@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emailer</title>
+    <style>
+        /* Inline CSS for styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            /* background-color: #3f3f3f; */
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* padding: 20px; */
+            margin: 0;
+            height: 100%;
+            /* width: 100%; */
+            /* border: 1px solid red; */
+        }
+
+        .notificationBox {
+            width: 100%;
+            max-width: 100%;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            box-sizing: border-box;
+            border-radius: 8px;
+            background-color: white;
+            margin: auto;
+        }
+         .logo{
+           /*border:1px solid red;*/
+           width: 100px;
+           height: 100px;
+           /* margin-top: 50px; */
+           
+         }
+        .logoImage {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .correctImageContainer {
+            text-align: center;
+            margin-top: -50px;
+        }
+
+        .correctImage {
+            height: 12%;
+            width: 12%;
+        }
+
+        .greeting {
+            text-align: center;
+            line-height: 2em;
+        }
+
+        .greetingText {
+            font-size: 18px;
+        }
+
+        .hopeText {
+            text-align: center;
+            line-height: 0.1em;
+        }
+
+        .paragraph {
+            font-size: 16px;
+        }
+
+        .infoText {
+            text-align: center;
+        }
+
+        .infoHeader {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .list {
+            padding-left: 18px;
+        }
+
+        .listItem {
+            margin-bottom: 10px;
+        }
+
+        .listLabel {
+            font-size: 15px;
+            font-weight: bolder;
+        }
+
+        .listText {
+            font-size: 15px;
+        }
+
+        .buttonContainer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .button {
+            background-color: #56A5FE;
+            color: white;
+            width: 170px;
+            padding: 10px;
+            font-size: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .footer {
+            position: relative;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f1f1f1;
+            text-align: center;
+            margin-top: 18px;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="notificationBox">
+            <div class="logo">
+                <img src="https://i.ibb.co/p1Z4zx7/innobloomslogo1.png" alt="Logo" class="logoImage" />
+            </div>
+            <div class="correctImageContainer">
+                <img src="https://i.ibb.co/4WPfgnY/correct.png" alt="Correct Image" class="correctImage" />
+            </div>
+            <div class="greeting">
+                <p>
+                    <span class="greetingText">Hi, </span>
+                    <span style="font-weight: bolder;">{{userName}}</span>
+                </p>
+            </div>
+            <div class="hopeText">
+                <p class="paragraph">Hope this email finds you well.</p>
+            </div>
+            <div class="infoText">
+                <p class="infoHeader">Here are your login credentials</p>
+            </div>
+            <div>
+                <p class="paragraph">Dear User,</p>
+                <p class="paragraph" style="line-height: 1.5em;">
+                    We are pleased to provide you with your login credentials for our system. Please find the details below.
+                </p>
+            </div>
+            <div>
+                <ul class="list">
+                    <li class="listItem">
+                        <span class="listLabel">Email Address: </span>
+                        <span class="listText">{{emailId}}</span>
+                    </li>
+                    <li class="listItem">
+                        <span class="listLabel">Mobile No: </span>
+                        <span class="listText">{{mobilleNo}}</span>
+                    </li>
+                    <li class="listItem">
+                        <span class="listLabel">Username: </span>
+                        <span class="listText">{{name}}</span>
+                    </li>
+                    <li class="listItem">
+                        <span class="listLabel">Temporary Password: </span>
+                        <span class="listText">{{temp_password}}</span>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <p class="paragraph">
+                    You can now access online by any device by going to: <a href="your-url-here.com" target="_blank">Link URL</a>.
+                </p>
+            </div>
+            <div>
+                <p class="paragraph" style="line-height: 1.5em;">
+                    Important: Please change your password upon first login to ensure the security of your account. If you have any questions or need assistance, feel free to reach out.
+                </p>
+            </div>
+            <div class="buttonContainer">
+                <button class="button">
+                    Get Started
+                </button>
+            </div>
+            <footer class="footer">
+                <p>© 1824, made by Innoblooms for a better web.</p>
+            </footer>
+        </div>
+    </div>
+</body>
+</html>

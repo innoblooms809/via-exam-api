@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:4.2
+    environment:
+      - AUTH=no
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_DATABASE=candidates
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    ports:
+      - '27017:27017'
+    volumes: 
+      - ./data:/data/db
+    networks:
+      - node-network
+  email: 
+    image: rnwood/smtp4dev:v3
+    ports:  
+    - '3002:80'
+    - '2525:25'
+  
+  node-app:
+    build: .
+    image: node-app
+    ports:
+      - '3000:3300'
+    depends_on:
+      - mongo
+      - email
+    volumes:
+      - .:/usr/src/node-app
+    networks:
+      - node-network
+  
+volumes:
+  dbdata:
+    driver: local
+
+networks:
+  node-network:
+    driver: bridge

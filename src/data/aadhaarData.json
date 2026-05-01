@@ -1,0 +1,327 @@
+[
+  {
+    "uid": "999922220032",
+    "name": "Anisha Jay Kapoor",
+    "gender": "F",
+    "email": "anisha@gmail.com",
+    "mobile": "6789376738",
+    "dob": "01-01-1982",
+    "dobt": "V",
+    "address": {
+      "building": "28 203",
+      "street": "14 Main Road",
+      "locality": "Jayanagar",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560036"
+    }
+  },
+  {
+    "uid": "999922220033",
+    "name": "Rohit Kumar Singh",
+    "gender": "M",
+    "email": "rohit@gmail.com",
+    "mobile": "7894561230",
+    "dob": "15-05-1985",
+    "dobt": "V",
+    "address": {
+      "building": "34 101",
+      "street": "2nd Cross",
+      "locality": "HSR Layout",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560102"
+    }
+  },
+  {
+    "uid": "999922220034",
+    "name": "Priya Sharma",
+    "gender": "F",
+    "email": "priya@gmail.com",
+    "mobile": "9876543210",
+    "dob": "20-03-1990",
+    "dobt": "V",
+    "address": {
+      "building": "56 305",
+      "street": "1st Main Road",
+      "locality": "Indiranagar",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560038"
+    }
+  },
+  {
+    "uid": "999922220035",
+    "name": "Amit Verma",
+    "gender": "M",
+    "email": "amit@gmail.com",
+    "mobile": "9012345678",
+    "dob": "25-12-1988",
+    "dobt": "V",
+    "address": {
+      "building": "12 404",
+      "street": "3rd Main",
+      "locality": "Koramangala",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560034"
+    }
+  },
+  {
+    "uid": "999922220036",
+    "name": "Sneha Reddy",
+    "gender": "F",
+    "email": "sneha@gmail.com",
+    "mobile": "9123456780",
+    "dob": "10-10-1992",
+    "dobt": "V",
+    "address": {
+      "building": "78 507",
+      "street": "5th Cross",
+      "locality": "BTM Layout",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560029"
+    }
+  },
+  {
+    "uid": "999922220037",
+    "name": "Vikas Gupta",
+    "gender": "M",
+    "email": "vikas@gmail.com",
+    "mobile": "8098765432",
+    "dob": "05-07-1984",
+    "dobt": "V",
+    "address": {
+      "building": "89 608",
+      "street": "6th Main",
+      "locality": "Whitefield",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560066"
+    }
+  },
+  {
+    "uid": "999922220038",
+    "name": "Neha Sinha",
+    "gender": "F",
+    "email": "neha@gmail.com",
+    "mobile": "7012345678",
+    "dob": "18-09-1991",
+    "dobt": "V",
+    "address": {
+      "building": "23 709",
+      "street": "7th Cross",
+      "locality": "Marathahalli",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560037"
+    }
+  },
+  {
+    "uid": "999922220039",
+    "name": "Rajesh Patil",
+    "gender": "M",
+    "email": "rajesh@gmail.com",
+    "mobile": "7890123456",
+    "dob": "12-11-1987",
+    "dobt": "V",
+    "address": {
+      "building": "34 808",
+      "street": "8th Main Road",
+      "locality": "Bellandur",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560103"
+    }
+  },
+  {
+    "uid": "999922220040",
+    "name": "Kiran Desai",
+    "gender": "M",
+    "email": "kiran@gmail.com",
+    "mobile": "6123456789",
+    "dob": "30-04-1993",
+    "dobt": "V",
+    "address": {
+      "building": "45 909",
+      "street": "9th Cross",
+      "locality": "Electronic City",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560100"
+    }
+  },
+  {
+    "uid": "999922220041",
+    "name": "Meena Rao",
+    "gender": "F",
+    "email": "meena@gmail.com",
+    "mobile": "9345678901",
+    "dob": "21-02-1986",
+    "dobt": "V",
+    "address": {
+      "building": "56 1001",
+      "street": "10th Main",
+      "locality": "Yeshwanthpur",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560022"
+    }
+  },
+  {
+    "uid": "999922220042",
+    "name": "Ashish Bhat",
+    "gender": "M",
+    "email": "ashish@gmail.com",
+    "mobile": "7234567890",
+    "dob": "14-08-1989",
+    "dobt": "V",
+    "address": {
+      "building": "67 1102",
+      "street": "11th Main Road",
+      "locality": "RT Nagar",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560032"
+    }
+  },
+  {
+    "uid": "999922220043",
+    "name": "Richa Jain",
+    "gender": "F",
+    "email": "richa@gmail.com",
+    "mobile": "8345678901",
+    "dob": "26-06-1994",
+    "dobt": "V",
+    "address": {
+      "building": "78 1203",
+      "street": "12th Cross",
+      "locality": "Basavanagudi",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560004"
+    }
+  },
+  {
+    "uid": "999922220044",
+    "name": "Suresh Nair",
+    "gender": "M",
+    "email": "suresh@gmail.com",
+    "mobile": "9234567890",
+    "dob": "19-03-1990",
+    "dobt": "V",
+    "address": {
+      "building": "89 1304",
+      "street": "13th Main",
+      "locality": "Rajajinagar",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560010"
+    }
+  },
+  {
+    "uid": "999922220045",
+    "name": "Pooja Joshi",
+    "gender": "F",
+    "email": "pooja@gmail.com",
+    "mobile": "1234567890",
+    "dob": "02-12-1983",
+    "dobt": "V",
+    "address": {
+      "building": "90 1405",
+      "street": "14th Main Road",
+      "locality": "Jalahalli",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560013"
+    }
+  },
+  {
+    "uid": "999922220046",
+    "name": "Vijay Reddy",
+    "gender": "M",
+    "email": "vijay@gmail.com",
+    "mobile": "6345678901",
+    "dob": "10-01-1988",
+    "dobt": "V",
+    "address": {
+      "building": "12 1506",
+      "street": "15th Cross",
+      "locality": "Banashankari",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560085"
+    }
+  },
+  {
+    "uid": "999922220047",
+    "name": "Ayesha Khan",
+    "gender": "F",
+    "email":
+
+ "ayesha@gmail.com",
+    "mobile": "7234567891",
+    "dob": "30-11-1992",
+    "dobt": "V",
+    "address": {
+      "building": "34 1607",
+      "street": "16th Main",
+      "locality": "Kalyan Nagar",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560043"
+    }
+  },
+  {
+    "uid": "999922220048",
+    "name": "Raman Malhotra",
+    "gender": "M",
+    "email": "raman@gmail.com",
+    "mobile": "8345678902",
+    "dob": "23-07-1985",
+    "dobt": "V",
+    "address": {
+      "building": "56 1708",
+      "street": "17th Cross",
+      "locality": "Hebbal",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560024"
+    }
+  },
+  {
+    "uid": "999922220049",
+    "name": "Divya Rao",
+    "gender": "F",
+    "email": "divya@gmail.com",
+    "mobile": "9345678902",
+    "dob": "14-02-1993",
+    "dobt": "V",
+    "address": {
+      "building": "67 1809",
+      "street": "18th Main",
+      "locality": "Malleswaram",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560003"
+    }
+  },
+  {
+    "uid": "999922220050",
+    "name": "Arun Prasad",
+    "gender": "M",
+    "email": "arun@gmail.com",
+    "mobile": "1234567892",
+    "dob": "07-09-1987",
+    "dobt": "V",
+    "address": {
+      "building": "78 1901",
+      "street": "19th Cross",
+      "locality": "Frazer Town",
+      "district": "Bangalore",
+      "state": "Karnataka",
+      "pincode": "560005"
+    }
+  }
+]
