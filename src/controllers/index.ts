@@ -1,0 +1,13 @@
+export { default as healthCheckController } from './health.check.controller';
+export { default as masterController } from './master.controller';
+export { default as userController } from './auth/user.controller';
+// export { default as captchaController } from './auth/user.controller';
+export { default as leadController } from './lead.controller';
+export { default as propertyController } from './property.controller';
+export { default as leadAssignController } from './property.controller';
+export { default as leadFollowUpController } from './leadFollowUp.controller';
+export { default as bookingController } from './booking.controller';
+export { default as sidebarController } from './sidebar.controller';
+export { default as teamMemberController } from './teamMember.controller';
+export { default as accessRoleController } from './accessRole.controller';
+export { default as dynamicModulesRoleController } from './dynamicModule.controller';

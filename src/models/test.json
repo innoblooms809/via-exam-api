@@ -1,0 +1,93 @@
+{
+  "masterId": 12,
+  "masterName": "facings",
+  "data": [
+    {
+      "isActive": "true",
+      "createdBy": 1,
+      "createdDate": "2024-10-10",
+      "_id": {
+        "$oid": "6707b5c9d220b71c915a0895"
+      },
+      "facingId": 1,
+      "facing": "North Facing"
+    },
+    {
+      "isActive": "true",
+      "createdBy": 1,
+      "createdDate": "2024-10-10",
+      "_id": {
+        "$oid": "6707b5c9d220b71c115a0201"
+      },
+      "facingId": 2,
+     "facing": "South Facing"
+    },
+    {
+      "isActive": "true",
+      "createdBy": 1,
+      "createdDate": "2024-10-10",
+      "_id": {
+        "$oid": "6707b5c9d220b71c115a8701"
+      },
+      "facingId": 3,
+      "facing": "East Facing"
+    },
+    {
+      "isActive": "true",
+      "createdBy": 1,
+      "createdDate": "2024-10-10",
+      "_id": {
+        "$oid": "6707b5c9d220b71c115a2901"
+      },
+      "facingId": 4,
+      "facing": "West Facing"
+    },
+    {
+      "isActive": "true",
+      "createdBy": 1,
+      "createdDate": "2024-10-10",
+      "_id": {
+        "$oid": "6707b5c9d220b71c115a2601"
+      },
+      "facingId": 5,
+     "facing": "North-East Facing"
+    },
+    {
+      "isActive": "true",
+      "createdBy": 1,
+      "createdDate": "2024-10-10",
+      "_id": {
+        "$oid": "6707b5c9d220b71c115a2601"
+      },
+      "facingId": 6,
+     "facing": "North-West Facing"
+    },
+    {
+      "isActive": "true",
+      "createdBy": 1,
+      "createdDate": "2024-10-10",
+      "_id": {
+        "$oid": "6707b5c9d220b71c115a2601"
+      },
+      "facingId": 7,
+     "facing": "South-East Facing"
+    },
+    {
+      "isActive": "true",
+      "createdBy": 1,
+      "createdDate": "2024-10-10",
+      "_id": {
+        "$oid": "6707b5c9d220b71c115a2601"
+      },
+      "facingId": 8,
+     "facing": "South-West Facing"
+    }
+  ],
+  "createdAt": {
+    "$date": "2024-10-10T11:08:57.892Z"
+  },
+  "updatedAt": {
+    "$date": "2024-10-10T11:08:57.892Z"
+  },
+  "__v": 0
+}
