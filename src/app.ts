@@ -7,7 +7,7 @@ import config from './config/config';
 import morgan from './config/morgan';
 import xss from './middlewares/xss';
 import { authLimiter } from './middlewares/rateLimiter';
-import routes from './routes/v1';
+// import routes from './routes/v1';
 import { errorConverter, errorHandler } from './middlewares/error';
 import ApiError from './utils/ApiError';
 import path from 'path';
@@ -50,12 +50,12 @@ if (config.env === 'production') {
 }
 
 // v1 api routes
-app.use('/v1', routes);
-app.use(express.static(path.join(__dirname, '../public')));
-// send back a 404 error for any unknown api request
-app.use((req, res, next) => {
-  next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
-});
+// app.use('/v1', routes);
+// app.use(express.static(path.join(__dirname, '../public')));
+// // send back a 404 error for any unknown api request
+// app.use((req, res, next) => {
+//   next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
+// });
 
 // convert error to ApiError, if needed
 app.use(errorConverter);
