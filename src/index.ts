@@ -3,11 +3,13 @@ import app from "./app";
 import config from "./config/config";
 import logger from "./config/logger";
 import connectDB from "./db/connect"; // Change to sequelize connection
+import initSuperAdmin from "./config/superAdmin";
 let server: Server;
 
 const bootApp = () => {
-  server = app.listen(config.port, () => {
+  server = app.listen(config.port, async () => {
     logger.info(`Listening on port ${config.port}`);
+    await initSuperAdmin();
   });
 };
 
