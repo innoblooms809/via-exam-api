@@ -1,14 +1,23 @@
-import jwt from "jsonwebtoken";
-import moment, { Moment } from "moment";
-import httpStatus from "http-status";
-import config from "../config/config";
-import ApiError from "../utils/ApiError";
-
-import { AuthTokensResponse } from "../types/response";
-import { TOKEN_TYPE } from "../utils/Constants";
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const moment_1 = __importDefault(require("moment"));
+const config_1 = __importDefault(require("../config/config"));
+const Constants_1 = require("../utils/Constants");
 // import clientPromise from "../db";
 // import candidateService from './candidate/candidate.service';
-
 /**
  * Generate token
  * @param {number} userId
@@ -17,21 +26,15 @@ import { TOKEN_TYPE } from "../utils/Constants";
  * @param {string} [secret]
  * @returns {string}
  */
-const generateToken = (
-  userId: any,
-  expires: Moment,
-  type: string,
-  secret = config.jwt.secret
-): string => {
-  const payload = {
-    sub: userId,
-    iat: moment().unix(),
-    exp: expires.unix(),
-    type,
-  };
-  return jwt.sign(payload, secret);
+const generateToken = (userId, expires, type, secret = config_1.default.jwt.secret) => {
+    const payload = {
+        sub: userId,
+        iat: (0, moment_1.default)().unix(),
+        exp: expires.unix(),
+        type,
+    };
+    return jsonwebtoken_1.default.sign(payload, secret);
 };
-
 /**
  * Generate token
  * @param {number} userId
@@ -40,19 +43,14 @@ const generateToken = (
  * @param {string} [secret]
  * @returns {string}
  */
-const generateUserToken = (
-  user: any,
-  expires: Moment,
-  type: string,
-  secret = config.jwt.secret
-): string => {
-  const payload = {
-    sub: user,
-    iat: moment().unix(),
-    exp: expires.unix(),
-    type,
-  };
-  return jwt.sign(payload, secret);
+const generateUserToken = (user, expires, type, secret = config_1.default.jwt.secret) => {
+    const payload = {
+        sub: user,
+        iat: (0, moment_1.default)().unix(),
+        exp: expires.unix(),
+        type,
+    };
+    return jsonwebtoken_1.default.sign(payload, secret);
 };
 /**
  * Save a token
@@ -82,7 +80,6 @@ const generateUserToken = (
 //       blacklisted,
 //     }
 //   );
-
 //   // const createdToken = prisma.token.create({
 //   //   data: {
 //   //     token,
@@ -94,7 +91,6 @@ const generateUserToken = (
 //   // });
 //   // return createdToken;
 // };
-
 // const savedUserToken = async (
 //   token: string,
 //   registrationid: string,
@@ -109,7 +105,6 @@ const generateUserToken = (
 //       type: type,
 //     },
 //   });
-
 //   // If the token exists, update it
 //   if (data) {
 //     // Update the existing record
@@ -117,10 +112,8 @@ const generateUserToken = (
 //     data.expires = expires;
 //     data.blacklisted = blacklisted;
 //     await data.save(); // Save the updated data
-
 //     return data; // Return the updated record
 //   }
-
 //   // If no token exists, create a new one
 //   let newToken = await Token.create({
 //     token,
@@ -129,17 +122,14 @@ const generateUserToken = (
 //     type,
 //     blacklisted,
 //   });
-
 //   return newToken; // Return the newly created token
 // };
-
 /**
  * Verify token and return token doc (or throw an error if it is not valid)
  * @param {string} token
  * @param {string} type
  * @returns {Promise<Token>}
  */
-
 // const verifyCandidateToken = async (token: string, type: any): Promise<any> => {
 //   const payload = jwt.verify(token, config.jwt.secret);
 //   const { registrationid }: any = payload.sub;
@@ -150,52 +140,32 @@ const generateUserToken = (
 //   }
 //   return doc;
 // };
-
 /**
  * Generate auth tokens
  * @param {User} user
  * @returns {Promise<AuthTokensResponse>}
  */
-
 /**
  * Generate auth tokens
  * @param {User} user
  * @returns {Promise<AuthTokensResponse>}
  */
-const generateUserAuthTokens = async (
-  user: any
-): Promise<AuthTokensResponse> => {
-  const accessTokenExpires = moment().add(
-    config.jwt.accessExpirationMinutes,
-    "minutes"
-  );
-  const accessToken = generateUserToken(
-    user,
-    accessTokenExpires,
-    TOKEN_TYPE.ACCESS
-  );
-  const refreshTokenExpires: any = moment().add(
-    config.jwt.refreshExpirationDays,
-    "days"
-  );
-  const refreshToken = generateUserToken(
-    user,
-    refreshTokenExpires,
-    TOKEN_TYPE.REFRESH
-  );
-
-  return {
-    access: {
-      token: accessToken,
-      expires: accessTokenExpires.toDate(),
-    },
-    refresh: {
-      token: refreshToken,
-      expires: refreshTokenExpires.toDate(),
-    },
-  };
-};
-
+const generateUserAuthTokens = (user) => __awaiter(void 0, void 0, void 0, function* () {
+    const accessTokenExpires = (0, moment_1.default)().add(config_1.default.jwt.accessExpirationMinutes, "minutes");
+    const accessToken = generateUserToken(user, accessTokenExpires, Constants_1.TOKEN_TYPE.ACCESS);
+    const refreshTokenExpires = (0, moment_1.default)().add(config_1.default.jwt.refreshExpirationDays, "days");
+    const refreshToken = generateUserToken(user, refreshTokenExpires, Constants_1.TOKEN_TYPE.REFRESH);
+    return {
+        access: {
+            token: accessToken,
+            expires: accessTokenExpires.toDate(),
+        },
+        refresh: {
+            token: refreshToken,
+            expires: refreshTokenExpires.toDate(),
+        },
+    };
+});
 /**
  * Generate reset password token
  * @param {string} email
@@ -233,7 +203,6 @@ const generateUserAuthTokens = async (
 //   }
 //   return resetPasswordToken;
 // };
-
 /**
  * Generate verify email token
  * @param {User} user
@@ -252,7 +221,6 @@ const generateUserAuthTokens = async (
 //   await saveToken(verifyEmailToken, user.id, expires, TOKEN_TYPE.VERIFY_EMAIL);
 //   return verifyEmailToken;
 // };
-
 // const verifyCandidateTokenForResetPass = async (
 //   token: string
 // ): Promise<any> => {
@@ -260,13 +228,12 @@ const generateUserAuthTokens = async (
 //   const { candidateEmail }: any = payload.sub;
 //   return candidateEmail;
 // };
-
-export default {
-  generateToken,
-  // saveToken,
-  //   generateResetPasswordToken,
-  // generateVerifyEmailToken,
-  generateUserAuthTokens,
-  // verifyCandidateToken,
-  // verifyCandidateTokenForResetPass,
+exports.default = {
+    generateToken,
+    // saveToken,
+    //   generateResetPasswordToken,
+    // generateVerifyEmailToken,
+    generateUserAuthTokens,
+    // verifyCandidateToken,
+    // verifyCandidateTokenForResetPass,
 };

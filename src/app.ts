@@ -21,7 +21,12 @@ if (config.env !== 'test') {
 }
 
 // set security HTTP headers
-app.use(helmet());
+// app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
 
 // parse json request body
 app.use(express.json({limit: "60MB"}));
@@ -49,9 +54,32 @@ if (config.env === 'production') {
   app.use('/v1/auth', authLimiter);
 }
 
+const allowCrossOriginUploads = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+};
+
+app.use(
+  "/v1/uploads",
+  allowCrossOriginUploads,
+  express.static(path.join(__dirname, "../uploads"), {
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+  })
+);
 // v1 api routes
 app.use('/v1', routes);
+
+
 app.use(express.static(path.join(__dirname, '../public')));
+
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
   next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));

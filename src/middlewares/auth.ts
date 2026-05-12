@@ -33,6 +33,25 @@ import UserModal from "../modals/User.modal";
 import Role from "../modals/Role.modal";
 import config from "../config/config";
 
+const getCookieValue = (req: any, name: string): string | undefined => {
+  if (req.cookies?.[name]) {
+    return req.cookies[name];
+  }
+
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) {
+    return undefined;
+  }
+
+  return cookieHeader
+    .split(";")
+    .map((cookie: string) => cookie.trim())
+    .find((cookie: string) => cookie.startsWith(`${name}=`))
+    ?.split("=")
+    .slice(1)
+    .join("=");
+};
+
 // ─── Authenticate ─────────────────────────────────────────────────────────────
 // Verifies JWT and attaches user to req.viaExamUser
 // Use on every protected route
@@ -44,8 +63,9 @@ const authenticate = async (
 ): Promise<any> => {
   try {
     const authHeader = req.headers.authorization;
+    const cookieToken = getCookieValue(req, "accessToken");
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if ((!authHeader || !authHeader.startsWith("Bearer ")) && !cookieToken) {
       return res.status(httpStatus.UNAUTHORIZED).json({
         error: true,
         statusCode: httpStatus.UNAUTHORIZED,
@@ -53,7 +73,9 @@ const authenticate = async (
       });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : cookieToken;
 
     // Verify token
     let decoded: any;
