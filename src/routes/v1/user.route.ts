@@ -18,7 +18,9 @@ router.get("/captcha", userController.getCaptcha);
  * Body: { emailId, mobileNo, type, password, captcha }
  * type: 1 = email, 2 = mobile
  */
-router.post("/login", userController.loginViaExamUser);
+router.post("/login",
+  //  authenticate,
+   userController.loginViaExamUser);
 
 /**
  * POST /api/viaexam/user/refresh-token

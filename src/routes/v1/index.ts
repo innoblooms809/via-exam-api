@@ -4,6 +4,10 @@ import userRoutes from "./user.route";
 import accessRoutes from "./access.route";
 import docsRoute from "./docs.route";
 import instituteRoutes from "./institute.route";
+import teacherRoutes from "./teacher.route";
+import examRoutes from './exam.route';
+import questionPaperRoutes from './questioPaper.route'
+// import studentRoutes from './student.route'  
 // import captchaRoutes from './captcha.route'
 
 const router = express.Router();
@@ -21,6 +25,19 @@ const defaultRoutes = [
     path: "/institute",
     route: instituteRoutes,
   },
+  {
+    path: "/teacher",
+    route: teacherRoutes,
+  },
+      {
+        path: "/exam",
+        route: examRoutes,
+      },
+      {
+        path: "/question-papers",
+        route: questionPaperRoutes,
+      }
+
 
   // {
   //   path: '/captcha',
