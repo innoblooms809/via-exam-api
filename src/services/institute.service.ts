@@ -140,9 +140,13 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     ]);
 
     // 11. Send credentials email to admin
+    // const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3040"}/${
+    //   body.slug
+    // }/auth/signin`;
+
     const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${
-      body.slug
-    }/auth/signin`;
+  body.slug
+}/auth/signin`;
 
     await sendAdminCredentials({
       adminName: `${body.adminFirstName} ${body.adminLastName}`,

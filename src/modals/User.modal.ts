@@ -2,6 +2,8 @@ import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize"; // same import as your boilerplate
 import Access from "./Access.modal";
 import Role from "./Role.modal";
+import TeacherProfile from "./TeacherProfile.modal";
+import StudentProfile from "./Student.modal"
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -140,5 +142,29 @@ User.init(
 // Association — matches your existing pattern: User.belongsTo(Role, ...)
  User.hasMany(Access, { foreignKey: 'roleId', as: 'permissions' })
 User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
+//  One user has one teacher profile
+User.hasOne(TeacherProfile, {
+  foreignKey: "userId",
+  sourceKey:  "userId",
+  as:         "teacherProfile",
+});
+
+TeacherProfile.belongsTo(User, {
+  foreignKey: "userId",
+  targetKey:  "userId",
+  as:         "user",
+});
+
+User.hasOne(StudentProfile, {
+  foreignKey: "userId",
+  sourceKey:  "userId",
+  as:         "studentProfile",
+});
+
+StudentProfile.belongsTo(User, {
+  foreignKey: "userId",
+  targetKey:  "userId",
+  as:         "user",
+});
 
 export default User;
