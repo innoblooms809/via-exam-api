@@ -20,6 +20,12 @@ router.get("/captcha", userController.getCaptcha);
  */
 router.post("/login", userController.loginViaExamUser);
 
+/**
+ * POST /api/viaexam/user/refresh-token
+ * Reads refreshToken from httpOnly cookie and refreshes accessToken.
+ */
+router.post("/refresh-token", userController.refreshAccessToken);
+
 // ─── Protected Routes ─────────────────────────────────────────────────────────
 
 /**

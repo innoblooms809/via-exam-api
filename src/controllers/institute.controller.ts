@@ -1,7 +1,6 @@
 import httpStatus from "http-status";
 import { Response } from "express";
 import InstituteService from "../services/institute.service";
-import { sendAdminCredentials, sendEmailToNewUser } from "../utils/mailHelper";
 
 const registerInstitute = async (req: any, res: Response): Promise<any> => {
   try {
@@ -10,18 +9,6 @@ const registerInstitute = async (req: any, res: Response): Promise<any> => {
       req.body,
       req.files,
     );
-
-    // Send welcome email to admin if created successfully
-    if (!result.error) {
-      await sendAdminCredentials({
-        adminName: `${req.body.adminFirstName} ${req.body.adminLastName}`,
-        adminEmail: req.body.adminEmail,
-        adminPassword: req.body.adminPassword,
-        instituteName: req.body.instituteName,
-        loginUrl: result.data.loginUrl,
-        plan: req.body.plan,
-      });
-    }
 
     return res.status(result.statusCode).send(result);
   } catch (error) {

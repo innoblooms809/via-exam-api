@@ -8,8 +8,6 @@ import { AuthTokensResponse } from "../types/response";
 import { TOKEN_TYPE } from "../utils/Constants";
 // import clientPromise from "../db";
 // import candidateService from './candidate/candidate.service';
-import Tokens from "../modals/Token.modal";
-import Token from "../modals/Token.modal";
 
 /**
  * Generate token
@@ -185,12 +183,7 @@ const generateUserAuthTokens = async (
     refreshTokenExpires,
     TOKEN_TYPE.REFRESH
   );
-  // let savedresponse = await savedUserToken(
-  //   refreshToken,
-  //   user.userId,
-  //   refreshTokenExpires,
-  //   TOKEN_TYPE.REFRESH
-  // );
+
   return {
     access: {
       token: accessToken,

@@ -140,7 +140,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     ]);
 
     // 11. Send credentials email to admin
-    const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3040"}/${
+    const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${
       body.slug
     }/auth/signin`;
 
@@ -161,9 +161,10 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         institute,
         admin: adminResponse,
         // loginUrl: `${process.env.FRONTEND_URL}/${body.slug}/auth/signin`,
-        loginUrl: `${process.env.FRONTEND_URL ?? "http://localhost:3020"}/${
+        loginUrl: `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${
           body.slug
         }/auth/signin`,
+        logoUrl,
       },
     };
   } catch (e: any) {
