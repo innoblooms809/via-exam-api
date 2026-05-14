@@ -131,6 +131,9 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             "refreshToken",
         ]);
         // 11. Send credentials email to admin
+        // const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3040"}/${
+        //   body.slug
+        // }/auth/signin`;
         const loginUrl = `${(_c = process.env.FRONTEND_URL) !== null && _c !== void 0 ? _c : "http://localhost:3000"}/${body.slug}/auth/signin`;
         yield (0, mailHelper_1.sendAdminCredentials)({
             adminName: `${body.adminFirstName} ${body.adminLastName}`,

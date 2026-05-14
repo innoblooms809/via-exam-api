@@ -7,6 +7,8 @@ const sequelize_1 = require("sequelize");
 const sequelize_2 = require("../config/sequelize"); // same import as your boilerplate
 const Access_modal_1 = __importDefault(require("./Access.modal"));
 const Role_modal_1 = __importDefault(require("./Role.modal"));
+const TeacherProfile_modal_1 = __importDefault(require("./TeacherProfile.modal"));
+const Student_modal_1 = __importDefault(require("./Student.modal"));
 // ─── Model ───────────────────────────────────────────────────────────────────
 class User extends sequelize_1.Model {
     // Helper: is the account locked?
@@ -85,4 +87,25 @@ User.init({
 // Association — matches your existing pattern: User.belongsTo(Role, ...)
 User.hasMany(Access_modal_1.default, { foreignKey: 'roleId', as: 'permissions' });
 User.belongsTo(Role_modal_1.default, { foreignKey: "roleId", as: "role" });
+//  One user has one teacher profile
+User.hasOne(TeacherProfile_modal_1.default, {
+    foreignKey: "userId",
+    sourceKey: "userId",
+    as: "teacherProfile",
+});
+TeacherProfile_modal_1.default.belongsTo(User, {
+    foreignKey: "userId",
+    targetKey: "userId",
+    as: "user",
+});
+User.hasOne(Student_modal_1.default, {
+    foreignKey: "userId",
+    sourceKey: "userId",
+    as: "studentProfile",
+});
+Student_modal_1.default.belongsTo(User, {
+    foreignKey: "userId",
+    targetKey: "userId",
+    as: "user",
+});
 exports.default = User;

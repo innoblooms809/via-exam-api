@@ -1,65 +1,88 @@
-import { DataTypes, Model, Optional } from "sequelize";
+import {
+  DataTypes,
+  Model,
+  Optional,
+} from "sequelize";
+
 import { sequelize } from "../config/sequelize";
 import User from "./User.modal";
 import Exam from "./Exam.modal";
 
 // ─────────────────────────────────────────────────────────────────
-// Interfaces
+// Attributes
 // ─────────────────────────────────────────────────────────────────
 
 interface QuestionPaperAttributes {
   id: number;
+
   paperId: string;
+
+  instituteId: string;   // ✅ ADDED
+
   examId: string;
   teacherId: string;
-  instituteId: string;
 
-  // Full JSON from the SetQuestionPaper component
-  // Shape: { meta, sections, generalInstructions, questions[] }
+  paperSet: "A" | "B" | "C" | "D";
+
   content: object;
 
-  // Draft → Submitted → Approved
-  //                  ↘ Rejected → (teacher revises) → Submitted
-  status: "Draft" | "Submitted" | "Approved" | "Rejected";
+  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
 
-  rejectionNote: string | null;  // set by examiner on rejection
+  rejectionNote: string | null;
 
   submittedAt: Date | null;
-  approvedAt:  Date | null;
-  rejectedAt:  Date | null;
+  approvedAt: Date | null;
+  rejectedAt: Date | null;
 
   createdAt?: Date;
   updatedAt?: Date;
+  deletedAt?: Date;
 }
+
+// ─────────────────────────────────────────────────────────────────
 
 interface QuestionPaperCreationAttributes
   extends Optional<
     QuestionPaperAttributes,
     | "id"
     | "paperId"
+    | "paperSet"
     | "status"
     | "rejectionNote"
     | "submittedAt"
     | "approvedAt"
     | "rejectedAt"
+    | "createdAt"
+    | "updatedAt"
+    | "deletedAt"
   > {}
 
 // ─────────────────────────────────────────────────────────────────
-// Model
+// Model Class
 // ─────────────────────────────────────────────────────────────────
 
 class QuestionPaper
-  extends Model<QuestionPaperAttributes, QuestionPaperCreationAttributes>
+  extends Model<
+    QuestionPaperAttributes,
+    QuestionPaperCreationAttributes
+  >
   implements QuestionPaperAttributes
 {
   public id!: number;
+
   public paperId!: string;
+
+  public instituteId!: string; // ✅ ADDED
+
   public examId!: string;
   public teacherId!: string;
-  public instituteId!: string;
+
+  public paperSet!: "A" | "B" | "C" | "D";
 
   public content!: object;
-  public status!: "Draft" | "Submitted" | "Approved" | "Rejected";
+
+  public status!: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
+
   public rejectionNote!: string | null;
 
   public submittedAt!: Date | null;
@@ -68,47 +91,93 @@ class QuestionPaper
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public readonly deletedAt!: Date;
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────────
 
 QuestionPaper.init(
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,
       autoIncrement: true,
       primaryKey: true,
     },
 
-    paperId: {
+     paperId: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
+      
+    },
+
+
+    instituteId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+
+      references: {
+        model: "viaexam_institutes",
+        key: "instituteId",
+      },
+
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
     },
 
     examId: {
       type: DataTypes.STRING,
       allowNull: false,
+
+      references: {
+        model: "viaexam_exams",
+        key: "examId",
+      },
+
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
     },
 
     teacherId: {
       type: DataTypes.STRING,
       allowNull: false,
+
+      references: {
+        model: "viaexam_users",
+        key: "userId",
+      },
+
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
     },
 
-    instituteId: {
-      type: DataTypes.STRING,
+    paperSet: {
+      type: DataTypes.ENUM("A", "B", "C", "D"),
       allowNull: false,
+      defaultValue: "A",
+      field: "paper_set",
     },
 
-    // Stored as JSON — Sequelize handles serialization automatically
     content: {
-      type: DataTypes.JSON,
+      type: DataTypes.JSONB,
       allowNull: false,
+
+      validate: {
+        notEmpty: true,
+      },
     },
 
     status: {
-      type: DataTypes.ENUM("Draft", "Submitted", "Approved", "Rejected"),
+      type: DataTypes.ENUM(
+        "DRAFT",
+        "SUBMITTED",
+        "APPROVED",
+        "REJECTED"
+      ),
       allowNull: false,
-      defaultValue: "Draft",
+      defaultValue: "DRAFT",
     },
 
     rejectionNote: {
@@ -137,17 +206,35 @@ QuestionPaper.init(
   },
   {
     sequelize,
+
     tableName: "viaexam_question_papers",
+
     modelName: "QuestionPaper",
+
     timestamps: true,
 
+    paranoid: true,
+
     indexes: [
-      // One paper per exam per teacher
-      { unique: true, fields: ["examId", "teacherId"], name: "uq_exam_teacher" },
-      // Examiner queue — fast lookup by instituteId + status
-      { fields: ["instituteId", "status"], name: "idx_qp_institute_status" },
-      // Teacher's own papers
-      { fields: ["teacherId", "status"], name: "idx_qp_teacher_status" },
+      {
+        fields: ["instituteId"],
+        name: "idx_qp_institute",
+      },
+
+      {
+        fields: ["teacherId"],
+        name: "idx_qp_teacher",
+      },
+
+      {
+        fields: ["status"],
+        name: "idx_qp_status",
+      },
+
+      {
+        fields: ["examId", "status"],
+        name: "idx_qp_exam_status",
+      },
     ],
   }
 );
@@ -156,25 +243,22 @@ QuestionPaper.init(
 // Associations
 // ─────────────────────────────────────────────────────────────────
 
-// Paper belongs to the teacher (User) who wrote it
 QuestionPaper.belongsTo(User, {
   foreignKey: "teacherId",
   targetKey: "userId",
   as: "teacher",
 });
 
-// Paper belongs to the exam it was created for
 QuestionPaper.belongsTo(Exam, {
   foreignKey: "examId",
   targetKey: "examId",
   as: "exam",
 });
 
-// Exam can have one question paper
-Exam.hasOne(QuestionPaper, {
+Exam.hasMany(QuestionPaper, {
   foreignKey: "examId",
   sourceKey: "examId",
-  as: "questionPaper",
+  as: "questionPapers",
 });
 
 export default QuestionPaper;

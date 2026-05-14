@@ -1,3 +1,4 @@
+"use strict";
 // import httpStatus from "http-status";
 // import { Op } from "sequelize";
 // import { sequelize } from "../config/sequelize";
@@ -6,11 +7,23 @@
 // import User from "../modals/User.modal";
 // import TeacherProfile from "../modals/TeacherProfile.modal";
 // import RegHelper from "../utils/helper";
-
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.QuestionPaperService = void 0;
 // // ─────────────────────────────────────────────────────────────────
 // // Helper: summarise questions inside a paper for quick display
 // // ─────────────────────────────────────────────────────────────────
-
 // const summarisePaper = (content: any) => {
 //   const questions: any[] = content?.questions ?? [];
 //   return {
@@ -22,12 +35,10 @@
 //     }, {}),
 //   };
 // };
-
 // // ═════════════════════════════════════════════════════════════════
 // // 1. saveDraft
 // //    Teacher creates or updates a question paper draft
 // // ═════════════════════════════════════════════════════════════════
-
 // const saveDraft = async (
 //   userId: string,
 //   instituteId: string,
@@ -35,7 +46,6 @@
 // ): Promise<any> => {
 //   try {
 //     const { examId, content } = body;
-
 //     // ── Verify exam exists, belongs to institute ─────────────────
 //     const exam = await Exam.findOne({
 //       where: {
@@ -44,7 +54,6 @@
 //         status: { [Op.notIn]: ["Deleted"] },
 //       },
 //     });
-
 //     if (!exam) {
 //       return {
 //         error: true,
@@ -52,7 +61,6 @@
 //         message: "Exam not found or does not belong to your institute.",
 //       };
 //     }
-
 //     // ── Only the assigned teacher can work on this exam ──────────
 //     if (exam.teacherId !== userId) {
 //       return {
@@ -61,7 +69,6 @@
 //         message: "You are not assigned to this exam.",
 //       };
 //     }
-
 //     // ── Cannot edit once exam is Live or Completed ───────────────
 //     if (["Live", "Completed"].includes(exam.status)) {
 //       return {
@@ -70,12 +77,10 @@
 //         message: `Cannot edit question paper. Exam is already ${exam.status}.`,
 //       };
 //     }
-
 //     // ── Check if a paper already exists for this exam + teacher ──
 //     const existing = await QuestionPaper.findOne({
 //       where: { examId, teacherId: userId },
 //     });
-
 //     if (existing) {
 //       // Cannot overwrite Submitted or Approved paper
 //       if (["Submitted", "Approved"].includes(existing.status)) {
@@ -85,14 +90,12 @@
 //           message: `Question paper is already ${existing.status}. Cannot save draft.`,
 //         };
 //       }
-
 //       // Update existing draft (or rejected paper being revised)
 //       await existing.update({
 //         content,
 //         status: "Draft",
 //         rejectionNote: null,
 //       });
-
 //       return {
 //         error: false,
 //         statusCode: httpStatus.OK,
@@ -100,10 +103,8 @@
 //         data: { paperId: existing.paperId, status: "Draft" },
 //       };
 //     }
-
 //     // ── Create brand new paper ───────────────────────────────────
 //     const paperId = await RegHelper.generateUserId();
-
 //     const paper = await QuestionPaper.create({
 //       paperId,
 //       examId,
@@ -116,7 +117,6 @@
 //       approvedAt: null,
 //       rejectedAt: null,
 //     });
-
 //     return {
 //       error: false,
 //       statusCode: httpStatus.CREATED,
@@ -132,12 +132,10 @@
 //     };
 //   }
 // };
-
 // // ═════════════════════════════════════════════════════════════════
 // // 2. submitPaper
 // //    Teacher submits a Draft / Rejected paper for examiner review
 // // ═════════════════════════════════════════════════════════════════
-
 // const submitPaper = async (
 //   userId: string,
 //   instituteId: string,
@@ -156,7 +154,6 @@
 //         },
 //       ],
 //     });
-
 //     if (!paper) {
 //       await t.rollback();
 //       return {
@@ -165,7 +162,6 @@
 //         message: "Question paper not found.",
 //       };
 //     }
-
 //     // Only the author can submit
 //     if (paper.teacherId !== userId) {
 //       await t.rollback();
@@ -175,7 +171,6 @@
 //         message: "You are not the author of this question paper.",
 //       };
 //     }
-
 //     if (!["Draft", "Rejected"].includes(paper.status)) {
 //       await t.rollback();
 //       return {
@@ -184,7 +179,6 @@
 //         message: `Cannot submit. Paper is currently ${paper.status}.`,
 //       };
 //     }
-
 //     // Must have at least one question
 //     const content: any = paper.content;
 //     if (!content?.questions?.length) {
@@ -196,21 +190,17 @@
 //           "Cannot submit an empty question paper. Add at least one question.",
 //       };
 //     }
-
 //     // Update paper → Submitted
 //     await paper.update(
 //       { status: "Submitted", rejectionNote: null, submittedAt: new Date() },
 //       { transaction: t },
 //     );
-
 //     // Update exam → Submitted (only if it was Draft)
 //     await Exam.update(
 //       { status: "Submitted" },
 //       { where: { examId: paper.examId, status: "Draft" }, transaction: t },
 //     );
-
 //     await t.commit();
-
 //     return {
 //       error: false,
 //       statusCode: httpStatus.OK,
@@ -227,12 +217,10 @@
 //     };
 //   }
 // };
-
 // // ═════════════════════════════════════════════════════════════════
 // // 3. getMyExams
 // //    Teacher views all exams assigned to them + paper status
 // // ═════════════════════════════════════════════════════════════════
-
 // const getMyExams = async (
 //   userId: string,
 //   instituteId: string,
@@ -243,18 +231,15 @@
 //     const parsedPage = Math.max(1, parseInt(page));
 //     const parsedLimit = Math.max(1, parseInt(limit));
 //     const offset = (parsedPage - 1) * parsedLimit;
-
 //     // Build exam where clause
 //     const examWhere: any = {
 //       teacherId: userId,
 //       instituteId,
 //       status: { [Op.notIn]: ["Deleted"] },
 //     };
-
 //     // Build paper where clause (for filtering by paper status)
 //     const paperWhere: any = {};
 //     if (status) paperWhere.status = status;
-
 //     const { count, rows } = await Exam.findAndCountAll({
 //       where: examWhere,
 //       include: [
@@ -278,11 +263,9 @@
 //       offset,
 //       distinct: true,
 //     });
-
 //     const data = rows.map((exam: any) => {
 //       const paper = exam.questionPaper;
 //       let paperData = null;
-
 //       if (paper) {
 //         const summary = summarisePaper(paper.content);
 //         paperData = {
@@ -294,7 +277,6 @@
 //           ...summary,
 //         };
 //       }
-
 //       return {
 //         examId: exam.examId,
 //         session: exam.session,
@@ -306,7 +288,6 @@
 //         paper: paperData, // null = teacher hasn't started yet
 //       };
 //     });
-
 //     return {
 //       error: false,
 //       statusCode: httpStatus.OK,
@@ -330,12 +311,10 @@
 //     };
 //   }
 // };
-
 // // ═════════════════════════════════════════════════════════════════
 // // 4. getSubmittedPapers
 // //    Examiner views all submitted papers pending review
 // // ═════════════════════════════════════════════════════════════════
-
 // const getSubmittedPapers = async (
 //   instituteId: string,
 //   query: any,
@@ -345,7 +324,6 @@
 //     const parsedPage = Math.max(1, parseInt(page));
 //     const parsedLimit = Math.max(1, parseInt(limit));
 //     const offset = (parsedPage - 1) * parsedLimit;
-
 //     // Exam-level filters
 //     const examWhere: any = {
 //       instituteId,
@@ -353,7 +331,6 @@
 //     };
 //     if (classFilter) examWhere.classVal = classFilter;
 //     if (subject) examWhere.subject = subject;
-
 //     const { count, rows } = await QuestionPaper.findAndCountAll({
 //       where: { status: "Submitted", instituteId },
 //       include: [
@@ -388,7 +365,6 @@
 //       offset,
 //       distinct: true,
 //     });
-
 //     const data = rows.map((paper: any) => ({
 //       paperId: paper.paperId,
 //       examId: paper.examId,
@@ -411,7 +387,6 @@
 //       },
 //       paperSummary: summarisePaper(paper.content),
 //     }));
-
 //     return {
 //       error: false,
 //       statusCode: httpStatus.OK,
@@ -435,12 +410,10 @@
 //     };
 //   }
 // };
-
 // // ═════════════════════════════════════════════════════════════════
 // // 5. approvePaper
 // //    Examiner approves → paper = Approved, exam = Live
 // // ═════════════════════════════════════════════════════════════════
-
 // const approvePaper = async (
 //   instituteId: string,
 //   paperId: string,
@@ -458,7 +431,6 @@
 //         },
 //       ],
 //     });
-
 //     if (!paper) {
 //       await t.rollback();
 //       return {
@@ -467,7 +439,6 @@
 //         message: "Question paper not found.",
 //       };
 //     }
-
 //     if (paper.status !== "Submitted") {
 //       await t.rollback();
 //       return {
@@ -476,21 +447,17 @@
 //         message: `Cannot approve. Paper status is '${paper.status}'. Only Submitted papers can be approved.`,
 //       };
 //     }
-
 //     // Paper → Approved
 //     await paper.update(
 //       { status: "Approved", rejectionNote: null, approvedAt: new Date() },
 //       { transaction: t },
 //     );
-
 //     // Exam → Live
 //     await Exam.update(
 //       { status: "Live" },
 //       { where: { examId: paper.examId }, transaction: t },
 //     );
-
 //     await t.commit();
-
 //     return {
 //       error: false,
 //       statusCode: httpStatus.OK,
@@ -512,12 +479,10 @@
 //     };
 //   }
 // };
-
 // // ═════════════════════════════════════════════════════════════════
 // // 6. rejectPaper
 // //    Examiner rejects → paper = Rejected (with note), exam = Draft
 // // ═════════════════════════════════════════════════════════════════
-
 // const rejectPaper = async (
 //   instituteId: string,
 //   paperId: string,
@@ -532,7 +497,6 @@
 //         message: "rejectionNote is required when rejecting a paper.",
 //       };
 //     }
-
 //     const paper = await QuestionPaper.findOne({
 //       where: { paperId },
 //       include: [
@@ -544,7 +508,6 @@
 //         },
 //       ],
 //     });
-
 //     if (!paper) {
 //       await t.rollback();
 //       return {
@@ -553,7 +516,6 @@
 //         message: "Question paper not found.",
 //       };
 //     }
-
 //     if (paper.status !== "Submitted") {
 //       await t.rollback();
 //       return {
@@ -562,23 +524,18 @@
 //         message: `Cannot reject. Paper status is '${paper.status}'. Only Submitted papers can be rejected.`,
 //       };
 //     }
-
 //     const note = rejectionNote.trim();
-
 //     // Paper → Rejected
 //     await paper.update(
 //       { status: "Rejected", rejectionNote: note, rejectedAt: new Date() },
 //       { transaction: t },
 //     );
-
 //     // Exam → back to Draft
 //     await Exam.update(
 //       { status: "Draft" },
 //       { where: { examId: paper.examId, status: "Submitted" }, transaction: t },
 //     );
-
 //     await t.commit();
-
 //     return {
 //       error: false,
 //       statusCode: httpStatus.OK,
@@ -601,7 +558,6 @@
 //     };
 //   }
 // };
-
 // // ─────────────────────────────────────────────────────────────────
 // export default {
 //   saveDraft,
@@ -611,75 +567,50 @@
 //   approvePaper,
 //   rejectPaper,
 // };
-
-
-
-import QuestionPaper from "../modals/QuestionPaper.modal"
-import Exam from "../modals/Exam.modal"
-import RegHelper from "../utils/helper";
-
-interface CreateQuestionPaperDTO {
-  instituteId: string;
-  examId: string;
-  teacherId: string;
-  paperSet: "A" | "B" | "C" | "D";
-  content: object;
+const QuestionPaper_modal_1 = __importDefault(require("../modals/QuestionPaper.modal"));
+const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
+const helper_1 = __importDefault(require("../utils/helper"));
+class QuestionPaperService {
+    // ─────────────────────────────────────────────
+    // CREATE QUESTION PAPER
+    // ─────────────────────────────────────────────
+    static createQuestionPaper(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { instituteId, examId, teacherId, paperSet, content, } = data;
+            // 1. Validate Exam exists
+            const exam = yield Exam_modal_1.default.findOne({
+                where: { examId },
+            });
+            if (!exam) {
+                throw new Error("Exam not found");
+            }
+            // 2. Ensure institute matches exam (IMPORTANT SAFETY CHECK)
+            if (exam.instituteId !== instituteId) {
+                throw new Error("Institute mismatch with Exam");
+            }
+            // 3. Check duplicate paper set for same exam
+            const existing = yield QuestionPaper_modal_1.default.findOne({
+                where: {
+                    examId,
+                    paperSet,
+                },
+            });
+            if (existing) {
+                throw new Error(`Question Paper Set ${paperSet} already exists for this exam`);
+            }
+            const paperId = yield helper_1.default.generateUserId();
+            // 4. Create Question Paper
+            const paper = yield QuestionPaper_modal_1.default.create({
+                paperId,
+                instituteId,
+                examId,
+                teacherId,
+                paperSet,
+                content,
+                status: "DRAFT",
+            });
+            return paper;
+        });
+    }
 }
-
-export class QuestionPaperService {
-  // ─────────────────────────────────────────────
-  // CREATE QUESTION PAPER
-  // ─────────────────────────────────────────────
-
-  static async createQuestionPaper(data: CreateQuestionPaperDTO) {
-    const {
-      instituteId,
-      examId,
-      teacherId,
-      paperSet,
-      content,
-    } = data;
-
-    // 1. Validate Exam exists
-     const exam = await Exam.findOne({
-    where: { examId },
-  });
-
-    if (!exam) {
-      throw new Error("Exam not found");
-    }
-
-    // 2. Ensure institute matches exam (IMPORTANT SAFETY CHECK)
-    if (exam.instituteId !== instituteId) {
-      throw new Error("Institute mismatch with Exam");
-    }
-
-    // 3. Check duplicate paper set for same exam
-    const existing = await QuestionPaper.findOne({
-      where: {
-        examId,
-        paperSet,
-      },
-    });
-
-    if (existing) {
-      throw new Error(
-        `Question Paper Set ${paperSet} already exists for this exam`
-      );
-    }
-        const paperId = await RegHelper.generateUserId();
-
-    // 4. Create Question Paper
-    const paper = await QuestionPaper.create({
-      paperId,
-      instituteId,
-      examId,
-      teacherId,
-      paperSet,
-      content,
-      status: "DRAFT",
-    });
-
-    return paper;
-  }
-}
+exports.QuestionPaperService = QuestionPaperService;

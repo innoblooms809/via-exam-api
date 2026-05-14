@@ -9,6 +9,10 @@ const user_route_1 = __importDefault(require("./user.route"));
 const access_route_1 = __importDefault(require("./access.route"));
 const docs_route_1 = __importDefault(require("./docs.route"));
 const institute_route_1 = __importDefault(require("./institute.route"));
+const teacher_route_1 = __importDefault(require("./teacher.route"));
+const exam_route_1 = __importDefault(require("./exam.route"));
+const questioPaper_route_1 = __importDefault(require("./questioPaper.route"));
+// import studentRoutes from './student.route'  
 // import captchaRoutes from './captcha.route'
 const router = express_1.default.Router();
 const defaultRoutes = [
@@ -24,6 +28,18 @@ const defaultRoutes = [
         path: "/institute",
         route: institute_route_1.default,
     },
+    {
+        path: "/teacher",
+        route: teacher_route_1.default,
+    },
+    {
+        path: "/exam",
+        route: exam_route_1.default,
+    },
+    {
+        path: "/question-papers",
+        route: questioPaper_route_1.default,
+    }
     // {
     //   path: '/captcha',
     //   route: captchaRoutes
