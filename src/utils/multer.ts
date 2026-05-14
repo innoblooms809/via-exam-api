@@ -42,3 +42,24 @@ export const instituteUpload = multer({
   { name: "logo", maxCount: 1 },
   { name: "banner", maxCount: 1 },
 ]);
+
+
+export const questionPaperUpload = multer({
+  storage,
+  fileFilter,
+
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+
+}).fields([
+  {
+    name: "diagram",
+    maxCount: 10,
+  },
+
+  {
+    name: "schoolLogo",
+    maxCount: 1,
+  },
+]);

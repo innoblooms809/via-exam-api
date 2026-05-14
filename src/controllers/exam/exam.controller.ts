@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
 import { Response } from "express";
-import ExamService from "../services/exam.service";
+import ExamService from "../../services/exam.service";
 
 const createExam = async (req: any, res: Response): Promise<any> => {
   try {
