@@ -5,6 +5,7 @@ interface StudentProfileAttributes {
   id: number;
   userId: string;
   instituteId: string;
+  classId: string | null;
   rollNumber: string;
   className: string;
   division: string;
@@ -23,19 +24,17 @@ interface StudentProfileAttributes {
 interface StudentProfileCreationAttributes
   extends Optional<
     StudentProfileAttributes,
-    "id" | "profileUrl" | "isActive"
+    "id" | "profileUrl" | "isActive" | "classId"
   > {}
 
 class StudentProfile
-  extends Model<
-    StudentProfileAttributes,
-    StudentProfileCreationAttributes
-  >
+  extends Model<StudentProfileAttributes, StudentProfileCreationAttributes>
   implements StudentProfileAttributes
 {
   public id!: number;
   public userId!: string;
   public instituteId!: string;
+  public classId!: string | null;
   public rollNumber!: string;
   public className!: string;
   public division!: string;
@@ -69,6 +68,15 @@ StudentProfile.init(
     instituteId: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    classId: {
+      type: DataTypes.STRING,
+      allowNull: true, // nullable for backward compatibility
+      defaultValue: null,
+      references: {
+        model: "viaexam_classes",
+        key: "classId",
+      },
     },
 
     rollNumber: {
@@ -133,7 +141,7 @@ StudentProfile.init(
     tableName: "viaexam_student_profiles",
     modelName: "StudentProfile",
     timestamps: true,
-  }
+  },
 );
 
 export default StudentProfile;

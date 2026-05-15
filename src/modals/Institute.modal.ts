@@ -255,17 +255,19 @@ Institute.init(
 );
 
 // One institute has many users
-Institute.hasMany(User, {
-  foreignKey: "instituteId",  // ← string FK not integer
-  sourceKey:  "instituteId",  // ← links via instituteId not id
-  as: "users",
-});
+// Institute.hasMany(User, {
+//   foreignKey: "instituteId",  // ← string FK not integer
+//   sourceKey:  "instituteId",  // ← links via instituteId not id
+//   as: "users",
+// });
 
 // User belongs to institute
-User.belongsTo(Institute, {
-  foreignKey: "instituteId",
-  targetKey:  "instituteId",  // ← links via instituteId not id
-  as: "institute",
-});
+// User.belongsTo(Institute, {
+//   foreignKey: "instituteId",
+//   targetKey:  "instituteId",  // ← links via instituteId not id
+//   as: "institute",
+// });
+
+
 
 export default Institute;
