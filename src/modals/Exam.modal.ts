@@ -1,10 +1,13 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
+import QuestionPaper from "./QuestionPaper.modal";
+import Subject from "./Subject.modal";
 
 interface ExamAttributes {
   id: number;
   examId: string;
   instituteId: string; // FK → Institute
+  classId: string | null; // FK → Class, nullable for school-wide exams
   session: string; // 2024-25
   year: string; // 1st Year
   examType: string; // Mid-Term, Final etc
@@ -33,12 +36,14 @@ interface ExamCreationAttributes
     | "instructions"
     | "status"
     | "isDeleted"
+    | "classId"
   > {}
 
 class Exam extends Model<ExamAttributes, ExamCreationAttributes> {
   public id!: number;
   public examId!: string;
   public instituteId!: string;
+  public classId!: string | null;
   public session!: string;
   public year!: string;
   public examType!: string;
@@ -62,6 +67,15 @@ Exam.init(
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     examId: { type: DataTypes.STRING, allowNull: false, unique: true },
     instituteId: { type: DataTypes.STRING, allowNull: false },
+    classId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+      references: {
+        model: "viaexam_classes",
+        key: "classId",
+      },
+    },
     session: { type: DataTypes.STRING, allowNull: false },
     year: { type: DataTypes.STRING, allowNull: false },
     examType: { type: DataTypes.STRING, allowNull: false },
@@ -88,5 +102,19 @@ Exam.init(
     timestamps: true,
   },
 );
+
+// Exam belongs to Subject
+// Exam.belongsTo(Subject, {
+//   foreignKey: "subjectId",
+//   targetKey: "subjectId",
+//   as: "subject",
+// });
+
+// // Exam has many Question Papers
+// Exam.hasMany(QuestionPaper, {
+//   foreignKey: "examId",
+//   sourceKey: "examId",
+//   as: "questionPapers",
+// });
 
 export default Exam;
