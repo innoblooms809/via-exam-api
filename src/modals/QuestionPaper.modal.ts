@@ -235,6 +235,12 @@ QuestionPaper.init(
         fields: ["examId", "status"],
         name: "idx_qp_exam_status",
       },
+
+      {
+        fields: ["examId", "paper_set"],
+        name: "uq_question_paper_exam_paper_set",
+        unique: true,
+      },
     ],
   }
 );

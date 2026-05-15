@@ -11,63 +11,62 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadImageController = exports.createQuestionPaper = void 0;
+const sequelize_1 = require("sequelize");
 const questionPaper_service_1 = require("../services/questionPaper.service");
-const getPaperSet = (paperSet, setLabel) => {
-    const value = paperSet || (setLabel === null || setLabel === void 0 ? void 0 : setLabel.replace(/^set\s+/i, ""));
-    const normalized = value === null || value === void 0 ? void 0 : value.trim().toUpperCase();
-    if (normalized === "A" ||
-        normalized === "B" ||
-        normalized === "C" ||
-        normalized === "D") {
-        return normalized;
+const getQuestionPaperErrorMessage = (error) => {
+    var _a, _b, _c;
+    if (error instanceof sequelize_1.UniqueConstraintError) {
+        const fields = Object.keys(error.fields || {});
+        if (fields.includes("paperId")) {
+            return "Question paper ID already exists";
+        }
+        return ((_b = (_a = error.errors) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.message) || "Duplicate question paper data";
     }
-    return undefined;
-};
-const getContent = (body, content) => {
-    if (content)
-        return content;
-    const { instituteId, teacherId, paperSet, content: _content } = body, paperContent = __rest(body, ["instituteId", "teacherId", "paperSet", "content"]);
-    return paperContent;
+    if (error instanceof sequelize_1.ForeignKeyConstraintError) {
+        return "Invalid institute, exam, or teacher selected";
+    }
+    if (error instanceof sequelize_1.ValidationError) {
+        return ((_c = error.errors) === null || _c === void 0 ? void 0 : _c.map((item) => item.message).join(", ")) || error.message;
+    }
+    return error.message || "Something went wrong";
 };
 const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
-        const { instituteId, examId, teacherId, paperSet, content, } = req.body;
+        const { paperId, instituteId, examId, teacherId, paperSet, content, } = req.body;
         console.log(req.body);
-        const resolvedPaperSet = getPaperSet(paperSet, (_a = req.body.meta) === null || _a === void 0 ? void 0 : _a.setLabel);
-        const resolvedContent = getContent(req.body, content);
         // ─────────────────────────────────────────────
         // 1. Basic validation
         // ─────────────────────────────────────────────
-        if (!examId ||
-            !resolvedPaperSet ||
-            !resolvedContent) {
+        if (!instituteId ||
+            !examId ||
+            !paperSet ||
+            !content) {
             return res.status(400).json({
-                message: "examId, paperSet/meta.setLabel and paper content are required",
+                message: "All fields are required",
+            });
+        }
+        if (teacherId !== undefined && typeof teacherId !== "string") {
+            return res.status(400).json({
+                message: "teacherId must be a string",
+            });
+        }
+        if (paperId !== undefined && typeof paperId !== "string") {
+            return res.status(400).json({
+                message: "paperId must be a string",
             });
         }
         // ─────────────────────────────────────────────
         // 2. Call service
         // ─────────────────────────────────────────────
         const paper = yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
+            paperId,
             instituteId,
             examId,
             teacherId,
-            paperSet: resolvedPaperSet,
-            content: resolvedContent,
+            paperSet,
+            content,
         });
         // ─────────────────────────────────────────────
         // 3. Response
@@ -79,22 +78,22 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
     }
     catch (error) {
         return res.status(400).json({
-            message: error.message || "Something went wrong",
+            message: getQuestionPaperErrorMessage(error),
         });
     }
 });
 exports.createQuestionPaper = createQuestionPaper;
 const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b;
+    var _a;
     try {
         const files = req.files;
-        const toUploadUrl = (file) => `/${file.path.replace(/\\/g, "/").replace(/^uploads\//, "v1/uploads/")}`;
+        const toUploadUrl = (file) => `/${file.path.replace(/\\/g, "/").replace(/^uploads\//, "uploads/")}`;
         const diagramFiles = [
             ...((files === null || files === void 0 ? void 0 : files.diagram) || []),
             ...((files === null || files === void 0 ? void 0 : files.diagramUrls) || []),
         ];
         const diagramUrls = diagramFiles.map(toUploadUrl);
-        const schoolLogo = ((_b = files === null || files === void 0 ? void 0 : files.schoolLogo) === null || _b === void 0 ? void 0 : _b[0])
+        const schoolLogo = ((_a = files === null || files === void 0 ? void 0 : files.schoolLogo) === null || _a === void 0 ? void 0 : _a[0])
             ? toUploadUrl(files.schoolLogo[0])
             : null;
         return res.status(200).json({

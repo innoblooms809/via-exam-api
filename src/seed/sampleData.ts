@@ -57,19 +57,38 @@ const upsertById = async (
   return model.create(data);
 };
 
+const removeLegacySuperAdminSeed = async () => {
+  const superAdminRole = await Role.findOne({ where: { role: "SUPER_ADMIN" } });
+
+  await User.destroy({ where: { userId: "USER-SUPER-001" } });
+
+  if (!superAdminRole) {
+    return;
+  }
+
+  await Access.destroy({ where: { roleId: superAdminRole.id } });
+
+  const remainingSuperAdminUsers = await User.count({
+    where: { roleId: superAdminRole.id },
+  });
+
+  if (remainingSuperAdminUsers === 0) {
+    await superAdminRole.destroy();
+  }
+};
+
 const seed = async () => {
   await sequelize.authenticate();
   await sequelize.sync({ force: false });
+  await removeLegacySuperAdminSeed();
 
   const [
-    superAdminRole,
-    instituteAdminRole,
+    adminRole,
     teacherRole,
     studentRole,
     examinerRole,
   ] = await Promise.all([
-    findOrCreateRole("SUPER_ADMIN", "Platform owner with all access"),
-    findOrCreateRole("INSTITUTE_ADMIN", "Institute administrator"),
+    findOrCreateRole("ADMIN", "Institute administrator"),
     findOrCreateRole("TEACHER", "Teacher who creates question papers"),
     findOrCreateRole("STUDENT", "Student who appears for exams"),
     findOrCreateRole("EXAMINER", "Teacher who reviews question papers"),
@@ -77,13 +96,7 @@ const seed = async () => {
 
   const modules = ["institutes", "users", "exams", "question-papers", "students"];
   for (const moduleName of modules) {
-    await findOrCreateAccess(superAdminRole.id, moduleName, {
-      create: true,
-      edit: true,
-      delete: true,
-      view: true,
-    });
-    await findOrCreateAccess(instituteAdminRole.id, moduleName, {
+    await findOrCreateAccess(adminRole.id, moduleName, {
       create: true,
       edit: true,
       delete: false,
@@ -144,25 +157,6 @@ const seed = async () => {
 
   await upsertById(
     User,
-    { userId: "USER-SUPER-001" },
-    {
-      userId: "USER-SUPER-001",
-      userName: "Super Admin",
-      emailId: "superadmin.seed@viaexam.com",
-      phoneNumber: "9000000010",
-      password,
-      roleId: superAdminRole.id,
-      instituteId: null,
-      status: 1,
-      loginAttempts: 0,
-      lockedUntil: null,
-      lastLoginAt: null,
-      refreshToken: null,
-    }
-  );
-
-  await upsertById(
-    User,
     { userId: "USER-ADMIN-001" },
     {
       userId: "USER-ADMIN-001",
@@ -170,7 +164,7 @@ const seed = async () => {
       emailId: "admin.seed@viaexam.com",
       phoneNumber: "9000000011",
       password,
-      roleId: instituteAdminRole.id,
+      roleId: adminRole.id,
       instituteId: "INST-DEMO-001",
       status: 1,
       loginAttempts: 0,

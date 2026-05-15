@@ -50,25 +50,33 @@ const upsertById = (model, where, data) => __awaiter(void 0, void 0, void 0, fun
     }
     return model.create(data);
 });
+const removeLegacySuperAdminSeed = () => __awaiter(void 0, void 0, void 0, function* () {
+    const superAdminRole = yield Role_modal_1.default.findOne({ where: { role: "SUPER_ADMIN" } });
+    yield User_modal_1.default.destroy({ where: { userId: "USER-SUPER-001" } });
+    if (!superAdminRole) {
+        return;
+    }
+    yield Access_modal_1.default.destroy({ where: { roleId: superAdminRole.id } });
+    const remainingSuperAdminUsers = yield User_modal_1.default.count({
+        where: { roleId: superAdminRole.id },
+    });
+    if (remainingSuperAdminUsers === 0) {
+        yield superAdminRole.destroy();
+    }
+});
 const seed = () => __awaiter(void 0, void 0, void 0, function* () {
     yield sequelize_2.sequelize.authenticate();
     yield sequelize_2.sequelize.sync({ force: false });
-    const [superAdminRole, instituteAdminRole, teacherRole, studentRole, examinerRole,] = yield Promise.all([
-        findOrCreateRole("SUPER_ADMIN", "Platform owner with all access"),
-        findOrCreateRole("INSTITUTE_ADMIN", "Institute administrator"),
+    yield removeLegacySuperAdminSeed();
+    const [adminRole, teacherRole, studentRole, examinerRole,] = yield Promise.all([
+        findOrCreateRole("ADMIN", "Institute administrator"),
         findOrCreateRole("TEACHER", "Teacher who creates question papers"),
         findOrCreateRole("STUDENT", "Student who appears for exams"),
         findOrCreateRole("EXAMINER", "Teacher who reviews question papers"),
     ]);
     const modules = ["institutes", "users", "exams", "question-papers", "students"];
     for (const moduleName of modules) {
-        yield findOrCreateAccess(superAdminRole.id, moduleName, {
-            create: true,
-            edit: true,
-            delete: true,
-            view: true,
-        });
-        yield findOrCreateAccess(instituteAdminRole.id, moduleName, {
+        yield findOrCreateAccess(adminRole.id, moduleName, {
             create: true,
             edit: true,
             delete: false,
@@ -120,27 +128,13 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         isDeleted: false,
     });
     const password = yield encryption_1.default.encryptPassword(passwordPlainText);
-    yield upsertById(User_modal_1.default, { userId: "USER-SUPER-001" }, {
-        userId: "USER-SUPER-001",
-        userName: "Super Admin",
-        emailId: "superadmin.seed@viaexam.com",
-        phoneNumber: "9000000010",
-        password,
-        roleId: superAdminRole.id,
-        instituteId: null,
-        status: 1,
-        loginAttempts: 0,
-        lockedUntil: null,
-        lastLoginAt: null,
-        refreshToken: null,
-    });
     yield upsertById(User_modal_1.default, { userId: "USER-ADMIN-001" }, {
         userId: "USER-ADMIN-001",
         userName: "Institute Admin",
         emailId: "admin.seed@viaexam.com",
         phoneNumber: "9000000011",
         password,
-        roleId: instituteAdminRole.id,
+        roleId: adminRole.id,
         instituteId: "INST-DEMO-001",
         status: 1,
         loginAttempts: 0,
