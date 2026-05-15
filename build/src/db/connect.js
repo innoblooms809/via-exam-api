@@ -38,11 +38,34 @@ const ensureQuestionPaperColumns = () => __awaiter(void 0, void 0, void 0, funct
         defaultValue: "A",
     });
 });
+const ensureQuestionPaperConstraints = () => __awaiter(void 0, void 0, void 0, function* () {
+    const tableName = "viaexam_question_papers";
+    const oldConstraintName = "uq_exam_teacher";
+    const newConstraintName = "uq_question_paper_exam_paper_set";
+    yield sequelize_1.sequelize.query(`ALTER TABLE "${tableName}" DROP CONSTRAINT IF EXISTS "${oldConstraintName}"`);
+    yield sequelize_1.sequelize.query(`DROP INDEX IF EXISTS "${oldConstraintName}"`);
+    const [constraints] = yield sequelize_1.sequelize.query(`select 1
+       from pg_constraint c
+       join pg_class t on c.conrelid = t.oid
+      where t.relname = :tableName
+        and c.conname = :constraintName
+      limit 1`, {
+        replacements: {
+            tableName,
+            constraintName: newConstraintName,
+        },
+    });
+    if (constraints.length === 0) {
+        yield sequelize_1.sequelize.query(`ALTER TABLE "${tableName}"
+       ADD CONSTRAINT "${newConstraintName}" UNIQUE ("examId", "paper_set")`);
+    }
+});
 const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield sequelize_1.sequelize.authenticate();
         logger_1.default.info("Connected to PostgreSQL Database");
         yield ensureQuestionPaperColumns();
+        yield ensureQuestionPaperConstraints();
         yield sequelize_1.sequelize.sync({ force: false }); // Sync models with the database
         logger_1.default.info("Models synced with PostgreSQL");
         fn();

@@ -616,9 +616,11 @@
 
 import QuestionPaper from "../modals/QuestionPaper.modal"
 import Exam from "../modals/Exam.modal"
+import { randomUUID } from "crypto";
 import RegHelper from "../utils/helper";
 
 interface CreateQuestionPaperDTO {
+  paperId?: string;
   instituteId?: string;
   examId: string;
   teacherId?: string;
@@ -633,6 +635,7 @@ export class QuestionPaperService {
 
   static async createQuestionPaper(data: CreateQuestionPaperDTO) {
     const {
+      paperId,
       instituteId,
       examId,
       teacherId,
@@ -674,11 +677,21 @@ export class QuestionPaperService {
         `Question Paper Set ${paperSet} already exists for this exam`
       );
     }
-        const paperId = await RegHelper.generateUserId();
+   
+
+    const resolvedPaperId = paperId?.trim() || `QP-${RegHelper.generateUserId()}`;
+
+    const existingPaperId = await QuestionPaper.findOne({
+      where: { paperId: resolvedPaperId },
+    });
+
+    if (existingPaperId) {
+      throw new Error("Question paper ID already exists");
+    }
 
     // 4. Create Question Paper
     const paper = await QuestionPaper.create({
-      paperId,
+      paperId: resolvedPaperId,
       instituteId: resolvedInstituteId,
       examId,
       teacherId: resolvedTeacherId,

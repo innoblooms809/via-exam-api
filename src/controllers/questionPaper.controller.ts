@@ -182,7 +182,38 @@
 
 
 import { Request, Response } from "express";
+import {
+  ForeignKeyConstraintError,
+  UniqueConstraintError,
+  ValidationError,
+} from "sequelize";
 import { QuestionPaperService } from "../services/questionPaper.service";
+import RegHelper from "../utils/helper";
+import QuestionPaper from "../modals/QuestionPaper.modal";
+import Exam from "../modals/Exam.modal";
+
+const getQuestionPaperErrorMessage = (error: any) => {
+  if (error instanceof UniqueConstraintError) {
+    const fields = Object.keys(error.fields || {});
+    if (fields.includes("paperId")) {
+      return "Question paper ID already exists";
+    }
+
+    return error.errors?.[0]?.message || "Duplicate question paper data";
+  }
+
+  if (error instanceof ForeignKeyConstraintError) {
+    return "Invalid institute, exam, or teacher selected";
+  }
+
+  if (error instanceof ValidationError) {
+    return error.errors?.map((item) => item.message).join(", ") || error.message;
+  }
+
+  return error.message || "Something went wrong";
+};
+
+
 
 export const createQuestionPaper = async (
   req: Request,
@@ -190,6 +221,7 @@ export const createQuestionPaper = async (
 ) => {
   try {
     const {
+      paperId,
       instituteId,
       examId,
       teacherId,
@@ -205,7 +237,6 @@ export const createQuestionPaper = async (
     if (
       !instituteId ||
       !examId ||
-      !teacherId ||
       !paperSet ||
       !content
     ) {
@@ -214,12 +245,25 @@ export const createQuestionPaper = async (
       });
     }
 
+    if (teacherId !== undefined && typeof teacherId !== "string") {
+      return res.status(400).json({
+        message: "teacherId must be a string",
+      });
+    }
+
+    if (paperId !== undefined && typeof paperId !== "string") {
+      return res.status(400).json({
+        message: "paperId must be a string",
+      });
+    }
+
     // ─────────────────────────────────────────────
     // 2. Call service
     // ─────────────────────────────────────────────
 
-    const paper =
+   
       await QuestionPaperService.createQuestionPaper({
+        paperId,
         instituteId,
         examId,
         teacherId,
@@ -232,12 +276,12 @@ export const createQuestionPaper = async (
     // ─────────────────────────────────────────────
     return res.status(201).json({
       message: "Question paper created successfully",
-      data: paper,
+      data: paperId,
     });
 
   } catch (error: any) {
     return res.status(400).json({
-      message: error.message || "Something went wrong",
+      message: getQuestionPaperErrorMessage(error),
     });
   }
 };
@@ -287,3 +331,153 @@ export const uploadImageController = async (
   }
 };
 
+
+//
+// ─────────────────────────────────────────────────────────────────
+export const getQuestionPaperBySet = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+
+  try {
+
+     const examId = String(req.query.examId);
+    const paperSet = String(req.query.paperSet);
+
+
+    if (!examId || !paperSet) {
+
+      return res.status(400).json({
+        error: true,
+        message:
+          "examId and paperSet are required",
+      });
+
+    }
+
+    const paper =
+      await QuestionPaper.findOne({
+        where: {
+          examId,
+          paperSet,
+        },
+
+        include: [
+          {
+            model: Exam,
+            as: "exam",
+          },
+        ],
+      });
+
+    if (!paper) {
+
+      return res.status(404).json({
+        error: true,
+        message:
+          "Question paper not found",
+      });
+
+    }
+
+    return res.status(200).json({
+      error: false,
+      message:
+        "Question paper fetched successfully",
+      data: paper,
+    });
+
+  } catch (e: any) {
+
+    return res.status(500).json({
+      error: true,
+      message: e.message,
+    });
+
+  }
+};
+
+
+
+
+
+
+
+// ─────────────────────────────────────────────────────────────────
+
+export const getQuestionPaperSets = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+
+   
+
+    const classVal = String(req.query.classVal);
+const subject = String(req.query.subject);
+const session = String(req.query.session);
+const examType = String(req.query.examType);
+
+
+    const exam = await Exam.findOne({
+      where: {
+        classVal,
+        subject,
+        session,
+        examType,
+        isDeleted: false,
+      },
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        error: true,
+        message: "Exam not found",
+      });
+    }
+
+    const papers = await QuestionPaper.findAll({
+      where: {
+        examId: exam.examId,
+      },
+
+      attributes: [
+        "paperSet",
+        "status",
+      ],
+    });
+
+    return res.status(200).json({
+      error: false,
+
+      message:
+        "Question paper sets fetched successfully",
+
+      data: {
+        examId: exam.examId,
+
+        subject: exam.subject,
+
+        classVal: exam.classVal,
+
+        session: exam.session,
+
+        examType: exam.examType,
+
+        availableSets: papers.map(
+          (item) => item.paperSet
+        ),
+
+        papers,
+      },
+    });
+
+  } catch (e: any) {
+
+    return res.status(500).json({
+      error: true,
+      message: e.message,
+    });
+
+  }
+};
