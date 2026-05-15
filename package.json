@@ -15,7 +15,8 @@
     "prettier:fix": "prettier --write **/*.ts",
     "docker:prod": "docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --detach",
     "prepare": "husky install",
-    "build": "rimraf build && tsc -p tsconfig.json"
+    "build": "rimraf build && tsc -p tsconfig.json",
+    "seed": "cross-env NODE_ENV=development ts-node src/seed/sampleData.ts"
   },
   "keywords": [
     "node",

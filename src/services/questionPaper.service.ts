@@ -619,9 +619,9 @@ import Exam from "../modals/Exam.modal"
 import RegHelper from "../utils/helper";
 
 interface CreateQuestionPaperDTO {
-  instituteId: string;
+  instituteId?: string;
   examId: string;
-  teacherId: string;
+  teacherId?: string;
   paperSet: "A" | "B" | "C" | "D";
   content: object;
 }
@@ -649,9 +649,16 @@ export class QuestionPaperService {
       throw new Error("Exam not found");
     }
 
-    // 2. Ensure institute matches exam (IMPORTANT SAFETY CHECK)
-    if (exam.instituteId !== instituteId) {
+    const resolvedInstituteId = instituteId || exam.instituteId;
+    const resolvedTeacherId = teacherId || exam.teacherId;
+
+    // 2. Ensure institute/teacher match exam when provided
+    if (instituteId && exam.instituteId !== instituteId) {
       throw new Error("Institute mismatch with Exam");
+    }
+
+    if (teacherId && exam.teacherId !== teacherId) {
+      throw new Error("Teacher mismatch with Exam");
     }
 
     // 3. Check duplicate paper set for same exam
@@ -672,9 +679,9 @@ export class QuestionPaperService {
     // 4. Create Question Paper
     const paper = await QuestionPaper.create({
       paperId,
-      instituteId,
+      instituteId: resolvedInstituteId,
       examId,
-      teacherId,
+      teacherId: resolvedTeacherId,
       paperSet,
       content,
       status: "DRAFT",

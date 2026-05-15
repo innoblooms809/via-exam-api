@@ -12,6 +12,10 @@ const storage = multer.diskStorage({
     let folder = "uploads/institutes/";
     if (file.fieldname === "logo") folder += "logos/";
     else if (file.fieldname === "banner") folder += "banners/";
+    else if (file.fieldname === "schoolLogo")
+      folder = "uploads/question-papers/school-logos/";
+    else if (["diagram", "diagramUrls"].includes(file.fieldname))
+      folder = "uploads/question-papers/diagrams/";
 
     ensureDir(folder);
     cb(null, folder);
@@ -55,6 +59,11 @@ export const questionPaperUpload = multer({
 }).fields([
   {
     name: "diagram",
+    maxCount: 10,
+  },
+
+  {
+    name: "diagramUrls",
     maxCount: 10,
   },
 

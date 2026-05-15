@@ -45,12 +45,28 @@ const generateToken = (userId, expires, type, secret = config_1.default.jwt.secr
  */
 const generateUserToken = (user, expires, type, secret = config_1.default.jwt.secret) => {
     const payload = {
-        sub: user,
+        sub: getUserTokenSubject(user),
         iat: (0, moment_1.default)().unix(),
         exp: expires.unix(),
         type,
     };
     return jsonwebtoken_1.default.sign(payload, secret);
+};
+const getUserTokenSubject = (user) => {
+    const plainUser = user && typeof user.toJSON === "function" ? user.toJSON() : user;
+    if (!plainUser || typeof plainUser !== "object") {
+        return plainUser;
+    }
+    return {
+        id: plainUser.id,
+        userId: plainUser.userId,
+        userName: plainUser.userName,
+        emailId: plainUser.emailId,
+        phoneNumber: plainUser.phoneNumber,
+        roleId: plainUser.roleId,
+        instituteId: plainUser.instituteId,
+        status: plainUser.status,
+    };
 };
 /**
  * Save a token
