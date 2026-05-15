@@ -170,7 +170,7 @@ const viaExamUserLogin = (emailId, password) => __awaiter(void 0, void 0, void 0
             lockedUntil: null,
             lastLoginAt: new Date(),
         }, { where: { userId: user.userId } });
-        const userResponse = (0, exclude_1.default)(user.toJSON(), ["password"]);
+        const userResponse = (0, exclude_1.default)(user.toJSON(), ["password", "refreshToken"]);
         return {
             error: false,
             statusCode: http_status_1.default.OK,

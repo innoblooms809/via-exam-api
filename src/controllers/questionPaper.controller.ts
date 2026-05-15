@@ -253,18 +253,19 @@ export const uploadImageController = async (
       [fieldname: string]: Express.Multer.File[];
     };
 
-    const diagramUrls =
-      files?.diagram?.map(
-        (file) =>
-          `/${file.path.replace(/\\/g, "/")}`
-      ) || [];
+    const toUploadUrl = (file: Express.Multer.File) =>
+      `/${file.path.replace(/\\/g, "/").replace(/^uploads\//, "uploads/")}`;
+
+    const diagramFiles = [
+      ...(files?.diagram || []),
+      ...(files?.diagramUrls || []),
+    ];
+
+    const diagramUrls = diagramFiles.map(toUploadUrl);
 
     const schoolLogo =
       files?.schoolLogo?.[0]
-        ? `/${files.schoolLogo[0].path.replace(
-            /\\/g,
-            "/"
-          )}`
+        ? toUploadUrl(files.schoolLogo[0])
         : null;
 
     return res.status(200).json({
@@ -285,5 +286,4 @@ export const uploadImageController = async (
     });
   }
 };
-
 

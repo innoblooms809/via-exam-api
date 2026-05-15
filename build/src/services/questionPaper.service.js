@@ -584,9 +584,14 @@ class QuestionPaperService {
             if (!exam) {
                 throw new Error("Exam not found");
             }
-            // 2. Ensure institute matches exam (IMPORTANT SAFETY CHECK)
-            if (exam.instituteId !== instituteId) {
+            const resolvedInstituteId = instituteId || exam.instituteId;
+            const resolvedTeacherId = teacherId || exam.teacherId;
+            // 2. Ensure institute/teacher match exam when provided
+            if (instituteId && exam.instituteId !== instituteId) {
                 throw new Error("Institute mismatch with Exam");
+            }
+            if (teacherId && exam.teacherId !== teacherId) {
+                throw new Error("Teacher mismatch with Exam");
             }
             // 3. Check duplicate paper set for same exam
             const existing = yield QuestionPaper_modal_1.default.findOne({
@@ -602,9 +607,9 @@ class QuestionPaperService {
             // 4. Create Question Paper
             const paper = yield QuestionPaper_modal_1.default.create({
                 paperId,
-                instituteId,
+                instituteId: resolvedInstituteId,
                 examId,
-                teacherId,
+                teacherId: resolvedTeacherId,
                 paperSet,
                 content,
                 status: "DRAFT",

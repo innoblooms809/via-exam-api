@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.instituteUpload = void 0;
+exports.questionPaperUpload = exports.instituteUpload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -19,6 +19,10 @@ const storage = multer_1.default.diskStorage({
             folder += "logos/";
         else if (file.fieldname === "banner")
             folder += "banners/";
+        else if (file.fieldname === "schoolLogo")
+            folder = "uploads/question-papers/school-logos/";
+        else if (["diagram", "diagramUrls"].includes(file.fieldname))
+            folder = "uploads/question-papers/diagrams/";
         ensureDir(folder);
         cb(null, folder);
     },
@@ -46,4 +50,24 @@ exports.instituteUpload = (0, multer_1.default)({
 }).fields([
     { name: "logo", maxCount: 1 },
     { name: "banner", maxCount: 1 },
+]);
+exports.questionPaperUpload = (0, multer_1.default)({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+}).fields([
+    {
+        name: "diagram",
+        maxCount: 10,
+    },
+    {
+        name: "diagramUrls",
+        maxCount: 10,
+    },
+    {
+        name: "schoolLogo",
+        maxCount: 1,
+    },
 ]);

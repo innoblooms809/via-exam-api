@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const exam_service_1 = __importDefault(require("../services/exam.service"));
+const exam_service_1 = __importDefault(require("../../services/exam.service"));
 const createExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         console.log(req.user);

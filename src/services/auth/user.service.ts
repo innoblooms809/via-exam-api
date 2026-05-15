@@ -177,7 +177,7 @@ const viaExamUserLogin = async (emailId: string, password: string) => {
       { where: { userId: user.userId } }
     );
 
-    const userResponse = exclude(user.toJSON(), ["password"]);
+    const userResponse = exclude(user.toJSON(), ["password", "refreshToken"]);
 
     return {
       error: false,
