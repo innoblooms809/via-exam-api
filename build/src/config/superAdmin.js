@@ -18,15 +18,13 @@ const encryption_1 = __importDefault(require("../utils/encryption"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const initSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // 1. Find super_admin role
-        const role = yield Role_modal_1.default.findOne({
-            where: { role: "SUPER_ADMIN" }, // ← match your exact role name in DB
+        let role = yield Role_modal_1.default.findOne({
+            where: { role: "SUPER_ADMIN" },
         });
         if (!role) {
-            console.log("⚠️  SUPER_ADMIN role not found — skipping.");
-            return;
+            console.log("⚠️ Creating SUPER_ADMIN role...");
+            role = yield Role_modal_1.default.create({ role: "SUPER_ADMIN" });
         }
-        // 2. Check if superadmin already exists
         const existing = yield User_modal_1.default.findOne({
             where: { roleId: role.id },
         });
@@ -34,27 +32,22 @@ const initSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
             console.log("✅ SuperAdmin already exists — skipping.");
             return;
         }
-        // 3. Auto-create superadmin
-        const plainPassword = "SuperAdmin@123";
-        const encryptedPassword = yield encryption_1.default.encryptPassword(plainPassword);
+        const encryptedPassword = yield encryption_1.default.encryptPassword("SuperAdmin@123");
         const userId = yield helper_1.default.generateUserId();
         yield User_modal_1.default.create({
             userId,
             userName: "Super Admin",
             emailId: "superadmin@viaexam.com",
-            phoneNumber: "0000000000",
+            phoneNumber: "9999999999",
             password: encryptedPassword,
             roleId: role.id,
             instituteId: null,
             status: 1,
         });
         console.log("✅ SuperAdmin created!");
-        console.log("   email   : superadmin@viaexam.com");
-        console.log("   password: SuperAdmin@123");
-        console.log("⚠️  Change password after first login!");
     }
     catch (e) {
-        console.error("❌ initSuperAdmin failed:", e.message);
+        console.error("FULL ERROR:", e); // IMPORTANT
     }
 });
 exports.default = initSuperAdmin;

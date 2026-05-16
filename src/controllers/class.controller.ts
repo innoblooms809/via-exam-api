@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { Response } from "express";
+import { Request,Response } from "express";
 import ClassService from "../services/class.service";
 
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
@@ -35,8 +35,7 @@ const getAllClasses = async (
   try {
 
     const result = await ClassService.getAllClasses(
-      req.query,
-      req.viaExamUser
+          req.viaExamUser
     );
 
     return res.status(result.statusCode).send(result);

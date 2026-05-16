@@ -1,11 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("../config/sequelize");
-const User_modal_1 = __importDefault(require("./User.modal"));
 // ─── Model ───────────────────────────────────────────────────────────────────
 class Institute extends sequelize_1.Model {
 }
@@ -129,17 +125,52 @@ Institute.init({
     tableName: "viaexam_institutes",
     modelName: "Institute",
     timestamps: true,
+    indexes: [
+        {
+            unique: true,
+            fields: ["slug"],
+        },
+        {
+            unique: true,
+            fields: ["contactEmail"],
+        },
+    ],
 });
-// One institute has many users
-Institute.hasMany(User_modal_1.default, {
-    foreignKey: "instituteId",
-    sourceKey: "instituteId",
-    as: "users",
-});
-// User belongs to institute
-User_modal_1.default.belongsTo(Institute, {
-    foreignKey: "instituteId",
-    targetKey: "instituteId",
-    as: "institute",
-});
+// // One institute has many users
+// Institute.hasMany(User, {
+//   foreignKey: "instituteId",  // ← string FK not integer
+//   sourceKey:  "instituteId",  // ← links via instituteId not id
+//   as: "users",
+// });
+// // User belongs to institute
+// User.belongsTo(Institute, {
+//   foreignKey: "instituteId",
+//   targetKey:  "instituteId",  // ← links via instituteId not id
+//   as: "institute",
+// });
+// Institute.hasMany(Class, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "classes",
+// });
+// Institute.hasMany(Section, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "sections",
+// });
+// Institute.hasMany(Subject, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "subjects",
+// });
+// Institute.hasMany(Exam, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "exams",
+// });
+// Institute.hasMany(Session, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "sessions",
+// });
 exports.default = Institute;

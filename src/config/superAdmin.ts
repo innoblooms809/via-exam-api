@@ -5,17 +5,15 @@ import RegHelper from "../utils/helper";
 
 const initSuperAdmin = async () => {
   try {
-    // 1. Find super_admin role
-    const role = await Role.findOne({
-      where: { role: "SUPER_ADMIN" }, // ← match your exact role name in DB
+    let role = await Role.findOne({
+      where: { role: "SUPER_ADMIN" },
     });
 
     if (!role) {
-      console.log("⚠️  SUPER_ADMIN role not found — skipping.");
-      return;
+      console.log("⚠️ Creating SUPER_ADMIN role...");
+      role = await Role.create({ role: "SUPER_ADMIN" });
     }
 
-    // 2. Check if superadmin already exists
     const existing = await User.findOne({
       where: { roleId: role.id },
     });
@@ -25,29 +23,23 @@ const initSuperAdmin = async () => {
       return;
     }
 
-    // 3. Auto-create superadmin
-    const plainPassword  = "SuperAdmin@123";
-    const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
+    const encryptedPassword = await EncryptPassword.encryptPassword("SuperAdmin@123");
     const userId = await RegHelper.generateUserId();
 
     await User.create({
       userId,
-      userName:    "Super Admin",
-      emailId:     "superadmin@viaexam.com",
-      phoneNumber: "0000000000",
-      password:    encryptedPassword,
-      roleId:      role.id,
+      userName: "Super Admin",
+      emailId: "superadmin@viaexam.com",
+      phoneNumber: "9999999999", // IMPORTANT: avoid duplicates
+      password: encryptedPassword,
+      roleId: role.id,
       instituteId: null,
-      status:      1,
+      status: 1,
     });
 
     console.log("✅ SuperAdmin created!");
-    console.log("   email   : superadmin@viaexam.com");
-    console.log("   password: SuperAdmin@123");
-    console.log("⚠️  Change password after first login!");
-
   } catch (e: any) {
-    console.error("❌ initSuperAdmin failed:", e.message);
+    console.error("FULL ERROR:", e); // IMPORTANT
   }
 };
 

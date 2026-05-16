@@ -42,7 +42,7 @@ app.options('*', (0, cors_1.default)());
 app.use((0, express_session_1.default)({
     secret: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
 }));
 app.use(body_parser_1.default.json());
 // limit repeated failed requests to auth endpoints

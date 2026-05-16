@@ -1,28 +1,17 @@
 import httpStatus from "http-status";
 import Subject from "../modals/Subject.modal";
 import RegHelper from "../utils/helper";
-
+import Class from "../modals/Class.modal";
+import User from "../modals/User.modal";
 
 // ─── CREATE SUBJECT ─────────────────────────────────────────────
-const createSubject = async (
-  body: any,
-  createdBy: any
-): Promise<any> => {
+const createSubject = async (body: any, createdBy: any): Promise<any> => {
   try {
-
     if (!body.classId) {
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
         message: "classId is required.",
-      };
-    }
-
-    if (!body.sessionId) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "sessionId is required.",
       };
     }
 
@@ -35,13 +24,45 @@ const createSubject = async (
     }
 
     const instituteId = createdBy.instituteId;
+    const classData = await Class.findOne({
+      where: {
+        classId: body.classId,
+        instituteId,
+        isDeleted: false,
+      },
+    });
+
+    if (!classData) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Class not found.",
+      };
+    }
+
+    if (body.teacherId) {
+      const teacher = await User.findOne({
+        where: {
+          userId: body.teacherId,
+          instituteId,
+          isDeleted: false,
+        },
+      });
+
+      if (!teacher) {
+        return {
+          error: true,
+          statusCode: httpStatus.NOT_FOUND,
+          message: "Teacher not found.",
+        };
+      }
+    }
 
     // Check duplicate
     const exists = await Subject.findOne({
       where: {
         instituteId,
         classId: body.classId,
-        sectionId: body.sectionId || null,
         subjectName: body.subjectName,
         isDeleted: false,
       },
@@ -57,17 +78,27 @@ const createSubject = async (
 
     const subjectId = await RegHelper.generateUserId();
 
+    if (
+      body.passingMarks &&
+      body.totalMarks &&
+      body.passingMarks > body.totalMarks
+    ) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "Passing marks cannot be greater than total marks.",
+      };
+    }
+
     const newSubject = await Subject.create({
       subjectId,
       instituteId,
-      sessionId: body.sessionId,
       classId: body.classId,
-      sectionId: body.sectionId || null,
       subjectName: body.subjectName,
-      subjectCode: body.subjectCode || null,
-      teacherId: body.teacherId || null,
-      totalMarks: body.totalMarks || 100,
-      passingMarks: body.passingMarks || 35,
+      subjectCode: body.subjectCode ?? null,
+      teacherId: body.teacherId ?? null,
+      totalMarks: body.totalMarks ?? 100,
+      passingMarks: body.passingMarks ?? 35,
     });
 
     return {
@@ -76,28 +107,18 @@ const createSubject = async (
       message: "Subject created successfully.",
       data: newSubject,
     };
-
   } catch (e: any) {
-
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       message: e.message,
     };
-
   }
 };
 
-
-
 // ─── GET ALL SUBJECTS ──────────────────────────────────────────
-const getAllSubjects = async (
-  query: any,
-  createdBy: any
-): Promise<any> => {
-
+const getAllSubjects = async (query: any, createdBy: any): Promise<any> => {
   try {
-
     const where: any = {
       instituteId: createdBy.instituteId,
       isDeleted: false,
@@ -108,12 +129,20 @@ const getAllSubjects = async (
       where.classId = query.classId;
     }
 
-    if (query.sectionId) {
-      where.sectionId = query.sectionId;
-    }
-
     const subjects = await Subject.findAll({
       where,
+      include: [
+        {
+          model: Class,
+          as: "class",
+        },
+        {
+          model: User,
+          as: "teacher",
+          attributes: ["userId", "userName", "emailId"],
+          required: false,
+        },
+      ],
       order: [["subjectName", "ASC"]],
     });
 
@@ -126,34 +155,39 @@ const getAllSubjects = async (
         total: subjects.length,
       },
     };
-
   } catch (e: any) {
-
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       message: e.message,
     };
-
   }
 };
-
-
 
 // ─── GET SUBJECT BY ID ─────────────────────────────────────────
 const getSubjectById = async (
   subjectId: string,
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
-
   try {
-
     const subject = await Subject.findOne({
       where: {
         subjectId,
         instituteId: createdBy.instituteId,
         isDeleted: false,
       },
+      include: [
+        {
+          model: Class,
+          as: "class",
+        },
+        {
+          model: User,
+          as: "teacher",
+          attributes: ["userId", "userName", "emailId"],
+          required: false,
+        },
+      ],
     });
 
     if (!subject) {
@@ -170,29 +204,22 @@ const getSubjectById = async (
       message: "Subject fetched successfully.",
       data: subject,
     };
-
   } catch (e: any) {
-
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       message: e.message,
     };
-
   }
 };
-
-
 
 // ─── UPDATE SUBJECT ────────────────────────────────────────────
 const updateSubject = async (
   subjectId: string,
   body: any,
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
-
   try {
-
     const subject = await Subject.findOne({
       where: {
         subjectId,
@@ -208,13 +235,59 @@ const updateSubject = async (
         message: "Subject not found.",
       };
     }
+    if (body.subjectName) {
+      const exists = await Subject.findOne({
+        where: {
+          instituteId: createdBy.instituteId,
+          classId: subject.classId,
+          subjectName: body.subjectName,
+          isDeleted: false,
+        },
+      });
+
+      if (exists && exists.subjectId !== subjectId) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Subject name already exists in this class.",
+        };
+      }
+    }
+    if (body.teacherId) {
+      const teacher = await User.findOne({
+        where: {
+          userId: body.teacherId,
+          instituteId: createdBy.instituteId,
+          isDeleted: false,
+        },
+      });
+
+      if (!teacher) {
+        return {
+          error: true,
+          statusCode: httpStatus.NOT_FOUND,
+          message: "Teacher not found.",
+        };
+      }
+    }
+
+    const totalMarks = body.totalMarks ?? subject.totalMarks;
+    const passingMarks = body.passingMarks ?? subject.passingMarks;
+
+    if (passingMarks > totalMarks) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "Passing marks cannot be greater than total marks.",
+      };
+    }
 
     await subject.update({
       subjectName: body.subjectName ?? subject.subjectName,
       subjectCode: body.subjectCode ?? subject.subjectCode,
       teacherId: body.teacherId ?? subject.teacherId,
-      totalMarks: body.totalMarks ?? subject.totalMarks,
-      passingMarks: body.passingMarks ?? subject.passingMarks,
+      totalMarks,
+      passingMarks,
     });
 
     return {
@@ -223,28 +296,21 @@ const updateSubject = async (
       message: "Subject updated successfully.",
       data: subject,
     };
-
   } catch (e: any) {
-
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       message: e.message,
     };
-
   }
 };
-
-
 
 // ─── DELETE SUBJECT (SOFT DELETE) ─────────────────────────────
 const deleteSubject = async (
   subjectId: string,
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
-
   try {
-
     const subject = await Subject.findOne({
       where: {
         subjectId,
@@ -272,18 +338,14 @@ const deleteSubject = async (
       message: "Subject deleted successfully.",
       data: {},
     };
-
   } catch (e: any) {
-
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       message: e.message,
     };
-
   }
 };
-
 
 export default {
   createSubject,

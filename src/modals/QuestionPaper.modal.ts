@@ -1,7 +1,5 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
-import User from "./User.modal";
-import Exam from "./Exam.modal";
 
 // ─────────────────────────────────────────────────────────────────
 // Interfaces
@@ -157,24 +155,24 @@ QuestionPaper.init(
 // ─────────────────────────────────────────────────────────────────
 
 // Paper belongs to the teacher (User) who wrote it
-QuestionPaper.belongsTo(User, {
-  foreignKey: "teacherId",
-  targetKey: "userId",
-  as: "teacher",
-});
+// QuestionPaper.belongsTo(User, {
+//   foreignKey: "teacherId",
+//   targetKey: "userId",
+//   as: "teacher",
+// });
 
 // Paper belongs to the exam it was created for
-QuestionPaper.belongsTo(Exam, {
-  foreignKey: "examId",
-  targetKey: "examId",
-  as: "exam",
-});
+// QuestionPaper.belongsTo(Exam, {
+//   foreignKey: "examId",
+//   targetKey: "examId",
+//   as: "exam",
+// });
 
 // Exam can have one question paper
-Exam.hasOne(QuestionPaper, {
-  foreignKey: "examId",
-  sourceKey: "examId",
-  as: "questionPaper",
-});
+// Exam.hasOne(QuestionPaper, {
+//   foreignKey: "examId",
+//   sourceKey: "examId",
+//   as: "questionPaper",
+// });
 
 export default QuestionPaper;

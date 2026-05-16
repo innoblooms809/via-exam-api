@@ -26,7 +26,20 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       };
     }
 
-    // 2. Check admin email uniqueness
+    // 2. Check institute contact email uniqueness
+    const contactEmailExists = await Institute.findOne({
+      where: { contactEmail: body.contactEmail },
+    });
+    if (contactEmailExists) {
+      await t.rollback();
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message: "Institute contact email is already in use.",
+      };
+    }
+
+    // 3. Check admin email uniqueness
     const emailExists = await UserModal.findOne({
       where: { emailId: body.adminEmail },
     });
@@ -39,7 +52,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       };
     }
 
-    // 3. Check admin phone uniqueness
+    // 4. Check admin phone uniqueness
     const phoneExists = await UserModal.findOne({
       where: { phoneNumber: body.adminPhone },
     });
@@ -52,7 +65,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       };
     }
 
-    // 4. Get file paths from multer
+    // 5. Get file paths from multer
     const logoUrl = files?.logo?.[0]
       ? `/${files.logo[0].path.replace(/\\/g, "/")}`
       : null;
@@ -60,17 +73,17 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       ? `/${files.banner[0].path.replace(/\\/g, "/")}`
       : null;
 
-    // 5. Calculate trial end date
+    // 6. Calculate trial end date
     const trialDays = parseInt(body.trialDays) || 0;
     const trialEndsAt =
       trialDays > 0
         ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
         : null;
 
-    // 6. Generate institute ID
+    // 7. Generate institute ID
     const instituteId = await RegHelper.generateUserId(); // reuse your ID generator
 
-    // 7. Create Institute record
+    // 8. Create Institute record
     const institute = await Institute.create(
       {
         instituteId,
@@ -100,7 +113,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       { transaction: t },
     );
 
-    // 8. Find admin role
+    // 9. Find admin role
     const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
     if (!adminRole) {
       await t.rollback();
@@ -111,7 +124,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       };
     }
 
-    // 9. Create Admin user tied to this institute
+    // 10. Create Admin user tied to this institute
     const encryptedPassword = await EncryptPassword.encryptPassword(
       body.adminPassword,
     );
@@ -340,6 +353,23 @@ const updateInstitute = async (
     }
 
     // Handle new file uploads — keep old ones if no new file sent
+    if (body.contactEmail && body.contactEmail !== institute.contactEmail) {
+      const contactEmailExists = await Institute.findOne({
+        where: {
+          contactEmail: body.contactEmail,
+          instituteId: { [Op.ne]: instituteId },
+        },
+      });
+      if (contactEmailExists) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Institute contact email is already in use.",
+        };
+      }
+    }
+
+    // Handle new file uploads â€” keep old ones if no new file sent
     const logoUrl = files?.logo?.[0]
       ? `/${files.logo[0].path.replace(/\\/g, "/")}`
       : institute.logoUrl;

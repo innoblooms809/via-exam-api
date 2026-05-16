@@ -19,7 +19,9 @@ router.get("/captcha", user_controller_1.default.getCaptcha);
  * Body: { emailId, mobileNo, type, password, captcha }
  * type: 1 = email, 2 = mobile
  */
-router.post("/login", user_controller_1.default.loginViaExamUser);
+router.post("/login", 
+//  authenticate,
+user_controller_1.default.loginViaExamUser);
 /**
  * POST /api/viaexam/user/refresh-token
  * Reads refreshToken from httpOnly cookie and refreshes accessToken.

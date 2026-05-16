@@ -1,9 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize"; // same import as your boilerplate
-import Access from "./Access.modal";
-import Role from "./Role.modal";
-import TeacherProfile from "./TeacherProfile.modal";
-import StudentProfile from "./Student.modal"
+
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -21,6 +18,7 @@ interface UserAttributes {
   lockedUntil: Date | null;
   lastLoginAt: Date | null;
   refreshToken: string | null;
+  isDeleted: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -36,6 +34,7 @@ interface UserCreationAttributes
     | "lastLoginAt"
     | "refreshToken"
     | "instituteId"
+    | "isDeleted"
   > {}
 
 // ─── Model ───────────────────────────────────────────────────────────────────
@@ -57,7 +56,7 @@ class User extends Model<
   public lockedUntil!: Date | null;
   public lastLoginAt!: Date | null;
   public refreshToken!: string | null;
-
+  public isDeleted!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -95,6 +94,7 @@ User.init(
     phoneNumber: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
     roleId: {
       type: DataTypes.INTEGER,
@@ -130,41 +130,52 @@ User.init(
       allowNull: true,
       defaultValue: null,
     },
+    isDeleted: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
   },
   {
     sequelize,
     tableName: "viaexam_users",
     modelName: "User",
     timestamps: true,
+//     indexes: [
+//   {
+//     unique: true,
+//     fields: ["emailId"],
+//   },
+//   {
+//     unique: true,
+//     fields: ["phoneNumber"],
+//   },
+// ],
   }
 );
 
 // Association — matches your existing pattern: User.belongsTo(Role, ...)
- User.hasMany(Access, { foreignKey: 'roleId', as: 'permissions' })
-User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
-//  One user has one teacher profile
-User.hasOne(TeacherProfile, {
-  foreignKey: "userId",
-  sourceKey:  "userId",
-  as:         "teacherProfile",
-});
+//  User.hasMany(Access, { foreignKey: 'roleId', as: 'permissions' })
+// User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
+// //  One user has one teacher profile
+// User.hasOne(TeacherProfile, {
+//   foreignKey: "userId",
+//   sourceKey:  "userId",
+//   as:         "teacherProfile",
+// });
 
-TeacherProfile.belongsTo(User, {
-  foreignKey: "userId",
-  targetKey:  "userId",
-  as:         "user",
-});
 
-User.hasOne(StudentProfile, {
-  foreignKey: "userId",
-  sourceKey:  "userId",
-  as:         "studentProfile",
-});
 
-StudentProfile.belongsTo(User, {
-  foreignKey: "userId",
-  targetKey:  "userId",
-  as:         "user",
-});
+// User.hasOne(StudentProfile, {
+//   foreignKey: "userId",
+//   sourceKey:  "userId",
+//   as:         "studentProfile",
+// });
+
+// StudentProfile.belongsTo(User, {
+//   foreignKey: "userId",
+//   targetKey:  "userId",
+//   as:         "user",
+// });
 
 export default User;
