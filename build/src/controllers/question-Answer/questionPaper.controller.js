@@ -17,9 +17,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getQuestionPaperSets = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
 const sequelize_1 = require("sequelize");
-const questionPaper_service_1 = require("../services/questionPaper.service");
-const QuestionPaper_modal_1 = __importDefault(require("../modals/QuestionPaper.modal"));
-const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
+const questionPaper_service_1 = require("../../services/questionPaper.service");
+const QuestionPaper_modal_1 = __importDefault(require("../../modals/QuestionPaper.modal"));
+const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
 const getQuestionPaperErrorMessage = (error) => {
     var _a, _b, _c;
     if (error instanceof sequelize_1.UniqueConstraintError) {
@@ -40,7 +40,6 @@ const getQuestionPaperErrorMessage = (error) => {
 const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { paperId, instituteId, examId, teacherId, paperSet, content, } = req.body;
-        console.log(req.body);
         // ─────────────────────────────────────────────
         // 1. Basic validation
         // ─────────────────────────────────────────────

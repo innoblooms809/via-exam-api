@@ -16,7 +16,7 @@ export const getExamBySelection = async (
       examType,
       teacherId
     } = req.body;
-    console.log("getExamBySelection - Request Body:", req.body);
+
 
     // ─────────────────────────────────────────────
     // Validation

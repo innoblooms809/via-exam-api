@@ -19,7 +19,6 @@ const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
 const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { classVal, subject, examType, teacherId } = req.body;
-        console.log("getExamBySelection - Request Body:", req.body);
         // ─────────────────────────────────────────────
         // Validation
         // ─────────────────────────────────────────────

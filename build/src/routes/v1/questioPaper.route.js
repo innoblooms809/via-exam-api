@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const questionPaper_controller_1 = require("../../controllers/questionPaper.controller");
+const questionPaper_controller_1 = require("../../controllers/question-Answer/questionPaper.controller");
 const multer_1 = require("../../utils/multer");
 const getExamBySelection_1 = require("../../controllers/exam/getExamBySelection");
 const router = (0, express_1.Router)();

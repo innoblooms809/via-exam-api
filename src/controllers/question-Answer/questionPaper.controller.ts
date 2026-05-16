@@ -228,7 +228,7 @@ export const createQuestionPaper = async (
       paperSet,
       content,
     } = req.body;
-    console.log(req.body)
+    
 
     // ─────────────────────────────────────────────
     // 1. Basic validation
