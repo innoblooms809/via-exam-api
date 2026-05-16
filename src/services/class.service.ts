@@ -7,13 +7,6 @@ import Subject from "../modals/Subject.modal";
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
 const createClass = async (body: any, createdBy: any): Promise<any> => {
   try {
-    if (!body.sessionId) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "sessionId is required.",
-      };
-    }
 
     if (!body.className) {
       return {
@@ -27,7 +20,6 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
     const exists = await Class.findOne({
       where: {
         instituteId,
-        sessionId: body.sessionId,
         className: body.className,
         isDeleted: false,
       },
@@ -37,7 +29,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
       return {
         error: true,
         statusCode: httpStatus.CONFLICT,
-        message: "Class already exists for this session.",
+        message: "Class already exists",
       };
     }
 
@@ -46,7 +38,6 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
     const newClass = await Class.create({
       classId,
       instituteId,
-      sessionId: body.sessionId,
       className: body.className,
     });
 
@@ -66,17 +57,13 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
 };
 
 // ─── GET ALL CLASSES ──────────────────────────────────────────────────────────
-const getAllClasses = async (query: any, createdBy: any): Promise<any> => {
+const getAllClasses = async (createdBy: any): Promise<any> => {
   try {
     const where: any = {
       instituteId: createdBy.instituteId,
       isActive: true,
       isDeleted: false,
     };
-
-    if (query.sessionId) {
-      where.sessionId = query.sessionId;
-    }
 
     const classes = await Class.findAll({
       where,
@@ -118,6 +105,7 @@ const getClassById = async (classId: string, createdBy: any): Promise<any> => {
       where: {
         classId,
         instituteId: createdBy.instituteId,
+        isDeleted: false,
       },
       include: [
         {
@@ -177,9 +165,26 @@ const updateClass = async (
       };
     }
 
+    if (body.className) {
+  const exists = await Class.findOne({
+    where: {
+      instituteId: createdBy.instituteId,
+      className: body.className,
+      isDeleted: false,
+    },
+  });
+
+  if (exists && exists.classId !== classId) {
+    return {
+      error: true,
+      statusCode: httpStatus.CONFLICT,
+      message: "Class name already exists.",
+    };
+  }
+}
+
     await classData.update({
       className: body.className ?? classData.className,
-      sessionId: body.sessionId ?? classData.sessionId,
     });
 
     return {
@@ -201,7 +206,7 @@ const updateClass = async (
 const deleteClass = async (classId: string, createdBy: any): Promise<any> => {
   try {
     const classData = await Class.findOne({
-      where: { classId, instituteId: createdBy.instituteId },
+      where: { classId, instituteId: createdBy.instituteId, isDeleted: false },
     });
 
     if (!classData) {

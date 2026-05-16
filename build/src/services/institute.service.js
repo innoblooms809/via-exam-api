@@ -37,7 +37,19 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 message: "This slug is already taken. Choose a different institute name.",
             };
         }
-        // 2. Check admin email uniqueness
+        // 2. Check institute contact email uniqueness
+        const contactEmailExists = yield Institute_modal_1.default.findOne({
+            where: { contactEmail: body.contactEmail },
+        });
+        if (contactEmailExists) {
+            yield t.rollback();
+            return {
+                error: true,
+                statusCode: http_status_1.default.CONFLICT,
+                message: "Institute contact email is already in use.",
+            };
+        }
+        // 3. Check admin email uniqueness
         const emailExists = yield User_modal_1.default.findOne({
             where: { emailId: body.adminEmail },
         });
@@ -49,7 +61,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 message: "Admin email is already registered.",
             };
         }
-        // 3. Check admin phone uniqueness
+        // 4. Check admin phone uniqueness
         const phoneExists = yield User_modal_1.default.findOne({
             where: { phoneNumber: body.adminPhone },
         });
@@ -61,21 +73,21 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 message: "Admin phone number is already registered.",
             };
         }
-        // 4. Get file paths from multer
+        // 5. Get file paths from multer
         const logoUrl = ((_a = files === null || files === void 0 ? void 0 : files.logo) === null || _a === void 0 ? void 0 : _a[0])
             ? `/${files.logo[0].path.replace(/\\/g, "/")}`
             : null;
         const bannerUrl = ((_b = files === null || files === void 0 ? void 0 : files.banner) === null || _b === void 0 ? void 0 : _b[0])
             ? `/${files.banner[0].path.replace(/\\/g, "/")}`
             : null;
-        // 5. Calculate trial end date
+        // 6. Calculate trial end date
         const trialDays = parseInt(body.trialDays) || 0;
         const trialEndsAt = trialDays > 0
             ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
             : null;
-        // 6. Generate institute ID
+        // 7. Generate institute ID
         const instituteId = yield helper_1.default.generateUserId(); // reuse your ID generator
-        // 7. Create Institute record
+        // 8. Create Institute record
         const institute = yield Institute_modal_1.default.create({
             instituteId,
             instituteName: body.instituteName,
@@ -101,7 +113,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             bannerUrl,
             status: 1,
         }, { transaction: t });
-        // 8. Find admin role
+        // 9. Find admin role
         const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
         if (!adminRole) {
             yield t.rollback();
@@ -111,7 +123,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 message: "Admin role not found. Please seed roles first.",
             };
         }
-        // 9. Create Admin user tied to this institute
+        // 10. Create Admin user tied to this institute
         const encryptedPassword = yield encryption_1.default.encryptPassword(body.adminPassword);
         const adminUserId = yield helper_1.default.generateUserId();
         const adminUser = yield User_modal_1.default.create({
@@ -131,6 +143,9 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             "refreshToken",
         ]);
         // 11. Send credentials email to admin
+        // const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3040"}/${
+        //   body.slug
+        // }/auth/signin`;
         const loginUrl = `${(_c = process.env.FRONTEND_URL) !== null && _c !== void 0 ? _c : "http://localhost:3000"}/${body.slug}/auth/signin`;
         yield (0, mailHelper_1.sendAdminCredentials)({
             adminName: `${body.adminFirstName} ${body.adminLastName}`,
@@ -302,6 +317,22 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
             }
         }
         // Handle new file uploads — keep old ones if no new file sent
+        if (body.contactEmail && body.contactEmail !== institute.contactEmail) {
+            const contactEmailExists = yield Institute_modal_1.default.findOne({
+                where: {
+                    contactEmail: body.contactEmail,
+                    instituteId: { [sequelize_2.Op.ne]: instituteId },
+                },
+            });
+            if (contactEmailExists) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Institute contact email is already in use.",
+                };
+            }
+        }
+        // Handle new file uploads â€” keep old ones if no new file sent
         const logoUrl = ((_e = files === null || files === void 0 ? void 0 : files.logo) === null || _e === void 0 ? void 0 : _e[0])
             ? `/${files.logo[0].path.replace(/\\/g, "/")}`
             : institute.logoUrl;

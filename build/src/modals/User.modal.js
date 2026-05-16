@@ -1,12 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("../config/sequelize"); // same import as your boilerplate
-const Access_modal_1 = __importDefault(require("./Access.modal"));
-const Role_modal_1 = __importDefault(require("./Role.modal"));
 // ─── Model ───────────────────────────────────────────────────────────────────
 class User extends sequelize_1.Model {
     // Helper: is the account locked?
@@ -41,6 +36,7 @@ User.init({
     phoneNumber: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
+        unique: true,
     },
     roleId: {
         type: sequelize_1.DataTypes.INTEGER,
@@ -76,13 +72,44 @@ User.init({
         allowNull: true,
         defaultValue: null,
     },
+    isDeleted: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
 }, {
     sequelize: sequelize_2.sequelize,
     tableName: "viaexam_users",
     modelName: "User",
     timestamps: true,
+    //     indexes: [
+    //   {
+    //     unique: true,
+    //     fields: ["emailId"],
+    //   },
+    //   {
+    //     unique: true,
+    //     fields: ["phoneNumber"],
+    //   },
+    // ],
 });
 // Association — matches your existing pattern: User.belongsTo(Role, ...)
-User.hasMany(Access_modal_1.default, { foreignKey: 'roleId', as: 'permissions' });
-User.belongsTo(Role_modal_1.default, { foreignKey: "roleId", as: "role" });
+//  User.hasMany(Access, { foreignKey: 'roleId', as: 'permissions' })
+// User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
+// //  One user has one teacher profile
+// User.hasOne(TeacherProfile, {
+//   foreignKey: "userId",
+//   sourceKey:  "userId",
+//   as:         "teacherProfile",
+// });
+// User.hasOne(StudentProfile, {
+//   foreignKey: "userId",
+//   sourceKey:  "userId",
+//   as:         "studentProfile",
+// });
+// StudentProfile.belongsTo(User, {
+//   foreignKey: "userId",
+//   targetKey:  "userId",
+//   as:         "user",
+// });
 exports.default = User;

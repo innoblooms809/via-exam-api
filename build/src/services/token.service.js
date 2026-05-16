@@ -44,8 +44,11 @@ const generateToken = (userId, expires, type, secret = config_1.default.jwt.secr
  * @returns {string}
  */
 const generateUserToken = (user, expires, type, secret = config_1.default.jwt.secret) => {
+    const subject = typeof user === "object" && (user === null || user === void 0 ? void 0 : user.userId)
+        ? { userId: user.userId }
+        : user;
     const payload = {
-        sub: user,
+        sub: subject,
         iat: (0, moment_1.default)().unix(),
         exp: expires.unix(),
         type,

@@ -1,19 +1,14 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
-import QuestionPaper from "./QuestionPaper.modal";
-import Subject from "./Subject.modal";
 
 interface ExamAttributes {
   id: number;
   examId: string;
   instituteId: string; // FK → Institute
   classId: string | null; // FK → Class, nullable for school-wide exams
-  session: string; // 2024-25
-  year: string; // 1st Year
+  sessionId: string; // 2024-25
   examType: string; // Mid-Term, Final etc
-  examDate: Date;
-  classVal: string; // Class 10
-  subject: string; // Mathematics
+  subjectId: string; // Mathematics
   teacherId: string; // FK → User (teacher)
   examinerId: string | null; // FK → User (examiner) — assigned later
   totalMarks: number;
@@ -44,12 +39,9 @@ class Exam extends Model<ExamAttributes, ExamCreationAttributes> {
   public examId!: string;
   public instituteId!: string;
   public classId!: string | null;
-  public session!: string;
-  public year!: string;
+  public sessionId!: string;
   public examType!: string;
-  public examDate!: Date;
-  public classVal!: string;
-  public subject!: string;
+  public subjectId!: string;
   public teacherId!: string;
   public examinerId!: string | null;
   public totalMarks!: number;
@@ -76,12 +68,9 @@ Exam.init(
         key: "classId",
       },
     },
-    session: { type: DataTypes.STRING, allowNull: false },
-    year: { type: DataTypes.STRING, allowNull: false },
+    sessionId: { type: DataTypes.STRING, allowNull: false },
     examType: { type: DataTypes.STRING, allowNull: false },
-    examDate: { type: DataTypes.DATE, allowNull: false },
-    classVal: { type: DataTypes.STRING, allowNull: false },
-    subject: { type: DataTypes.STRING, allowNull: false },
+    subjectId: { type: DataTypes.STRING, allowNull: false },
     teacherId: { type: DataTypes.STRING, allowNull: false },
     examinerId: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
     totalMarks: { type: DataTypes.INTEGER, allowNull: false },
@@ -103,18 +92,37 @@ Exam.init(
   },
 );
 
-// Exam belongs to Subject
+
+// Exam.belongsTo(Institute, {
+//   foreignKey: "instituteId",
+//   targetKey: "instituteId",
+//   as: "institute",
+// });
+// // Exam belongs to Subject
 // Exam.belongsTo(Subject, {
 //   foreignKey: "subjectId",
 //   targetKey: "subjectId",
 //   as: "subject",
 // });
 
-// // Exam has many Question Papers
-// Exam.hasMany(QuestionPaper, {
-//   foreignKey: "examId",
-//   sourceKey: "examId",
-//   as: "questionPapers",
+
+// Exam.belongsTo(Class, {
+//   foreignKey: "classId",
+//   targetKey: "classId",
+//   as: "class",
 // });
+
+// Exam.belongsTo(User, {
+//   foreignKey: "assignedTeacherId",
+//   targetKey: "userId",
+//   as: "teacher",
+// });
+
+// // // Exam has many Question Papers
+// // Exam.hasMany(QuestionPaper, {
+// //   foreignKey: "examId",
+// //   sourceKey: "examId",
+// //   as: "questionPapers",
+// // });
 
 export default Exam;

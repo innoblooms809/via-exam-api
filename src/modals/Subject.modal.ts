@@ -1,17 +1,11 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
-import Section from "./Section.modal";
-import Class from "./Class.modal";
-import User from "./User.modal";
-import Exam from "./Exam.modal";
 
 interface SubjectAttributes {
   id:          number;
   subjectId:   string;
   classId:     string;   // FK → Class
-  sectionId:   string | null;  // null = subject for all sections of this class
   instituteId: string;
-  sessionId:   string;
   subjectName: string;   // Mathematics, Science, English
   subjectCode: string | null;  // MAT001, SCI001
   teacherId:   string | null;  // FK → User (subject teacher)
@@ -28,7 +22,6 @@ interface SubjectCreationAttributes
     SubjectAttributes,
     | "id"
   | "subjectId"
-  | "sectionId"
   | "subjectCode"
   | "teacherId"
   | "isActive"
@@ -42,9 +35,7 @@ class Subject
   public id!:           number;
   public subjectId!:    string;
   public classId!:      string;
-  public sectionId!:    string | null;
   public instituteId!:  string;
-  public sessionId!:    string;
   public subjectName!:  string;
   public subjectCode!:  string | null;
   public teacherId!:    string | null;
@@ -61,15 +52,13 @@ Subject.init(
     id:           { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     subjectId:    { type: DataTypes.STRING,  allowNull: false, unique: true },
     classId:      { type: DataTypes.STRING,  allowNull: false },
-    sectionId:    { type: DataTypes.STRING,  allowNull: true, defaultValue: null },
     instituteId:  { type: DataTypes.STRING,  allowNull: false },
-    sessionId:    { type: DataTypes.STRING,  allowNull: false },
     subjectName:  { type: DataTypes.STRING,  allowNull: false },
-    subjectCode:  { type: DataTypes.STRING,  allowNull: true, defaultValue: null },
+    subjectCode:  { type: DataTypes.STRING,  allowNull: true, defaultValue: null,unique: true, },
     teacherId:    { type: DataTypes.STRING,  allowNull: true, defaultValue: null },
     totalMarks:   { type: DataTypes.INTEGER, allowNull: false, defaultValue: 100 },
-    passingMarks: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 35 },
-    isActive:     { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    passingMarks: {type: DataTypes.INTEGER,allowNull: false,}, 
+    isActive:      { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     isDeleted:    { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   },
   {
@@ -77,37 +66,35 @@ Subject.init(
     tableName: "viaexam_subjects",
     modelName: "Subject",
     timestamps: true,
+    indexes: [
+  {
+    unique: true,
+    fields: ["classId",  "subjectName"],
+  },
+],
   }
 );
 
-// Subject.belongsTo(Section, {
-//   foreignKey: "sectionId",
-//   targetKey: "sectionId",
-//   as: "section",
-// });
-
-// Section.hasMany(Subject, {
-//   foreignKey: "sectionId",
-//   sourceKey: "sectionId",
-//   as: "subjects",
+// Subject.belongsTo(Institute, {
+//   foreignKey: "instituteId",
+//   targetKey: "instituteId",
+//   as: "institute",
 // });
 
 
-// Subject belongs to Class
 // Subject.belongsTo(Class, {
 //   foreignKey: "classId",
 //   targetKey: "classId",
 //   as: "class",
 // });
 
-// Subject belongs to Teacher
+
 // Subject.belongsTo(User, {
 //   foreignKey: "teacherId",
 //   targetKey: "userId",
 //   as: "teacher",
 // });
 
-// Subject has many Exams
 // Subject.hasMany(Exam, {
 //   foreignKey: "subjectId",
 //   sourceKey: "subjectId",
