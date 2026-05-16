@@ -187,10 +187,10 @@ import {
   UniqueConstraintError,
   ValidationError,
 } from "sequelize";
-import { QuestionPaperService } from "../services/questionPaper.service";
-import RegHelper from "../utils/helper";
-import QuestionPaper from "../modals/QuestionPaper.modal";
-import Exam from "../modals/Exam.modal";
+import { QuestionPaperService } from "../../services/questionPaper.service";
+import RegHelper from "../../utils/helper";
+import QuestionPaper from "../../modals/QuestionPaper.modal";
+import Exam from "../../modals/Exam.modal";
 
 const getQuestionPaperErrorMessage = (error: any) => {
   if (error instanceof UniqueConstraintError) {

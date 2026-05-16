@@ -19,6 +19,15 @@ StudentProfile.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
+    classId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+            model: "viaexam_classes",
+            key: "classId",
+        },
+    },
     rollNumber: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,

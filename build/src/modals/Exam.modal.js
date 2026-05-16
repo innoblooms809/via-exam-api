@@ -8,6 +8,15 @@ Exam.init({
     id: { type: sequelize_1.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     examId: { type: sequelize_1.DataTypes.STRING, allowNull: false, unique: true },
     instituteId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    classId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+            model: "viaexam_classes",
+            key: "classId",
+        },
+    },
     session: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     year: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     examType: { type: sequelize_1.DataTypes.STRING, allowNull: false },
@@ -32,4 +41,16 @@ Exam.init({
     modelName: "Exam",
     timestamps: true,
 });
+// Exam belongs to Subject
+// Exam.belongsTo(Subject, {
+//   foreignKey: "subjectId",
+//   targetKey: "subjectId",
+//   as: "subject",
+// });
+// // Exam has many Question Papers
+// Exam.hasMany(QuestionPaper, {
+//   foreignKey: "examId",
+//   sourceKey: "examId",
+//   as: "questionPapers",
+// });
 exports.default = Exam;
