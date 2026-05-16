@@ -12,7 +12,11 @@ const institute_route_1 = __importDefault(require("./institute.route"));
 const teacher_route_1 = __importDefault(require("./teacher.route"));
 const exam_route_1 = __importDefault(require("./exam.route"));
 const questioPaper_route_1 = __importDefault(require("./questioPaper.route"));
-// import studentRoutes from './student.route'  
+const session_route_1 = __importDefault(require("./session.route"));
+const class_route_1 = __importDefault(require("./class.route"));
+const section_route_1 = __importDefault(require("./section.route"));
+const subject_route_1 = __importDefault(require("./subject.route"));
+// import studentRoutes from './student.route'
 // import captchaRoutes from './captcha.route'
 const router = express_1.default.Router();
 const defaultRoutes = [
@@ -29,6 +33,22 @@ const defaultRoutes = [
         route: institute_route_1.default,
     },
     {
+        path: "/sessions",
+        route: session_route_1.default,
+    },
+    {
+        path: "/class",
+        route: class_route_1.default,
+    },
+    {
+        path: "/section",
+        route: section_route_1.default,
+    },
+    {
+        path: "/subject",
+        route: subject_route_1.default,
+    },
+    {
         path: "/teacher",
         route: teacher_route_1.default,
     },
@@ -39,7 +59,7 @@ const defaultRoutes = [
     {
         path: "/question-papers",
         route: questioPaper_route_1.default,
-    }
+    },
     // {
     //   path: '/captcha',
     //   route: captchaRoutes

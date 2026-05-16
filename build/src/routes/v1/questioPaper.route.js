@@ -20,4 +20,9 @@ router.post("/createQuestionPaper",
 // authenticate,
 questionPaper_controller_1.createQuestionPaper);
 router.post("/image", multer_1.questionPaperUpload, questionPaper_controller_1.uploadImageController);
+router.get("/question-paper/sets", questionPaper_controller_1.getQuestionPaperSets);
+// router.get(
+//   "/question-paper/content",
+//   getQuestionPaperBySet
+// );
 exports.default = router;

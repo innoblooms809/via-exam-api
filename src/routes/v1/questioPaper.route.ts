@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createQuestionPaper, getQuestionPaperSets, uploadImageController,getQuestionPaperBySet } from "../../controllers/questionPaper.controller";
+import { createQuestionPaper, getQuestionPaperSets, uploadImageController,getQuestionPaperBySet } from "../../controllers/question-Answer/questionPaper.controller";
 import { authenticate } from "../../middlewares/auth";
 import { questionPaperUpload } from "../../utils/multer";
 import { getExamBySelection, } from "../../controllers/exam/getExamBySelection";

@@ -569,7 +569,7 @@ exports.QuestionPaperService = void 0;
 // };
 const QuestionPaper_modal_1 = __importDefault(require("../modals/QuestionPaper.modal"));
 const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
-const crypto_1 = require("crypto");
+const helper_1 = __importDefault(require("../utils/helper"));
 class QuestionPaperService {
     // ─────────────────────────────────────────────
     // CREATE QUESTION PAPER
@@ -603,7 +603,7 @@ class QuestionPaperService {
             if (existing) {
                 throw new Error(`Question Paper Set ${paperSet} already exists for this exam`);
             }
-            const resolvedPaperId = (paperId === null || paperId === void 0 ? void 0 : paperId.trim()) || `QP-${(0, crypto_1.randomUUID)()}`;
+            const resolvedPaperId = (paperId === null || paperId === void 0 ? void 0 : paperId.trim()) || `QP-${helper_1.default.generateUserId()}`;
             const existingPaperId = yield QuestionPaper_modal_1.default.findOne({
                 where: { paperId: resolvedPaperId },
             });

@@ -11,10 +11,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadImageController = exports.createQuestionPaper = void 0;
+exports.getQuestionPaperSets = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
 const sequelize_1 = require("sequelize");
 const questionPaper_service_1 = require("../services/questionPaper.service");
+const QuestionPaper_modal_1 = __importDefault(require("../modals/QuestionPaper.modal"));
+const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
 const getQuestionPaperErrorMessage = (error) => {
     var _a, _b, _c;
     if (error instanceof sequelize_1.UniqueConstraintError) {
@@ -60,7 +65,7 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
         // ─────────────────────────────────────────────
         // 2. Call service
         // ─────────────────────────────────────────────
-        const paper = yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
+        yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
             paperId,
             instituteId,
             examId,
@@ -73,7 +78,7 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
         // ─────────────────────────────────────────────
         return res.status(201).json({
             message: "Question paper created successfully",
-            data: paper,
+            data: paperId,
         });
     }
     catch (error) {
@@ -113,3 +118,100 @@ const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.uploadImageController = uploadImageController;
+//
+// ─────────────────────────────────────────────────────────────────
+const getQuestionPaperBySet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const examId = String(req.query.examId);
+        const paperSet = String(req.query.paperSet);
+        if (!examId || !paperSet) {
+            return res.status(400).json({
+                error: true,
+                message: "examId and paperSet are required",
+            });
+        }
+        const paper = yield QuestionPaper_modal_1.default.findOne({
+            where: {
+                examId,
+                paperSet,
+            },
+            include: [
+                {
+                    model: Exam_modal_1.default,
+                    as: "exam",
+                },
+            ],
+        });
+        if (!paper) {
+            return res.status(404).json({
+                error: true,
+                message: "Question paper not found",
+            });
+        }
+        return res.status(200).json({
+            error: false,
+            message: "Question paper fetched successfully",
+            data: paper,
+        });
+    }
+    catch (e) {
+        return res.status(500).json({
+            error: true,
+            message: e.message,
+        });
+    }
+});
+exports.getQuestionPaperBySet = getQuestionPaperBySet;
+// ─────────────────────────────────────────────────────────────────
+const getQuestionPaperSets = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const classVal = String(req.query.classVal);
+        const subject = String(req.query.subject);
+        const session = String(req.query.session);
+        const examType = String(req.query.examType);
+        const exam = yield Exam_modal_1.default.findOne({
+            where: {
+                classVal,
+                subject,
+                session,
+                examType,
+                isDeleted: false,
+            },
+        });
+        if (!exam) {
+            return res.status(404).json({
+                error: true,
+                message: "Exam not found",
+            });
+        }
+        const papers = yield QuestionPaper_modal_1.default.findAll({
+            where: {
+                examId: exam.examId,
+            },
+            attributes: [
+                "paperSet",
+                "status",
+            ],
+        });
+        return res.status(200).json({
+            error: false,
+            message: "Question paper sets fetched successfully",
+            data: {
+                examId: exam.examId,
+                subject: exam.subject,
+                classVal: exam.classVal,
+                session: exam.session,
+                examType: exam.examType,
+                availableSets: papers.map((item) => item.paperSet),
+                papers,
+            },
+        });
+    }
+    catch (e) {
+        return res.status(500).json({
+            error: true,
+            message: e.message,
+        });
+    }
+});
+exports.getQuestionPaperSets = getQuestionPaperSets;
