@@ -69,7 +69,8 @@ const connectDB = async (fn: any) => {
     logger.info("Connected to PostgreSQL Database");
     await ensureQuestionPaperColumns();
     await ensureQuestionPaperConstraints();
-    await sequelize.sync({ force: false }); // Sync models with the database
+    // await sequelize.sync({ force: false }); // Sync models with the database
+    await sequelize.sync({ alter: true });
     logger.info("Models synced with PostgreSQL");
     fn();
   } catch (err: any) {
