@@ -1,8 +1,9 @@
 import { Router } from "express";
 import Controller from "../../controllers/exam/exam.controller";
 import { authenticate } from "../../middlewares/auth"
-import { getExamBySelection }      from "../../controllers/exam/getExamBySelection";
+// import { getExamBySelection }      from "../../controllers/exam/getExamBySelection";
 // import { authenticate, authorize } from "../middlewares/auth";
+
 
 const router = Router();
 

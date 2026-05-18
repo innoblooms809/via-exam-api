@@ -20,13 +20,6 @@ const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
 const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        if (!body.sessionId) {
-            return {
-                error: true,
-                statusCode: http_status_1.default.BAD_REQUEST,
-                message: "sessionId is required.",
-            };
-        }
         if (!body.className) {
             return {
                 error: true,
@@ -38,7 +31,6 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
         const exists = yield Class_modal_1.default.findOne({
             where: {
                 instituteId,
-                sessionId: body.sessionId,
                 className: body.className,
                 isDeleted: false,
             },
@@ -47,14 +39,13 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
             return {
                 error: true,
                 statusCode: http_status_1.default.CONFLICT,
-                message: "Class already exists for this session.",
+                message: "Class already exists",
             };
         }
         const classId = yield helper_1.default.generateUserId();
         const newClass = yield Class_modal_1.default.create({
             classId,
             instituteId,
-            sessionId: body.sessionId,
             className: body.className,
         });
         return {
@@ -73,16 +64,13 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 // ─── GET ALL CLASSES ──────────────────────────────────────────────────────────
-const getAllClasses = (query, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllClasses = (createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const where = {
             instituteId: createdBy.instituteId,
             isActive: true,
             isDeleted: false,
         };
-        if (query.sessionId) {
-            where.sessionId = query.sessionId;
-        }
         const classes = yield Class_modal_1.default.findAll({
             where,
             include: [
@@ -122,6 +110,7 @@ const getClassById = (classId, createdBy) => __awaiter(void 0, void 0, void 0, f
             where: {
                 classId,
                 instituteId: createdBy.instituteId,
+                isDeleted: false,
             },
             include: [
                 {
@@ -158,7 +147,7 @@ const getClassById = (classId, createdBy) => __awaiter(void 0, void 0, void 0, f
 });
 // ─── UPDATE CLASS ─────────────────────────────────────────────────────────────
 const updateClass = (classId, body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a;
     try {
         const classData = yield Class_modal_1.default.findOne({
             where: {
@@ -174,9 +163,24 @@ const updateClass = (classId, body, createdBy) => __awaiter(void 0, void 0, void
                 message: "Class not found.",
             };
         }
+        if (body.className) {
+            const exists = yield Class_modal_1.default.findOne({
+                where: {
+                    instituteId: createdBy.instituteId,
+                    className: body.className,
+                    isDeleted: false,
+                },
+            });
+            if (exists && exists.classId !== classId) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Class name already exists.",
+                };
+            }
+        }
         yield classData.update({
             className: (_a = body.className) !== null && _a !== void 0 ? _a : classData.className,
-            sessionId: (_b = body.sessionId) !== null && _b !== void 0 ? _b : classData.sessionId,
         });
         return {
             error: false,
@@ -197,7 +201,7 @@ const updateClass = (classId, body, createdBy) => __awaiter(void 0, void 0, void
 const deleteClass = (classId, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const classData = yield Class_modal_1.default.findOne({
-            where: { classId, instituteId: createdBy.instituteId },
+            where: { classId, instituteId: createdBy.instituteId, isDeleted: false },
         });
         if (!classData) {
             return {

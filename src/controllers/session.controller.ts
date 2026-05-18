@@ -5,7 +5,7 @@ import SessionService from "../services/session.service";
 // ─── CREATE ───────────────────────────────────────────────────────────────────
 const createSession = async (req: any, res: Response): Promise<any> => {
   try {
-    console.log("REQ USER:", req.viaExamUser);
+   
     const result = await SessionService.createSession(
       req.body,
       req.viaExamUser

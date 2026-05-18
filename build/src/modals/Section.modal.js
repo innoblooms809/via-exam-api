@@ -9,7 +9,6 @@ Section.init({
     sectionId: { type: sequelize_1.DataTypes.STRING, allowNull: false, unique: true },
     classId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     instituteId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    sessionId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     sectionName: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     classTeacherId: {
         type: sequelize_1.DataTypes.STRING,
@@ -34,23 +33,22 @@ Section.init({
         },
     ],
 });
+// Section.belongsTo(Institute, {
+//   foreignKey: "instituteId",
+//   targetKey: "instituteId",
+//   as: "institute",
+// });
 // Section.belongsTo(Class, {
 //   foreignKey: "classId",
 //   targetKey: "classId",
 //   as: "class",
 // });
-// Class.hasMany(Section, {
-//   foreignKey: "classId",
-//   sourceKey: "classId",
-//   as: "sections",
+// // Section belongs to class teacher
+// Section.belongsTo(User, {
+//   foreignKey: "classTeacherId",
+//   targetKey: "userId",
+//   as: "classTeacher",
 // });
-// Section belongs to Class
-// Section.belongsTo(Class, {
-//   foreignKey: "classId",
-//   targetKey: "classId",
-//   as: "class",
-// });
-// Section belongs to class teacher
 // Section.belongsTo(User, {
 //   foreignKey: "classTeacherId",
 //   targetKey: "userId",

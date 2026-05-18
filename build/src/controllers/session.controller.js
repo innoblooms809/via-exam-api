@@ -17,7 +17,6 @@ const session_service_1 = __importDefault(require("../services/session.service")
 // ─── CREATE ───────────────────────────────────────────────────────────────────
 const createSession = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("REQ USER:", req.viaExamUser);
         const result = yield session_service_1.default.createSession(req.body, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }

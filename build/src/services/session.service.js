@@ -28,7 +28,7 @@ const createSession = (body, createdBy) => __awaiter(void 0, void 0, void 0, fun
             where: { instituteId, status: 1 },
         });
         if (!institute) {
-            yield t.rollback();
+            // await t.rollback();
             return {
                 error: true,
                 statusCode: http_status_1.default.NOT_FOUND,

@@ -1,7 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../config/sequelize';  // Assuming you have sequelize instance
 import Role from './Role.modal';  // Import the Role model
-import UserModal from './User.modal';
 
 class Access extends Model {
   public moduleName!: string;
@@ -51,9 +50,5 @@ Access.init(
   }
 );
 
-// Define the association
-Access.belongsTo(Role, { foreignKey: 'roleId', as: 'role' });
-// Define the association
-Role.hasMany(Access, { foreignKey: 'roleId', as: 'access' });
 
 export default Access;

@@ -567,17 +567,16 @@ exports.QuestionPaperService = void 0;
 //   approvePaper,
 //   rejectPaper,
 // };
-const QuestionPaper_modal_1 = __importDefault(require("../modals/QuestionPaper.modal"));
-const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
-const helper_1 = __importDefault(require("../utils/helper"));
+const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-paper/QuestionPaper.modal"));
+const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
+const helper_1 = __importDefault(require("../../utils/helper"));
 class QuestionPaperService {
     // ─────────────────────────────────────────────
     // CREATE QUESTION PAPER
     // ─────────────────────────────────────────────
     static createQuestionPaper(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { paperId, instituteId, examId, teacherId, paperSet, content, } = data;
-            // 1. Validate Exam exists
+            const { instituteId, examId, teacherId, paperSet, content, } = data;
             const exam = yield Exam_modal_1.default.findOne({
                 where: { examId },
             });
@@ -586,14 +585,6 @@ class QuestionPaperService {
             }
             const resolvedInstituteId = instituteId || exam.instituteId;
             const resolvedTeacherId = teacherId || exam.teacherId;
-            // 2. Ensure institute/teacher match exam when provided
-            if (instituteId && exam.instituteId !== instituteId) {
-                throw new Error("Institute mismatch with Exam");
-            }
-            if (teacherId && exam.teacherId !== teacherId) {
-                throw new Error("Teacher mismatch with Exam");
-            }
-            // 3. Check duplicate paper set for same exam
             const existing = yield QuestionPaper_modal_1.default.findOne({
                 where: {
                     examId,
@@ -603,14 +594,7 @@ class QuestionPaperService {
             if (existing) {
                 throw new Error(`Question Paper Set ${paperSet} already exists for this exam`);
             }
-            const resolvedPaperId = (paperId === null || paperId === void 0 ? void 0 : paperId.trim()) || `QP-${helper_1.default.generateUserId()}`;
-            const existingPaperId = yield QuestionPaper_modal_1.default.findOne({
-                where: { paperId: resolvedPaperId },
-            });
-            if (existingPaperId) {
-                throw new Error("Question paper ID already exists");
-            }
-            // 4. Create Question Paper
+            const resolvedPaperId = yield helper_1.default.generateUserId();
             const paper = yield QuestionPaper_modal_1.default.create({
                 paperId: resolvedPaperId,
                 instituteId: resolvedInstituteId,

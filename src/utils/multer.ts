@@ -72,3 +72,20 @@ export const questionPaperUpload = multer({
     maxCount: 1,
   },
 ]);
+
+export const answerPaperUpload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+}).fields([
+  {
+    name: "diagram",
+    maxCount: 10,
+  },
+  {
+    name: "diagramUrls",
+    maxCount: 10,
+  },
+]);

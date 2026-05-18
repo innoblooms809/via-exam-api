@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const questionPaper_controller_1 = require("../../controllers/question-Answer/questionPaper.controller");
-const multer_1 = require("../../utils/multer");
-const getExamBySelection_1 = require("../../controllers/exam/getExamBySelection");
+const questionPaper_controller_1 = require("../../../controllers/question-Answer/questionPaper.controller");
+const multer_1 = require("../../../utils/multer");
+const getExamBySelection_1 = require("../../../controllers/exam/getExamBySelection");
 const router = (0, express_1.Router)();
 // POST /api/viaexam/question-papers
 // Body: { instituteId, examId, teacherId, paperSet, content }
@@ -20,9 +20,5 @@ router.post("/createQuestionPaper",
 // authenticate,
 questionPaper_controller_1.createQuestionPaper);
 router.post("/image", multer_1.questionPaperUpload, questionPaper_controller_1.uploadImageController);
-router.get("/question-paper/sets", questionPaper_controller_1.getQuestionPaperSets);
-// router.get(
-//   "/question-paper/content",
-//   getQuestionPaperBySet
-// );
+router.get("/getQuestionPaperBySet", questionPaper_controller_1.getQuestionPaperBySelection);
 exports.default = router;

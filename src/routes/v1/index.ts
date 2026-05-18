@@ -6,12 +6,13 @@ import docsRoute from "./docs.route";
 import instituteRoutes from "./institute.route";
 import teacherRoutes from "./teacher.route";
 import examRoutes from "./exam.route";
-import questionPaperRoutes from "./questioPaper.route";
+import questionPaperRoutes from "./question-answer/questioPaper.route";
 import sessionRoutes from "./session.route";
 import classRoutes from "./class.route";
 import sectionRoutes from "./section.route";
 import subjectRoutes from "./subject.route";
 import { session } from "passport";
+import standeranswerRoutes from "./question-answer/stander-answer.routes";
 // import studentRoutes from './student.route'
 // import captchaRoutes from './captcha.route'
 
@@ -58,6 +59,10 @@ const defaultRoutes = [
     path: "/question-papers",
     route: questionPaperRoutes,
   },
+  {
+    path: "/question-paper-answers",
+    route: standeranswerRoutes,
+  }
   
   // {
   //   path: '/captcha',

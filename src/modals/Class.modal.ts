@@ -1,13 +1,10 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
-import Section from "./Section.modal";
-import Subject from "./Subject.modal";
 
 interface ClassAttributes {
   id: number;
   classId: string;
   instituteId: string; // FK → Institute
-  sessionId: string; // FK → Session
   className: string; // Class 1, Class 2 ... Class 12
   isActive: boolean;
   isDeleted?: boolean;
@@ -22,7 +19,6 @@ class Class extends Model<ClassAttributes, ClassCreationAttributes> {
   public id!: number;
   public classId!: string;
   public instituteId!: string;
-  public sessionId!: string;
   public className!: string;
   public isActive!: boolean;
   public isDeleted!: boolean;
@@ -43,11 +39,6 @@ Class.init(
       unique: true,
     },
     instituteId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-   
-    sessionId:{
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -75,59 +66,59 @@ Class.init(
       {
         // Unique: one section per class per year per institute
         unique: true,
-        fields: ["instituteId", "className", "sessionId"],
+        fields: ["instituteId", "className"],
       },
     ],
   },
 );
 
-// Class belongs to Institute
+// // Class belongs to Institute
 // Class.belongsTo(Institute, {
 //   foreignKey: "instituteId",
 //   targetKey: "instituteId",
 //   as: "institute",
 // });
 
-// Class has one class teacher
-// Class.belongsTo(User, {
-//   foreignKey: "classTeacherId",
-//   targetKey: "userId",
-//   as: "classTeacher",
-// });
+// // Class has one class teacher
+// // Class.belongsTo(User, {
+// //   foreignKey: "classTeacherId",
+// //   targetKey: "userId",
+// //   as: "classTeacher",
+// // });
 
-// Class has many students
-// Class.hasMany(StudentProfile, {
-//   foreignKey: "classId",
-//   sourceKey: "classId",
-//   as: "students",
-// });
+// // Class has many students
+// // Class.hasMany(StudentProfile, {
+// //   foreignKey: "classId",
+// //   sourceKey: "classId",
+// //   as: "students",
+// // });
 
-// Class has many exams
-// Class.hasMany(Exam, {
-//   foreignKey: "classId",
-//   sourceKey: "classId",
-//   as: "exams",
-// });
+// // Class has many exams
+// // Class.hasMany(Exam, {
+// //   foreignKey: "classId",
+// //   sourceKey: "classId",
+// //   as: "exams",
+// // });
 
-// Class.hasMany(Section, { foreignKey: "classId", sourceKey: "classId", as: "sections" });
-// Section.belongsTo(Class, { foreignKey: "classId", targetKey: "classId", as: "class" });
+// // Class.hasMany(Section, { foreignKey: "classId", sourceKey: "classId", as: "sections" });
+// // Section.belongsTo(Class, { foreignKey: "classId", targetKey: "classId", as: "class" });
 
 
-// Class belongs to Session
-// Class.belongsTo(Session, {
-//   foreignKey: "sessionId",
-//   targetKey: "sessionId",
-//   as: "session",
-// });
+// // Class belongs to Session
+// // Class.belongsTo(Session, {
+// //   foreignKey: "sessionId",
+// //   targetKey: "sessionId",
+// //   as: "session",
+// // });
 
-// Class has many Sections
+// // Class has many Sections
 // Class.hasMany(Section, {
 //   foreignKey: "classId",
 //   sourceKey: "classId",
 //   as: "sections",
 // });
 
-// Class has many Subjects
+// // Class has many Subjects
 // Class.hasMany(Subject, {
 //   foreignKey: "classId",
 //   sourceKey: "classId",
