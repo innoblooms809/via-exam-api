@@ -27,6 +27,7 @@ const exitHandler = () => {
 };
 
 const unexpectedErrorHandler = (error: unknown) => {
+  // console.error(JSON.stringify(error, null, 2));
   logger.error(error);
   exitHandler();
 };

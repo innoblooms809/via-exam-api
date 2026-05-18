@@ -15,11 +15,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getQuestionPaperSets = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
+exports.getQuestionPaperBySelection = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
 const sequelize_1 = require("sequelize");
-const questionPaper_service_1 = require("../../services/questionPaper.service");
-const QuestionPaper_modal_1 = __importDefault(require("../../modals/QuestionPaper.modal"));
+const questionPaper_service_1 = require("../../services/question-answer/questionPaper.service");
+const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-paper/QuestionPaper.modal"));
 const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
+const http_status_1 = __importDefault(require("http-status"));
+const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
+const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
+const Subject_modal_1 = __importDefault(require("../../modals/Subject.modal"));
 const getQuestionPaperErrorMessage = (error) => {
     var _a, _b, _c;
     if (error instanceof sequelize_1.UniqueConstraintError) {
@@ -39,7 +43,7 @@ const getQuestionPaperErrorMessage = (error) => {
 };
 const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { paperId, instituteId, examId, teacherId, paperSet, content, } = req.body;
+        const { instituteId, examId, teacherId, paperSet, content, } = req.body;
         // ─────────────────────────────────────────────
         // 1. Basic validation
         // ─────────────────────────────────────────────
@@ -56,16 +60,16 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
                 message: "teacherId must be a string",
             });
         }
-        if (paperId !== undefined && typeof paperId !== "string") {
-            return res.status(400).json({
-                message: "paperId must be a string",
-            });
-        }
+        // if (paperId !== undefined && typeof paperId !== "string") {
+        //   return res.status(400).json({
+        //     message: "paperId must be a string",
+        //   });
+        // }
         // ─────────────────────────────────────────────
         // 2. Call service
         // ─────────────────────────────────────────────
         yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
-            paperId,
+            paperId: "313d",
             instituteId,
             examId,
             teacherId,
@@ -77,7 +81,7 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
         // ─────────────────────────────────────────────
         return res.status(201).json({
             message: "Question paper created successfully",
-            data: paperId,
+            // data: paperId,
         });
     }
     catch (error) {
@@ -162,55 +166,91 @@ const getQuestionPaperBySet = (req, res) => __awaiter(void 0, void 0, void 0, fu
 });
 exports.getQuestionPaperBySet = getQuestionPaperBySet;
 // ─────────────────────────────────────────────────────────────────
-const getQuestionPaperSets = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const classVal = String(req.query.classVal);
-        const subject = String(req.query.subject);
-        const session = String(req.query.session);
-        const examType = String(req.query.examType);
-        const exam = yield Exam_modal_1.default.findOne({
+        const { classVal, subject, examType, teacherId, instituteId, session, paperSet, } = req.body;
+        // ─────────────────────────────────────────────
+        // SINGLE QUERY (ALL JOINS)
+        // ─────────────────────────────────────────────
+        const examWithPaper = yield Exam_modal_1.default.findOne({
             where: {
-                classVal,
-                subject,
-                session,
                 examType,
+                teacherId,
+                instituteId,
                 isDeleted: false,
             },
-        });
-        if (!exam) {
-            return res.status(404).json({
-                error: true,
-                message: "Exam not found",
-            });
-        }
-        const papers = yield QuestionPaper_modal_1.default.findAll({
-            where: {
-                examId: exam.examId,
-            },
-            attributes: [
-                "paperSet",
-                "status",
+            include: [
+                {
+                    model: Session_modal_1.default,
+                    as: "session",
+                    where: {
+                        sessionName: session,
+                        instituteId,
+                        isDeleted: false,
+                    },
+                },
+                {
+                    model: Class_modal_1.default,
+                    as: "class",
+                    where: {
+                        className: classVal,
+                        instituteId,
+                        isDeleted: false,
+                    },
+                },
+                {
+                    model: Subject_modal_1.default,
+                    as: "subject",
+                    where: {
+                        subjectName: subject,
+                        instituteId,
+                        isDeleted: false,
+                    },
+                },
+                {
+                    model: QuestionPaper_modal_1.default,
+                    as: "questionPapers",
+                    required: false,
+                    where: {
+                        paperSet,
+                    },
+                },
             ],
         });
-        return res.status(200).json({
+        // ─────────────────────────────────────────────
+        // NOT FOUND
+        // ─────────────────────────────────────────────
+        if (!examWithPaper) {
+            return res.status(http_status_1.default.NOT_FOUND).json({
+                error: true,
+                message: "Exam or related data not found",
+            });
+        }
+        // ─────────────────────────────────────────────
+        // QUESTION PAPER CHECK
+        // ─────────────────────────────────────────────
+        const questionPaper = examWithPaper.questionPapers;
+        if (!questionPaper) {
+            return res.status(http_status_1.default.NOT_FOUND).json({
+                error: true,
+                message: "Question paper not found for selected exam",
+            });
+        }
+        // ─────────────────────────────────────────────
+        // SUCCESS
+        // ─────────────────────────────────────────────
+        return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Question paper sets fetched successfully",
-            data: {
-                examId: exam.examId,
-                subject: exam.subject,
-                classVal: exam.classVal,
-                session: exam.session,
-                examType: exam.examType,
-                availableSets: papers.map((item) => item.paperSet),
-                papers,
-            },
+            message: "Question paper fetched successfully",
+            data: examWithPaper,
         });
     }
-    catch (e) {
-        return res.status(500).json({
+    catch (error) {
+        console.error("getQuestionPaperBySelection Error:", error);
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
-            message: e.message,
+            message: error.message,
         });
     }
 });
-exports.getQuestionPaperSets = getQuestionPaperSets;
+exports.getQuestionPaperBySelection = getQuestionPaperBySelection;

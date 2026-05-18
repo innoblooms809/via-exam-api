@@ -31,7 +31,7 @@ const createClass = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 // ─── GET ALL CLASSES ──────────────────────────────────────────────────────────
 const getAllClasses = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const result = yield class_service_1.default.getAllClasses(req.query, req.viaExamUser);
+        const result = yield class_service_1.default.getAllClasses(req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
     catch (error) {

@@ -187,10 +187,14 @@ import {
   UniqueConstraintError,
   ValidationError,
 } from "sequelize";
-import { QuestionPaperService } from "../../services/questionPaper.service";
+import { QuestionPaperService } from "../../services/question-answer/questionPaper.service";
 import RegHelper from "../../utils/helper";
-import QuestionPaper from "../../modals/QuestionPaper.modal";
+import QuestionPaper from "../../modals/question-paper/QuestionPaper.modal";
 import Exam from "../../modals/Exam.modal";
+import httpStatus from "http-status";
+import Session from "../../modals/Session.modal";
+import Class from "../../modals/Class.modal";
+import Subject from "../../modals/Subject.modal";
 
 const getQuestionPaperErrorMessage = (error: any) => {
   if (error instanceof UniqueConstraintError) {
@@ -221,7 +225,7 @@ export const createQuestionPaper = async (
 ) => {
   try {
     const {
-      paperId,
+     
       instituteId,
       examId,
       teacherId,
@@ -251,19 +255,19 @@ export const createQuestionPaper = async (
       });
     }
 
-    if (paperId !== undefined && typeof paperId !== "string") {
-      return res.status(400).json({
-        message: "paperId must be a string",
-      });
-    }
+    // if (paperId !== undefined && typeof paperId !== "string") {
+    //   return res.status(400).json({
+    //     message: "paperId must be a string",
+    //   });
+    // }
 
     // ─────────────────────────────────────────────
     // 2. Call service
     // ─────────────────────────────────────────────
-
+  
    
       await QuestionPaperService.createQuestionPaper({
-        paperId,
+        paperId:"313d",
         instituteId,
         examId,
         teacherId,
@@ -276,7 +280,7 @@ export const createQuestionPaper = async (
     // ─────────────────────────────────────────────
     return res.status(201).json({
       message: "Question paper created successfully",
-      data: paperId,
+      // data: paperId,
     });
 
   } catch (error: any) {
@@ -405,79 +409,252 @@ export const getQuestionPaperBySet = async (
 
 // ─────────────────────────────────────────────────────────────────
 
-export const getQuestionPaperSets = async (
+
+
+// export const getQuestionPaperBySelection = async (
+//   req: Request,
+//   res: Response
+// ): Promise<any> => {
+//   try {
+//     const {
+//       classVal,
+//       subject,
+//       examType,
+//       teacherId,
+//       instituteId,
+//       session,
+//       paperSet,
+//     } = req.body;
+//     console.log("Received getQuestionPaperBySelection request with body:", req.body);
+
+//     // ─────────────────────────────────────────────
+//     // SINGLE QUERY (ALL JOINS)
+//     // ─────────────────────────────────────────────
+
+//     const examWithPaper = await Exam.findOne({
+//       where: {
+//         examType,
+//         teacherId,
+//         instituteId,
+//         isDeleted: false,
+//       },
+
+//       include: [
+//         {
+//           model: Session,
+//           as: "session",
+//           where: {
+//             sessionName: session,
+//             instituteId,
+//             isDeleted: false,
+//           },
+//         },
+//         {
+//           model: Class,
+//           as: "class",
+//           where: {
+//             className: classVal,
+//             instituteId,
+//             isDeleted: false,
+//           },
+//         },
+//         {
+//           model: Subject,
+//           as: "subject",
+//           where: {
+//             subjectName: subject,
+//             instituteId,
+//             isDeleted: false,
+//           },
+//         },
+//         {
+//           model: QuestionPaper,
+//           as: "questionPapers",
+//           required: false,
+//           where: {
+//             paperSet,
+//           },
+//         },
+//       ],
+//     });
+//     console.log("Exam with Paper:", examWithPaper)
+
+//     // ─────────────────────────────────────────────
+//     // NOT FOUND
+//     // ─────────────────────────────────────────────
+
+//     if (!examWithPaper) {
+//       return res.status(httpStatus.NOT_FOUND).json({
+//         error: true,
+//         message: "Exam or related data not found",
+//       });
+//     }
+
+//     // ─────────────────────────────────────────────
+//     // QUESTION PAPER CHECK
+//     // ─────────────────────────────────────────────
+
+//     const questionPaper = examWithPaper.questionPapers;
+
+//     if (!questionPaper) {
+//       return res.status(httpStatus.NOT_FOUND).json({
+//         error: true,
+//         message: "Question paper not found for selected exam",
+//       });
+//     }
+
+//     // ─────────────────────────────────────────────
+//     // SUCCESS
+//     // ─────────────────────────────────────────────
+
+//     return res.status(httpStatus.OK).json({
+//       error: false,
+//       message: "Question paper fetched successfully",
+//       data: examWithPaper,
+//     });
+
+//   } catch (error: any) {
+//     console.error("getQuestionPaperBySelection Error:", error);
+
+//     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+//       error: true,
+//       message: error.message,
+//     });
+//   }
+// };
+
+
+export const getQuestionPaperBySelection = async (
   req: Request,
   res: Response
 ): Promise<any> => {
   try {
+    const {
+      classVal,
+      subject,
+      examType,
+      teacherId,
+      instituteId,
+      session,
+      paperSet,
+    } = req.body;
 
-   
+    // ─────────────────────────────────────────────
+    // FIND SESSION + CLASS
+    // ─────────────────────────────────────────────
 
-    const classVal = String(req.query.classVal);
-const subject = String(req.query.subject);
-const session = String(req.query.session);
-const examType = String(req.query.examType);
+    const [sessionData, classData] = await Promise.all([
+      Session.findOne({
+        where: {
+          sessionName: session,
+          instituteId,
+          isDeleted: false,
+        },
+      }),
 
+      Class.findOne({
+        where: {
+          className: classVal,
+          instituteId,
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    if (!sessionData) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Session not found.",
+      });
+    }
+
+    if (!classData) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Class not found.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // FIND SUBJECT
+    // ─────────────────────────────────────────────
+
+    const subjectData = await Subject.findOne({
+      where: {
+        subjectName: subject,
+        classId: classData.classId,
+        instituteId,
+        isDeleted: false,
+      },
+    });
+
+    if (!subjectData) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Subject not found.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // FIND EXAM
+    // ─────────────────────────────────────────────
 
     const exam = await Exam.findOne({
       where: {
-        classVal,
-        subject,
-        session,
+        sessionId: sessionData.sessionId,
+        classId: classData.classId,
+        subjectId: subjectData.subjectId,
         examType,
+        teacherId,
+        instituteId,
         isDeleted: false,
       },
     });
 
     if (!exam) {
-      return res.status(404).json({
+      return res.status(httpStatus.NOT_FOUND).json({
         error: true,
-        message: "Exam not found",
+        message: "Exam not found.",
       });
     }
 
-    const papers = await QuestionPaper.findAll({
+    // ─────────────────────────────────────────────
+    // FIND QUESTION PAPER
+    // ─────────────────────────────────────────────
+
+    const questionPaper = await QuestionPaper.findOne({
       where: {
         examId: exam.examId,
+        paperSet,
       },
-
-      attributes: [
-        "paperSet",
-        "status",
-      ],
     });
 
-    return res.status(200).json({
+    if (!questionPaper) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Question paper not found for selected exam.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // SUCCESS
+    // ─────────────────────────────────────────────
+
+    return res.status(httpStatus.OK).json({
       error: false,
-
-      message:
-        "Question paper sets fetched successfully",
-
+      message: "Question paper fetched successfully.",
       data: {
-        examId: exam.examId,
-
-        subject: exam.subject,
-
-        classVal: exam.classVal,
-
-        session: exam.session,
-
-        examType: exam.examType,
-
-        availableSets: papers.map(
-          (item) => item.paperSet
-        ),
-
-        papers,
+        exam,
+        questionPaper,
       },
     });
 
-  } catch (e: any) {
+  } catch (error: any) {
+    console.error("getQuestionPaperBySelection Error:", error);
 
-    return res.status(500).json({
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
-      message: e.message,
+      message: `Something went wrong: ${error.message}`,
     });
-
   }
 };

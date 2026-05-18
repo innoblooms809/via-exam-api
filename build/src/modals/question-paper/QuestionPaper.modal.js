@@ -1,12 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_1 = require("sequelize");
-const sequelize_2 = require("../config/sequelize");
-const User_modal_1 = __importDefault(require("./User.modal"));
-const Exam_modal_1 = __importDefault(require("./Exam.modal"));
+const sequelize_2 = require("../../config/sequelize");
 // ─────────────────────────────────────────────────────────────────
 // Model Class
 // ─────────────────────────────────────────────────────────────────
@@ -123,23 +118,5 @@ QuestionPaper.init({
             unique: true,
         },
     ],
-});
-// ─────────────────────────────────────────────────────────────────
-// Associations
-// ─────────────────────────────────────────────────────────────────
-QuestionPaper.belongsTo(User_modal_1.default, {
-    foreignKey: "teacherId",
-    targetKey: "userId",
-    as: "teacher",
-});
-QuestionPaper.belongsTo(Exam_modal_1.default, {
-    foreignKey: "examId",
-    targetKey: "examId",
-    as: "exam",
-});
-Exam_modal_1.default.hasMany(QuestionPaper, {
-    foreignKey: "examId",
-    sourceKey: "examId",
-    as: "questionPapers",
 });
 exports.default = QuestionPaper;

@@ -12,27 +12,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const http_status_1 = __importDefault(require("http-status"));
 const exam_service_1 = __importDefault(require("../../services/exam.service"));
 const createExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log(req.user);
-        console.log("USER =", req.user);
-        console.log("VIA USER =", req.viaExamUser);
         const result = yield exam_service_1.default.createExam(req.body, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
-        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
     }
 });
 const getAllExams = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("USER =", req.viaExamUser);
         const result = yield exam_service_1.default.getAllExams(req.query, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
-        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
     }
 });
 const getExamById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -41,7 +46,11 @@ const getExamById = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
-        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
     }
 });
 const updateExamStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -50,7 +59,11 @@ const updateExamStatus = (req, res) => __awaiter(void 0, void 0, void 0, functio
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
-        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
     }
 });
 const updateExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -59,9 +72,9 @@ const updateExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
-        return res.status(500).json({
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
-            statusCode: 500,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
             message: "Internal Server Error",
         });
     }
@@ -72,7 +85,18 @@ const deleteExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
-        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
     }
 });
-exports.default = { createExam, getAllExams, getExamById, updateExamStatus, updateExam, deleteExam };
+exports.default = {
+    createExam,
+    getAllExams,
+    getExamById,
+    updateExamStatus,
+    updateExam,
+    deleteExam,
+};

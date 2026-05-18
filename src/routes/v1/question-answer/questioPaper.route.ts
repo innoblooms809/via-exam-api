@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { createQuestionPaper, getQuestionPaperSets, uploadImageController,getQuestionPaperBySet } from "../../controllers/question-Answer/questionPaper.controller";
-import { authenticate } from "../../middlewares/auth";
-import { questionPaperUpload } from "../../utils/multer";
-import { getExamBySelection, } from "../../controllers/exam/getExamBySelection";
+import { createQuestionPaper,  uploadImageController,getQuestionPaperBySelection } from "../../../controllers/question-Answer/questionPaper.controller";
+import { authenticate } from "../../../middlewares/auth";
+import { questionPaperUpload } from "../../../utils/multer";
+import {getExamBySelection } from "../../../controllers/exam/getExamBySelection"
 const router = Router();
 
 // POST /api/viaexam/question-papers
@@ -33,15 +33,12 @@ router.post(
 );
 
 
-router.get(
-  "/question-paper/sets",
-  getQuestionPaperSets
-);
 
-// router.get(
-//   "/question-paper/content",
-//   getQuestionPaperBySet
-// );
+
+router.get(
+  "/getQuestionPaperBySet",
+  getQuestionPaperBySelection
+);
 
 
 export default router;

@@ -4,9 +4,7 @@ import {
   Optional,
 } from "sequelize";
 
-import { sequelize } from "../config/sequelize";
-import User from "./User.modal";
-import Exam from "./Exam.modal";
+import { sequelize } from "../../config/sequelize";
 
 // ─────────────────────────────────────────────────────────────────
 // Attributes
@@ -244,27 +242,5 @@ QuestionPaper.init(
     ],
   }
 );
-
-// ─────────────────────────────────────────────────────────────────
-// Associations
-// ─────────────────────────────────────────────────────────────────
-
-QuestionPaper.belongsTo(User, {
-  foreignKey: "teacherId",
-  targetKey: "userId",
-  as: "teacher",
-});
-
-QuestionPaper.belongsTo(Exam, {
-  foreignKey: "examId",
-  targetKey: "examId",
-  as: "exam",
-});
-
-Exam.hasMany(QuestionPaper, {
-  foreignKey: "examId",
-  sourceKey: "examId",
-  as: "questionPapers",
-});
 
 export default QuestionPaper;

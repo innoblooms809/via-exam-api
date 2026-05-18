@@ -51,6 +51,7 @@ const createSection = (body, createdBy) => __awaiter(void 0, void 0, void 0, fun
         const exists = yield Section_modal_1.default.findOne({
             where: {
                 classId: body.classId,
+                instituteId: createdBy.instituteId,
                 sectionName: body.sectionName,
                 isDeleted: false,
             },
@@ -62,12 +63,28 @@ const createSection = (body, createdBy) => __awaiter(void 0, void 0, void 0, fun
                 message: "Section already exists.",
             };
         }
+        let teacher = null;
+        if (body.classTeacherId) {
+            teacher = yield User_modal_1.default.findOne({
+                where: {
+                    userId: body.classTeacherId,
+                    instituteId: createdBy.instituteId,
+                    isDeleted: false,
+                },
+            });
+            if (!teacher) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.NOT_FOUND,
+                    message: "Teacher not found.",
+                };
+            }
+        }
         const sectionId = yield helper_1.default.generateUserId();
         const newSection = yield Section_modal_1.default.create({
             sectionId,
             classId: body.classId,
             instituteId: createdBy.instituteId,
-            sessionId: classData.sessionId,
             sectionName: body.sectionName,
             classTeacherId: body.classTeacherId || null,
         });
@@ -169,8 +186,9 @@ const getSectionById = (sectionId, createdBy) => __awaiter(void 0, void 0, void 
 });
 // ─── UPDATE SECTION ───────────────────────────────────────────────────────────
 const updateSection = (sectionId, body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
     try {
+        const hasSectionName = Object.prototype.hasOwnProperty.call(body, "sectionName");
+        const normalizedSectionName = typeof body.sectionName === "string" ? body.sectionName.trim() : undefined;
         const section = yield Section_modal_1.default.findOne({
             where: {
                 sectionId,
@@ -185,9 +203,63 @@ const updateSection = (sectionId, body, createdBy) => __awaiter(void 0, void 0, 
                 message: "Section not found.",
             };
         }
+        if (hasSectionName && !normalizedSectionName) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "sectionName cannot be empty.",
+            };
+        }
+        if (normalizedSectionName) {
+            const exists = yield Section_modal_1.default.findOne({
+                where: {
+                    classId: section.classId,
+                    instituteId: createdBy.instituteId,
+                    sectionName: normalizedSectionName,
+                    isDeleted: false,
+                },
+            });
+            if (exists && exists.sectionId !== sectionId) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Section name already exists in this class.",
+                };
+            }
+        }
+        if (body.classTeacherId) {
+            const teacher = yield User_modal_1.default.findOne({
+                where: {
+                    userId: body.classTeacherId,
+                    instituteId: createdBy.instituteId,
+                    isDeleted: false,
+                },
+            });
+            if (!teacher) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.NOT_FOUND,
+                    message: "Teacher not found.",
+                };
+            }
+        }
         yield section.update({
-            sectionName: (_a = body.sectionName) !== null && _a !== void 0 ? _a : section.sectionName,
-            classTeacherId: (_b = body.classTeacherId) !== null && _b !== void 0 ? _b : section.classTeacherId,
+            sectionName: normalizedSectionName !== undefined
+                ? normalizedSectionName
+                : section.sectionName,
+            classTeacherId: body.classTeacherId !== undefined
+                ? body.classTeacherId
+                : section.classTeacherId,
+        });
+        yield section.reload({
+            include: [
+                {
+                    model: User_modal_1.default,
+                    as: "classTeacher",
+                    attributes: ["userId", "userName", "emailId"],
+                    required: false,
+                },
+            ],
         });
         return {
             error: false,

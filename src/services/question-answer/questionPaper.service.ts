@@ -614,10 +614,10 @@
 
 
 
-import QuestionPaper from "../modals/QuestionPaper.modal"
-import Exam from "../modals/Exam.modal"
+import QuestionPaper from "../../modals/question-paper/QuestionPaper.modal"
+import Exam from "../../modals/Exam.modal"
 import { randomUUID } from "crypto";
-import RegHelper from "../utils/helper";
+import RegHelper from "../../utils/helper";
 
 interface CreateQuestionPaperDTO {
   paperId?: string;
@@ -634,72 +634,52 @@ export class QuestionPaperService {
   // ─────────────────────────────────────────────
 
   static async createQuestionPaper(data: CreateQuestionPaperDTO) {
-    const {
-      paperId,
-      instituteId,
-      examId,
-      teacherId,
-      paperSet,
-      content,
-    } = data;
 
-    // 1. Validate Exam exists
-     const exam = await Exam.findOne({
+  const {
+    instituteId,
+    examId,
+    teacherId,
+    paperSet,
+    content,
+  } = data;
+
+  const exam = await Exam.findOne({
     where: { examId },
   });
 
-    if (!exam) {
-      throw new Error("Exam not found");
-    }
-
-    const resolvedInstituteId = instituteId || exam.instituteId;
-    const resolvedTeacherId = teacherId || exam.teacherId;
-
-    // 2. Ensure institute/teacher match exam when provided
-    if (instituteId && exam.instituteId !== instituteId) {
-      throw new Error("Institute mismatch with Exam");
-    }
-
-    if (teacherId && exam.teacherId !== teacherId) {
-      throw new Error("Teacher mismatch with Exam");
-    }
-
-    // 3. Check duplicate paper set for same exam
-    const existing = await QuestionPaper.findOne({
-      where: {
-        examId,
-        paperSet,
-      },
-    });
-
-    if (existing) {
-      throw new Error(
-        `Question Paper Set ${paperSet} already exists for this exam`
-      );
-    }
-   
-
-    const resolvedPaperId = paperId?.trim() || `QP-${RegHelper.generateUserId()}`;
-
-    const existingPaperId = await QuestionPaper.findOne({
-      where: { paperId: resolvedPaperId },
-    });
-
-    if (existingPaperId) {
-      throw new Error("Question paper ID already exists");
-    }
-
-    // 4. Create Question Paper
-    const paper = await QuestionPaper.create({
-      paperId: resolvedPaperId,
-      instituteId: resolvedInstituteId,
-      examId,
-      teacherId: resolvedTeacherId,
-      paperSet,
-      content,
-      status: "DRAFT",
-    });
-
-    return paper;
+  if (!exam) {
+    throw new Error("Exam not found");
   }
+
+  const resolvedInstituteId = instituteId || exam.instituteId;
+  const resolvedTeacherId = teacherId || exam.teacherId;
+
+  const existing = await QuestionPaper.findOne({
+    where: {
+      examId,
+      paperSet,
+    },
+  });
+
+  if (existing) {
+    throw new Error(
+      `Question Paper Set ${paperSet} already exists for this exam`
+    );
+  }
+
+  const resolvedPaperId =
+    await RegHelper.generateUserId();
+
+  const paper = await QuestionPaper.create({
+    paperId: resolvedPaperId,
+    instituteId: resolvedInstituteId,
+    examId,
+    teacherId: resolvedTeacherId,
+    paperSet,
+    content,
+    status: "DRAFT",
+  });
+
+  return paper;
+}
 }

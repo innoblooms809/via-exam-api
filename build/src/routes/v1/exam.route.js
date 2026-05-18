@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const exam_controller_1 = __importDefault(require("../../controllers/exam/exam.controller"));
 const auth_1 = require("../../middlewares/auth");
+// import { getExamBySelection }      from "../../controllers/exam/getExamBySelection";
 // import { authenticate, authorize } from "../middlewares/auth";
 const router = (0, express_1.Router)();
 // Admin and Examiner can create/manage exams

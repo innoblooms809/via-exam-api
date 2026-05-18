@@ -4,7 +4,7 @@ import { sequelize } from "../config/sequelize";
 import Access from "../modals/Access.modal";
 import Exam from "../modals/Exam.modal";
 import Institute from "../modals/Institute.modal";
-import QuestionPaper from "../modals/QuestionPaper.modal";
+import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
 import Role from "../modals/Role.modal";
 import StudentProfile from "../modals/Student.modal";
 import TeacherProfile from "../modals/TeacherProfile.modal";
