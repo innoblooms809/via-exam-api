@@ -15,7 +15,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getQuestionPaperBySelection = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
+exports.getQuestionPaperUploads = exports.getQuestionPaperBySelection = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
 const sequelize_1 = require("sequelize");
 const questionPaper_service_1 = require("../../services/question-answer/questionPaper.service");
 const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-paper/QuestionPaper.modal"));
@@ -24,6 +24,8 @@ const http_status_1 = __importDefault(require("http-status"));
 const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
 const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
 const Subject_modal_1 = __importDefault(require("../../modals/Subject.modal"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const getQuestionPaperErrorMessage = (error) => {
     var _a, _b, _c;
     if (error instanceof sequelize_1.UniqueConstraintError) {
@@ -69,8 +71,7 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
         // 2. Call service
         // ─────────────────────────────────────────────
         yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
-            paperId: "313d",
-            instituteId,
+            paperId: instituteId,
             examId,
             teacherId,
             paperSet,
@@ -170,70 +171,86 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
     try {
         const { classVal, subject, examType, teacherId, instituteId, session, paperSet, } = req.body;
         // ─────────────────────────────────────────────
-        // SINGLE QUERY (ALL JOINS)
+        // FIND SESSION + CLASS
         // ─────────────────────────────────────────────
-        const examWithPaper = yield Exam_modal_1.default.findOne({
+        const [sessionData, classData] = yield Promise.all([
+            Session_modal_1.default.findOne({
+                where: {
+                    sessionName: session,
+                    instituteId,
+                    isDeleted: false,
+                },
+            }),
+            Class_modal_1.default.findOne({
+                where: {
+                    className: classVal,
+                    instituteId,
+                    isDeleted: false,
+                },
+            }),
+        ]);
+        if (!sessionData) {
+            return res.status(http_status_1.default.NOT_FOUND).json({
+                error: true,
+                message: "Session not found.",
+            });
+        }
+        if (!classData) {
+            return res.status(http_status_1.default.NOT_FOUND).json({
+                error: true,
+                message: "Class not found.",
+            });
+        }
+        // ─────────────────────────────────────────────
+        // FIND SUBJECT
+        // ─────────────────────────────────────────────
+        const subjectData = yield Subject_modal_1.default.findOne({
             where: {
+                subjectName: subject,
+                classId: classData.classId,
+                instituteId,
+                isDeleted: false,
+            },
+        });
+        if (!subjectData) {
+            return res.status(http_status_1.default.NOT_FOUND).json({
+                error: true,
+                message: "Subject not found.",
+            });
+        }
+        // ─────────────────────────────────────────────
+        // FIND EXAM
+        // ─────────────────────────────────────────────
+        const exam = yield Exam_modal_1.default.findOne({
+            where: {
+                sessionId: sessionData.sessionId,
+                classId: classData.classId,
+                subjectId: subjectData.subjectId,
                 examType,
                 teacherId,
                 instituteId,
                 isDeleted: false,
             },
-            include: [
-                {
-                    model: Session_modal_1.default,
-                    as: "session",
-                    where: {
-                        sessionName: session,
-                        instituteId,
-                        isDeleted: false,
-                    },
-                },
-                {
-                    model: Class_modal_1.default,
-                    as: "class",
-                    where: {
-                        className: classVal,
-                        instituteId,
-                        isDeleted: false,
-                    },
-                },
-                {
-                    model: Subject_modal_1.default,
-                    as: "subject",
-                    where: {
-                        subjectName: subject,
-                        instituteId,
-                        isDeleted: false,
-                    },
-                },
-                {
-                    model: QuestionPaper_modal_1.default,
-                    as: "questionPapers",
-                    required: false,
-                    where: {
-                        paperSet,
-                    },
-                },
-            ],
         });
-        // ─────────────────────────────────────────────
-        // NOT FOUND
-        // ─────────────────────────────────────────────
-        if (!examWithPaper) {
+        if (!exam) {
             return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
-                message: "Exam or related data not found",
+                message: "Exam not found.",
             });
         }
         // ─────────────────────────────────────────────
-        // QUESTION PAPER CHECK
+        // FIND QUESTION PAPER
         // ─────────────────────────────────────────────
-        const questionPaper = examWithPaper.questionPapers;
+        const questionPaper = yield QuestionPaper_modal_1.default.findOne({
+            where: {
+                examId: exam.examId,
+                paperSet,
+            },
+        });
         if (!questionPaper) {
             return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
-                message: "Question paper not found for selected exam",
+                message: "Question paper not found for selected exam.",
             });
         }
         // ─────────────────────────────────────────────
@@ -241,16 +258,46 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
         // ─────────────────────────────────────────────
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Question paper fetched successfully",
-            data: examWithPaper,
+            message: "Question paper fetched successfully.",
+            data: {
+                exam,
+                questionPaper,
+            },
         });
     }
     catch (error) {
         console.error("getQuestionPaperBySelection Error:", error);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
-            message: error.message,
+            message: `Something went wrong: ${error.message}`,
         });
     }
 });
 exports.getQuestionPaperBySelection = getQuestionPaperBySelection;
+const getQuestionPaperUploads = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const baseDir = path_1.default.join(process.cwd(), "uploads", "question-papers");
+        const listFiles = (dir, urlPath) => {
+            if (!fs_1.default.existsSync(dir))
+                return [];
+            return fs_1.default
+                .readdirSync(dir)
+                .filter((file) => fs_1.default.statSync(path_1.default.join(dir, file)).isFile())
+                .map((file) => `/uploads/question-papers/${urlPath}/${file}`);
+        };
+        return res.json({
+            error: false,
+            data: {
+                diagrams: listFiles(path_1.default.join(baseDir, "diagrams"), "diagrams"),
+                schoolLogos: listFiles(path_1.default.join(baseDir, "school-logos"), "school-logos"),
+            },
+        });
+    }
+    catch (e) {
+        return res.status(500).json({
+            error: true,
+            message: e.message,
+        });
+    }
+});
+exports.getQuestionPaperUploads = getQuestionPaperUploads;

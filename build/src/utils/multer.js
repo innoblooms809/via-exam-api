@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.questionPaperUpload = exports.instituteUpload = void 0;
+exports.answerPaperUpload = exports.questionPaperUpload = exports.instituteUpload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -69,5 +69,21 @@ exports.questionPaperUpload = (0, multer_1.default)({
     {
         name: "schoolLogo",
         maxCount: 1,
+    },
+]);
+exports.answerPaperUpload = (0, multer_1.default)({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+}).fields([
+    {
+        name: "diagram",
+        maxCount: 10,
+    },
+    {
+        name: "diagramUrls",
+        maxCount: 10,
     },
 ]);
