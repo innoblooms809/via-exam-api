@@ -16,7 +16,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createQuestionPaperAnswer = void 0;
+exports.uploadImageController = exports.createQuestionPaperAnswer = void 0;
 const stander_answer_service_1 = __importDefault(require("../../services/question-answer/stander-answer.service"));
 const createQuestionPaperAnswer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -56,3 +56,28 @@ const createQuestionPaperAnswer = (req, res) => __awaiter(void 0, void 0, void 0
     }
 });
 exports.createQuestionPaperAnswer = createQuestionPaperAnswer;
+const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const files = req.files;
+        const toUploadUrl = (file) => `/${file.path.replace(/\\/g, "/").replace(/^uploads\//, "uploads/")}`;
+        const diagramFiles = [
+            ...((files === null || files === void 0 ? void 0 : files.diagram) || []),
+            ...((files === null || files === void 0 ? void 0 : files.diagramUrls) || []),
+        ];
+        const diagramUrls = diagramFiles.map(toUploadUrl);
+        return res.status(200).json({
+            error: false,
+            message: "Images uploaded successfully",
+            data: {
+                diagramUrls,
+            },
+        });
+    }
+    catch (e) {
+        return res.status(500).json({
+            error: true,
+            message: e.message,
+        });
+    }
+});
+exports.uploadImageController = uploadImageController;

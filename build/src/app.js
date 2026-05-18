@@ -54,7 +54,14 @@ const allowCrossOriginUploads = (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
 };
-app.use("/v1/uploads", allowCrossOriginUploads, express_1.default.static(path_1.default.join(__dirname, "../uploads"), {
+const uploadsPath = path_1.default.resolve(process.cwd(), 'uploads');
+app.use('/uploads', allowCrossOriginUploads, express_1.default.static(uploadsPath, {
+    setHeaders: (res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+}));
+app.use('/v1/uploads', allowCrossOriginUploads, express_1.default.static(uploadsPath, {
     setHeaders: (res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
