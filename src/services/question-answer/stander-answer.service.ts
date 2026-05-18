@@ -43,6 +43,7 @@ const answerId = await RegHelper.generateUserId();
       });
 
       return result;
+      
     } catch (error: any) {
       throw new Error(error.message);
     }

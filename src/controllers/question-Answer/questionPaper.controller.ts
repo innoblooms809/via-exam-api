@@ -340,68 +340,68 @@ export const uploadImageController = async (
 
 //
 // ─────────────────────────────────────────────────────────────────
-export const getQuestionPaperBySet = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
+// export const getQuestionPaperBySet = async (
+//   req: Request,
+//   res: Response
+// ): Promise<any> => {
 
-  try {
+//   try {
 
-     const examId = String(req.query.examId);
-    const paperSet = String(req.query.paperSet);
+//      const examId = String(req.query.examId);
+//     const paperSet = String(req.query.paperSet);
 
 
-    if (!examId || !paperSet) {
+//     if (!examId || !paperSet) {
 
-      return res.status(400).json({
-        error: true,
-        message:
-          "examId and paperSet are required",
-      });
+//       return res.status(400).json({
+//         error: true,
+//         message:
+//           "examId and paperSet are required",
+//       });
 
-    }
+//     }
 
-    const paper =
-      await QuestionPaper.findOne({
-        where: {
-          examId,
-          paperSet,
-        },
+//     const paper =
+//       await QuestionPaper.findOne({
+//         where: {
+//           examId,
+//           paperSet,
+//         },
 
-        include: [
-          {
-            model: Exam,
-            as: "exam",
-          },
-        ],
-      });
+//         include: [
+//           {
+//             model: Exam,
+//             as: "exam",
+//           },
+//         ],
+//       });
 
-    if (!paper) {
+//     if (!paper) {
 
-      return res.status(404).json({
-        error: true,
-        message:
-          "Question paper not found",
-      });
+//       return res.status(404).json({
+//         error: true,
+//         message:
+//           "Question paper not found",
+//       });
 
-    }
+//     }
 
-    return res.status(200).json({
-      error: false,
-      message:
-        "Question paper fetched successfully",
-      data: paper,
-    });
+//     return res.status(200).json({
+//       error: false,
+//       message:
+//         "Question paper fetched successfully",
+//       data: paper,
+//     });
 
-  } catch (e: any) {
+//   } catch (e: any) {
 
-    return res.status(500).json({
-      error: true,
-      message: e.message,
-    });
+//     return res.status(500).json({
+//       error: true,
+//       message: e.message,
+//     });
 
-  }
-};
+//   }
+// };
 
 
 
