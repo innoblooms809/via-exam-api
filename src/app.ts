@@ -6,6 +6,7 @@ import httpStatus from 'http-status';
 import config from './config/config';
 import morgan from './config/morgan';
 import xss from './middlewares/xss';
+import cookieParser from 'cookie-parser';
 import { authLimiter } from './middlewares/rateLimiter';
 import routes from './routes/v1';
 import { errorConverter, errorHandler } from './middlewares/error';
@@ -33,6 +34,7 @@ app.use(express.json({limit: "60MB"}));
 
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // sanitize request data
 app.use(xss());
@@ -41,7 +43,21 @@ app.use(xss());
 app.use(compression());
 
 // enable cors
-app.use(cors());
+// app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
+
+app.options(
+  "*",
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.options('*', cors());
 app.use(session({
   secret: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',

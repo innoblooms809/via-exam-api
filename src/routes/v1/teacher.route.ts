@@ -11,7 +11,7 @@ const router = Router();
 router.post(
   "/createTeacher",
   authenticate,
-//   authorize(["ADMIN"]),
+  // authorize(["ADMIN"]),
   handleUploadFile.single("profilePhoto"),
   Controller.createTeacher
 );
