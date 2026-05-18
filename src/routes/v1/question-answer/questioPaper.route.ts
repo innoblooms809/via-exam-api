@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createQuestionPaper,  uploadImageController,getQuestionPaperBySelection } from "../../../controllers/question-Answer/questionPaper.controller";
+import { createQuestionPaper, getQuestionPaperUploads,  uploadImageController,getQuestionPaperBySelection } from "../../../controllers/question-Answer/questionPaper.controller";
 import { authenticate } from "../../../middlewares/auth";
 import { questionPaperUpload } from "../../../utils/multer";
 import {getExamBySelection } from "../../../controllers/exam/getExamBySelection"
@@ -32,10 +32,11 @@ router.post(
   uploadImageController
 );
 
+router.get("/uploads", getQuestionPaperUploads);
 
 
 
-router.get(
+router.post(
   "/getQuestionPaperBySet",
   getQuestionPaperBySelection
 );

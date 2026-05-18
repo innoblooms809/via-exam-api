@@ -195,6 +195,8 @@ import httpStatus from "http-status";
 import Session from "../../modals/Session.modal";
 import Class from "../../modals/Class.modal";
 import Subject from "../../modals/Subject.modal";
+import fs from "fs";
+import path from "path";
 
 const getQuestionPaperErrorMessage = (error: any) => {
   if (error instanceof UniqueConstraintError) {
@@ -265,9 +267,9 @@ export const createQuestionPaper = async (
     // 2. Call service
     // ─────────────────────────────────────────────
   
-   
+      
       await QuestionPaperService.createQuestionPaper({
-        paperId:"313d",
+        paperId: 
         instituteId,
         examId,
         teacherId,
@@ -411,117 +413,6 @@ export const getQuestionPaperBySet = async (
 
 
 
-// export const getQuestionPaperBySelection = async (
-//   req: Request,
-//   res: Response
-// ): Promise<any> => {
-//   try {
-//     const {
-//       classVal,
-//       subject,
-//       examType,
-//       teacherId,
-//       instituteId,
-//       session,
-//       paperSet,
-//     } = req.body;
-//     console.log("Received getQuestionPaperBySelection request with body:", req.body);
-
-//     // ─────────────────────────────────────────────
-//     // SINGLE QUERY (ALL JOINS)
-//     // ─────────────────────────────────────────────
-
-//     const examWithPaper = await Exam.findOne({
-//       where: {
-//         examType,
-//         teacherId,
-//         instituteId,
-//         isDeleted: false,
-//       },
-
-//       include: [
-//         {
-//           model: Session,
-//           as: "session",
-//           where: {
-//             sessionName: session,
-//             instituteId,
-//             isDeleted: false,
-//           },
-//         },
-//         {
-//           model: Class,
-//           as: "class",
-//           where: {
-//             className: classVal,
-//             instituteId,
-//             isDeleted: false,
-//           },
-//         },
-//         {
-//           model: Subject,
-//           as: "subject",
-//           where: {
-//             subjectName: subject,
-//             instituteId,
-//             isDeleted: false,
-//           },
-//         },
-//         {
-//           model: QuestionPaper,
-//           as: "questionPapers",
-//           required: false,
-//           where: {
-//             paperSet,
-//           },
-//         },
-//       ],
-//     });
-//     console.log("Exam with Paper:", examWithPaper)
-
-//     // ─────────────────────────────────────────────
-//     // NOT FOUND
-//     // ─────────────────────────────────────────────
-
-//     if (!examWithPaper) {
-//       return res.status(httpStatus.NOT_FOUND).json({
-//         error: true,
-//         message: "Exam or related data not found",
-//       });
-//     }
-
-//     // ─────────────────────────────────────────────
-//     // QUESTION PAPER CHECK
-//     // ─────────────────────────────────────────────
-
-//     const questionPaper = examWithPaper.questionPapers;
-
-//     if (!questionPaper) {
-//       return res.status(httpStatus.NOT_FOUND).json({
-//         error: true,
-//         message: "Question paper not found for selected exam",
-//       });
-//     }
-
-//     // ─────────────────────────────────────────────
-//     // SUCCESS
-//     // ─────────────────────────────────────────────
-
-//     return res.status(httpStatus.OK).json({
-//       error: false,
-//       message: "Question paper fetched successfully",
-//       data: examWithPaper,
-//     });
-
-//   } catch (error: any) {
-//     console.error("getQuestionPaperBySelection Error:", error);
-
-//     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-//       error: true,
-//       message: error.message,
-//     });
-//   }
-// };
 
 
 export const getQuestionPaperBySelection = async (
@@ -655,6 +546,38 @@ export const getQuestionPaperBySelection = async (
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       message: `Something went wrong: ${error.message}`,
+    });
+  }
+};
+
+
+
+
+export const getQuestionPaperUploads = async (req: Request, res: Response) => {
+  try {
+    const baseDir = path.join(process.cwd(), "uploads", "question-papers");
+
+    const listFiles = (dir: string, urlPath: string): string[] => {
+      if (!fs.existsSync(dir)) return [];
+
+      return fs
+        .readdirSync(dir)
+        .filter((file) => fs.statSync(path.join(dir, file)).isFile())
+        .map((file) => `/uploads/question-papers/${urlPath}/${file}`);
+    };
+
+    return res.json({
+      error: false,
+      data: {
+        diagrams: listFiles(path.join(baseDir, "diagrams"), "diagrams"),
+        schoolLogos: listFiles(path.join(baseDir, "school-logos"), "school-logos"),
+      },
+    });
+
+  } catch (e: any) {
+    return res.status(500).json({
+      error: true,
+      message: e.message,
     });
   }
 };
