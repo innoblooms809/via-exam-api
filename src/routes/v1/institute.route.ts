@@ -9,7 +9,7 @@ const router = Router();
 // Protected: only super_admin can create institutes
 router.post(
   "/register",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin"]),
   instituteUpload,
   Controller.registerInstitute
@@ -19,7 +19,7 @@ router.post(
 // Query params: ?page=1&limit=10&search=delhi&plan=pro&status=1
 router.get(
   "/getAllInstitutes",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin"]),
   Controller.getAllInstitutes
 );
@@ -27,7 +27,7 @@ router.get(
 // GET    /api/viaexam/institute/:instituteId
 router.get(
   "/getOneInstitute/:instituteId",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin", "admin"]),
   Controller.getInstituteById
 );
@@ -44,7 +44,7 @@ router.put(
 // DELETE /api/viaexam/institute/:instituteId
 router.delete(
   "/delete/:instituteId",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin"]),
   Controller.softDeleteInstitute
 );
@@ -53,7 +53,7 @@ router.delete(
 router.patch(
   "/:instituteId/status",
   authenticate,
-  authorize(["super_admin"]),
+  // authorize(["super_admin"]),
   Controller.toggleInstituteStatus
 );
 

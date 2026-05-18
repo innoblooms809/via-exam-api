@@ -85,7 +85,8 @@ const loginViaExamUser = async (
     // Set tokens as httpOnly cookies
     res.cookie("accessToken", token.access.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
+      // secure: process.env.NODE_ENV === "production",
       maxAge: config.jwt.accessExpirationMinutes * 60 * 1000, // Convert minutes to milliseconds
       sameSite: "lax",
     });
