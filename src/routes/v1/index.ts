@@ -11,6 +11,7 @@ import sessionRoutes from "./session.route";
 import classRoutes from "./class.route";
 import sectionRoutes from "./section.route";
 import subjectRoutes from "./subject.route";
+import scannerRoutes from "./scanner.route";
 import { session } from "passport";
 import standeranswerRoutes from "./question-answer/stander-answer.routes";
 // import studentRoutes from './student.route'
@@ -62,7 +63,11 @@ const defaultRoutes = [
   {
     path: "/question-paper-answers",
     route: standeranswerRoutes,
-  }
+  },
+  {
+    path: "/scanner",
+    route: scannerRoutes,
+  },
   
   // {
   //   path: '/captcha',
