@@ -1,6 +1,6 @@
 import { Router } from "express";
 import Controller from "../../controllers/student.controller";
-// import { authenticate, authorize } from "../middlewares/auth";
+import { authenticate, authorize } from "../../middlewares/auth";
 // import  handleUploadFile  from "../../utils/multer";
 
 const router = Router();
@@ -8,7 +8,7 @@ const router = Router();
 // POST   /v1/students
 router.post(
   "/",
-//   authenticate,
+  authenticate,
 //   authorize(["ADMIN"]),
 //   userUpload,
   Controller.createStudent
@@ -17,7 +17,7 @@ router.post(
 // POST   /v1/students/bulk
 router.post(
   "/bulk",
-//   authenticate,
+  authenticate,
 //   authorize(["ADMIN"]),
   Controller.bulkCreateStudents
 );
@@ -26,7 +26,7 @@ router.post(
 // ?search=john&className=Class 10&division=A&academicYear=2024-25
 router.get(
   "/",
-//   authenticate,
+  authenticate,
 //   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
   Controller.getAllStudents
 );
@@ -34,7 +34,7 @@ router.get(
 // GET    /v1/students/:userId
 router.get(
   "/:userId",
-//   authenticate,
+  authenticate,
 //   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
   Controller.getStudentById
 );
@@ -42,7 +42,7 @@ router.get(
 // PUT    /v1/students/:userId
 router.put(
   "/:userId",
-//   authenticate,
+  authenticate,
 //   authorize(["ADMIN"]),
 //   userUpload,
   Controller.updateStudent
@@ -51,7 +51,7 @@ router.put(
 // DELETE /v1/students/:userId
 router.delete(
   "/:userId",
-//   authenticate,
+  authenticate,
 //   authorize(["ADMIN"]),
   Controller.deleteStudent
 );

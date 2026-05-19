@@ -18,7 +18,7 @@ import Session from "../../modals/Session.modal"
       classVal,
       subject,
       examType,
-      teacherId,
+      // teacherId,
       instituteId,
       session,
     } = req.body;
@@ -128,7 +128,7 @@ import Session from "../../modals/Session.modal"
 
         examType,
 
-        teacherId,
+        // teacherId,
 
         instituteId,
 
