@@ -83,7 +83,7 @@ const defaultRoutes = [
     // {
     //   path: '/captcha',
     //   route: captchaRoutes
-    // }
+    // }  
 ];
 const devRoutes = [
     // routes available only in development mode
