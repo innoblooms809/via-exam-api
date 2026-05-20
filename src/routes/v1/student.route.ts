@@ -7,7 +7,7 @@ const router = Router();
 
 // POST   /v1/students
 router.post(
-  "/",
+  "/createStudent",
   authenticate,
 //   authorize(["ADMIN"]),
 //   userUpload,
@@ -16,7 +16,7 @@ router.post(
 
 // POST   /v1/students/bulk
 router.post(
-  "/bulk",
+  "/createBulkStudents",
   authenticate,
 //   authorize(["ADMIN"]),
   Controller.bulkCreateStudents
@@ -25,7 +25,7 @@ router.post(
 // GET    /v1/students
 // ?search=john&className=Class 10&division=A&academicYear=2024-25
 router.get(
-  "/",
+  "/getAllStudents",
   authenticate,
 //   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
   Controller.getAllStudents
@@ -33,7 +33,7 @@ router.get(
 
 // GET    /v1/students/:userId
 router.get(
-  "/:userId",
+  "/getStudentById/:userId",
   authenticate,
 //   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
   Controller.getStudentById
@@ -41,7 +41,7 @@ router.get(
 
 // PUT    /v1/students/:userId
 router.put(
-  "/:userId",
+  "/updateStudent/:userId",
   authenticate,
 //   authorize(["ADMIN"]),
 //   userUpload,
@@ -50,7 +50,7 @@ router.put(
 
 // DELETE /v1/students/:userId
 router.delete(
-  "/:userId",
+  "/deleteStudent/:userId",
   authenticate,
 //   authorize(["ADMIN"]),
   Controller.deleteStudent
