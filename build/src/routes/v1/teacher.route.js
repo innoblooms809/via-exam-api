@@ -12,7 +12,7 @@ const router = (0, express_1.Router)();
 // All routes are admin only
 // POST   /v1/teachers
 router.post("/createTeacher", auth_1.authenticate, 
-//   authorize(["ADMIN"]),
+// authorize(["ADMIN"]),
 uploadSingleFile_1.handleUploadFile.single("profilePhoto"), teacher_controller_1.default.createTeacher);
 // GET    /v1/teachers
 // ?search=john&isExaminer=true

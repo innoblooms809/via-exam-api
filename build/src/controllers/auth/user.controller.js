@@ -75,7 +75,8 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
         // Set tokens as httpOnly cookies
         res.cookie("accessToken", token.access.token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
+            // secure: process.env.NODE_ENV === "production",
             maxAge: config_1.default.jwt.accessExpirationMinutes * 60 * 1000,
             sameSite: "lax",
         });
