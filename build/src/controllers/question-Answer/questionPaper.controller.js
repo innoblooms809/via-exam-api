@@ -15,7 +15,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getQuestionPaperBySelection = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
+exports.getQuestionPaperUploads = exports.getQuestionPaperBySelection = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
 const sequelize_1 = require("sequelize");
 const questionPaper_service_1 = require("../../services/question-answer/questionPaper.service");
 const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-paper/QuestionPaper.modal"));
@@ -24,6 +24,8 @@ const http_status_1 = __importDefault(require("http-status"));
 const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
 const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
 const Subject_modal_1 = __importDefault(require("../../modals/Subject.modal"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const getQuestionPaperErrorMessage = (error) => {
     var _a, _b, _c;
     if (error instanceof sequelize_1.UniqueConstraintError) {
@@ -69,8 +71,7 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
         // 2. Call service
         // ─────────────────────────────────────────────
         yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
-            paperId: "313d",
-            instituteId,
+            paperId: instituteId,
             examId,
             teacherId,
             paperSet,
@@ -372,3 +373,30 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
     }
 });
 exports.getQuestionPaperBySelection = getQuestionPaperBySelection;
+const getQuestionPaperUploads = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const baseDir = path_1.default.join(process.cwd(), "uploads", "question-papers");
+        const listFiles = (dir, urlPath) => {
+            if (!fs_1.default.existsSync(dir))
+                return [];
+            return fs_1.default
+                .readdirSync(dir)
+                .filter((file) => fs_1.default.statSync(path_1.default.join(dir, file)).isFile())
+                .map((file) => `/uploads/question-papers/${urlPath}/${file}`);
+        };
+        return res.json({
+            error: false,
+            data: {
+                diagrams: listFiles(path_1.default.join(baseDir, "diagrams"), "diagrams"),
+                schoolLogos: listFiles(path_1.default.join(baseDir, "school-logos"), "school-logos"),
+            },
+        });
+    }
+    catch (e) {
+        return res.status(500).json({
+            error: true,
+            message: e.message,
+        });
+    }
+});
+exports.getQuestionPaperUploads = getQuestionPaperUploads;
