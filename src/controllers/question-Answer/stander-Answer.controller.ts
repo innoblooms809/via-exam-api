@@ -5,17 +5,23 @@
 // ======================================================
 
 import { Request, Response } from "express";
-
 import QuestionPaperAnswerService from "../../services/question-answer/stander-answer.service";
+import Session from "../../modals/Session.modal";
+import Class from "../../modals/Class.modal";
+import Subject from "../../modals/Subject.modal";
+import Exam from "../../modals/Exam.modal";
+import QuestionPaperAnswer from "../../modals/question-paper/stander-answer.model";
+import httpStatus from "http-status";
+import fs from "fs";
+import path from "path";
 
 export const createQuestionPaperAnswer = async (
-  req: Request,
+  req: any,
   res: Response
 ): Promise<any> => {
   try {
     const {
    
-      instituteId,
       paperId,
       examId,
       teacherId,
@@ -23,6 +29,8 @@ export const createQuestionPaperAnswer = async (
       answers,
       status,
     } = req.body;
+
+    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
 
     // BASIC VALIDATION
     if (
@@ -104,3 +112,166 @@ export const uploadImageController = async (
   }
 };
 
+export const getQuestionPaperAnswerBySelection = async (
+  req: any,
+  res: Response
+): Promise<any> => {
+  try {
+    const {
+      classVal,
+      subject,
+      examType,
+     
+      session,
+      paperSet,
+    } = req.body;
+
+    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
+
+    // ─────────────────────────────────────────────
+    // FIND SESSION + CLASS
+    // ─────────────────────────────────────────────
+
+    const [sessionData, classData] = await Promise.all([
+      Session.findOne({
+        where: {
+          sessionName: session,
+          instituteId,
+          isDeleted: false,
+        },
+      }),
+
+      Class.findOne({
+        where: {
+          className: classVal,
+          instituteId,
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    if (!sessionData) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Session not found.",
+      });
+    }
+
+    if (!classData) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Class not found.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // FIND SUBJECT
+    // ─────────────────────────────────────────────
+
+    const subjectData = await Subject.findOne({
+      where: {
+        subjectName: subject,
+        classId: classData.classId,
+        instituteId,
+        isDeleted: false,
+      },
+    });
+
+    if (!subjectData) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Subject not found.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // FIND EXAM
+    // ─────────────────────────────────────────────
+
+    const exam = await Exam.findOne({
+      where: {
+        sessionId: sessionData.sessionId,
+        classId: classData.classId,
+        subjectId: subjectData.subjectId,
+        examType,
+       
+        instituteId,
+        isDeleted: false,
+      },
+    });
+
+    if (!exam) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Exam not found.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // FIND QUESTION PAPER ANSWER
+    // ─────────────────────────────────────────────
+
+    const questionPaperAnswer = await QuestionPaperAnswer.findOne({
+      where: {
+        examId: exam.examId,
+        paperSet,
+      },
+    });
+
+    if (!questionPaperAnswer) {
+      return res.status(httpStatus.NOT_FOUND).json({
+        error: true,
+        message: "Question paper answer not found for selected exam.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // SUCCESS
+    // ─────────────────────────────────────────────
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Question paper answer fetched successfully.",
+      data: {
+        exam,
+        questionPaperAnswer,
+      },
+    });
+
+  } catch (error: any) {
+    console.error("getQuestionPaperAnswerBySelection Error:", error);
+
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      message: `Something went wrong: ${error.message}`,
+    });
+  }
+};
+
+export const getQuestionPaperAnswerUploads = async (req: Request, res: Response) => {
+  try {
+    const baseDir = path.join(process.cwd(), "uploads", "question-papers");
+
+    const listFiles = (dir: string, urlPath: string): string[] => {
+      if (!fs.existsSync(dir)) return [];
+
+      return fs
+        .readdirSync(dir)
+        .filter((file) => fs.statSync(path.join(dir, file)).isFile())
+        .map((file) => `/uploads/question-papers/${urlPath}/${file}`);
+    };
+
+    return res.json({
+      error: false,
+      data: {
+        diagrams: listFiles(path.join(baseDir, "diagrams"), "diagrams"),
+      },
+    });
+
+  } catch (e: any) {
+    return res.status(500).json({
+      error: true,
+      message: e.message,
+    });
+  }
+};
