@@ -200,7 +200,9 @@ const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const result = yield user_service_1.default.viaExamUserCreate(req);
         if (!result.error) {
             // Reuse your existing mail helper
-            yield (0, mailHelper_1.sendEmailToNewUser)(Object.assign(Object.assign({}, req.body), { password: result.password }));
+            (0, mailHelper_1.sendEmailToNewUser)(Object.assign(Object.assign({}, req.body), { password: result.password })).catch((err) => {
+                console.error("Background seeding email dispatch failed:", err);
+            });
         }
         return res.status(result.statusCode).send(result);
     }

@@ -229,7 +229,9 @@ const createViaExamUser = async (req: Request, res: Response): Promise<any> => {
 
     if (!result.error) {
       // Reuse your existing mail helper
-      await sendEmailToNewUser({ ...req.body, password: result.password });
+      sendEmailToNewUser({ ...req.body, password: result.password }).catch((err) => {
+        console.error("Background seeding email dispatch failed:", err);
+      });
     }
 
     return res.status(result.statusCode).send(result);

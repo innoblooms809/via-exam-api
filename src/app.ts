@@ -43,24 +43,18 @@ app.use(xss());
 app.use(compression());
 
 // enable cors
-// app.use(cors());
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: config.corsOrigin.includes(',') 
+    ? config.corsOrigin.split(',').map((o: string) => o.trim()) 
+    : config.corsOrigin,
+  credentials: true,
+};
 
-app.options(
-  "*",
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 app.use(session({
-  secret: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',
+  secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false,
 }));
