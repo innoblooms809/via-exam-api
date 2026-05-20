@@ -8,6 +8,7 @@ import exclude from "../utils/exclude";
 import { sequelize } from "../config/sequelize";
 import { Op } from "sequelize";
 import { sendAdminCredentials } from "../utils/mailHelper";
+import config from "../config/config";
 
 const registerInstitute = async (body: any, files: any): Promise<any> => {
   // Use a transaction — if admin user creation fails, institute also rolls back
@@ -157,9 +158,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     //   body.slug
     // }/auth/signin`;
 
-    const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${
-  body.slug
-}/auth/signin`;
+    const loginUrl = `${config.frontendUrl}/${body.slug}/auth/signin`;
 
     await sendAdminCredentials({
       adminName: `${body.adminFirstName} ${body.adminLastName}`,
@@ -258,7 +257,7 @@ const getAllInstitutes = async (query: any): Promise<any> => {
 
 const getInstituteById = async (identifier: string): Promise<any> => {
   try {
-    console.log("🔍 Looking for:", identifier);
+
 
     // Build where clause — supports both numeric id (4) and instituteId (IB726935)
     const where: any = {
@@ -272,7 +271,7 @@ const getInstituteById = async (identifier: string): Promise<any> => {
     // ✅ Using the where clause we built above (was using wrong variable before)
     const institute = await Institute.findOne({ where });
 
-    console.log("📦 Found:", institute ? institute.instituteId : "NULL");
+
 
     if (!institute) {
       return {

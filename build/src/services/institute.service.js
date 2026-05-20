@@ -22,8 +22,9 @@ const exclude_1 = __importDefault(require("../utils/exclude"));
 const sequelize_1 = require("../config/sequelize");
 const sequelize_2 = require("sequelize");
 const mailHelper_1 = require("../utils/mailHelper");
+const config_1 = __importDefault(require("../config/config"));
 const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
+    var _a, _b, _c;
     // Use a transaction — if admin user creation fails, institute also rolls back
     const t = yield sequelize_1.sequelize.transaction();
     try {
@@ -146,7 +147,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
         // const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3040"}/${
         //   body.slug
         // }/auth/signin`;
-        const loginUrl = `${(_c = process.env.FRONTEND_URL) !== null && _c !== void 0 ? _c : "http://localhost:3000"}/${body.slug}/auth/signin`;
+        const loginUrl = `${config_1.default.frontendUrl}/${body.slug}/auth/signin`;
         yield (0, mailHelper_1.sendAdminCredentials)({
             adminName: `${body.adminFirstName} ${body.adminLastName}`,
             adminEmail: body.adminEmail,
@@ -163,7 +164,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 institute,
                 admin: adminResponse,
                 // loginUrl: `${process.env.FRONTEND_URL}/${body.slug}/auth/signin`,
-                loginUrl: `${(_d = process.env.FRONTEND_URL) !== null && _d !== void 0 ? _d : "http://localhost:3000"}/${body.slug}/auth/signin`,
+                loginUrl: `${(_c = process.env.FRONTEND_URL) !== null && _c !== void 0 ? _c : "http://localhost:3000"}/${body.slug}/auth/signin`,
                 logoUrl,
             },
         };
@@ -235,7 +236,6 @@ const getAllInstitutes = (query) => __awaiter(void 0, void 0, void 0, function* 
 // Also returns the admin user linked to this institute
 const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("🔍 Looking for:", identifier);
         // Build where clause — supports both numeric id (4) and instituteId (IB726935)
         const where = {
             isDeleted: false,
@@ -246,7 +246,6 @@ const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, funct
         };
         // ✅ Using the where clause we built above (was using wrong variable before)
         const institute = yield Institute_modal_1.default.findOne({ where });
-        console.log("📦 Found:", institute ? institute.instituteId : "NULL");
         if (!institute) {
             return {
                 error: true,
@@ -288,7 +287,7 @@ const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, funct
 // Update institute details + optionally update logo/banner
 // Does NOT update admin credentials here (separate API for that)
 const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
+    var _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
     try {
         const institute = yield Institute_modal_1.default.findOne({
             where: { instituteId, isDeleted: false },
@@ -333,31 +332,31 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
             }
         }
         // Handle new file uploads â€” keep old ones if no new file sent
-        const logoUrl = ((_e = files === null || files === void 0 ? void 0 : files.logo) === null || _e === void 0 ? void 0 : _e[0])
+        const logoUrl = ((_d = files === null || files === void 0 ? void 0 : files.logo) === null || _d === void 0 ? void 0 : _d[0])
             ? `/${files.logo[0].path.replace(/\\/g, "/")}`
             : institute.logoUrl;
-        const bannerUrl = ((_f = files === null || files === void 0 ? void 0 : files.banner) === null || _f === void 0 ? void 0 : _f[0])
+        const bannerUrl = ((_e = files === null || files === void 0 ? void 0 : files.banner) === null || _e === void 0 ? void 0 : _e[0])
             ? `/${files.banner[0].path.replace(/\\/g, "/")}`
             : institute.bannerUrl;
         // Only update fields that are sent in body
         yield institute.update({
-            instituteName: (_g = body.instituteName) !== null && _g !== void 0 ? _g : institute.instituteName,
-            instituteType: (_h = body.instituteType) !== null && _h !== void 0 ? _h : institute.instituteType,
-            boardType: (_j = body.boardType) !== null && _j !== void 0 ? _j : institute.boardType,
-            registrationNumber: (_k = body.registrationNumber) !== null && _k !== void 0 ? _k : institute.registrationNumber,
-            establishedYear: (_l = body.establishedYear) !== null && _l !== void 0 ? _l : institute.establishedYear,
-            websiteUrl: (_m = body.websiteUrl) !== null && _m !== void 0 ? _m : institute.websiteUrl,
-            slug: (_o = body.slug) !== null && _o !== void 0 ? _o : institute.slug,
-            contactPersonName: (_p = body.contactPersonName) !== null && _p !== void 0 ? _p : institute.contactPersonName,
-            contactEmail: (_q = body.contactEmail) !== null && _q !== void 0 ? _q : institute.contactEmail,
-            contactPhone: (_r = body.contactPhone) !== null && _r !== void 0 ? _r : institute.contactPhone,
-            alternatePhone: (_s = body.alternatePhone) !== null && _s !== void 0 ? _s : institute.alternatePhone,
-            addressLine1: (_t = body.addressLine1) !== null && _t !== void 0 ? _t : institute.addressLine1,
-            addressLine2: (_u = body.addressLine2) !== null && _u !== void 0 ? _u : institute.addressLine2,
-            city: (_v = body.city) !== null && _v !== void 0 ? _v : institute.city,
-            state: (_w = body.state) !== null && _w !== void 0 ? _w : institute.state,
-            pincode: (_x = body.pincode) !== null && _x !== void 0 ? _x : institute.pincode,
-            plan: (_y = body.plan) !== null && _y !== void 0 ? _y : institute.plan,
+            instituteName: (_f = body.instituteName) !== null && _f !== void 0 ? _f : institute.instituteName,
+            instituteType: (_g = body.instituteType) !== null && _g !== void 0 ? _g : institute.instituteType,
+            boardType: (_h = body.boardType) !== null && _h !== void 0 ? _h : institute.boardType,
+            registrationNumber: (_j = body.registrationNumber) !== null && _j !== void 0 ? _j : institute.registrationNumber,
+            establishedYear: (_k = body.establishedYear) !== null && _k !== void 0 ? _k : institute.establishedYear,
+            websiteUrl: (_l = body.websiteUrl) !== null && _l !== void 0 ? _l : institute.websiteUrl,
+            slug: (_m = body.slug) !== null && _m !== void 0 ? _m : institute.slug,
+            contactPersonName: (_o = body.contactPersonName) !== null && _o !== void 0 ? _o : institute.contactPersonName,
+            contactEmail: (_p = body.contactEmail) !== null && _p !== void 0 ? _p : institute.contactEmail,
+            contactPhone: (_q = body.contactPhone) !== null && _q !== void 0 ? _q : institute.contactPhone,
+            alternatePhone: (_r = body.alternatePhone) !== null && _r !== void 0 ? _r : institute.alternatePhone,
+            addressLine1: (_s = body.addressLine1) !== null && _s !== void 0 ? _s : institute.addressLine1,
+            addressLine2: (_t = body.addressLine2) !== null && _t !== void 0 ? _t : institute.addressLine2,
+            city: (_u = body.city) !== null && _u !== void 0 ? _u : institute.city,
+            state: (_v = body.state) !== null && _v !== void 0 ? _v : institute.state,
+            pincode: (_w = body.pincode) !== null && _w !== void 0 ? _w : institute.pincode,
+            plan: (_x = body.plan) !== null && _x !== void 0 ? _x : institute.plan,
             logoUrl,
             bannerUrl,
         });

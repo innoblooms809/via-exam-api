@@ -25,7 +25,10 @@ const envVarsSchema = Joi.object()
     SMTP_PORT: Joi.number().description('port to connect to the email server'),
     SMTP_USERNAME: Joi.string().description('username for email server'),
     SMTP_PASSWORD: Joi.string().description('password for email server'),
-    EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app')
+    EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app'),
+    CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
+    SESSION_SECRET: Joi.string().default('a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'),
+    FRONTEND_URL: Joi.string().default('http://localhost:3000')
   })
   .unknown();
 
@@ -40,6 +43,9 @@ if (error) {
 export default {
   env: envVars.NODE_ENV,
   port: envVars.PORT,
+  corsOrigin: envVars.CORS_ORIGIN,
+  sessionSecret: envVars.SESSION_SECRET,
+  frontendUrl: envVars.FRONTEND_URL,
   jwt: {
     secret: envVars.JWT_SECRET,
     accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,

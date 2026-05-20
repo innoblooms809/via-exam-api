@@ -1,8 +1,8 @@
 module.exports = {
     apps : [{
       script: 'yarn',
-          args:'run start',
-      watch: '.'
+      args:'run start',
+      watch: false
     }
    ],
   

@@ -19,7 +19,7 @@ router.get("/captcha", userController.getCaptcha);
  * type: 1 = email, 2 = mobile
  */
 router.post("/login",
-  //  authenticate,
+  
    userController.loginViaExamUser);
 
 /**
@@ -36,7 +36,7 @@ router.post("/refresh-token", userController.refreshAccessToken);
  */
 router.post(
   "/create-user",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin","admin"]), // ← only super_admin and admin can create users
   userController.createViaExamUser
 );
