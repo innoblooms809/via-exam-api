@@ -11,6 +11,7 @@ const http_status_1 = __importDefault(require("http-status"));
 const config_1 = __importDefault(require("./config/config"));
 const morgan_1 = __importDefault(require("./config/morgan"));
 const xss_1 = __importDefault(require("./middlewares/xss"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const rateLimiter_1 = require("./middlewares/rateLimiter");
 const v1_1 = __importDefault(require("./routes/v1"));
 const error_1 = require("./middlewares/error");
@@ -32,12 +33,21 @@ app.use((0, helmet_1.default)({
 app.use(express_1.default.json({ limit: "60MB" }));
 // parse urlencoded request body
 app.use(express_1.default.urlencoded({ extended: true }));
+app.use((0, cookie_parser_1.default)());
 // sanitize request data
 app.use((0, xss_1.default)());
 // gzip compression
 app.use((0, compression_1.default)());
 // enable cors
-app.use((0, cors_1.default)());
+// app.use(cors());
+app.use((0, cors_1.default)({
+    origin: "http://localhost:3000",
+    credentials: true,
+}));
+app.options("*", (0, cors_1.default)({
+    origin: "http://localhost:3000",
+    credentials: true,
+}));
 app.options('*', (0, cors_1.default)());
 app.use((0, express_session_1.default)({
     secret: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',

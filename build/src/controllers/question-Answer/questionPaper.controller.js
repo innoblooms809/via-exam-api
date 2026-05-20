@@ -15,7 +15,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getQuestionPaperUploads = exports.getQuestionPaperBySelection = exports.getQuestionPaperBySet = exports.uploadImageController = exports.createQuestionPaper = void 0;
+exports.getQuestionPaperUploads = exports.getQuestionPaperBySelection = exports.uploadImageController = exports.createQuestionPaper = void 0;
 const sequelize_1 = require("sequelize");
 const questionPaper_service_1 = require("../../services/question-answer/questionPaper.service");
 const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-paper/QuestionPaper.modal"));
@@ -44,8 +44,10 @@ const getQuestionPaperErrorMessage = (error) => {
     return error.message || "Something went wrong";
 };
 const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const { instituteId, examId, teacherId, paperSet, content, } = req.body;
+        const { examId, teacherId, paperSet, content, } = req.body;
+        const instituteId = ((_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.instituteId) || req.body.instituteId;
         // ─────────────────────────────────────────────
         // 1. Basic validation
         // ─────────────────────────────────────────────
@@ -93,7 +95,7 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
 });
 exports.createQuestionPaper = createQuestionPaper;
 const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _b;
     try {
         const files = req.files;
         const toUploadUrl = (file) => `/${file.path.replace(/\\/g, "/").replace(/^uploads\//, "uploads/")}`;
@@ -102,7 +104,7 @@ const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, fu
             ...((files === null || files === void 0 ? void 0 : files.diagramUrls) || []),
         ];
         const diagramUrls = diagramFiles.map(toUploadUrl);
-        const schoolLogo = ((_a = files === null || files === void 0 ? void 0 : files.schoolLogo) === null || _a === void 0 ? void 0 : _a[0])
+        const schoolLogo = ((_b = files === null || files === void 0 ? void 0 : files.schoolLogo) === null || _b === void 0 ? void 0 : _b[0])
             ? toUploadUrl(files.schoolLogo[0])
             : null;
         return res.status(200).json({
@@ -122,54 +124,12 @@ const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.uploadImageController = uploadImageController;
-//
-// ─────────────────────────────────────────────────────────────────
-const getQuestionPaperBySet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const examId = String(req.query.examId);
-        const paperSet = String(req.query.paperSet);
-        if (!examId || !paperSet) {
-            return res.status(400).json({
-                error: true,
-                message: "examId and paperSet are required",
-            });
-        }
-        const paper = yield QuestionPaper_modal_1.default.findOne({
-            where: {
-                examId,
-                paperSet,
-            },
-            include: [
-                {
-                    model: Exam_modal_1.default,
-                    as: "exam",
-                },
-            ],
-        });
-        if (!paper) {
-            return res.status(404).json({
-                error: true,
-                message: "Question paper not found",
-            });
-        }
-        return res.status(200).json({
-            error: false,
-            message: "Question paper fetched successfully",
-            data: paper,
-        });
-    }
-    catch (e) {
-        return res.status(500).json({
-            error: true,
-            message: e.message,
-        });
-    }
-});
-exports.getQuestionPaperBySet = getQuestionPaperBySet;
 // ─────────────────────────────────────────────────────────────────
 const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _c;
     try {
-        const { classVal, subject, examType, teacherId, instituteId, session, paperSet, } = req.body;
+        const { classVal, subject, examType, session, paperSet, } = req.body;
+        const instituteId = ((_c = req.viaExamUser) === null || _c === void 0 ? void 0 : _c.instituteId) || req.body.instituteId;
         // ─────────────────────────────────────────────
         // FIND SESSION + CLASS
         // ─────────────────────────────────────────────
@@ -227,7 +187,6 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
                 classId: classData.classId,
                 subjectId: subjectData.subjectId,
                 examType,
-                teacherId,
                 instituteId,
                 isDeleted: false,
             },
