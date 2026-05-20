@@ -39,16 +39,18 @@ app.use((0, xss_1.default)());
 // gzip compression
 app.use((0, compression_1.default)());
 // enable cors
-const corsOptions = {
-    origin: config_1.default.corsOrigin.includes(',')
-        ? config_1.default.corsOrigin.split(',').map((o) => o.trim())
-        : config_1.default.corsOrigin,
+// app.use(cors());
+app.use((0, cors_1.default)({
+    origin: "http://localhost:3000",
     credentials: true,
-};
-app.use((0, cors_1.default)(corsOptions));
-app.options("*", (0, cors_1.default)(corsOptions));
+}));
+app.options("*", (0, cors_1.default)({
+    origin: "http://localhost:3000",
+    credentials: true,
+}));
+app.options('*', (0, cors_1.default)());
 app.use((0, express_session_1.default)({
-    secret: config_1.default.sessionSecret,
+    secret: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',
     resave: false,
     saveUninitialized: false,
 }));

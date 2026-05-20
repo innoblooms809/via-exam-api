@@ -11,6 +11,8 @@ import sessionRoutes from "./session.route";
 import classRoutes from "./class.route";
 import sectionRoutes from "./section.route";
 import subjectRoutes from "./subject.route";
+import scannerRoutes from "./scanner.route";
+import studentRoutes from "./student.route";
 import { session } from "passport";
 import standeranswerRoutes from "./question-answer/stander-answer.routes";
 import healthRoutes from "./health.route";
@@ -67,7 +69,15 @@ const defaultRoutes = [
   {
     path: "/health",
     route: healthRoutes,
-  }
+  },
+  {
+    path: "/scanner",
+    route: scannerRoutes,
+  },
+  {
+    path: "/student",
+    route: studentRoutes,
+  },
   
   // {
   //   path: '/captcha',

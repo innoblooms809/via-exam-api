@@ -125,6 +125,105 @@ const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, fu
 });
 exports.uploadImageController = uploadImageController;
 // ─────────────────────────────────────────────────────────────────
+// export const getQuestionPaperBySelection = async (
+//   req: Request,
+//   res: Response
+// ): Promise<any> => {
+//   try {
+//     const {
+//       classVal,
+//       subject,
+//       examType,
+//       teacherId,
+//       instituteId,
+//       session,
+//       paperSet,
+//     } = req.body;
+//     console.log("Received getQuestionPaperBySelection request with body:", req.body);
+//     // ─────────────────────────────────────────────
+//     // SINGLE QUERY (ALL JOINS)
+//     // ─────────────────────────────────────────────
+//     const examWithPaper = await Exam.findOne({
+//       where: {
+//         examType,
+//         teacherId,
+//         instituteId,
+//         isDeleted: false,
+//       },
+//       include: [
+//         {
+//           model: Session,
+//           as: "session",
+//           where: {
+//             sessionName: session,
+//             instituteId,
+//             isDeleted: false,
+//           },
+//         },
+//         {
+//           model: Class,
+//           as: "class",
+//           where: {
+//             className: classVal,
+//             instituteId,
+//             isDeleted: false,
+//           },
+//         },
+//         {
+//           model: Subject,
+//           as: "subject",
+//           where: {
+//             subjectName: subject,
+//             instituteId,
+//             isDeleted: false,
+//           },
+//         },
+//         {
+//           model: QuestionPaper,
+//           as: "questionPapers",
+//           required: false,
+//           where: {
+//             paperSet,
+//           },
+//         },
+//       ],
+//     });
+//     console.log("Exam with Paper:", examWithPaper)
+//     // ─────────────────────────────────────────────
+//     // NOT FOUND
+//     // ─────────────────────────────────────────────
+//     if (!examWithPaper) {
+//       return res.status(httpStatus.NOT_FOUND).json({
+//         error: true,
+//         message: "Exam or related data not found",
+//       });
+//     }
+//     // ─────────────────────────────────────────────
+//     // QUESTION PAPER CHECK
+//     // ─────────────────────────────────────────────
+//     const questionPaper = examWithPaper.questionPapers;
+//     if (!questionPaper) {
+//       return res.status(httpStatus.NOT_FOUND).json({
+//         error: true,
+//         message: "Question paper not found for selected exam",
+//       });
+//     }
+//     // ─────────────────────────────────────────────
+//     // SUCCESS
+//     // ─────────────────────────────────────────────
+//     return res.status(httpStatus.OK).json({
+//       error: false,
+//       message: "Question paper fetched successfully",
+//       data: examWithPaper,
+//     });
+//   } catch (error: any) {
+//     console.error("getQuestionPaperBySelection Error:", error);
+//     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+//       error: true,
+//       message: error.message,
+//     });
+//   }
+// };
 const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _c;
     try {
