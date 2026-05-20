@@ -10,7 +10,7 @@ import Session from "../../modals/Session.modal"
 
 
   export const getExamBySelection = async (
-  req: Request,
+  req: any,
   res: Response
 ): Promise<any> => {
   try {
@@ -18,10 +18,10 @@ import Session from "../../modals/Session.modal"
       classVal,
       subject,
       examType,
-      teacherId,
-      instituteId,
       session,
     } = req.body;
+
+    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
 
     // ─────────────────────────────────────────────
     // Find Session + Class Together
@@ -128,7 +128,7 @@ import Session from "../../modals/Session.modal"
 
         examType,
 
-        teacherId,
+      
 
         instituteId,
 

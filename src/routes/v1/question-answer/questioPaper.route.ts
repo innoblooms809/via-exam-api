@@ -16,14 +16,14 @@ const router = Router();
 // POST /api/viaexam/question-papers/createQuestionPaper
 router.post(
   "/getExamBySelection",
-  // authenticate,
+  authenticate,
   getExamBySelection)
 
 
 
 router.post(
   "/createQuestionPaper",
-  // authenticate,
+  authenticate,
   createQuestionPaper
 );
 router.post(
@@ -38,6 +38,7 @@ router.get("/uploads", getQuestionPaperUploads);
 
 router.post(
   "/getQuestionPaperBySet",
+  authenticate,
   getQuestionPaperBySelection
 );
 
