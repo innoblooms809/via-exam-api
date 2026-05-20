@@ -100,7 +100,11 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
             error: false,
             statusCode: http_status_1.default.OK,
             message: "User logged in successfully",
-            data: userData
+            data: userData,
+            tokens: {
+                access: token.access,
+                refresh: token.refresh,
+            },
         });
     }
     catch (error) {

@@ -1,57 +1,40 @@
 "use strict";
-// import { Router } from "express";
-// import Controller from "../controllers/answerSheet.controller";
-// import { authenticate, authorize } from "../middlewares/auth";
-// const router = Router();
-// // ── Teacher routes ────────────────────────────────────────────────────────────
-// // Save draft answer sheet
-// router.post(
-//   "/",
-//   authenticate,
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const answerSheet_controller_1 = __importDefault(require("../../controllers/answerSheet.controller"));
+const auth_1 = require("../middlewares/auth");
+const router = (0, express_1.Router)();
+// ── Teacher routes ────────────────────────────────────────────────────────────
+// Save draft answer sheet
+router.post("/", auth_1.authenticate, 
 //   authorize(["TEACHER"]),
-//   Controller.saveAnswerSheet
-// );
-// // Submit for review
-// router.patch(
-//   "/:answerSheetId/submit",
-//   authenticate,
+answerSheet_controller_1.default.saveAnswerSheet);
+// Submit for review
+router.patch("/:answerSheetId/submit", auth_1.authenticate, 
 //   authorize(["TEACHER"]),
-//   Controller.submitAnswerSheet
-// );
-// // Get my answer sheet for a paper
-// router.get(
-//   "/my/:paperId",
-//   authenticate,
+answerSheet_controller_1.default.submitAnswerSheet);
+// Get my answer sheet for a paper
+router.get("/my/:paperId", auth_1.authenticate, 
 //   authorize(["TEACHER"]),
-//   Controller.getMyAnswerSheet
-// );
-// // ── Examiner/Admin routes ─────────────────────────────────────────────────────
-// // Get all submitted answer sheets
-// router.get(
-//   "/submitted",
-//   authenticate,
+answerSheet_controller_1.default.getMyAnswerSheet);
+// ── Examiner/Admin routes ─────────────────────────────────────────────────────
+// Get all submitted answer sheets
+router.get("/submitted", auth_1.authenticate, 
 //   authorize(["ADMIN", "EXAMINER"]),
-//   Controller.getSubmittedAnswerSheets
-// );
-// // Get one answer sheet
-// router.get(
-//   "/:answerSheetId",
-//   authenticate,
+answerSheet_controller_1.default.getSubmittedAnswerSheets);
+// Get one answer sheet
+router.get("/:answerSheetId", auth_1.authenticate, 
 //   authorize(["ADMIN", "EXAMINER"]),
-//   Controller.getAnswerSheetById
-// );
-// // Approve
-// router.patch(
-//   "/:answerSheetId/approve",
-//   authenticate,
+answerSheet_controller_1.default.getAnswerSheetById);
+// Approve
+router.patch("/:answerSheetId/approve", auth_1.authenticate, 
 //   authorize(["ADMIN", "EXAMINER"]),
-//   Controller.approveAnswerSheet
-// );
-// // Reject with note
-// router.patch(
-//   "/:answerSheetId/reject",
-//   authenticate,
+answerSheet_controller_1.default.approveAnswerSheet);
+// Reject with note
+router.patch("/:answerSheetId/reject", auth_1.authenticate, 
 //   authorize(["ADMIN", "EXAMINER"]),
-//   Controller.rejectAnswerSheet
-// );
-// export default router;
+answerSheet_controller_1.default.rejectAnswerSheet);
+exports.default = router;
