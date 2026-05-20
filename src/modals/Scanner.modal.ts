@@ -84,6 +84,7 @@ Scanner.init(
     indexes: [
       // Fast lookup: all sheets for a class+section+subject+exam combo
       {
+        name: "viaexam_answer_sheets_institute_id_class_id_section_subject_id_",
         fields: ["instituteId", "classId", "section", "subjectId", "examType"],
       },
       // Unique sheet per student per exam
