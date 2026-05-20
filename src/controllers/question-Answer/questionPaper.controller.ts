@@ -222,19 +222,20 @@ const getQuestionPaperErrorMessage = (error: any) => {
 
 
 export const createQuestionPaper = async (
-  req: Request,
+  req: any,
   res: Response
 ) => {
   try {
     const {
-     
-      instituteId,
+
       examId,
       teacherId,
       paperSet,
       content,
     } = req.body;
-    
+
+    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
+
 
     // ─────────────────────────────────────────────
     // 1. Basic validation
@@ -266,16 +267,16 @@ export const createQuestionPaper = async (
     // ─────────────────────────────────────────────
     // 2. Call service
     // ─────────────────────────────────────────────
-  
-      
-      await QuestionPaperService.createQuestionPaper({
-        paperId: 
+
+
+    await QuestionPaperService.createQuestionPaper({
+      paperId:
         instituteId,
-        examId,
-        teacherId,
-        paperSet,
-        content,
-      });
+      examId,
+      teacherId,
+      paperSet,
+      content,
+    });
 
     // ─────────────────────────────────────────────
     // 3. Response
@@ -338,70 +339,6 @@ export const uploadImageController = async (
 };
 
 
-//
-// ─────────────────────────────────────────────────────────────────
-// export const getQuestionPaperBySet = async (
-//   req: Request,
-//   res: Response
-// ): Promise<any> => {
-
-//   try {
-
-//      const examId = String(req.query.examId);
-//     const paperSet = String(req.query.paperSet);
-
-
-//     if (!examId || !paperSet) {
-
-//       return res.status(400).json({
-//         error: true,
-//         message:
-//           "examId and paperSet are required",
-//       });
-
-//     }
-
-//     const paper =
-//       await QuestionPaper.findOne({
-//         where: {
-//           examId,
-//           paperSet,
-//         },
-
-//         include: [
-//           {
-//             model: Exam,
-//             as: "exam",
-//           },
-//         ],
-//       });
-
-//     if (!paper) {
-
-//       return res.status(404).json({
-//         error: true,
-//         message:
-//           "Question paper not found",
-//       });
-
-//     }
-
-//     return res.status(200).json({
-//       error: false,
-//       message:
-//         "Question paper fetched successfully",
-//       data: paper,
-//     });
-
-//   } catch (e: any) {
-
-//     return res.status(500).json({
-//       error: true,
-//       message: e.message,
-//     });
-
-//   }
-// };
 
 
 
@@ -416,7 +353,7 @@ export const uploadImageController = async (
 
 
 export const getQuestionPaperBySelection = async (
-  req: Request,
+  req: any,
   res: Response
 ): Promise<any> => {
   try {
@@ -424,11 +361,12 @@ export const getQuestionPaperBySelection = async (
       classVal,
       subject,
       examType,
-      teacherId,
-      instituteId,
+    
       session,
       paperSet,
     } = req.body;
+
+    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
 
     // ─────────────────────────────────────────────
     // FIND SESSION + CLASS
@@ -496,7 +434,7 @@ export const getQuestionPaperBySelection = async (
         classId: classData.classId,
         subjectId: subjectData.subjectId,
         examType,
-        teacherId,
+      
         instituteId,
         isDeleted: false,
       },
