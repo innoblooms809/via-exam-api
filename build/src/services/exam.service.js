@@ -40,10 +40,6 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
                 status: 1,
             },
         });
-        console.log("Teacher Role =", teacherRole === null || teacherRole === void 0 ? void 0 : teacherRole.id);
-        console.log("Institute =", instituteId);
-        console.log("Teacher Name =", body.teacher);
-        console.log("Teacher =", teacher);
         if (!teacher) {
             return {
                 error: true,
