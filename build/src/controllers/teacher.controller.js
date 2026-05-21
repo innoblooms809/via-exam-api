@@ -16,15 +16,15 @@ const teacher_service_1 = __importDefault(require("../services/teacher.service")
 const mailHelper_1 = require("../utils/mailHelper");
 const createTeacher = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log(req.user);
-        console.log(req.body);
         const result = yield teacher_service_1.default.createTeacher(req.body, req.files, req.viaExamUser);
         if (!result.error) {
-            yield (0, mailHelper_1.sendEmailToNewUser)({
+            (0, mailHelper_1.sendEmailToNewUser)({
                 emailId: req.body.emailId,
                 phoneNumber: req.body.phoneNumber,
                 userName: `${req.body.firstName} ${req.body.lastName}`,
                 password: result.data.plainPassword,
+            }).catch((err) => {
+                console.error("Background email dispatch failed:", err);
             });
         }
         return res.status(result.statusCode).send(result);
@@ -39,6 +39,7 @@ const getAllTeachers = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
+        console.error("getAllTeachers Controller Error:", error);
         return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
     }
 });

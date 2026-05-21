@@ -5,8 +5,6 @@ import { sendEmailToNewUser } from "../utils/mailHelper";
 
 const createTeacher = async (req: any, res: Response): Promise<any> => {
   try {
-    console.log(req.user);
-console.log(req.body);
     const result = await TeacherService.createTeacher(
       req.body,
       req.files,
@@ -14,11 +12,13 @@ console.log(req.body);
     );
 
     if (!result.error) {
-      await sendEmailToNewUser({
+      sendEmailToNewUser({
         emailId:     req.body.emailId,
         phoneNumber: req.body.phoneNumber,
         userName:    `${req.body.firstName} ${req.body.lastName}`,
         password:    result.data.plainPassword,
+      }).catch((err) => {
+        console.error("Background email dispatch failed:", err);
       });
     }
 
@@ -33,6 +33,7 @@ const getAllTeachers = async (req: any, res: Response): Promise<any> => {
     const result = await TeacherService.getAllTeachers(req.viaExamUser, req.query);
     return res.status(result.statusCode).send(result);
   } catch (error) {
+    console.error("getAllTeachers Controller Error:", error);
     return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
   }
 };

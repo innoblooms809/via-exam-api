@@ -16,6 +16,8 @@ const storage = multer.diskStorage({
       folder = "uploads/question-papers/school-logos/";
     else if (["diagram", "diagramUrls"].includes(file.fieldname))
       folder = "uploads/question-papers/diagrams/";
+    else if (file.fieldname === "profilePhoto")
+      folder = "uploads/students/";
 
     ensureDir(folder);
     cb(null, folder);
@@ -35,6 +37,16 @@ const fileFilter = (req: any, file: any, cb: any) => {
     cb(new Error("Only JPG, PNG, WEBP allowed"), false);
   }
 };
+
+export const studentUpload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB max
+  },
+}).fields([
+  { name: "profilePhoto", maxCount: 1 },
+]);
 
 export const instituteUpload = multer({
   storage,

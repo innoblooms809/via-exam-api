@@ -20,10 +20,10 @@ const Subject_modal_1 = __importDefault(require("../../modals/Subject.modal"));
 const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
 const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
 const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const { classVal, subject, examType, 
-        // teacherId,
-        instituteId, session, } = req.body;
+        const { classVal, subject, examType, session, } = req.body;
+        const instituteId = ((_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.instituteId) || req.body.instituteId;
         // ─────────────────────────────────────────────
         // Find Session + Class Together
         // ─────────────────────────────────────────────
@@ -90,7 +90,6 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 classId: classData.classId,
                 subjectId: subjectData.subjectId,
                 examType,
-                // teacherId,
                 instituteId,
                 isDeleted: false,
             },

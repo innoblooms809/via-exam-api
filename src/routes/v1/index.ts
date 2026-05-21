@@ -15,6 +15,7 @@ import scannerRoutes from "./scanner.route";
 import studentRoutes from "./student.route";
 import { session } from "passport";
 import standeranswerRoutes from "./question-answer/stander-answer.routes";
+import healthRoutes from "./health.route";
 // import studentRoutes from './student.route'
 // import captchaRoutes from './captcha.route'
 
@@ -66,6 +67,10 @@ const defaultRoutes = [
     route: standeranswerRoutes,
   },
   {
+    path: "/health",
+    route: healthRoutes,
+  },
+  {
     path: "/scanner",
     route: scannerRoutes,
   },
@@ -77,7 +82,7 @@ const defaultRoutes = [
   // {
   //   path: '/captcha',
   //   route: captchaRoutes
-  // }
+  // }  
 ];
 
 const devRoutes = [

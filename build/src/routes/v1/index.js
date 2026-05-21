@@ -19,6 +19,7 @@ const subject_route_1 = __importDefault(require("./subject.route"));
 const scanner_route_1 = __importDefault(require("./scanner.route"));
 const student_route_1 = __importDefault(require("./student.route"));
 const stander_answer_routes_1 = __importDefault(require("./question-answer/stander-answer.routes"));
+const health_route_1 = __importDefault(require("./health.route"));
 // import studentRoutes from './student.route'
 // import captchaRoutes from './captcha.route'
 const router = express_1.default.Router();
@@ -68,6 +69,10 @@ const defaultRoutes = [
         route: stander_answer_routes_1.default,
     },
     {
+        path: "/health",
+        route: health_route_1.default,
+    },
+    {
         path: "/scanner",
         route: scanner_route_1.default,
     },
@@ -78,7 +83,7 @@ const defaultRoutes = [
     // {
     //   path: '/captcha',
     //   route: captchaRoutes
-    // }
+    // }  
 ];
 const devRoutes = [
     // routes available only in development mode

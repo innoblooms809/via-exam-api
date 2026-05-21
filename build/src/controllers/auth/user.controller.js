@@ -82,7 +82,7 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
         });
         res.cookie("refreshToken", token.refresh.token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             maxAge: config_1.default.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
             sameSite: "lax",
         });
@@ -100,7 +100,7 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
             error: false,
             statusCode: http_status_1.default.OK,
             message: "User logged in successfully",
-            data: userData
+            data: userData,
         });
     }
     catch (error) {
@@ -165,13 +165,13 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
         yield User_modal_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: user.userId } });
         res.cookie("accessToken", token.access.token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             maxAge: config_1.default.jwt.accessExpirationMinutes * 60 * 1000,
             sameSite: "lax",
         });
         res.cookie("refreshToken", token.refresh.token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             maxAge: config_1.default.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
             sameSite: "lax",
         });
@@ -200,7 +200,9 @@ const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const result = yield user_service_1.default.viaExamUserCreate(req);
         if (!result.error) {
             // Reuse your existing mail helper
-            yield (0, mailHelper_1.sendEmailToNewUser)(Object.assign(Object.assign({}, req.body), { password: result.password }));
+            (0, mailHelper_1.sendEmailToNewUser)(Object.assign(Object.assign({}, req.body), { password: result.password })).catch((err) => {
+                console.error("Background seeding email dispatch failed:", err);
+            });
         }
         return res.status(result.statusCode).send(result);
     }
@@ -223,12 +225,12 @@ const logoutViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
         // Clear access token cookie
         res.clearCookie("accessToken", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             sameSite: "lax",
         });
         res.clearCookie("refreshToken", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: false,
             sameSite: "lax",
         });
         const result = yield user_service_1.default.viaExamUserLogout(req.viaExamUser.userId);

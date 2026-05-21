@@ -1,7 +1,7 @@
 import { Router } from "express";
 import Controller from "../../controllers/student.controller";
 import { authenticate, authorize } from "../../middlewares/auth";
-// import  handleUploadFile  from "../../utils/multer";
+import { studentUpload } from "../../utils/multer";
 
 const router = Router();
 
@@ -10,9 +10,10 @@ router.post(
   "/createStudent",
   authenticate,
 //   authorize(["ADMIN"]),
-//   userUpload,
+  studentUpload,
   Controller.createStudent
 );
+
 
 // POST   /v1/students/bulk
 router.post(
@@ -44,7 +45,7 @@ router.put(
   "/updateStudent/:userId",
   authenticate,
 //   authorize(["ADMIN"]),
-//   userUpload,
+  studentUpload,
   Controller.updateStudent
 );
 
