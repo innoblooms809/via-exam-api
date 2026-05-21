@@ -6,13 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const student_controller_1 = __importDefault(require("../../controllers/student.controller"));
 const auth_1 = require("../../middlewares/auth");
-// import  handleUploadFile  from "../../utils/multer";
+const multer_1 = require("../../utils/multer");
 const router = (0, express_1.Router)();
 // POST   /v1/students
 router.post("/createStudent", auth_1.authenticate, 
 //   authorize(["ADMIN"]),
-//   userUpload,
-student_controller_1.default.createStudent);
+multer_1.studentUpload, student_controller_1.default.createStudent);
 // POST   /v1/students/bulk
 router.post("/createBulkStudents", auth_1.authenticate, 
 //   authorize(["ADMIN"]),
@@ -29,8 +28,7 @@ student_controller_1.default.getStudentById);
 // PUT    /v1/students/:userId
 router.put("/updateStudent/:userId", auth_1.authenticate, 
 //   authorize(["ADMIN"]),
-//   userUpload,
-student_controller_1.default.updateStudent);
+multer_1.studentUpload, student_controller_1.default.updateStudent);
 // DELETE /v1/students/:userId
 router.delete("/deleteStudent/:userId", auth_1.authenticate, 
 //   authorize(["ADMIN"]),

@@ -28,10 +28,7 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
         status: 1,
       },
     });
-    console.log("Teacher Role =", teacherRole?.id);
-    console.log("Institute =", instituteId);
-    console.log("Teacher Name =", body.teacher);
-    console.log("Teacher =", teacher);
+
 
     if (!teacher) {
       return {

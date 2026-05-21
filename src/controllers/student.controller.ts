@@ -10,11 +10,13 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
     );
 
     if (!result.error) {
-      await sendEmailToNewUser({
+      sendEmailToNewUser({
         emailId:     req.body.email,
         phoneNumber: req.body.mobile,
         userName:    `${req.body.firstName} ${req.body.lastName}`,
         password:    result.data.plainPassword,
+      }).catch((err) => {
+        console.error("Background student email dispatch failed:", err);
       });
     }
 

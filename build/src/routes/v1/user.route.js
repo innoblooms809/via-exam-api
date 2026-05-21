@@ -19,9 +19,7 @@ router.get("/captcha", user_controller_1.default.getCaptcha);
  * Body: { emailId, mobileNo, type, password, captcha }
  * type: 1 = email, 2 = mobile
  */
-router.post("/login", 
-//  authenticate,
-user_controller_1.default.loginViaExamUser);
+router.post("/login", user_controller_1.default.loginViaExamUser);
 /**
  * POST /api/viaexam/user/refresh-token
  * Reads refreshToken from httpOnly cookie and refreshes accessToken.
@@ -32,8 +30,7 @@ router.post("/refresh-token", user_controller_1.default.refreshAccessToken);
  * POST /api/viaexam/auth/create-user
  * Only super_admin can create ViaExam users
  */
-router.post("/create-user", 
-//   authenticate,
+router.post("/create-user", auth_1.authenticate, 
 //   authorize(["super_admin","admin"]), // ← only super_admin and admin can create users
 user_controller_1.default.createViaExamUser);
 /**

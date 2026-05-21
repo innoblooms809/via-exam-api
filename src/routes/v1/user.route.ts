@@ -35,7 +35,7 @@ router.post("/refresh-token", userController.refreshAccessToken);
  */
 router.post(
   "/create-user",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin","admin"]), // ← only super_admin and admin can create users
   userController.createViaExamUser
 );

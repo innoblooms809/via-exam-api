@@ -93,7 +93,7 @@ const loginViaExamUser = async (
 
     res.cookie("refreshToken", token.refresh.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       maxAge: config.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
       sameSite: "lax",
     });
@@ -114,7 +114,8 @@ const loginViaExamUser = async (
       error: false,
       statusCode: httpStatus.OK,
       message: "User logged in successfully",
-      data: userData
+      data: userData,
+      
     });
   } catch (error) {
     console.error(error);
@@ -191,14 +192,14 @@ const refreshAccessToken = async (req: Request, res: Response): Promise<any> => 
 
     res.cookie("accessToken", token.access.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure:false,
       maxAge: config.jwt.accessExpirationMinutes * 60 * 1000,
       sameSite: "lax",
     });
 
     res.cookie("refreshToken", token.refresh.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      httpOnly:true,
+      secure: false,
       maxAge: config.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
       sameSite: "lax",
     });
@@ -229,7 +230,9 @@ const createViaExamUser = async (req: Request, res: Response): Promise<any> => {
 
     if (!result.error) {
       // Reuse your existing mail helper
-      await sendEmailToNewUser({ ...req.body, password: result.password });
+      sendEmailToNewUser({ ...req.body, password: result.password }).catch((err) => {
+        console.error("Background seeding email dispatch failed:", err);
+      });
     }
 
     return res.status(result.statusCode).send(result);
@@ -252,15 +255,16 @@ const logoutViaExamUser = async (req: any, res: Response): Promise<any> => {
   try {
     // Clear access token cookie
     res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
+  httpOnly: true,
+  secure: false,
+  sameSite: "lax",
+});
+
+res.clearCookie("refreshToken", {
+  httpOnly: true,
+  secure: false,
+  sameSite: "lax",
+});
 
     const result = await Service.viaExamUserLogout(req.viaExamUser.userId);
     return res.status(result.statusCode).send(result);
