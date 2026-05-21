@@ -20,6 +20,22 @@ const registerInstitute = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// RESEND ADMIN CREDENTIALS
+const resendAdminCredentials = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await InstituteService.resendAdminCredentials(
+      req.params.instituteId,
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 // ─── Get All ──────────────────────────────────────────────────────────────────
 const getAllInstitutes = async (req: any, res: Response): Promise<any> => {
   try {
@@ -118,4 +134,5 @@ export default {
   updateInstitute,
   softDeleteInstitute,
   toggleInstituteStatus,
+  resendAdminCredentials,
 };
