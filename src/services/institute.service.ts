@@ -9,6 +9,8 @@ import { sequelize } from "../config/sequelize";
 import { Op } from "sequelize";
 import { sendAdminCredentials } from "../utils/mailHelper";
 
+
+// ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
 const registerInstitute = async (body: any, files: any): Promise<any> => {
   // Use a transaction — if admin user creation fails, institute also rolls back
   const t = await sequelize.transaction();
@@ -186,6 +188,75 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     };
   } catch (e: any) {
     await t.rollback();
+    console.error(e);
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
+
+// ----------RESEND ADMIN CREDENTIALS EMAIL (IF NOT RECEIVED)----------------
+const resendAdminCredentials = async (instituteId: string): Promise<any> => {
+  try {
+    // 1. Find institute
+    const institute = await Institute.findOne({
+      where: { instituteId, status: 1 },
+    });
+
+    if (!institute) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Institute not found.",
+      };
+    }
+
+    // 2. Find admin user of this institute
+    const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
+    const adminUser = await UserModal.findOne({
+      where: { instituteId, roleId: adminRole?.id, status: 1 },
+    });
+
+    if (!adminUser) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Admin user not found for this institute.",
+      };
+    }
+
+    // 3. Generate a new password
+    const newPassword = RegHelper.generateTempPassword(); // see helper below
+    const encrypted = await EncryptPassword.encryptPassword(newPassword);
+
+    // 4. Update password in DB
+    await adminUser.update({ password: encrypted });
+
+    // 5. Build login URL same way as registration
+    const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${
+      institute.slug
+    }/auth/signin`;
+
+    // 6. Re-send credentials email
+    await sendAdminCredentials({
+      adminName: adminUser.userName,
+      adminEmail: adminUser.emailId,
+      adminPassword: newPassword,       // plain — email only, never stored
+      instituteName: institute.instituteName,
+      loginUrl,
+      plan: institute.plan,
+    });
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: `Credentials resent to ${adminUser.emailId} successfully.`,
+      data: { email: adminUser.emailId },
+    };
+  } catch (e: any) {
     console.error(e);
     return {
       error: true,
@@ -514,4 +585,5 @@ export default {
   updateInstitute,
   softDeleteInstitute,
   toggleInstituteStatus,
+  resendAdminCredentials,
 };

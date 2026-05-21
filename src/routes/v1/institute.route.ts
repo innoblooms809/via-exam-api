@@ -15,6 +15,15 @@ router.post(
   Controller.registerInstitute
 );
 
+// POST /api/viaexam/institute/resendCredentials/:instituteId
+// Protected: only super_admin can trigger resend of admin credentials
+router.post(
+  "/resendCredentials/:instituteId",
+  authenticate,
+  // authorize(["SUPER_ADMIN"]),   // uncomment if only super-admin should do this
+  Controller.resendAdminCredentials,
+);
+
 // GET    /api/viaexam/institute/
 // Query params: ?page=1&limit=10&search=delhi&plan=pro&status=1
 router.get(

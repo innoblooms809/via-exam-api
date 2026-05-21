@@ -19,7 +19,6 @@ router.get("/captcha", userController.getCaptcha);
  * type: 1 = email, 2 = mobile
  */
 router.post("/login",
-  //  authenticate,
    userController.loginViaExamUser);
 
 /**
