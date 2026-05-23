@@ -1,0 +1,30 @@
+[33ma7301f6c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mrufiadah[m[33m, [m[1;31morigin/rufiadah[m[33m)[m HEAD@{0}: commit (merge): Merge branch 'aditya' of https://github.com/innoblooms809/via-exam-api into rufiadah
+[33md435520e[m HEAD@{1}: commit: Added auth and mail functionality
+[33m0661cd52[m HEAD@{2}: commit (merge): merging the code
+[33m197b4a13[m HEAD@{3}: commit: worked on scanner and student part
+[33mf0cb588a[m HEAD@{4}: commit: worked on scanner part
+[33mf2c13897[m HEAD@{5}: commit: some changes in app.ts and also some change in exam
+[33m7007e3e8[m HEAD@{6}: pull origin aditya: Fast-forward
+[33m2f852250[m HEAD@{7}: commit: i have worked on class,exam,student,session,subject,teacher modal
+[33m3dbc0e57[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{8}: merge main: Fast-forward
+[33me7a0305a[m HEAD@{9}: checkout: moving from main to rufiadah
+[33m3dbc0e57[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m HEAD@{10}: commit: working on class,section ,session,subject part
+[33m1f75d824[m HEAD@{11}: commit: taking pullfrom aditya branch
+[33m3c3df54c[m HEAD@{12}: pull origin aditya: Fast-forward
+[33me7a0305a[m HEAD@{13}: reset: moving to HEAD
+[33me7a0305a[m HEAD@{14}: checkout: moving from rufiadah to main
+[33me7a0305a[m HEAD@{15}: checkout: moving from main to rufiadah
+[33me7a0305a[m HEAD@{16}: checkout: moving from rufiadah to main
+[33me7a0305a[m HEAD@{17}: pull origin main: Fast-forward
+[33m7335b9ae[m HEAD@{18}: checkout: moving from main to rufiadah
+[33me7a0305a[m HEAD@{19}: commit: working on institute apis
+[33mf8055510[m HEAD@{20}: commit: Removed env from tracking
+[33m512e44e6[m HEAD@{21}: commit: this is my first commit
+[33m261b675a[m HEAD@{22}: commit: Removed node_modules from repo
+[33m7335b9ae[m HEAD@{23}: merge rufiadah: Fast-forward
+[33m5b6d0863[m HEAD@{24}: checkout: moving from rufiadah to main
+[33m7335b9ae[m HEAD@{25}: commit: Added gitignore
+[33ma26481d3[m HEAD@{26}: commit: Initial project setup
+[33m5b6d0863[m HEAD@{27}: checkout: moving from main to rufiadah
+[33m5b6d0863[m HEAD@{28}: Branch: renamed refs/heads/master to refs/heads/main
+[33m5b6d0863[m HEAD@{30}: commit (initial): first commit

@@ -13,7 +13,7 @@ import { Op } from "sequelize";
 const createStudent = async (
   body: any,
   files: any,
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
   const t = await sequelize.transaction();
   try {
@@ -66,14 +66,14 @@ const createStudent = async (
       };
     }
 
-    // 4. Check roll number unique within class+division+year
+    // 4. Check roll number unique within class+sectionIdIdIdId+year
     const rollExists = await StudentProfile.findOne({
       where: {
         instituteId,
-        rollNumber:   body.rollNumber,
-        className:    body.className,
-        division:     body.division,
-        academicYear: body.academicYear,
+        rollNumber: body.rollNumber,
+        className: body.className,
+        sectionId: body.sectionId,
+        session: body.session,
       },
     });
     if (rollExists) {
@@ -81,7 +81,7 @@ const createStudent = async (
       return {
         error: true,
         statusCode: httpStatus.CONFLICT,
-        message: `Roll number ${body.rollNumber} already exists in ${body.className} ${body.division} for ${body.academicYear}.`,
+        message: `Roll number ${body.rollNumber} already exists in ${body.className} ${body.sectionId} for ${body.session}.`,
       };
     }
 
@@ -102,54 +102,59 @@ const createStudent = async (
       : null;
 
     // 7. Create user
-    const plainPassword     = body.password || await RegHelper.generatePassword();
-    const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
-    const userId            = await RegHelper.generateUserId();
+    const plainPassword = body.password || (await RegHelper.generatePassword());
+    const encryptedPassword = await EncryptPassword.encryptPassword(
+      plainPassword,
+    );
+    const userId = await RegHelper.generateUserId();
 
     const newUser = await UserModal.create(
       {
         userId,
-        userName:    `${body.firstName} ${body.lastName}`,
-        emailId:     body.email,
+        userName: `${body.firstName} ${body.lastName}`,
+        emailId: body.email,
         phoneNumber: body.mobile,
-        password:    encryptedPassword,
-        roleId:      studentRole.id,
+        password: encryptedPassword,
+        roleId: studentRole.id,
         instituteId,
         status: 1,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     // 8. Create student profile
     await StudentProfile.create(
       {
-        userId:       newUser.userId,
+        userId: newUser.userId,
         instituteId,
-        rollNumber:   body.rollNumber,
-        className:    body.className,
-        division:     body.division,
-        academicYear: body.academicYear,
-        fatherName:   body.fatherName,
-        gender:       body.gender,
-        dob:          new Date(body.dob),
-        aadhar:       body.aadhar,
-        address:      body.address,
+        rollNumber: body.rollNumber,
+        className: body.className,
+        sectionId: body.sectionId,
+        session: body.session,
+        fatherName: body.fatherName,
+        gender: body.gender,
+        dob: new Date(body.dob),
+        aadhar: body.aadhar,
+        address: body.address,
         profileUrl,
-        isActive:     true,
+        isActive: true,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     await t.commit();
 
-    const userResponse = exclude(newUser.toJSON(), ["password", "refreshToken"]);
+    const userResponse = exclude(newUser.toJSON(), [
+      "password",
+      "refreshToken",
+    ]);
 
     return {
       error: false,
       statusCode: httpStatus.CREATED,
       message: "Student created successfully.",
       data: {
-        user:          userResponse,
+        user: userResponse,
         plainPassword,
         instituteName: institute.instituteName,
       },
@@ -166,48 +171,46 @@ const createStudent = async (
 };
 
 // ─── GET ALL STUDENTS ─────────────────────────────────────────────────────────
-const getAllStudents = async (
-  createdBy: any,
-  query: any
-): Promise<any> => {
+const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
   try {
     const {
       search = "",
       className = "",
-      division = "",
-      academicYear = "",
+      sectionIdIdId = "",
+      session = "",
     } = query;
 
     const studentRole = await Role.findOne({ where: { role: "STUDENT" } });
 
     const where: any = {
       instituteId: createdBy.instituteId,
-      roleId:      studentRole?.id,
-      status:      1,
+      roleId: studentRole?.id,
+      status: 1,
     };
 
     if (search) {
       where[Op.or] = [
         { userName: { [Op.iLike]: `%${search}%` } },
-        { emailId:  { [Op.iLike]: `%${search}%` } },
+        { emailId: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
     // Profile filters
     const profileWhere: any = {};
-    if (className)    profileWhere.className    = className;
-    if (division)     profileWhere.division     = division;
-    if (academicYear) profileWhere.academicYear = academicYear;
+    if (className) profileWhere.className = className;
+    if (sectionIdIdId) profileWhere.sectionIdIdId = sectionIdIdId;
+    if (session) profileWhere.session = session;
 
     const students = await UserModal.findAll({
       where,
       include: [
-        { model: Role,           as: "role" },
+        { model: Role, as: "role" },
         {
-          model:    StudentProfile,
-          as:       "studentProfile",
+          model: StudentProfile,
+          as: "studentProfile",
           required: Object.keys(profileWhere).length > 0,
-          where:    Object.keys(profileWhere).length > 0 ? profileWhere : undefined,
+          where:
+            Object.keys(profileWhere).length > 0 ? profileWhere : undefined,
         },
       ],
       attributes: { exclude: ["password", "refreshToken"] },
@@ -215,22 +218,22 @@ const getAllStudents = async (
     });
 
     const result = students.map((u: any) => ({
-      userId:       u.userId,
-      userName:     u.userName,
-      emailId:      u.emailId,
-      phoneNumber:  u.phoneNumber,
-      status:       u.status,
-      instituteId:  u.instituteId,
-      rollNumber:   u.studentProfile?.rollNumber   ?? null,
-      className:    u.studentProfile?.className    ?? null,
-      division:     u.studentProfile?.division     ?? null,
-      academicYear: u.studentProfile?.academicYear ?? null,
-      fatherName:   u.studentProfile?.fatherName   ?? null,
-      gender:       u.studentProfile?.gender       ?? null,
-      dob:          u.studentProfile?.dob          ?? null,
-      aadhar:       u.studentProfile?.aadhar       ?? null,
-      address:      u.studentProfile?.address      ?? null,
-      profileUrl:   u.studentProfile?.profileUrl   ?? null,
+      userId: u.userId,
+      userName: u.userName,
+      emailId: u.emailId,
+      phoneNumber: u.phoneNumber,
+      status: u.status,
+      instituteId: u.instituteId,
+      rollNumber: u.studentProfile?.rollNumber ?? null,
+      className: u.studentProfile?.className ?? null,
+      sectionId: u.studentProfile?.sectionId ?? null,
+      session: u.studentProfile?.session ?? null,
+      fatherName: u.studentProfile?.fatherName ?? null,
+      gender: u.studentProfile?.gender ?? null,
+      dob: u.studentProfile?.dob ?? null,
+      aadhar: u.studentProfile?.aadhar ?? null,
+      address: u.studentProfile?.address ?? null,
+      profileUrl: u.studentProfile?.profileUrl ?? null,
     }));
 
     return {
@@ -249,15 +252,12 @@ const getAllStudents = async (
 };
 
 // ─── GET ONE STUDENT ──────────────────────────────────────────────────────────
-const getStudentById = async (
-  userId: string,
-  createdBy: any
-): Promise<any> => {
+const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
   try {
     const student = await UserModal.findOne({
       where: { userId, instituteId: createdBy.instituteId },
       include: [
-        { model: Role,           as: "role" },
+        { model: Role, as: "role" },
         { model: StudentProfile, as: "studentProfile" },
       ],
       attributes: { exclude: ["password", "refreshToken"] },
@@ -291,7 +291,7 @@ const updateStudent = async (
   userId: string,
   body: any,
   files: any,
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
   const t = await sequelize.transaction();
   try {
@@ -313,12 +313,13 @@ const updateStudent = async (
     // Update user
     await user.update(
       {
-        userName:    body.firstName && body.lastName
-          ? `${body.firstName} ${body.lastName}`
-          : user.userName,
+        userName:
+          body.firstName && body.lastName
+            ? `${body.firstName} ${body.lastName}`
+            : user.userName,
         phoneNumber: body.mobile ?? user.phoneNumber,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     // Update profile
@@ -329,15 +330,15 @@ const updateStudent = async (
 
       await profile.update(
         {
-          fatherName:   body.fatherName   ?? profile.fatherName,
-          gender:       body.gender       ?? profile.gender,
-          division:     body.division     ?? profile.division,
-          className:    body.className    ?? profile.className,
-          academicYear: body.academicYear ?? profile.academicYear,
-          address:      body.address      ?? profile.address,
+          fatherName: body.fatherName ?? profile.fatherName,
+          gender: body.gender ?? profile.gender,
+          sectionId: body.sectionId ?? profile.sectionId,
+          className: body.className ?? profile.className,
+          session: body.session ?? profile.session,
+          address: body.address ?? profile.address,
           profileUrl,
         },
-        { transaction: t }
+        { transaction: t },
       );
     }
 
@@ -360,10 +361,7 @@ const updateStudent = async (
 };
 
 // ─── DEACTIVATE STUDENT ───────────────────────────────────────────────────────
-const deleteStudent = async (
-  userId: string,
-  createdBy: any
-): Promise<any> => {
+const deleteStudent = async (userId: string, createdBy: any): Promise<any> => {
   try {
     const user = await UserModal.findOne({
       where: { userId, instituteId: createdBy.instituteId },
@@ -397,12 +395,12 @@ const deleteStudent = async (
 // ─── BULK CREATE STUDENTS ─────────────────────────────────────────────────────
 const bulkCreateStudents = async (
   students: any[],
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
   const t = await sequelize.transaction();
   try {
-    const instituteId  = createdBy.instituteId;
-    const studentRole  = await Role.findOne({ where: { role: "STUDENT" } });
+    const instituteId = createdBy.instituteId;
+    const studentRole = await Role.findOne({ where: { role: "STUDENT" } });
     if (!studentRole) {
       await t.rollback();
       return {
@@ -412,21 +410,23 @@ const bulkCreateStudents = async (
       };
     }
 
-    let created  = 0;
-    let skipped  = 0;
+    let created = 0;
+    let skipped = 0;
     const errors: string[] = [];
 
     for (const s of students) {
       try {
         // Check duplicates
-        const emailExists = await UserModal.findOne({ where: { emailId: s.email } });
-        const rollExists  = await StudentProfile.findOne({
+        const emailExists = await UserModal.findOne({
+          where: { emailId: s.email },
+        });
+        const rollExists = await StudentProfile.findOne({
           where: {
             instituteId,
-            rollNumber:   s.rollNumber,
-            className:    s.className,
-            division:     s.division,
-            academicYear: s.academicYear,
+            rollNumber: s.rollNumber,
+            className: s.className,
+            sectionId: s.sectionId,
+            session: s.session,
           },
         });
 
@@ -435,39 +435,41 @@ const bulkCreateStudents = async (
           continue;
         }
 
-        const plainPassword     = await RegHelper.generatePassword();
-        const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
-        const userId            = await RegHelper.generateUserId();
+        const plainPassword = await RegHelper.generatePassword();
+        const encryptedPassword = await EncryptPassword.encryptPassword(
+          plainPassword,
+        );
+        const userId = await RegHelper.generateUserId();
 
         const newUser = await UserModal.create(
           {
             userId,
-            userName:    `${s.firstName} ${s.lastName}`,
-            emailId:     s.email,
+            userName: `${s.firstName} ${s.lastName}`,
+            emailId: s.email,
             phoneNumber: s.mobile,
-            password:    encryptedPassword,
-            roleId:      studentRole.id,
+            password: encryptedPassword,
+            roleId: studentRole.id,
             instituteId,
             status: 1,
           },
-          { transaction: t }
+          { transaction: t },
         );
 
         await StudentProfile.create(
           {
-            userId:       newUser.userId,
+            userId: newUser.userId,
             instituteId,
-            rollNumber:   s.rollNumber,
-            className:    s.className,
-            division:     s.division,
-            academicYear: s.academicYear,
-            fatherName:   s.fatherName   || "Not provided",
-            gender:       s.gender       || "other",
-            dob:          new Date(s.dob || "2000-01-01"),
-            aadhar:       s.aadhar       || "000000000000",
-            address:      s.address      || "Not provided",
+            rollNumber: s.rollNumber,
+            className: s.className,
+            sectionId: s.sectionId,
+            session: s.session,
+            fatherName: s.fatherName || "Not provided",
+            gender: s.gender || "other",
+            dob: new Date(s.dob || "2000-01-01"),
+            aadhar: s.aadhar || "000000000000",
+            address: s.address || "Not provided",
           },
-          { transaction: t }
+          { transaction: t },
         );
 
         created++;

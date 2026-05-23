@@ -8,8 +8,8 @@ interface StudentProfileAttributes {
   classId: string | null;
   rollNumber: string;
   className: string;
-  division: string;
-  academicYear: string;
+  sectionId: string;
+  session: string;
   fatherName: string;
   gender: string;
   dob: Date;
@@ -37,10 +37,10 @@ class StudentProfile
   public classId!: string | null;
   public rollNumber!: string;
   public className!: string;
-  public division!: string;
-  public academicYear!: string;
+  public sectionId!: string;
+  public session!: string;
   public fatherName!: string;
-  public gender!: string;
+  public gender!: string; 
   public dob!: Date;
   public aadhar!: string;
   public address!: string;
@@ -89,12 +89,12 @@ StudentProfile.init(
       allowNull: false,
     },
 
-    division: {
+    sectionId: {
       type: DataTypes.STRING,
       allowNull: false,
     },
 
-    academicYear: {
+    session: {
       type: DataTypes.STRING,
       allowNull: false,
     },
