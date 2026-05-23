@@ -55,14 +55,11 @@ export class QuestionPaperService {
       instituteId || exam.instituteId;
 
     // ─────────────────────────────────────────────
-    // Check Existing Paper Set
+    // Check if this Set already exists for the exam
     // ─────────────────────────────────────────────
 
     const existing = await QuestionPaper.findOne({
-      where: {
-        examId,
-        paperSet,
-      },
+      where: { examId, paperSet },
     });
 
     if (existing) {

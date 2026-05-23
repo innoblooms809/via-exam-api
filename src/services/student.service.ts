@@ -316,7 +316,13 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
       where: { userId, instituteId: createdBy.instituteId },
       include: [
         { model: Role, as: "role" },
-        { model: StudentProfile, as: "studentProfile" },
+        {
+          model: StudentProfile,
+          as: "studentProfile",
+          include: [
+            { model: Section, as: "section", required: false },
+          ],
+        },
       ],
       attributes: { exclude: ["password", "refreshToken"] },
     });
@@ -329,11 +335,27 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
       };
     }
 
+    const s = student.toJSON() as any;
+    const data = {
+      userId: s.userId,
+      userName: s.userName,
+      emailId: s.emailId,
+      phoneNumber: s.phoneNumber,
+      status: s.status,
+      instituteId: s.instituteId,
+      studentProfile: s.studentProfile
+        ? {
+          ...s.studentProfile,
+          sectionId: s.studentProfile.section?.sectionName ?? s.studentProfile.sectionId,
+        }
+        : null,
+    };
+
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Student fetched successfully.",
-      data: student,
+      data,
     };
   } catch (e: any) {
     return {

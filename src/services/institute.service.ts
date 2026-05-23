@@ -179,15 +179,28 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         institute,
         admin: adminResponse,
         // loginUrl: `${process.env.FRONTEND_URL}/${body.slug}/auth/signin`,
-        loginUrl: `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${
-          body.slug
-        }/auth/signin`,
+        loginUrl: `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${body.slug
+          }/auth/signin`,
         logoUrl,
       },
     };
   } catch (e: any) {
     await t.rollback();
     console.error(e);
+
+    if (e.name === "SequelizeUniqueConstraintError") {
+      const field = e.errors?.[0]?.path;
+      let message = "This record already exists.";
+      if (field === "phoneNumber") message = "This phone number is already registered.";
+      if (field === "emailId") message = "This email is already registered.";
+
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message,
+      };
+    }
+
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -201,9 +214,14 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
 const resendAdminCredentials = async (instituteId: string): Promise<any> => {
   try {
     // 1. Find institute
-    const institute = await Institute.findOne({
-      where: { instituteId, status: 1 },
-    });
+    const whereCondition: any = {
+      isDeleted: false,
+      [Op.or]: [
+        { instituteId },
+        ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+      ],
+    };
+    const institute = await Institute.findOne({ where: whereCondition });
 
     if (!institute) {
       return {
@@ -216,7 +234,7 @@ const resendAdminCredentials = async (instituteId: string): Promise<any> => {
     // 2. Find admin user of this institute
     const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
     const adminUser = await UserModal.findOne({
-      where: { instituteId, roleId: adminRole?.id, status: 1 },
+      where: { instituteId: institute.instituteId, roleId: adminRole?.id },
     });
 
     if (!adminUser) {
@@ -354,12 +372,12 @@ const getInstituteById = async (identifier: string): Promise<any> => {
     const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
     const adminUser = adminRole
       ? await UserModal.findOne({
-          where: {
-            instituteId: institute.instituteId, // ✅ use fetched institute's id
-            roleId: adminRole.id,
-          },
-          attributes: { exclude: ["password", "refreshToken"] },
-        })
+        where: {
+          instituteId: institute.instituteId, // ✅ use fetched institute's id
+          roleId: adminRole.id,
+        },
+        attributes: { exclude: ["password", "refreshToken"] },
+      })
       : null;
 
     return {
@@ -391,9 +409,14 @@ const updateInstitute = async (
   files: any,
 ): Promise<any> => {
   try {
-    const institute = await Institute.findOne({
-      where: { instituteId, isDeleted: false },
-    });
+    const whereCondition: any = {
+      isDeleted: false,
+      [Op.or]: [
+        { instituteId },
+        ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+      ],
+    };
+    const institute = await Institute.findOne({ where: whereCondition });
 
     if (!institute) {
       return {
@@ -408,7 +431,7 @@ const updateInstitute = async (
       const slugExists = await Institute.findOne({
         where: {
           slug: body.slug,
-          instituteId: { [Op.ne]: instituteId }, // exclude current institute
+          instituteId: { [Op.ne]: institute.instituteId }, // exclude current institute
         },
       });
       if (slugExists) {
@@ -425,7 +448,7 @@ const updateInstitute = async (
       const contactEmailExists = await Institute.findOne({
         where: {
           contactEmail: body.contactEmail,
-          instituteId: { [Op.ne]: instituteId },
+          instituteId: { [Op.ne]: institute.instituteId },
         },
       });
       if (contactEmailExists) {
@@ -441,7 +464,7 @@ const updateInstitute = async (
       const contactPhoneExists = await Institute.findOne({
         where: {
           contactPhone: body.contactPhone,
-          instituteId: { [Op.ne]: instituteId },
+          instituteId: { [Op.ne]: institute.instituteId },
         },
       });
       if (contactPhoneExists) {
@@ -508,9 +531,14 @@ const updateInstitute = async (
 const softDeleteInstitute = async (instituteId: string): Promise<any> => {
   const t = await sequelize.transaction();
   try {
-    const institute = await Institute.findOne({
-      where: { instituteId, isDeleted: false },
-    });
+    const whereCondition: any = {
+      isDeleted: false,
+      [Op.or]: [
+        { instituteId },
+        ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+      ],
+    };
+    const institute = await Institute.findOne({ where: whereCondition });
 
     if (!institute) {
       await t.rollback();
@@ -527,7 +555,7 @@ const softDeleteInstitute = async (instituteId: string): Promise<any> => {
     // Also deactivate all users of this institute
     await UserModal.update(
       { status: 0 },
-      { where: { instituteId }, transaction: t },
+      { where: { instituteId: institute.instituteId }, transaction: t },
     );
 
     await t.commit();
@@ -557,9 +585,14 @@ const toggleInstituteStatus = async (
   status: number,
 ): Promise<any> => {
   try {
-    const institute = await Institute.findOne({
-      where: { instituteId, isDeleted: false },
-    });
+    const whereCondition: any = {
+      isDeleted: false,
+      [Op.or]: [
+        { instituteId },
+        ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+      ],
+    };
+    const institute = await Institute.findOne({ where: whereCondition });
 
     if (!institute) {
       return {
@@ -572,14 +605,13 @@ const toggleInstituteStatus = async (
     await institute.update({ status });
 
     // Also update all users of this institute
-    await UserModal.update({ status }, { where: { instituteId } });
+    await UserModal.update({ status }, { where: { instituteId: institute.instituteId } });
 
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `Institute ${
-        status === 1 ? "activated" : "deactivated"
-      } successfully.`,
+      message: `Institute ${status === 1 ? "activated" : "deactivated"
+        } successfully.`,
       data: institute,
     };
   } catch (e: any) {
