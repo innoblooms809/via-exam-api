@@ -42,6 +42,19 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       };
     }
 
+    // 2b. Check institute contact phone uniqueness
+    const contactPhoneExists = await Institute.findOne({
+      where: { contactPhone: body.contactPhone },
+    });
+    if (contactPhoneExists) {
+      await t.rollback();
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message: "Institute contact phone is already in use.",
+      };
+    }
+
     // 3. Check admin email uniqueness
     const emailExists = await UserModal.findOne({
       where: { emailId: body.adminEmail },
@@ -52,19 +65,6 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         error: true,
         statusCode: httpStatus.CONFLICT,
         message: "Admin email is already registered.",
-      };
-    }
-
-    // 4. Check admin phone uniqueness
-    const phoneExists = await UserModal.findOne({
-      where: { phoneNumber: body.adminPhone },
-    });
-    if (phoneExists) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Admin phone number is already registered.",
       };
     }
 
@@ -235,9 +235,7 @@ const resendAdminCredentials = async (instituteId: string): Promise<any> => {
     await adminUser.update({ password: encrypted });
 
     // 5. Build login URL same way as registration
-    const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${
-      institute.slug
-    }/auth/signin`;
+    const loginUrl = `${config.frontendUrl}/${institute.slug}/auth/signin`;
 
     // 6. Re-send credentials email
     await sendAdminCredentials({
@@ -435,6 +433,22 @@ const updateInstitute = async (
           error: true,
           statusCode: httpStatus.CONFLICT,
           message: "Institute contact email is already in use.",
+        };
+      }
+    }
+
+    if (body.contactPhone && body.contactPhone !== institute.contactPhone) {
+      const contactPhoneExists = await Institute.findOne({
+        where: {
+          contactPhone: body.contactPhone,
+          instituteId: { [Op.ne]: instituteId },
+        },
+      });
+      if (contactPhoneExists) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Institute contact phone is already in use.",
         };
       }
     }
