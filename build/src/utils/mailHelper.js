@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAdminCredentials = exports.sendEmailToNewUser = void 0;
+exports.sendOtpEmail = exports.sendAdminCredentials = exports.sendEmailToNewUser = void 0;
 // const transporter = nodemailer.createTransport({
 //   host: 'smtp.gmail.com',
 //   port: 465,
@@ -424,3 +424,18 @@ const sendAdminCredentials = (data) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.sendAdminCredentials = sendAdminCredentials;
+const sendOtpEmail = ({ toEmail, userName, otp, }) => __awaiter(void 0, void 0, void 0, function* () {
+    yield transporter.sendMail({
+        from: process.env.MAIL_FROM,
+        to: toEmail,
+        subject: "Your Password Reset OTP",
+        html: `
+      <h2>Hello ${userName},</h2>
+      <p>Your OTP for password reset is:</p>
+      <h1 style="letter-spacing: 8px; color: #3b6ef6">${otp}</h1>
+      <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+      <p>If you did not request this, ignore this email.</p>
+    `,
+    });
+});
+exports.sendOtpEmail = sendOtpEmail;

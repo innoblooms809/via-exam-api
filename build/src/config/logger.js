@@ -17,7 +17,9 @@ const logger = winston_1.default.createLogger({
     transports: [
         new winston_1.default.transports.Console({
             stderrLevels: ['error']
-        })
+        }),
+        new winston_1.default.transports.File({ filename: 'logs/error.log', level: 'error' }),
+        new winston_1.default.transports.File({ filename: 'logs/combined.log' })
     ]
 });
 exports.default = logger;

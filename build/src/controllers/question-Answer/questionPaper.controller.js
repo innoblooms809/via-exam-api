@@ -1,7 +1,4 @@
 "use strict";
-// import httpStatus from "http-status";
-// import { Request, Response } from "express";
-// import QuestionPaperService from "../services/questionPaper.service";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -32,6 +29,11 @@ const getQuestionPaperErrorMessage = (error) => {
         const fields = Object.keys(error.fields || {});
         if (fields.includes("paperId")) {
             return "Question paper ID already exists";
+        }
+        // Composite unique index: (examId, paper_set) — one set per exam
+        if (fields.includes("paper_set") ||
+            (error === null || error === void 0 ? void 0 : error.constraint) === "uq_question_paper_exam_paper_set") {
+            return "A question paper with this Set already exists for the selected exam. Please choose a different Set.";
         }
         return ((_b = (_a = error.errors) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.message) || "Duplicate question paper data";
     }
@@ -73,7 +75,7 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
         // 2. Call service
         // ─────────────────────────────────────────────
         yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
-            paperId: instituteId,
+            instituteId,
             examId,
             teacherId,
             paperSet,
