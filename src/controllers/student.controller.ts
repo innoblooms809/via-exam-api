@@ -8,6 +8,7 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
     const result = await StudentService.createStudent(
       req.body, req.files, req.viaExamUser
     );
+  
 
     if (!result.error) {
       sendEmailToNewUser({
