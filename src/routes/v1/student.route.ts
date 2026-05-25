@@ -35,7 +35,7 @@ router.get(
 // GET    /v1/students/:userId
 router.get(
   "/getStudentById/:userId",
-  authenticate,
+  // authenticate,
 //   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
   Controller.getStudentById
 );
