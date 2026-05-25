@@ -66,7 +66,7 @@ const createStudent = async (
       };
     }
 
-    // 4. Check roll number unique within class+sectionIdIdIdId+year
+    // 4. Check roll number unique within class+sectionId+year
     const rollExists = await StudentProfile.findOne({
       where: {
         instituteId,
@@ -176,8 +176,9 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
     const {
       search = "",
       className = "",
-      sectionIdIdId = "",
+      sectionId = "",
       session = "",
+
     } = query;
 
     const studentRole = await Role.findOne({ where: { role: "STUDENT" } });
@@ -198,7 +199,7 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
     // Profile filters
     const profileWhere: any = {};
     if (className) profileWhere.className = className;
-    if (sectionIdIdId) profileWhere.sectionIdIdId = sectionIdIdId;
+    if (sectionId) profileWhere.sectionId = sectionId;
     if (session) profileWhere.session = session;
 
     const students = await UserModal.findAll({
