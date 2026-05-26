@@ -44,8 +44,6 @@ const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
         logger_1.default.info("Connected to PostgreSQL Database");
         yield Promise.resolve().then(() => __importStar(require("../modals/index"))); // Ensure all models are imported and registered
         yield sequelize_1.sequelize.sync({ force: false });
-        //  // Sync models with the database
-        // sequelize.sync({ force: true })
         logger_1.default.info("Models synced with PostgreSQL");
         fn();
     }
