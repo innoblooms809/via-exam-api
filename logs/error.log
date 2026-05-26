@@ -1,0 +1,52 @@
+[31merror[39m: Error connecting to PostgreSQL / syncing models
+[31merror[39m: POST /v1/institute/register 500 - 49.762 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 64.032 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 12.387 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 473.632 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 54.345 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 39.859 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 21.873 ms - message: -
+[31merror[39m: GET /v1/student/getAllStudents 401 - 47.081 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779691405989 401 - 1.569 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 2.263 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.329 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779691405990 401 - 1.032 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 34.680 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 7.147 ms - message: -
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /v1/question-papers/createQuestionPaper 404 - 94.010 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /favicon.ico 404 - 1.623 ms - message: Not found
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 321.781 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 10.649 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 1416.375 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 4.723 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 207.517 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 166.574 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779699200090 401 - 82.629 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779699200094 401 - 0.400 ms - message: -
+[31merror[39m: GET /v1/institute/getOneInstitute/IB307486 401 - 5.210 ms - message: -
+[31merror[39m: GET /v1/institute/getOneInstitute/IB307486 401 - 2.859 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779699202385 401 - 1.871 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779699202386 401 - 1.078 ms - message: -
+[31merror[39m: POST /v1/sessions/createSession 409 - 286.639 ms - message: -
