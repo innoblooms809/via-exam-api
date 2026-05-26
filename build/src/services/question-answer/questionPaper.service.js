@@ -43,13 +43,10 @@ class QuestionPaperService {
             // ─────────────────────────────────────────────
             const resolvedInstituteId = instituteId || exam.instituteId;
             // ─────────────────────────────────────────────
-            // Check Existing Paper Set
+            // Check if this Set already exists for the exam
             // ─────────────────────────────────────────────
             const existing = yield QuestionPaper_modal_1.default.findOne({
-                where: {
-                    examId,
-                    paperSet,
-                },
+                where: { examId, paperSet },
             });
             if (existing) {
                 throw new Error(`Question Paper Set ${paperSet} already exists for this exam`);

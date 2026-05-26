@@ -13,6 +13,11 @@ const router = (0, express_1.Router)();
 router.post("/register", auth_1.authenticate, 
 //   authorize(["super_admin"]),
 multer_1.instituteUpload, institute_controller_1.default.registerInstitute);
+// POST /api/viaexam/institute/resendCredentials/:instituteId
+// Protected: only super_admin can trigger resend of admin credentials
+router.post("/resendCredentials/:instituteId", auth_1.authenticate, 
+// authorize(["SUPER_ADMIN"]),   // uncomment if only super-admin should do this
+institute_controller_1.default.resendAdminCredentials);
 // GET    /api/viaexam/institute/
 // Query params: ?page=1&limit=10&search=delhi&plan=pro&status=1
 router.get("/getAllInstitutes", auth_1.authenticate, 

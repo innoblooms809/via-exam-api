@@ -59,6 +59,7 @@ Institute.init({
     contactPhone: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
+        unique: true,
     },
     alternatePhone: {
         type: sequelize_1.DataTypes.STRING,

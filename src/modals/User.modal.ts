@@ -35,7 +35,7 @@ interface UserCreationAttributes
     | "refreshToken"
     | "instituteId"
     | "isDeleted"
-  > {}
+  > { }
 
 // ─── Model ───────────────────────────────────────────────────────────────────
 
@@ -141,16 +141,16 @@ User.init(
     tableName: "viaexam_users",
     modelName: "User",
     timestamps: true,
-//     indexes: [
-//   {
-//     unique: true,
-//     fields: ["emailId"],
-//   },
-//   {
-//     unique: true,
-//     fields: ["phoneNumber"],
-//   },
-// ],
+    //     indexes: [
+    //   {
+    //     unique: true,
+    //     fields: ["emailId"],
+    //   },
+    //   {
+    //     unique: true,
+    //     fields: ["phoneNumber"],
+    //   },
+    // ],
   }
 );
 

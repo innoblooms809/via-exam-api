@@ -20,6 +20,13 @@ router.get(
 //   authorize(["ADMIN", "EXAMINER", "TEACHER"]),
   Controller.getAllExams,
 );
+
+router.get(
+  "/assigned",
+  authenticate,
+  Controller.getAssignedExams,
+);
+
 router.get(
   "/getOneExam/:examId",
   authenticate,

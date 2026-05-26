@@ -8,6 +8,11 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
     const result = await StudentService.createStudent(
       req.body, req.files, req.viaExamUser
     );
+  
+    console.log("🎓 Student result:", result);
+console.log("📧 Email field:", req.body.email);
+console.log("📧 EmailId field:", req.body.emailId);
+console.log("🔑 plainPassword:", result?.data?.plainPassword);
 
     if (!result.error) {
       sendEmailToNewUser({

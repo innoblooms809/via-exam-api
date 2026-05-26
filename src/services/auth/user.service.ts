@@ -4,6 +4,7 @@ import Role from "../../modals/Role.modal";
 import EncryptPassword from "../../utils/encryption"; // reuse your existing utility
 import RegHelper from "../../utils/helper";           // reuse your existing utility
 import exclude from "../../utils/exclude";            // reuse your existing utility
+import { Op } from "sequelize";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -23,7 +24,11 @@ const getViaExamUserByEmail = async (emailId: string): Promise<any> => {
         as: "role",
       },
     ],
-    where: { emailId: emailId },
+    where: {
+      emailId: {
+        [Op.iLike]: emailId
+      }
+    },
   });
 };
 

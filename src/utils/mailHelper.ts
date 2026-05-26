@@ -336,12 +336,18 @@ export const sendEmailToNewUser = async (requestBody: any) => {
   // };
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"ViaExam" <${config.email.smtp.auth.user}>`,
       to: emailId,
       subject: "Registration Completed",
       html: htmlContentFile,
     });
+
+    console.log("✅ MAIL SENT SUCCESSFULLY");
+    console.log("📨 Accepted:", info.accepted);
+    console.log("❌ Rejected:", info.rejected);
+    console.log("🆔 Message ID:", info.messageId);
+    console.log("📩 Response:", info.response);
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
@@ -451,7 +457,6 @@ export const sendAdminCredentials = async (data: {
     return false; // don't throw — email failure won't break registration
   }
 };
-
 
 export const sendOtpEmail = async ({
   toEmail,

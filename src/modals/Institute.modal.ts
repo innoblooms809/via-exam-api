@@ -171,6 +171,7 @@ Institute.init(
     contactPhone: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
 
     alternatePhone: {

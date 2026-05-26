@@ -1,0 +1,443 @@
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: POST /v1/class/createClass 401 - 12.893 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 107.771 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701654696 401 - 14.678 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701654714 401 - 2.532 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701663374 401 - 1.657 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779701674737 401 - 2.740 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.103 ms - message: -
+[31merror[39m: GET /v1/section/allSections 401 - 1.535 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 1.672 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701698424 401 - 1.299 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701698426 401 - 1.068 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701717869 401 - 1.099 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701717872 401 - 1.077 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701761657 401 - 1.264 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701761655 401 - 0.371 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701775041 401 - 1.074 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701775042 401 - 0.510 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701793504 401 - 1.460 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701793506 401 - 1.075 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701887910 401 - 1.138 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701898791 401 - 1.112 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701898793 401 - 0.462 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701905994 401 - 1.525 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701905997 401 - 1.093 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702062597 401 - 1.664 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702062595 401 - 0.954 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702151352 401 - 1.206 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702151356 401 - 1.098 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702165166 401 - 1.115 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702397856 401 - 1.476 ms - message: -
+[31merror[39m: GET /v1/student/getAllStudents 401 - 18.122 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 7.643 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 3.202 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1779705251711 401 - 14.705 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1779705251708 401 - 1.282 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779705254406 401 - 3.716 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779705254409 401 - 1.492 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779705554056 401 - 2.266 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779705554068 401 - 1.048 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706235061 401 - 1.805 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706235067 401 - 1.033 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706948555 401 - 2.868 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706948562 401 - 1.463 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708515932 401 - 1.685 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708515942 401 - 1.279 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708529271 401 - 1.630 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708529273 401 - 1.134 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779711595435 401 - 8.103 ms - message: -
+[31merror[39m: Error connecting to PostgreSQL / syncing models
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779771981336 401 - 10.349 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 404 - 375.833 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 221.453 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 252.956 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 288.963 ms - message: -
+[31merror[39m: Error connecting to PostgreSQL / syncing models
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779968193.png 404 - 19.085 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 19.148 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 19.932 ms - message: Not found
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: GET /v1/exam/assigned 401 - 7.686 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 401 - 1.292 ms - message: -
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: GET /v1/exam/assigned 500 - 14.244 ms - message: -
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: GET /v1/exam/assigned 500 - 4.746 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779782937454 401 - 1.842 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.075 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 12.567 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 12.259 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 13.421 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 2.819 ms - message: Not found
+[31merror[39m: GET /v1/exam/assigned 500 - 1.588 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 2.806 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 1.561 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 1.163 ms - message: -
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: POST /v1/user/login 400 - 329.742 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 307.116 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 118.700 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 107.250 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 349.395 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 52.895 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 43.448 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 44.577 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 299.542 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 306.448 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 668.478 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 273.427 ms - message: -
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: POST /v1/student/createStudent 409 - 1724.618 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 7.220 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779793719011 401 - 1.440 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 2.579 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779793719017 401 - 1.642 ms - message: -
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1939:16)
+    at listenInCluster (node:net:1996:12)
+    at Server.listen (node:net:2101:7)
+    at Function.listen (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\index.ts:10:16)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:15:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 27.924 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 28.551 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 30.099 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 11.177 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 15.856 ms - message: Not found
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779795637186 401 - 9.474 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.538 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779795637191 401 - 1.516 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.147 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 401 - 11.099 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.354 ms - message: -
+[31merror[39m: GET /v1/student/getAllStudents 401 - 31.109 ms - message: -
