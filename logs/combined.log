@@ -1,0 +1,872 @@
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 120.476 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 102.596 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 128.634 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693606596 200 - 109.052 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693606598 200 - 101.469 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 47.643 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 55.094 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 32.365 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB155965 200 - 177.027 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.423 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 4.275 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 5.297 ms
+[32minfo[39m: POST /v1/user/login 200 - 138.709 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 113.818 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 92.884 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 125.650 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693849497 200 - 85.901 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693849495 200 - 108.536 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 32.710 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 21.930 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 23.652 ms
+[32minfo[39m: OPTIONS /v1/question-papers/getExamBySelection 204 - 0.258 ms
+[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 64.479 ms
+[32minfo[39m: GET /v1/student/getAllStudents?className=1&sectionId=A 200 - 45.843 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779693861753&classId=IB418680&section=A&subjectId=IB710090&examType=Mid+Term 200 - 26.151 ms
+[32minfo[39m: GET /v1/student/getAllStudents?className=1&sectionId=A 304 - 61.856 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779693862000&classId=IB418680&section=A&subjectId=IB710090&examType=Mid+Term 200 - 10.770 ms
+[32minfo[39m: GET /v1/scanner/getFile/IB721185 200 - 56.681 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693904230 200 - 79.314 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 81.007 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 77.236 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 88.569 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 22.363 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693904232 200 - 86.173 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 21.497 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 22.409 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779693911337 200 - 27.406 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779693911340 200 - 42.165 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 42.566 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 54.929 ms
+[32minfo[39m: GET /v1/section/allSections 200 - 38.200 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 17.479 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 19.704 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 18.279 ms
+[32minfo[39m: OPTIONS /v1/question-papers/getQuestionPaperBySet 204 - 0.525 ms
+[32minfo[39m: OPTIONS /v1/question-paper-answers/getQuestionPaperAnswerBySet 204 - 0.290 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779693930947&classId=IB418680&section=A&subjectId=IB710090&examType=Mid+Term 200 - 79.674 ms
+[32minfo[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 200 - 80.130 ms
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 91.384 ms
+[32minfo[39m: GET /v1/student/getAllStudents?className=1&sectionId=A 304 - 103.114 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779694189961 200 - 79.613 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 71.932 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779694189964 200 - 71.647 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 75.416 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 96.182 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 18.731 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 19.935 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.386 ms
+[32minfo[39m: OPTIONS /v1/question-papers/getQuestionPaperBySet 204 - 0.198 ms
+[32minfo[39m: OPTIONS /v1/question-paper-answers/getQuestionPaperAnswerBySet 204 - 0.220 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779694219291&classId=IB418680&section=A&subjectId=IB710090&examType=Mid+Term 200 - 74.591 ms
+[32minfo[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 200 - 80.151 ms
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 95.313 ms
+[32minfo[39m: GET /v1/student/getAllStudents?className=1&sectionId=A 304 - 93.195 ms
+[32minfo[39m: GET /v1/scanner/getFile/IB721185 304 - 65.038 ms
+[32minfo[39m: OPTIONS /v1/class/createClass 204 - 4.682 ms
+[31merror[39m: POST /v1/class/createClass 401 - 12.893 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.672 ms
+[31merror[39m: POST /v1/user/login 400 - 107.771 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701654696 401 - 14.678 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701654714 401 - 2.532 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701663374 401 - 1.657 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779701674737 401 - 2.740 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.103 ms - message: -
+[31merror[39m: GET /v1/section/allSections 401 - 1.535 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 1.672 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.354 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.367 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 133.239 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 107.031 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 132.050 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 122.113 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779701674737 200 - 32.115 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 36.284 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 46.699 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 48.982 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.568 ms
+[32minfo[39m: POST /v1/user/login 200 - 70.377 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701698424 401 - 1.299 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701698426 401 - 1.068 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.478 ms
+[32minfo[39m: POST /v1/user/login 200 - 207.292 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701717869 401 - 1.099 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701717872 401 - 1.077 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701761657 401 - 1.264 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701761655 401 - 0.371 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701775041 401 - 1.074 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701775042 401 - 0.510 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.213 ms
+[32minfo[39m: POST /v1/user/login 200 - 174.250 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701793504 401 - 1.460 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701793506 401 - 1.075 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701887910 401 - 1.138 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701898791 401 - 1.112 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701898793 401 - 0.462 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701905994 401 - 1.525 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701905997 401 - 1.093 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702062597 401 - 1.664 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702062595 401 - 0.954 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.644 ms
+[32minfo[39m: POST /v1/user/login 200 - 108.225 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702151352 401 - 1.206 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702151356 401 - 1.098 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702165166 401 - 1.115 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702397856 401 - 1.476 ms - message: -
+[31merror[39m: GET /v1/student/getAllStudents 401 - 18.122 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 7.643 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 3.202 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1779705251711 401 - 14.705 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1779705251708 401 - 1.282 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779705254406 401 - 3.716 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779705254409 401 - 1.492 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779705554056 401 - 2.266 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779705554068 401 - 1.048 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706235061 401 - 1.805 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706235067 401 - 1.033 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706948555 401 - 2.868 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706948562 401 - 1.463 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708515932 401 - 1.685 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708515942 401 - 1.279 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708529271 401 - 1.630 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708529273 401 - 1.134 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779711595435 401 - 8.103 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.700 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 138.501 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779711595435 200 - 130.702 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779687321524.png 304 - 35.155 ms
+[31merror[39m: Error connecting to PostgreSQL / syncing models
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779771981336 401 - 10.349 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.910 ms
+[31merror[39m: POST /v1/user/refresh-token 404 - 375.833 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.310 ms
+[32minfo[39m: POST /v1/user/login 200 - 917.661 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779772083604 200 - 324.504 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779772083607 200 - 349.184 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569490591.png 200 - 5.811 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 200 - 9.255 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.240 ms
+[31merror[39m: POST /v1/user/login 400 - 221.453 ms - message: -
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB065139 200 - 194.056 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.201 ms
+[31merror[39m: POST /v1/user/login 400 - 252.956 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.339 ms
+[31merror[39m: POST /v1/user/login 400 - 288.963 ms - message: -
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779772255719 200 - 322.876 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 4.682 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569490591.png 304 - 1.178 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB065139 200 - 396.392 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779772559722 200 - 957.965 ms
+[32minfo[39m: POST /v1/institute/register 201 - 10529.850 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.342 ms
+[32minfo[39m: POST /v1/user/login 200 - 725.661 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779772742274 200 - 422.236 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779772742269 200 - 432.553 ms
+[32minfo[39m: OPTIONS /v1/sessions/createSession 204 - 0.315 ms
+[32minfo[39m: POST /v1/sessions/createSession 201 - 1193.026 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779772794999 200 - 118.474 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779772795000 200 - 156.466 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772801642 200 - 137.290 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772801643 200 - 136.436 ms
+[32minfo[39m: OPTIONS /v1/class/createClass 204 - 0.265 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 769.485 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772814862 200 - 173.951 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772814865 200 - 215.951 ms
+[32minfo[39m: OPTIONS /v1/class/createClass 204 - 0.686 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 197.500 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772823692 200 - 270.793 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772823691 200 - 276.294 ms
+[32minfo[39m: OPTIONS /v1/class/createClass 204 - 0.240 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 201.848 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772830794 200 - 132.694 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772830793 200 - 144.141 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772834093 200 - 207.457 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772834093 200 - 208.460 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772834095 200 - 248.011 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772834094 200 - 252.383 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772836455 200 - 167.032 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772836456 200 - 167.846 ms
+[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.400 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 330.489 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772844097 200 - 113.502 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772844098 200 - 122.472 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772844099 200 - 186.111 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772844099 200 - 186.556 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772845908 200 - 93.626 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772845909 200 - 92.411 ms
+[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.219 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 324.978 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772853003 200 - 110.798 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772853004 200 - 106.504 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772853004 200 - 102.286 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772853003 200 - 113.196 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772855738 200 - 164.506 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772855740 200 - 151.239 ms
+[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.231 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 14017.842 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772875967 200 - 22036.920 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772875965 200 - 22050.714 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772875966 200 - 22041.647 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772875967 - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772906317 200 - 14010.774 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772906315 200 - 14016.258 ms
+[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.382 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 10019.485 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772948050 200 - 400.508 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772948050 200 - 477.472 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772948052 200 - 511.237 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772948053 200 - 552.239 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779772982870 200 - 9862.281 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779772982871 200 - 9857.804 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772982870 200 - 9934.956 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772982872 200 - 9929.248 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772998512 200 - 6447.162 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772998510 200 - 6447.302 ms
+[32minfo[39m: OPTIONS /v1/subject/createSubject 204 - 0.222 ms
+[32minfo[39m: POST /v1/subject/createSubject 201 - 9639.910 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779773022994 200 - 7112.747 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773022994 200 - 7111.874 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773022997 200 - 21878.526 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779773022996 200 - 22064.661 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773042449 200 - 16902.170 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773042450 200 - 16898.648 ms
+[32minfo[39m: OPTIONS /v1/subject/createSubject 204 - 0.213 ms
+[32minfo[39m: POST /v1/subject/createSubject 201 - 21996.142 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779773104797 - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773104797 - - - ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779773104799 - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773104799 - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.230 ms
+[32minfo[39m: POST /v1/user/login 200 - 635.816 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779773218991 200 - 322.124 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 2.471 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569490591.png 304 - 2.554 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779772560785.png 200 - 8.662 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779773218992 200 - 496.357 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779774079821 200 - 324.702 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779774079824 200 - 320.715 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779774079824 200 - 374.629 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779774079822 200 - 437.976 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 576.776 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 219.235 ms
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 983.295 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 143.718 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 301.816 ms
+[32minfo[39m: GET /v1/student/getAllStudents - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses - - - ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779774699769 - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses - - - ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779774699765 - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.296 ms
+[32minfo[39m: POST /v1/user/login - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.390 ms
+[32minfo[39m: POST /v1/user/login - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.307 ms
+[32minfo[39m: POST /v1/user/login - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.575 ms
+[32minfo[39m: POST /v1/user/login - - - ms
+[32minfo[39m: Connected to PostgreSQL Database
+[31merror[39m: Error connecting to PostgreSQL / syncing models
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 3.080 ms
+[32minfo[39m: POST /v1/user/login 200 - 825.751 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779780382292 200 - 326.157 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779780382294 200 - 343.745 ms
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779772560785.png 304 - 18.713 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 23.860 ms
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779968193.png 404 - 19.085 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 19.148 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 19.932 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB113021 200 - 213.162 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.757 ms
+[32minfo[39m: POST /v1/user/login 200 - 418.927 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/exam/assigned 401 - 7.686 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 401 - 1.292 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[31merror[39m: GET /v1/exam/assigned 500 - 14.244 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[31merror[39m: GET /v1/exam/assigned 500 - 4.746 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779782937454 401 - 1.842 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.075 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.801 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 749.465 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 581.635 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779782937454 200 - 268.230 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 200 - 384.930 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779772560785.png 304 - 1.949 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 1.190 ms
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 12.567 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 12.259 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 13.421 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 2.819 ms - message: Not found
+[31merror[39m: GET /v1/exam/assigned 500 - 1.588 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 2.806 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 1.561 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 1.163 ms - message: -
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 280.390 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: OPTIONS /v1/user/login 204 - 3.428 ms
+[32minfo[39m: POST /v1/user/login 200 - 552.795 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 192.871 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 123.315 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 137.371 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783337597 200 - 116.852 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783337599 200 - 147.345 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779783340623 200 - 79.040 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779783340625 200 - 79.902 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783343277 200 - 81.873 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779783343276 200 - 90.182 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783343279 200 - 87.822 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779783343279 200 - 93.216 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783345961 200 - 92.049 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779783345961 200 - 101.637 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783345963 200 - 101.028 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779783345962 200 - 108.544 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 282.371 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 276.998 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 286.388 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 281.072 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 328.054 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 90.967 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 85.671 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 88.012 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 100.903 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 117.510 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 72.261 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 92.986 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 101.398 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 125.652 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 77.175 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 83.505 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 91.003 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 115.383 ms
+[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 0.512 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 400.104 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 274.475 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 307.121 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 306.628 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 304.591 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 143.763 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 403.807 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 115.052 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 135.070 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 142.657 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 144.428 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.417 ms
+[31merror[39m: POST /v1/user/login 400 - 329.742 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.311 ms
+[31merror[39m: POST /v1/user/login 400 - 307.116 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 118.700 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 107.250 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.272 ms
+[31merror[39m: POST /v1/user/login 400 - 349.395 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 52.895 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.442 ms
+[31merror[39m: POST /v1/user/login 429 - 43.448 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 44.577 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.310 ms
+[31merror[39m: POST /v1/user/login 429 - 299.542 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.395 ms
+[31merror[39m: POST /v1/user/login 429 - 306.448 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.478 ms
+[32minfo[39m: POST /v1/user/login 200 - 302.762 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 204.386 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 115.477 ms
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 668.478 ms - message: -
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 456.962 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 117.621 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 152.345 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 246.869 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 263.625 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 272.615 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 267.060 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 82.221 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 315.022 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 80.142 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 79.813 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 86.462 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 125.101 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.398 ms
+[32minfo[39m: POST /v1/user/login 200 - 752.141 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 118.279 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 89.915 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 103.275 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 147.067 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 149.651 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 215.322 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 613.144 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 609.710 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 608.522 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 677.443 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 90.659 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 103.922 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 126.072 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 190.415 ms
+[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 0.342 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 434.147 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 299.526 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 297.955 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 296.238 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 301.106 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 363.122 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 91.783 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 129.934 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 127.029 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 124.494 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 138.879 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 99.139 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 98.878 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 330.332 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 80.031 ms
+[31merror[39m: POST /v1/user/login 400 - 273.427 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: OPTIONS /v1/user/login 204 - 2.769 ms
+[32minfo[39m: POST /v1/user/login 200 - 1730.030 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 271.095 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 298.597 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 376.857 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 139.408 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 680.263 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 197.582 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 506.617 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.610 ms
+[32minfo[39m: POST /v1/user/login 200 - 438.908 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 479.786 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 468.418 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 468.972 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 535.389 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 529.352 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 133.389 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 140.154 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 122.030 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 136.475 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 208.266 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 133.722 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 129.675 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 177.144 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 202.700 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 323.782 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 332.016 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 289.039 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 289.039 ms
+[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 0.444 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 1418.957 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 463.774 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 461.862 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 470.918 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 499.818 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 539.832 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 122.259 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 122.457 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 159.547 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 170.551 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 175.936 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB617241 200 - 584.509 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 629.769 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 637.851 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 633.763 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB617241 304 - 124.138 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 690.325 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 102.673 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 112.154 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 101.822 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 147.568 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 718.221 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 715.985 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 729.879 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 740.350 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 93.354 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 825.235 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 107.943 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 96.882 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 118.056 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 246.754 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.201 ms
+[32minfo[39m: POST /v1/user/login 200 - 709.103 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 103.801 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 86.882 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 117.639 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 98.325 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 456.111 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.357 ms
+[32minfo[39m: POST /v1/user/login 200 - 541.480 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 136.004 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779790764211 200 - 324.730 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 374.241 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779790764214 200 - 523.944 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 216.443 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 200 - 306.342 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 1155.178 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 125.969 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779791707222 200 - 395.162 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779791707225 200 - 384.380 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 437.369 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 116.349 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 815.244 ms
+[31merror[39m: POST /v1/student/createStudent 409 - 1724.618 ms - message: -
+[32minfo[39m: POST /v1/student/createStudent 201 - 1423.658 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 140.682 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/class/getAllClasses 401 - 7.220 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779793719011 401 - 1.440 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 2.579 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779793719017 401 - 1.642 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.379 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.277 ms
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.341 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.314 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 314.764 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 284.133 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 283.499 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 279.385 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793719011 200 - 127.841 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793719017 200 - 111.258 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 175.390 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 95.803 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 121.041 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793724545 200 - 80.154 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 82.203 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793724547 200 - 91.318 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 79.315 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 76.189 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 985.214 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 121.603 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779794984698 200 - 432.378 ms
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 27.924 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 28.551 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 30.099 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779772560785.png 304 - 8.570 ms
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 11.177 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 15.856 ms - message: Not found
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 2.068 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 671.952 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 131.773 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779794991376 200 - 155.467 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779794991381 200 - 177.733 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 115.895 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 141.738 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 1452.012 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 168.806 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779795637186 401 - 9.474 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.538 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779795637191 401 - 1.516 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.147 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.404 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.351 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.213 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 329.822 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 292.019 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 309.625 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 315.885 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779795637186 200 - 82.685 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779795637191 200 - 83.566 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 164.581 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 82.129 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 100.380 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 1392.867 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 371.192 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 20553.090 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 20737.316 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779796557817 200 - 452.650 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779796557821 200 - 493.971 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 528.694 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 117.366 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 357.302 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 1123.757 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 454.634 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/exam/assigned 401 - 11.099 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.481 ms
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.354 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 411.900 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 408.196 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 113.672 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 87.985 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 466.134 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 408.288 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.332 ms
+[32minfo[39m: POST /v1/user/login 200 - 501.684 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 230.360 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 250.831 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 149.565 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 157.843 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 541.976 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 248.213 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 490.200 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 145.972 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 543.425 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 80.638 ms
+[31merror[39m: GET /v1/student/getAllStudents 401 - 31.109 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 2.232 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 370.739 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 147.313 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.407 ms
+[32minfo[39m: POST /v1/user/login 200 - 332.087 ms

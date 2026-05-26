@@ -2,6 +2,10 @@ import httpStatus from "http-status";
 import Exam from "../modals/Exam.modal";
 import UserModal from "../modals/User.modal";
 import Role from "../modals/Role.modal";
+import Class from "../modals/Class.modal";
+import Section from "../modals/Section.modal";
+import Subject from "../modals/Subject.modal";
+import Session from "../modals/Session.modal";
 import RegHelper from "../utils/helper";
 import { Op } from "sequelize";
 
@@ -121,6 +125,52 @@ const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
       statusCode: httpStatus.OK,
       message: "Exams fetched successfully.",
       data: { exams, total: exams.length },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
+// ─── GET ASSIGNED EXAMS (FOR TEACHER) ─────────────────────────────────────────
+const getAssignedExams = async (requestedBy: any): Promise<any> => {
+  try {
+    const instituteId = requestedBy.instituteId;
+    const teacherId = requestedBy.userId;
+
+    const exams: any = await Exam.findAll({
+      where: { 
+        instituteId, 
+        isDeleted: false,
+        teacherId 
+      },
+      include: [
+        { model: Class, as: "class", attributes: ["className"] },
+        { model: Section, as: "section", attributes: ["sectionName"] },
+        { model: Subject, as: "subject", attributes: ["subjectName"] },
+        { model: Session, as: "session", attributes: ["sessionName"] },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const formattedExams = exams.map((exam: any) => ({
+      id: exam.examId,
+      className: exam.class?.className || "N/A",
+      sectionName: exam.section?.sectionName || "N/A",
+      subjectName: exam.subject?.subjectName || "N/A",
+      sessionName: exam.session?.sessionName || "N/A",
+      examType: exam.examType,
+      status: exam.status,
+    }));
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Assigned exams fetched successfully.",
+      data: { exams: formattedExams },
     };
   } catch (e: any) {
     return {
@@ -342,4 +392,5 @@ export default {
   updateExamStatus,
   updateExam,
   deleteExam,
+  getAssignedExams,
 };

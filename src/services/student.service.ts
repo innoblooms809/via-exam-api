@@ -3,11 +3,44 @@ import UserModal from "../modals/User.modal";
 import StudentProfile from "../modals/Student.modal";
 import Role from "../modals/Role.modal";
 import Institute from "../modals/Institute.modal";
+import Class from "../modals/Class.modal";
+import Section from "../modals/Section.modal";
 import EncryptPassword from "../utils/encryption";
 import RegHelper from "../utils/helper";
 import exclude from "../utils/exclude";
 import { sequelize } from "../config/sequelize";
 import { Op } from "sequelize";
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const resolveClassId = async (inputClass: string, instituteId: string): Promise<string | null> => {
+  if (!inputClass) return null;
+  const byId = await Class.findOne({
+    where: { classId: inputClass, instituteId, isDeleted: false },
+  });
+  if (byId) return byId.classId;
+
+  const byName = await Class.findOne({
+    where: { className: inputClass, instituteId, isDeleted: false },
+  });
+  if (byName) return byName.classId;
+
+  return null;
+};
+
+const resolveSectionId = async (inputSection: string, classId: string, instituteId: string): Promise<string> => {
+  if (!inputSection) return "";
+  const byId = await Section.findOne({
+    where: { sectionId: inputSection, instituteId, isDeleted: false },
+  });
+  if (byId) return byId.sectionId;
+
+  const byName = await Section.findOne({
+    where: { sectionName: inputSection, classId, instituteId, isDeleted: false },
+  });
+  if (byName) return byName.sectionId;
+
+  return inputSection;
+};
 
 // ─── CREATE STUDENT ───────────────────────────────────────────────────────────
 const createStudent = async (
@@ -66,13 +99,25 @@ const createStudent = async (
       };
     }
 
-    // 4. Check roll number unique within class+sectionId+year
+    // 4. Resolve classId from Class table
+    const resolvedClassId = await resolveClassId(body.classId || body.className, instituteId);
+
+    // 5. Resolve sectionId from Section table
+    const resolvedSectionId = await resolveSectionId(body.sectionId, resolvedClassId || "", instituteId);
+
+    // Look up section name for user-friendly messages
+    const sectionRecord = await Section.findOne({
+      where: { sectionId: resolvedSectionId },
+    });
+    const sectionLabel = sectionRecord?.sectionName || resolvedSectionId;
+
+    // 6. Check roll number unique within class+section+session
     const rollExists = await StudentProfile.findOne({
       where: {
         instituteId,
         rollNumber: body.rollNumber,
         className: body.className,
-        sectionId: body.sectionId,
+        sectionId: resolvedSectionId,
         session: body.session,
       },
     });
@@ -81,11 +126,11 @@ const createStudent = async (
       return {
         error: true,
         statusCode: httpStatus.CONFLICT,
-        message: `Roll number ${body.rollNumber} already exists in ${body.className} ${body.sectionId} for ${body.session}.`,
+        message: `Roll number ${body.rollNumber} already exists in ${body.className} Section ${sectionLabel} for session ${body.session}.`,
       };
     }
 
-    // 5. Find STUDENT role
+    // 7. Find STUDENT role
     const studentRole = await Role.findOne({ where: { role: "STUDENT" } });
     if (!studentRole) {
       await t.rollback();
@@ -96,12 +141,12 @@ const createStudent = async (
       };
     }
 
-    // 6. Profile photo
+    // 8. Profile photo
     const profileUrl = files?.profilePhoto?.[0]
       ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
       : null;
 
-    // 7. Create user
+    // 9. Create user
     const plainPassword = body.password || (await RegHelper.generatePassword());
     const encryptedPassword = await EncryptPassword.encryptPassword(
       plainPassword,
@@ -122,14 +167,15 @@ const createStudent = async (
       { transaction: t },
     );
 
-    // 8. Create student profile
+    // 10. Create student profile
     await StudentProfile.create(
       {
         userId: newUser.userId,
         instituteId,
+        classId: resolvedClassId,
         rollNumber: body.rollNumber,
         className: body.className,
-        sectionId: body.sectionId,
+        sectionId: resolvedSectionId,
         session: body.session,
         fatherName: body.fatherName,
         gender: body.gender,
@@ -199,8 +245,13 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
     // Profile filters
     const profileWhere: any = {};
     if (className) profileWhere.className = className;
-    if (sectionId) profileWhere.sectionId = sectionId;
     if (session) profileWhere.session = session;
+
+    if (sectionId) {
+      const resolvedClassId = await resolveClassId(className, createdBy.instituteId);
+      const resolvedSectionId = await resolveSectionId(sectionId, resolvedClassId || "", createdBy.instituteId);
+      profileWhere.sectionId = resolvedSectionId;
+    }
 
     const students = await UserModal.findAll({
       where,
@@ -212,6 +263,13 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
           required: Object.keys(profileWhere).length > 0,
           where:
             Object.keys(profileWhere).length > 0 ? profileWhere : undefined,
+          include: [
+            {
+              model: Section,
+              as: "section",
+              required: false,
+            },
+          ],
         },
       ],
       attributes: { exclude: ["password", "refreshToken"] },
@@ -227,7 +285,7 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
       instituteId: u.instituteId,
       rollNumber: u.studentProfile?.rollNumber ?? null,
       className: u.studentProfile?.className ?? null,
-      sectionId: u.studentProfile?.sectionId ?? null,
+      sectionId: u.studentProfile?.section?.sectionName ?? u.studentProfile?.sectionId ?? null,
       session: u.studentProfile?.session ?? null,
       fatherName: u.studentProfile?.fatherName ?? null,
       gender: u.studentProfile?.gender ?? null,
@@ -259,7 +317,13 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
       where: { userId, instituteId: createdBy.instituteId },
       include: [
         { model: Role, as: "role" },
-        { model: StudentProfile, as: "studentProfile" },
+        {
+          model: StudentProfile,
+          as: "studentProfile",
+          include: [
+            { model: Section, as: "section", required: false },
+          ],
+        },
       ],
       attributes: { exclude: ["password", "refreshToken"] },
     });
@@ -272,11 +336,27 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
       };
     }
 
+    const s = student.toJSON() as any;
+    const data = {
+      userId: s.userId,
+      userName: s.userName,
+      emailId: s.emailId,
+      phoneNumber: s.phoneNumber,
+      status: s.status,
+      instituteId: s.instituteId,
+      studentProfile: s.studentProfile
+        ? {
+          ...s.studentProfile,
+          sectionId: s.studentProfile.section?.sectionName ?? s.studentProfile.sectionId,
+        }
+        : null,
+    };
+
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Student fetched successfully.",
-      data: student,
+      data,
     };
   } catch (e: any) {
     return {
@@ -309,6 +389,21 @@ const updateStudent = async (
       };
     }
 
+    // Check phone unique if phone is being updated
+    if (body.mobile && body.mobile !== user.phoneNumber) {
+      const phoneExists = await UserModal.findOne({
+        where: { phoneNumber: body.mobile },
+      });
+      if (phoneExists) {
+        await t.rollback();
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Phone number is already registered.",
+        };
+      }
+    }
+
     const profile = await StudentProfile.findOne({ where: { userId } });
 
     // Update user
@@ -329,12 +424,19 @@ const updateStudent = async (
         ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
         : profile.profileUrl;
 
+      const targetClassName = body.className ?? profile.className;
+      const resolvedClassId = await resolveClassId(body.classId || targetClassName, createdBy.instituteId);
+
+      const targetSectionInput = body.sectionId ?? profile.sectionId;
+      const resolvedSectionId = await resolveSectionId(targetSectionInput, resolvedClassId || "", createdBy.instituteId);
+
       await profile.update(
         {
           fatherName: body.fatherName ?? profile.fatherName,
           gender: body.gender ?? profile.gender,
-          sectionId: body.sectionId ?? profile.sectionId,
+          sectionId: resolvedSectionId,
           className: body.className ?? profile.className,
+          classId: resolvedClassId,
           session: body.session ?? profile.session,
           address: body.address ?? profile.address,
           profileUrl,
@@ -421,6 +523,9 @@ const bulkCreateStudents = async (
         const emailExists = await UserModal.findOne({
           where: { emailId: s.email },
         });
+        const phoneExists = await UserModal.findOne({
+          where: { phoneNumber: s.mobile },
+        });
         const rollExists = await StudentProfile.findOne({
           where: {
             instituteId,
@@ -431,10 +536,16 @@ const bulkCreateStudents = async (
           },
         });
 
-        if (emailExists || rollExists) {
+        if (emailExists || phoneExists || rollExists) {
           skipped++;
           continue;
         }
+
+        // Resolve classId from Class table
+        const resolvedClassId = await resolveClassId(s.classId || s.className, instituteId);
+
+        // Resolve sectionId from Section table
+        const resolvedSectionId = await resolveSectionId(s.sectionId, resolvedClassId || "", instituteId);
 
         const plainPassword = await RegHelper.generatePassword();
         const encryptedPassword = await EncryptPassword.encryptPassword(
@@ -460,9 +571,10 @@ const bulkCreateStudents = async (
           {
             userId: newUser.userId,
             instituteId,
+            classId: resolvedClassId,
             rollNumber: s.rollNumber,
             className: s.className,
-            sectionId: s.sectionId,
+            sectionId: resolvedSectionId,
             session: s.session,
             fatherName: s.fatherName || "Not provided",
             gender: s.gender || "other",

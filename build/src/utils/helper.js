@@ -18,6 +18,25 @@ const generatePassword = () => __awaiter(void 0, void 0, void 0, function* () {
     const id = prefix + timestamp + randomNumStr;
     return id.length === 10 ? id : id.slice(0, 10);
 });
+// Produces something like: aB3$xK9!
+const generateTempPassword = () => {
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const digits = "0123456789";
+    const special = "@#$!";
+    const all = upper + lower + digits + special;
+    const rand = (str) => str[Math.floor(Math.random() * str.length)];
+    // Guarantee at least one of each required character type
+    const password = [
+        rand(upper),
+        rand(lower),
+        rand(digits),
+        rand(special),
+        ...Array.from({ length: 4 }, () => rand(all)),
+    ];
+    // Shuffle so the guaranteed chars aren't always at the start
+    return password.sort(() => Math.random() - 0.5).join("");
+};
 const generateUserId = () => __awaiter(void 0, void 0, void 0, function* () {
     const randomNum = Math.floor(Math.random() * 10000);
     const prefix = 'IB';
@@ -40,4 +59,4 @@ const generateEnquiryId = (productName, productCategory) => __awaiter(void 0, vo
     const id = `${p1}-${p2}-${uuid}`.slice(0, 14);
     return id.toUpperCase();
 });
-exports.default = { generatePassword, generateUserId, generateCustomerId, generateEnquiryId };
+exports.default = { generatePassword, generateUserId, generateCustomerId, generateEnquiryId, generateTempPassword };

@@ -23,8 +23,9 @@ const sequelize_1 = require("../config/sequelize");
 const sequelize_2 = require("sequelize");
 const mailHelper_1 = require("../utils/mailHelper");
 const config_1 = __importDefault(require("../config/config"));
+// ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
 const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e;
     // Use a transaction — if admin user creation fails, institute also rolls back
     const t = yield sequelize_1.sequelize.transaction();
     try {
@@ -50,6 +51,18 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 message: "Institute contact email is already in use.",
             };
         }
+        // 2b. Check institute contact phone uniqueness
+        const contactPhoneExists = yield Institute_modal_1.default.findOne({
+            where: { contactPhone: body.contactPhone },
+        });
+        if (contactPhoneExists) {
+            yield t.rollback();
+            return {
+                error: true,
+                statusCode: http_status_1.default.CONFLICT,
+                message: "Institute contact phone is already in use.",
+            };
+        }
         // 3. Check admin email uniqueness
         const emailExists = yield User_modal_1.default.findOne({
             where: { emailId: body.adminEmail },
@@ -60,18 +73,6 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 error: true,
                 statusCode: http_status_1.default.CONFLICT,
                 message: "Admin email is already registered.",
-            };
-        }
-        // 4. Check admin phone uniqueness
-        const phoneExists = yield User_modal_1.default.findOne({
-            where: { phoneNumber: body.adminPhone },
-        });
-        if (phoneExists) {
-            yield t.rollback();
-            return {
-                error: true,
-                statusCode: http_status_1.default.CONFLICT,
-                message: "Admin phone number is already registered.",
             };
         }
         // 5. Get file paths from multer
@@ -171,6 +172,82 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
     }
     catch (e) {
         yield t.rollback();
+        console.error(e);
+        if (e.name === "SequelizeUniqueConstraintError") {
+            const field = (_e = (_d = e.errors) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.path;
+            let message = "This record already exists.";
+            if (field === "phoneNumber")
+                message = "This phone number is already registered.";
+            if (field === "emailId")
+                message = "This email is already registered.";
+            return {
+                error: true,
+                statusCode: http_status_1.default.CONFLICT,
+                message,
+            };
+        }
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// ----------RESEND ADMIN CREDENTIALS EMAIL (IF NOT RECEIVED)----------------
+const resendAdminCredentials = (instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // 1. Find institute
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
+        if (!institute) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Institute not found.",
+            };
+        }
+        // 2. Find admin user of this institute
+        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+        const adminUser = yield User_modal_1.default.findOne({
+            where: { instituteId: institute.instituteId, roleId: adminRole === null || adminRole === void 0 ? void 0 : adminRole.id },
+        });
+        if (!adminUser) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Admin user not found for this institute.",
+            };
+        }
+        // 3. Generate a new password
+        const newPassword = helper_1.default.generateTempPassword(); // see helper below
+        const encrypted = yield encryption_1.default.encryptPassword(newPassword);
+        // 4. Update password in DB
+        yield adminUser.update({ password: encrypted });
+        // 5. Build login URL same way as registration
+        const loginUrl = `${config_1.default.frontendUrl}/${institute.slug}/auth/signin`;
+        // 6. Re-send credentials email
+        yield (0, mailHelper_1.sendAdminCredentials)({
+            adminName: adminUser.userName,
+            adminEmail: adminUser.emailId,
+            adminPassword: newPassword,
+            instituteName: institute.instituteName,
+            loginUrl,
+            plan: institute.plan,
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: `Credentials resent to ${adminUser.emailId} successfully.`,
+            data: { email: adminUser.emailId },
+        };
+    }
+    catch (e) {
         console.error(e);
         return {
             error: true,
@@ -287,11 +364,16 @@ const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, funct
 // Update institute details + optionally update logo/banner
 // Does NOT update admin credentials here (separate API for that)
 const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
+    var _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z;
     try {
-        const institute = yield Institute_modal_1.default.findOne({
-            where: { instituteId, isDeleted: false },
-        });
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
         if (!institute) {
             return {
                 error: true,
@@ -304,7 +386,7 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
             const slugExists = yield Institute_modal_1.default.findOne({
                 where: {
                     slug: body.slug,
-                    instituteId: { [sequelize_2.Op.ne]: instituteId }, // exclude current institute
+                    instituteId: { [sequelize_2.Op.ne]: institute.instituteId }, // exclude current institute
                 },
             });
             if (slugExists) {
@@ -320,7 +402,7 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
             const contactEmailExists = yield Institute_modal_1.default.findOne({
                 where: {
                     contactEmail: body.contactEmail,
-                    instituteId: { [sequelize_2.Op.ne]: instituteId },
+                    instituteId: { [sequelize_2.Op.ne]: institute.instituteId },
                 },
             });
             if (contactEmailExists) {
@@ -331,32 +413,47 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
                 };
             }
         }
+        if (body.contactPhone && body.contactPhone !== institute.contactPhone) {
+            const contactPhoneExists = yield Institute_modal_1.default.findOne({
+                where: {
+                    contactPhone: body.contactPhone,
+                    instituteId: { [sequelize_2.Op.ne]: institute.instituteId },
+                },
+            });
+            if (contactPhoneExists) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Institute contact phone is already in use.",
+                };
+            }
+        }
         // Handle new file uploads â€” keep old ones if no new file sent
-        const logoUrl = ((_d = files === null || files === void 0 ? void 0 : files.logo) === null || _d === void 0 ? void 0 : _d[0])
+        const logoUrl = ((_f = files === null || files === void 0 ? void 0 : files.logo) === null || _f === void 0 ? void 0 : _f[0])
             ? `/${files.logo[0].path.replace(/\\/g, "/")}`
             : institute.logoUrl;
-        const bannerUrl = ((_e = files === null || files === void 0 ? void 0 : files.banner) === null || _e === void 0 ? void 0 : _e[0])
+        const bannerUrl = ((_g = files === null || files === void 0 ? void 0 : files.banner) === null || _g === void 0 ? void 0 : _g[0])
             ? `/${files.banner[0].path.replace(/\\/g, "/")}`
             : institute.bannerUrl;
         // Only update fields that are sent in body
         yield institute.update({
-            instituteName: (_f = body.instituteName) !== null && _f !== void 0 ? _f : institute.instituteName,
-            instituteType: (_g = body.instituteType) !== null && _g !== void 0 ? _g : institute.instituteType,
-            boardType: (_h = body.boardType) !== null && _h !== void 0 ? _h : institute.boardType,
-            registrationNumber: (_j = body.registrationNumber) !== null && _j !== void 0 ? _j : institute.registrationNumber,
-            establishedYear: (_k = body.establishedYear) !== null && _k !== void 0 ? _k : institute.establishedYear,
-            websiteUrl: (_l = body.websiteUrl) !== null && _l !== void 0 ? _l : institute.websiteUrl,
-            slug: (_m = body.slug) !== null && _m !== void 0 ? _m : institute.slug,
-            contactPersonName: (_o = body.contactPersonName) !== null && _o !== void 0 ? _o : institute.contactPersonName,
-            contactEmail: (_p = body.contactEmail) !== null && _p !== void 0 ? _p : institute.contactEmail,
-            contactPhone: (_q = body.contactPhone) !== null && _q !== void 0 ? _q : institute.contactPhone,
-            alternatePhone: (_r = body.alternatePhone) !== null && _r !== void 0 ? _r : institute.alternatePhone,
-            addressLine1: (_s = body.addressLine1) !== null && _s !== void 0 ? _s : institute.addressLine1,
-            addressLine2: (_t = body.addressLine2) !== null && _t !== void 0 ? _t : institute.addressLine2,
-            city: (_u = body.city) !== null && _u !== void 0 ? _u : institute.city,
-            state: (_v = body.state) !== null && _v !== void 0 ? _v : institute.state,
-            pincode: (_w = body.pincode) !== null && _w !== void 0 ? _w : institute.pincode,
-            plan: (_x = body.plan) !== null && _x !== void 0 ? _x : institute.plan,
+            instituteName: (_h = body.instituteName) !== null && _h !== void 0 ? _h : institute.instituteName,
+            instituteType: (_j = body.instituteType) !== null && _j !== void 0 ? _j : institute.instituteType,
+            boardType: (_k = body.boardType) !== null && _k !== void 0 ? _k : institute.boardType,
+            registrationNumber: (_l = body.registrationNumber) !== null && _l !== void 0 ? _l : institute.registrationNumber,
+            establishedYear: (_m = body.establishedYear) !== null && _m !== void 0 ? _m : institute.establishedYear,
+            websiteUrl: (_o = body.websiteUrl) !== null && _o !== void 0 ? _o : institute.websiteUrl,
+            slug: (_p = body.slug) !== null && _p !== void 0 ? _p : institute.slug,
+            contactPersonName: (_q = body.contactPersonName) !== null && _q !== void 0 ? _q : institute.contactPersonName,
+            contactEmail: (_r = body.contactEmail) !== null && _r !== void 0 ? _r : institute.contactEmail,
+            contactPhone: (_s = body.contactPhone) !== null && _s !== void 0 ? _s : institute.contactPhone,
+            alternatePhone: (_t = body.alternatePhone) !== null && _t !== void 0 ? _t : institute.alternatePhone,
+            addressLine1: (_u = body.addressLine1) !== null && _u !== void 0 ? _u : institute.addressLine1,
+            addressLine2: (_v = body.addressLine2) !== null && _v !== void 0 ? _v : institute.addressLine2,
+            city: (_w = body.city) !== null && _w !== void 0 ? _w : institute.city,
+            state: (_x = body.state) !== null && _x !== void 0 ? _x : institute.state,
+            pincode: (_y = body.pincode) !== null && _y !== void 0 ? _y : institute.pincode,
+            plan: (_z = body.plan) !== null && _z !== void 0 ? _z : institute.plan,
             logoUrl,
             bannerUrl,
         });
@@ -381,9 +478,14 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
 const softDeleteInstitute = (instituteId) => __awaiter(void 0, void 0, void 0, function* () {
     const t = yield sequelize_1.sequelize.transaction();
     try {
-        const institute = yield Institute_modal_1.default.findOne({
-            where: { instituteId, isDeleted: false },
-        });
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
         if (!institute) {
             yield t.rollback();
             return {
@@ -395,7 +497,7 @@ const softDeleteInstitute = (instituteId) => __awaiter(void 0, void 0, void 0, f
         // Soft delete institute
         yield institute.update({ isDeleted: true, status: 0 }, { transaction: t });
         // Also deactivate all users of this institute
-        yield User_modal_1.default.update({ status: 0 }, { where: { instituteId }, transaction: t });
+        yield User_modal_1.default.update({ status: 0 }, { where: { instituteId: institute.instituteId }, transaction: t });
         yield t.commit();
         return {
             error: false,
@@ -418,9 +520,14 @@ const softDeleteInstitute = (instituteId) => __awaiter(void 0, void 0, void 0, f
 // Useful for suspending without deleting
 const toggleInstituteStatus = (instituteId, status) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const institute = yield Institute_modal_1.default.findOne({
-            where: { instituteId, isDeleted: false },
-        });
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
         if (!institute) {
             return {
                 error: true,
@@ -430,7 +537,7 @@ const toggleInstituteStatus = (instituteId, status) => __awaiter(void 0, void 0,
         }
         yield institute.update({ status });
         // Also update all users of this institute
-        yield User_modal_1.default.update({ status }, { where: { instituteId } });
+        yield User_modal_1.default.update({ status }, { where: { instituteId: institute.instituteId } });
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -453,4 +560,5 @@ exports.default = {
     updateInstitute,
     softDeleteInstitute,
     toggleInstituteStatus,
+    resendAdminCredentials,
 };

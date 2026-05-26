@@ -10,6 +10,7 @@ import Subject from "./Subject.modal";
 import Exam from "./Exam.modal";
 import Session from "./Session.modal";
 import QuestionPaper from "./question-paper/QuestionPaper.modal";
+import Notification from "./Notification.modal";
 
 // ROLE ↔ ACCESS
 // ═══════════════════════════════════════════════════════════════
@@ -526,3 +527,17 @@ StudentProfile.belongsTo(Section, {
 // //   sourceKey: "examId",
 // //   as: "questionPapers",
 // // });
+
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICATION ↔ USER
+// ═══════════════════════════════════════════════════════════════
+Notification.belongsTo(User, {
+  foreignKey: "userId",
+  targetKey: "userId",
+  as: "user",
+});
+User.hasMany(Notification, {
+  foreignKey: "userId",
+  sourceKey: "userId",
+  as: "notifications",
+});

@@ -17,11 +17,44 @@ const User_modal_1 = __importDefault(require("../modals/User.modal"));
 const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
 const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
 const Institute_modal_1 = __importDefault(require("../modals/Institute.modal"));
+const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
+const Section_modal_1 = __importDefault(require("../modals/Section.modal"));
 const encryption_1 = __importDefault(require("../utils/encryption"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const exclude_1 = __importDefault(require("../utils/exclude"));
 const sequelize_1 = require("../config/sequelize");
 const sequelize_2 = require("sequelize");
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const resolveClassId = (inputClass, instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!inputClass)
+        return null;
+    const byId = yield Class_modal_1.default.findOne({
+        where: { classId: inputClass, instituteId, isDeleted: false },
+    });
+    if (byId)
+        return byId.classId;
+    const byName = yield Class_modal_1.default.findOne({
+        where: { className: inputClass, instituteId, isDeleted: false },
+    });
+    if (byName)
+        return byName.classId;
+    return null;
+});
+const resolveSectionId = (inputSection, classId, instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!inputSection)
+        return "";
+    const byId = yield Section_modal_1.default.findOne({
+        where: { sectionId: inputSection, instituteId, isDeleted: false },
+    });
+    if (byId)
+        return byId.sectionId;
+    const byName = yield Section_modal_1.default.findOne({
+        where: { sectionName: inputSection, classId, instituteId, isDeleted: false },
+    });
+    if (byName)
+        return byName.sectionId;
+    return inputSection;
+});
 // ─── CREATE STUDENT ───────────────────────────────────────────────────────────
 const createStudent = (body, files, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -72,14 +105,23 @@ const createStudent = (body, files, createdBy) => __awaiter(void 0, void 0, void
                 message: "Phone number is already registered.",
             };
         }
-        // 4. Check roll number unique within class+division+year
+        // 4. Resolve classId from Class table
+        const resolvedClassId = yield resolveClassId(body.classId || body.className, instituteId);
+        // 5. Resolve sectionId from Section table
+        const resolvedSectionId = yield resolveSectionId(body.sectionId, resolvedClassId || "", instituteId);
+        // Look up section name for user-friendly messages
+        const sectionRecord = yield Section_modal_1.default.findOne({
+            where: { sectionId: resolvedSectionId },
+        });
+        const sectionLabel = (sectionRecord === null || sectionRecord === void 0 ? void 0 : sectionRecord.sectionName) || resolvedSectionId;
+        // 6. Check roll number unique within class+section+session
         const rollExists = yield Student_modal_1.default.findOne({
             where: {
                 instituteId,
                 rollNumber: body.rollNumber,
                 className: body.className,
-                division: body.division,
-                academicYear: body.academicYear,
+                sectionId: resolvedSectionId,
+                session: body.session,
             },
         });
         if (rollExists) {
@@ -87,10 +129,10 @@ const createStudent = (body, files, createdBy) => __awaiter(void 0, void 0, void
             return {
                 error: true,
                 statusCode: http_status_1.default.CONFLICT,
-                message: `Roll number ${body.rollNumber} already exists in ${body.className} ${body.division} for ${body.academicYear}.`,
+                message: `Roll number ${body.rollNumber} already exists in ${body.className} Section ${sectionLabel} for session ${body.session}.`,
             };
         }
-        // 5. Find STUDENT role
+        // 7. Find STUDENT role
         const studentRole = yield Role_modal_1.default.findOne({ where: { role: "STUDENT" } });
         if (!studentRole) {
             yield t.rollback();
@@ -100,11 +142,11 @@ const createStudent = (body, files, createdBy) => __awaiter(void 0, void 0, void
                 message: "STUDENT role not found. Please seed roles.",
             };
         }
-        // 6. Profile photo
+        // 8. Profile photo
         const profileUrl = ((_a = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _a === void 0 ? void 0 : _a[0])
             ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
             : null;
-        // 7. Create user
+        // 9. Create user
         const plainPassword = body.password || (yield helper_1.default.generatePassword());
         const encryptedPassword = yield encryption_1.default.encryptPassword(plainPassword);
         const userId = yield helper_1.default.generateUserId();
@@ -118,14 +160,15 @@ const createStudent = (body, files, createdBy) => __awaiter(void 0, void 0, void
             instituteId,
             status: 1,
         }, { transaction: t });
-        // 8. Create student profile
+        // 10. Create student profile
         yield Student_modal_1.default.create({
             userId: newUser.userId,
             instituteId,
+            classId: resolvedClassId,
             rollNumber: body.rollNumber,
             className: body.className,
-            division: body.division,
-            academicYear: body.academicYear,
+            sectionId: resolvedSectionId,
+            session: body.session,
             fatherName: body.fatherName,
             gender: body.gender,
             dob: new Date(body.dob),
@@ -135,7 +178,10 @@ const createStudent = (body, files, createdBy) => __awaiter(void 0, void 0, void
             isActive: true,
         }, { transaction: t });
         yield t.commit();
-        const userResponse = (0, exclude_1.default)(newUser.toJSON(), ["password", "refreshToken"]);
+        const userResponse = (0, exclude_1.default)(newUser.toJSON(), [
+            "password",
+            "refreshToken",
+        ]);
         return {
             error: false,
             statusCode: http_status_1.default.CREATED,
@@ -160,7 +206,7 @@ const createStudent = (body, files, createdBy) => __awaiter(void 0, void 0, void
 // ─── GET ALL STUDENTS ─────────────────────────────────────────────────────────
 const getAllStudents = (createdBy, query) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { search = "", className = "", division = "", academicYear = "", } = query;
+        const { search = "", className = "", sectionId = "", session = "", } = query;
         const studentRole = yield Role_modal_1.default.findOne({ where: { role: "STUDENT" } });
         const where = {
             instituteId: createdBy.instituteId,
@@ -177,10 +223,13 @@ const getAllStudents = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
         const profileWhere = {};
         if (className)
             profileWhere.className = className;
-        if (division)
-            profileWhere.division = division;
-        if (academicYear)
-            profileWhere.academicYear = academicYear;
+        if (session)
+            profileWhere.session = session;
+        if (sectionId) {
+            const resolvedClassId = yield resolveClassId(className, createdBy.instituteId);
+            const resolvedSectionId = yield resolveSectionId(sectionId, resolvedClassId || "", createdBy.instituteId);
+            profileWhere.sectionId = resolvedSectionId;
+        }
         const students = yield User_modal_1.default.findAll({
             where,
             include: [
@@ -190,13 +239,20 @@ const getAllStudents = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
                     as: "studentProfile",
                     required: Object.keys(profileWhere).length > 0,
                     where: Object.keys(profileWhere).length > 0 ? profileWhere : undefined,
+                    include: [
+                        {
+                            model: Section_modal_1.default,
+                            as: "section",
+                            required: false,
+                        },
+                    ],
                 },
             ],
             attributes: { exclude: ["password", "refreshToken"] },
             order: [["userName", "ASC"]],
         });
         const result = students.map((u) => {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
             return ({
                 userId: u.userId,
                 userName: u.userName,
@@ -206,14 +262,14 @@ const getAllStudents = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
                 instituteId: u.instituteId,
                 rollNumber: (_b = (_a = u.studentProfile) === null || _a === void 0 ? void 0 : _a.rollNumber) !== null && _b !== void 0 ? _b : null,
                 className: (_d = (_c = u.studentProfile) === null || _c === void 0 ? void 0 : _c.className) !== null && _d !== void 0 ? _d : null,
-                division: (_f = (_e = u.studentProfile) === null || _e === void 0 ? void 0 : _e.division) !== null && _f !== void 0 ? _f : null,
-                academicYear: (_h = (_g = u.studentProfile) === null || _g === void 0 ? void 0 : _g.academicYear) !== null && _h !== void 0 ? _h : null,
-                fatherName: (_k = (_j = u.studentProfile) === null || _j === void 0 ? void 0 : _j.fatherName) !== null && _k !== void 0 ? _k : null,
-                gender: (_m = (_l = u.studentProfile) === null || _l === void 0 ? void 0 : _l.gender) !== null && _m !== void 0 ? _m : null,
-                dob: (_p = (_o = u.studentProfile) === null || _o === void 0 ? void 0 : _o.dob) !== null && _p !== void 0 ? _p : null,
-                aadhar: (_r = (_q = u.studentProfile) === null || _q === void 0 ? void 0 : _q.aadhar) !== null && _r !== void 0 ? _r : null,
-                address: (_t = (_s = u.studentProfile) === null || _s === void 0 ? void 0 : _s.address) !== null && _t !== void 0 ? _t : null,
-                profileUrl: (_v = (_u = u.studentProfile) === null || _u === void 0 ? void 0 : _u.profileUrl) !== null && _v !== void 0 ? _v : null,
+                sectionId: (_j = (_g = (_f = (_e = u.studentProfile) === null || _e === void 0 ? void 0 : _e.section) === null || _f === void 0 ? void 0 : _f.sectionName) !== null && _g !== void 0 ? _g : (_h = u.studentProfile) === null || _h === void 0 ? void 0 : _h.sectionId) !== null && _j !== void 0 ? _j : null,
+                session: (_l = (_k = u.studentProfile) === null || _k === void 0 ? void 0 : _k.session) !== null && _l !== void 0 ? _l : null,
+                fatherName: (_o = (_m = u.studentProfile) === null || _m === void 0 ? void 0 : _m.fatherName) !== null && _o !== void 0 ? _o : null,
+                gender: (_q = (_p = u.studentProfile) === null || _p === void 0 ? void 0 : _p.gender) !== null && _q !== void 0 ? _q : null,
+                dob: (_s = (_r = u.studentProfile) === null || _r === void 0 ? void 0 : _r.dob) !== null && _s !== void 0 ? _s : null,
+                aadhar: (_u = (_t = u.studentProfile) === null || _t === void 0 ? void 0 : _t.aadhar) !== null && _u !== void 0 ? _u : null,
+                address: (_w = (_v = u.studentProfile) === null || _v === void 0 ? void 0 : _v.address) !== null && _w !== void 0 ? _w : null,
+                profileUrl: (_y = (_x = u.studentProfile) === null || _x === void 0 ? void 0 : _x.profileUrl) !== null && _y !== void 0 ? _y : null,
             });
         });
         return {
@@ -233,12 +289,19 @@ const getAllStudents = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
 });
 // ─── GET ONE STUDENT ──────────────────────────────────────────────────────────
 const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b, _c;
     try {
         const student = yield User_modal_1.default.findOne({
             where: { userId, instituteId: createdBy.instituteId },
             include: [
                 { model: Role_modal_1.default, as: "role" },
-                { model: Student_modal_1.default, as: "studentProfile" },
+                {
+                    model: Student_modal_1.default,
+                    as: "studentProfile",
+                    include: [
+                        { model: Section_modal_1.default, as: "section", required: false },
+                    ],
+                },
             ],
             attributes: { exclude: ["password", "refreshToken"] },
         });
@@ -249,11 +312,22 @@ const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
                 message: "Student not found.",
             };
         }
+        const s = student.toJSON();
+        const data = {
+            userId: s.userId,
+            userName: s.userName,
+            emailId: s.emailId,
+            phoneNumber: s.phoneNumber,
+            status: s.status,
+            instituteId: s.instituteId,
+            studentProfile: s.studentProfile
+                ? Object.assign(Object.assign({}, s.studentProfile), { sectionId: (_c = (_b = s.studentProfile.section) === null || _b === void 0 ? void 0 : _b.sectionName) !== null && _c !== void 0 ? _c : s.studentProfile.sectionId }) : null,
+        };
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Student fetched successfully.",
-            data: student,
+            data,
         };
     }
     catch (e) {
@@ -266,7 +340,7 @@ const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
 });
 // ─── UPDATE STUDENT ───────────────────────────────────────────────────────────
 const updateStudent = (userId, body, files, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b, _c, _d, _e, _f, _g, _h, _j;
+    var _d, _e, _f, _g, _h, _j, _k, _l, _m;
     const t = yield sequelize_1.sequelize.transaction();
     try {
         const user = yield User_modal_1.default.findOne({
@@ -280,26 +354,45 @@ const updateStudent = (userId, body, files, createdBy) => __awaiter(void 0, void
                 message: "Student not found.",
             };
         }
+        // Check phone unique if phone is being updated
+        if (body.mobile && body.mobile !== user.phoneNumber) {
+            const phoneExists = yield User_modal_1.default.findOne({
+                where: { phoneNumber: body.mobile },
+            });
+            if (phoneExists) {
+                yield t.rollback();
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Phone number is already registered.",
+                };
+            }
+        }
         const profile = yield Student_modal_1.default.findOne({ where: { userId } });
         // Update user
         yield user.update({
             userName: body.firstName && body.lastName
                 ? `${body.firstName} ${body.lastName}`
                 : user.userName,
-            phoneNumber: (_b = body.mobile) !== null && _b !== void 0 ? _b : user.phoneNumber,
+            phoneNumber: (_d = body.mobile) !== null && _d !== void 0 ? _d : user.phoneNumber,
         }, { transaction: t });
         // Update profile
         if (profile) {
-            const profileUrl = ((_c = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _c === void 0 ? void 0 : _c[0])
+            const profileUrl = ((_e = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _e === void 0 ? void 0 : _e[0])
                 ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
                 : profile.profileUrl;
+            const targetClassName = (_f = body.className) !== null && _f !== void 0 ? _f : profile.className;
+            const resolvedClassId = yield resolveClassId(body.classId || targetClassName, createdBy.instituteId);
+            const targetSectionInput = (_g = body.sectionId) !== null && _g !== void 0 ? _g : profile.sectionId;
+            const resolvedSectionId = yield resolveSectionId(targetSectionInput, resolvedClassId || "", createdBy.instituteId);
             yield profile.update({
-                fatherName: (_d = body.fatherName) !== null && _d !== void 0 ? _d : profile.fatherName,
-                gender: (_e = body.gender) !== null && _e !== void 0 ? _e : profile.gender,
-                division: (_f = body.division) !== null && _f !== void 0 ? _f : profile.division,
-                className: (_g = body.className) !== null && _g !== void 0 ? _g : profile.className,
-                academicYear: (_h = body.academicYear) !== null && _h !== void 0 ? _h : profile.academicYear,
-                address: (_j = body.address) !== null && _j !== void 0 ? _j : profile.address,
+                fatherName: (_h = body.fatherName) !== null && _h !== void 0 ? _h : profile.fatherName,
+                gender: (_j = body.gender) !== null && _j !== void 0 ? _j : profile.gender,
+                sectionId: resolvedSectionId,
+                className: (_k = body.className) !== null && _k !== void 0 ? _k : profile.className,
+                classId: resolvedClassId,
+                session: (_l = body.session) !== null && _l !== void 0 ? _l : profile.session,
+                address: (_m = body.address) !== null && _m !== void 0 ? _m : profile.address,
                 profileUrl,
             }, { transaction: t });
         }
@@ -369,20 +462,29 @@ const bulkCreateStudents = (students, createdBy) => __awaiter(void 0, void 0, vo
         for (const s of students) {
             try {
                 // Check duplicates
-                const emailExists = yield User_modal_1.default.findOne({ where: { emailId: s.email } });
+                const emailExists = yield User_modal_1.default.findOne({
+                    where: { emailId: s.email },
+                });
+                const phoneExists = yield User_modal_1.default.findOne({
+                    where: { phoneNumber: s.mobile },
+                });
                 const rollExists = yield Student_modal_1.default.findOne({
                     where: {
                         instituteId,
                         rollNumber: s.rollNumber,
                         className: s.className,
-                        division: s.division,
-                        academicYear: s.academicYear,
+                        sectionId: s.sectionId,
+                        session: s.session,
                     },
                 });
-                if (emailExists || rollExists) {
+                if (emailExists || phoneExists || rollExists) {
                     skipped++;
                     continue;
                 }
+                // Resolve classId from Class table
+                const resolvedClassId = yield resolveClassId(s.classId || s.className, instituteId);
+                // Resolve sectionId from Section table
+                const resolvedSectionId = yield resolveSectionId(s.sectionId, resolvedClassId || "", instituteId);
                 const plainPassword = yield helper_1.default.generatePassword();
                 const encryptedPassword = yield encryption_1.default.encryptPassword(plainPassword);
                 const userId = yield helper_1.default.generateUserId();
@@ -399,10 +501,11 @@ const bulkCreateStudents = (students, createdBy) => __awaiter(void 0, void 0, vo
                 yield Student_modal_1.default.create({
                     userId: newUser.userId,
                     instituteId,
+                    classId: resolvedClassId,
                     rollNumber: s.rollNumber,
                     className: s.className,
-                    division: s.division,
-                    academicYear: s.academicYear,
+                    sectionId: resolvedSectionId,
+                    session: s.session,
                     fatherName: s.fatherName || "Not provided",
                     gender: s.gender || "other",
                     dob: new Date(s.dob || "2000-01-01"),
