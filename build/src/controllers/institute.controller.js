@@ -120,6 +120,20 @@ const toggleInstituteStatus = (req, res) => __awaiter(void 0, void 0, void 0, fu
         });
     }
 });
+// ─── Get By Slug ──────────────────────────────────────────────────────────────
+const getInstituteBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield institute_service_1.default.getInstituteBySlug(req.params.slug);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
 exports.default = {
     registerInstitute,
     getAllInstitutes,
@@ -128,4 +142,5 @@ exports.default = {
     softDeleteInstitute,
     toggleInstituteStatus,
     resendAdminCredentials,
+    getInstituteBySlug,
 };
