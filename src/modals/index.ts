@@ -10,6 +10,23 @@ import Subject from "./Subject.modal";
 import Exam from "./Exam.modal";
 import Session from "./Session.modal";
 import QuestionPaper from "./question-paper/QuestionPaper.modal";
+import AcademicCalendar from "./AcademicCalendar.modal";
+
+export {
+  User,
+  Role,
+  Access,
+  TeacherProfile,
+  StudentProfile,
+  Institute,
+  Class,
+  Section,
+  Subject,
+  Exam,
+  Session,
+  QuestionPaper,
+  AcademicCalendar
+};
 
 // ROLE ↔ ACCESS
 // ═══════════════════════════════════════════════════════════════

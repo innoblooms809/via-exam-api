@@ -3,18 +3,33 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
 const User_modal_1 = __importDefault(require("./User.modal"));
+exports.User = User_modal_1.default;
 const Role_modal_1 = __importDefault(require("./Role.modal"));
+exports.Role = Role_modal_1.default;
 const Access_modal_1 = __importDefault(require("./Access.modal"));
+exports.Access = Access_modal_1.default;
 const TeacherProfile_modal_1 = __importDefault(require("./TeacherProfile.modal"));
+exports.TeacherProfile = TeacherProfile_modal_1.default;
 const Student_modal_1 = __importDefault(require("./Student.modal"));
+exports.StudentProfile = Student_modal_1.default;
 const Institute_modal_1 = __importDefault(require("./Institute.modal"));
+exports.Institute = Institute_modal_1.default;
 const Class_modal_1 = __importDefault(require("./Class.modal"));
+exports.Class = Class_modal_1.default;
 const Section_modal_1 = __importDefault(require("./Section.modal"));
+exports.Section = Section_modal_1.default;
 const Subject_modal_1 = __importDefault(require("./Subject.modal"));
+exports.Subject = Subject_modal_1.default;
 const Exam_modal_1 = __importDefault(require("./Exam.modal"));
+exports.Exam = Exam_modal_1.default;
 const Session_modal_1 = __importDefault(require("./Session.modal"));
+exports.Session = Session_modal_1.default;
 const QuestionPaper_modal_1 = __importDefault(require("./question-paper/QuestionPaper.modal"));
+exports.QuestionPaper = QuestionPaper_modal_1.default;
+const AcademicCalendar_modal_1 = __importDefault(require("./AcademicCalendar.modal"));
+exports.AcademicCalendar = AcademicCalendar_modal_1.default;
 // ROLE ↔ ACCESS
 // ═══════════════════════════════════════════════════════════════
 // ROLE ↔ ACCESS
