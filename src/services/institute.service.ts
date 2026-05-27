@@ -623,6 +623,39 @@ const toggleInstituteStatus = async (
   }
 };
 
+const getInstituteBySlug = async (slug: string): Promise<any> => {
+  try {
+    const institute = await Institute.findOne({
+      where: {
+        slug,
+        isDeleted: false,
+      },
+      attributes: ["instituteName", "logoUrl", "bannerUrl", "slug", "status", "city"],
+    });
+
+    if (!institute) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Institute not found.",
+      };
+    }
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Institute fetched successfully.",
+      data: institute,
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 export default {
   registerInstitute,
   getAllInstitutes,
@@ -631,4 +664,5 @@ export default {
   softDeleteInstitute,
   toggleInstituteStatus,
   resendAdminCredentials,
+  getInstituteBySlug,
 };

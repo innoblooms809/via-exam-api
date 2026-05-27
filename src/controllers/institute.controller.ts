@@ -127,6 +127,22 @@ const toggleInstituteStatus = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// ─── Get By Slug ──────────────────────────────────────────────────────────────
+const getInstituteBySlug = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await InstituteService.getInstituteBySlug(
+      req.params.slug,
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export default {
   registerInstitute,
   getAllInstitutes,
@@ -135,4 +151,5 @@ export default {
   softDeleteInstitute,
   toggleInstituteStatus,
   resendAdminCredentials,
+  getInstituteBySlug,
 };

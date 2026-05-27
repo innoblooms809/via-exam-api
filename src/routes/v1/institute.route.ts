@@ -65,5 +65,11 @@ router.patch(
   // authorize(["super_admin"]),
   Controller.toggleInstituteStatus
 );
+// GET    /api/viaexam/institute/slug/:slug
+// Public: Used on login pages to fetch basic institute info like logo
+router.get(
+  "/slug/:slug",
+  Controller.getInstituteBySlug
+);
 
 export default router;
