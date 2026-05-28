@@ -40,6 +40,19 @@ const getAllExams = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         });
     }
 });
+const getAssignedExams = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield exam_service_1.default.getAssignedExams(req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
 const getExamById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield exam_service_1.default.getExamById(req.params.examId, req.viaExamUser);
@@ -99,4 +112,5 @@ exports.default = {
     updateExamStatus,
     updateExam,
     deleteExam,
+    getAssignedExams,
 };
