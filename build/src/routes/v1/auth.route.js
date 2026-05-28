@@ -11,3 +11,4 @@ const router = (0, express_1.Router)();
 router.post("/forgotPassword", auth_controller_1.default.forgotPassword);
 // Reset Password - Step 2 (verify OTP + new password)
 router.post("/resetPassword", auth_controller_1.default.resetPassword);
+exports.default = router;

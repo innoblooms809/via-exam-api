@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
+exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
 const User_modal_1 = __importDefault(require("./User.modal"));
 exports.User = User_modal_1.default;
 const Role_modal_1 = __importDefault(require("./Role.modal"));
@@ -30,6 +30,8 @@ const QuestionPaper_modal_1 = __importDefault(require("./question-paper/Question
 exports.QuestionPaper = QuestionPaper_modal_1.default;
 const AcademicCalendar_modal_1 = __importDefault(require("./AcademicCalendar.modal"));
 exports.AcademicCalendar = AcademicCalendar_modal_1.default;
+const Notification_modal_1 = __importDefault(require("./Notification.modal"));
+exports.Notification = Notification_modal_1.default;
 // ROLE ↔ ACCESS
 // ═══════════════════════════════════════════════════════════════
 // ROLE ↔ ACCESS
@@ -446,3 +448,16 @@ Student_modal_1.default.belongsTo(Section_modal_1.default, {
 // //   sourceKey: "examId",
 // //   as: "questionPapers",
 // // });
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICATION ↔ USER
+// ═══════════════════════════════════════════════════════════════
+Notification_modal_1.default.belongsTo(User_modal_1.default, {
+    foreignKey: "userId",
+    targetKey: "userId",
+    as: "user",
+});
+User_modal_1.default.hasMany(Notification_modal_1.default, {
+    foreignKey: "userId",
+    sourceKey: "userId",
+    as: "notifications",
+});

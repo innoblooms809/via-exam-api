@@ -29,6 +29,7 @@ const Role_modal_1 = __importDefault(require("../../modals/Role.modal"));
 const encryption_1 = __importDefault(require("../../utils/encryption")); // reuse your existing utility
 const helper_1 = __importDefault(require("../../utils/helper")); // reuse your existing utility
 const exclude_1 = __importDefault(require("../../utils/exclude")); // reuse your existing utility
+const sequelize_1 = require("sequelize");
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_MINUTES = 30;
@@ -44,7 +45,11 @@ const getViaExamUserByEmail = (emailId) => __awaiter(void 0, void 0, void 0, fun
                 as: "role",
             },
         ],
-        where: { emailId: emailId },
+        where: {
+            emailId: {
+                [sequelize_1.Op.iLike]: emailId
+            }
+        },
     });
 });
 /**
