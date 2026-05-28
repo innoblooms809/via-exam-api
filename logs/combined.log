@@ -1,1282 +1,354 @@
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 120.476 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 102.596 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 128.634 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693606596 200 - 109.052 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693606598 200 - 101.469 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 47.643 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 55.094 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 32.365 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB155965 200 - 177.027 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.423 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 4.275 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 5.297 ms
+[32minfo[39m: POST /v1/user/login 200 - 138.709 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 113.818 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 92.884 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 125.650 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693849497 200 - 85.901 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693849495 200 - 108.536 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 32.710 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 21.930 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 23.652 ms
+[32minfo[39m: OPTIONS /v1/question-papers/getExamBySelection 204 - 0.258 ms
+[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 64.479 ms
+[32minfo[39m: GET /v1/student/getAllStudents?className=1&sectionId=A 200 - 45.843 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779693861753&classId=IB418680&section=A&subjectId=IB710090&examType=Mid+Term 200 - 26.151 ms
+[32minfo[39m: GET /v1/student/getAllStudents?className=1&sectionId=A 304 - 61.856 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779693862000&classId=IB418680&section=A&subjectId=IB710090&examType=Mid+Term 200 - 10.770 ms
+[32minfo[39m: GET /v1/scanner/getFile/IB721185 200 - 56.681 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693904230 200 - 79.314 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 81.007 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 77.236 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 88.569 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 22.363 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779693904232 200 - 86.173 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 21.497 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 22.409 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779693911337 200 - 27.406 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779693911340 200 - 42.165 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 42.566 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 54.929 ms
+[32minfo[39m: GET /v1/section/allSections 200 - 38.200 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 17.479 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 19.704 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 18.279 ms
+[32minfo[39m: OPTIONS /v1/question-papers/getQuestionPaperBySet 204 - 0.525 ms
+[32minfo[39m: OPTIONS /v1/question-paper-answers/getQuestionPaperAnswerBySet 204 - 0.290 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779693930947&classId=IB418680&section=A&subjectId=IB710090&examType=Mid+Term 200 - 79.674 ms
+[32minfo[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 200 - 80.130 ms
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 91.384 ms
+[32minfo[39m: GET /v1/student/getAllStudents?className=1&sectionId=A 304 - 103.114 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779694189961 200 - 79.613 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 71.932 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779694189964 200 - 71.647 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 75.416 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 96.182 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 18.731 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 19.935 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.386 ms
+[32minfo[39m: OPTIONS /v1/question-papers/getQuestionPaperBySet 204 - 0.198 ms
+[32minfo[39m: OPTIONS /v1/question-paper-answers/getQuestionPaperAnswerBySet 204 - 0.220 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779694219291&classId=IB418680&section=A&subjectId=IB710090&examType=Mid+Term 200 - 74.591 ms
+[32minfo[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 200 - 80.151 ms
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 95.313 ms
+[32minfo[39m: GET /v1/student/getAllStudents?className=1&sectionId=A 304 - 93.195 ms
+[32minfo[39m: GET /v1/scanner/getFile/IB721185 304 - 65.038 ms
+[32minfo[39m: OPTIONS /v1/class/createClass 204 - 4.682 ms
+[31merror[39m: POST /v1/class/createClass 401 - 12.893 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.672 ms
+[31merror[39m: POST /v1/user/login 400 - 107.771 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701654696 401 - 14.678 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701654714 401 - 2.532 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701663374 401 - 1.657 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779701674737 401 - 2.740 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.103 ms - message: -
+[31merror[39m: GET /v1/section/allSections 401 - 1.535 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 1.672 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.354 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.367 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 133.239 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 107.031 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 132.050 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 122.113 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779701674737 200 - 32.115 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 36.284 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 46.699 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 48.982 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.568 ms
+[32minfo[39m: POST /v1/user/login 200 - 70.377 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701698424 401 - 1.299 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701698426 401 - 1.068 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.478 ms
+[32minfo[39m: POST /v1/user/login 200 - 207.292 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701717869 401 - 1.099 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701717872 401 - 1.077 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701761657 401 - 1.264 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701761655 401 - 0.371 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701775041 401 - 1.074 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701775042 401 - 0.510 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.213 ms
+[32minfo[39m: POST /v1/user/login 200 - 174.250 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701793504 401 - 1.460 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701793506 401 - 1.075 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701887910 401 - 1.138 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701898791 401 - 1.112 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701898793 401 - 0.462 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701905994 401 - 1.525 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779701905997 401 - 1.093 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702062597 401 - 1.664 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702062595 401 - 0.954 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.644 ms
+[32minfo[39m: POST /v1/user/login 200 - 108.225 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702151352 401 - 1.206 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702151356 401 - 1.098 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702165166 401 - 1.115 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779702397856 401 - 1.476 ms - message: -
+[31merror[39m: GET /v1/student/getAllStudents 401 - 18.122 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 7.643 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 3.202 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1779705251711 401 - 14.705 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1779705251708 401 - 1.282 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779705254406 401 - 3.716 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779705254409 401 - 1.492 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779705554056 401 - 2.266 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779705554068 401 - 1.048 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706235061 401 - 1.805 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706235067 401 - 1.033 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706948555 401 - 2.868 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779706948562 401 - 1.463 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708515932 401 - 1.685 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708515942 401 - 1.279 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708529271 401 - 1.630 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779708529273 401 - 1.134 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779711595435 401 - 8.103 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.700 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 138.501 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779711595435 200 - 130.702 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779687321524.png 304 - 35.155 ms
 [31merror[39m: Error connecting to PostgreSQL / syncing models
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: OPTIONS /v1/user/login 204 - 17.396 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.430 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 5.967 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.523 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.276 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.508 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.267 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.775 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.534 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 1.107 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.809 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.326 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.353 ms
-[32minfo[39m: SIGTERM received
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.989 ms
-[32minfo[39m: POST /v1/user/login 200 - 90.118 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.219 ms
-[32minfo[39m: POST /v1/user/login 200 - 163.880 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779687605564 200 - 169.374 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779687605561 200 - 196.989 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779687638008 200 - 134.622 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779687638011 200 - 103.432 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779687645886 200 - 29.493 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779687645887 200 - 33.777 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779687753528 200 - 139.646 ms
-[31merror[39m: POST /v1/institute/register 500 - 49.762 ms - message: -
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779688322996 200 - 27.166 ms
-[32minfo[39m: POST /v1/institute/register 201 - 3422.358 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.522 ms
-[32minfo[39m: POST /v1/user/login 200 - 103.056 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779688377534 200 - 237.498 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779688377532 200 - 269.865 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779688323065.png 200 - 9.661 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688387941 200 - 41.828 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688387937 200 - 54.847 ms
-[32minfo[39m: OPTIONS /v1/sessions/createSession 204 - 2.412 ms
-[32minfo[39m: POST /v1/sessions/createSession 201 - 173.657 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688406303 200 - 64.532 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688406304 200 - 49.371 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688420689 200 - 114.217 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688420689 304 - 6.019 ms
-[32minfo[39m: OPTIONS /v1/class/createClass 204 - 1.229 ms
-[32minfo[39m: POST /v1/class/createClass 201 - 396.722 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688429678 200 - 40.649 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688429679 200 - 7.847 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688433346 200 - 29.210 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779688433347 200 - 25.124 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779688433345 200 - 39.143 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688433347 200 - 23.684 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688463473 200 - 184.614 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688463474 200 - 180.334 ms
-[32minfo[39m: GET /v1/student/getAllStudents 200 - 134.770 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688844544 200 - 1013.689 ms
-[32minfo[39m: GET /v1/class/getAllClasses 200 - 970.516 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688844547 200 - 964.098 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 4.366 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 64.032 ms - message: -
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 12.387 ms - message: -
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688860623 200 - 662.813 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688860627 200 - 648.215 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688863068 200 - 21.384 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688863067 200 - 28.608 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688864316 200 - 4.282 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779688864317 200 - 5.786 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688865024 200 - 6.719 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779688865023 200 - 10.867 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688865024 304 - 5.067 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779688865024 200 - 12.508 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779688868638 200 - 72.851 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688868638 200 - 60.737 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779688868639 200 - 58.646 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779688868639 200 - 18.658 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779689625149 200 - 271.372 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779689625148 200 - 320.727 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779689625149 200 - 295.359 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779689625149 304 - 2.989 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779690023351 200 - 219.815 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779690023351 200 - 203.528 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779690023349 200 - 261.053 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779690023351 304 - 6.282 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 473.632 ms - message: -
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 409.142 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 430.239 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 452.915 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 54.345 ms - message: -
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 54.402 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 19.570 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 13.554 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 200 - 472.029 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 304 - 7.654 ms
-[32minfo[39m: GET /v1/section/allSections 200 - 2345.247 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779690049236 200 - 2485.151 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779690049226 200 - 2672.589 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779690052597 200 - 277.870 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 2369.850 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 2450.051 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779690052597 200 - 16.773 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779690052625 200 - 13.867 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779690052625 200 - 13.010 ms
-[32minfo[39m: GET /v1/section/allSections 304 - 11.726 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779690052597 200 - 16.848 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779690052625 200 - 15.513 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 6.693 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.812 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 39.859 ms - message: -
-[32minfo[39m: GET /v1/exam/getAllExams? 304 - 38.625 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 40.820 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 51.372 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 51.796 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 304 - 7.777 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 21.873 ms - message: -
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 17.599 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 16.045 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 15.785 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779690055180 200 - 6.823 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779690055179 200 - 10.026 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779690055180 200 - 6.834 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779690055180 200 - 8.832 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779690055180 304 - 10.601 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779690055180 304 - 25.189 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779690063026 200 - 55.923 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779690063027 200 - 37.154 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779690063120 200 - 34.249 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779690063027 200 - 52.196 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779690063121 200 - 17.000 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779690063121 200 - 27.376 ms
-[31merror[39m: GET /v1/student/getAllStudents 401 - 47.081 ms - message: -
-[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779691405989 401 - 1.569 ms - message: -
-[31merror[39m: GET /v1/class/getAllClasses 401 - 2.263 ms - message: -
-[31merror[39m: GET /v1/class/getAllClasses 401 - 0.329 ms - message: -
-[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779691405990 401 - 1.032 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.402 ms
-[32minfo[39m: POST /v1/user/login 200 - 296.874 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 34.680 ms - message: -
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 7.147 ms - message: -
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 55.234 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779691499115 200 - 21.229 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779691499116 200 - 16.341 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691500268 200 - 40.195 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691500269 200 - 34.509 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691502155 200 - 13.247 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779691502155 200 - 17.961 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691502156 200 - 7.345 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779691502156 200 - 15.101 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691506916 200 - 21.991 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691506915 200 - 36.889 ms
-[32minfo[39m: OPTIONS /v1/section/createSection 204 - 2.241 ms
-[32minfo[39m: POST /v1/section/createSection 201 - 1169.843 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779691515911 200 - 95.801 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691515912 200 - 18.262 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779691515912 200 - 54.105 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691515912 304 - 10.778 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 54.212 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779691520553 200 - 12.948 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779691520556 200 - 10.726 ms
-[32minfo[39m: GET /v1/class/getAllClasses 200 - 10.248 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 3.919 ms
-[32minfo[39m: GET /v1/section/allSections?classId=IB921172 200 - 13.397 ms
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /v1/question-papers/createQuestionPaper 404 - 94.010 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /favicon.ico 404 - 1.623 ms - message: Not found
-[32minfo[39m: POST /v1/student/createStudent 201 - 193.630 ms
-[32minfo[39m: GET /v1/student/getAllStudents 200 - 53.696 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779691647909 200 - 159.671 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779691647908 200 - 194.728 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691647909 200 - 168.966 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691647909 304 - 12.048 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691652614 200 - 256.430 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691652615 200 - 242.858 ms
-[32minfo[39m: OPTIONS /v1/subject/createSubject 204 - 0.506 ms
-[32minfo[39m: POST /v1/subject/createSubject 201 - 260.774 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691660507 200 - 58.085 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779691660506 200 - 67.040 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779691660508 200 - 63.235 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779691660508 200 - 62.475 ms
-[32minfo[39m: GET /v1/class/getAllClasses 200 - 130.258 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 191.619 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 114.499 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779691685302 200 - 112.569 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779691685301 200 - 290.562 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 12.213 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 11.764 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 9.796 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 560.255 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 358.540 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 321.781 ms - message: -
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.311 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 11.786 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 10.649 ms - message: -
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 363.075 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 4.774 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 304 - 486.077 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 304 - 5.588 ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 1416.375 ms - message: -
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 4.723 ms - message: -
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 1590.566 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 1576.883 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 20.670 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 30.036 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 1632.514 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 17.895 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB307486 200 - 656.097 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB307486 304 - 5.836 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779692603547 200 - 143.488 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779692603543 200 - 184.006 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779688323065.png 304 - 21.601 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB307486 304 - 14.864 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB307486 304 - 5.036 ms
-[32minfo[39m: GET /v1/uploads/institutes/logos/logo-1779688323065.png 200 - 5.575 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 3.648 ms
-[31merror[39m: POST /v1/user/login 400 - 207.517 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.509 ms
-[32minfo[39m: POST /v1/user/login 200 - 113.000 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 204.211 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 12.576 ms
-[31merror[39m: POST /v1/teacher/createTeacher 409 - 166.574 ms - message: -
-[32minfo[39m: POST /v1/teacher/createTeacher 201 - 198.304 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 109.048 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 304 - 185.039 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 202.849 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 198.003 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 189.462 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 123.577 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 304 - 24.207 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 26.283 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 21.909 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 19.752 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 7.676 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 7.582 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.112 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 14.848 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 5.520 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.171 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 5.546 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 11.643 ms
-[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 1.114 ms
-[32minfo[39m: POST /v1/exam/createExam 201 - 53.937 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 200 - 17.240 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 29.657 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 32.471 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 27.513 ms
-[32minfo[39m: GET /v1/exam/getAllExams? 304 - 21.340 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 28.724 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 25.376 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 20.287 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 20.560 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 11.918 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779692870470 200 - 41.517 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 11.032 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 17.098 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 13.665 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 12.048 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779692870471 200 - 17.583 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 13.484 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 7.220 ms
-[32minfo[39m: OPTIONS /v1/question-papers/getExamBySelection 204 - 0.316 ms
-[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 24.261 ms
-[32minfo[39m: POST /v1/scanner/uploadSheets 201 - 80.587 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779692890926 200 - 23.259 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 20.341 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 22.131 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779692890927 200 - 12.354 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 5.684 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 19.596 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 8.599 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 16.531 ms
-[32minfo[39m: OPTIONS /v1/question-papers/getExamBySelection 204 - 0.399 ms
-[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 14.589 ms
-[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 1356.298 ms
-[32minfo[39m: OPTIONS /v1/question-papers/getExamBySelection 204 - 4.082 ms
-[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 129.041 ms
-[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 114.959 ms
-[32minfo[39m: GET /v1/student/getAllStudents?className=5&sectionId=A 200 - 438.350 ms
-[32minfo[39m: GET /v1/student/getAllStudents?className=5&sectionId=A 304 - 32.511 ms
-[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779692913265&classId=IB921172&section=A&subjectId=IB015159&examType=Mid+Term 200 - 92.858 ms
-[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1779692913301&classId=IB921172&section=A&subjectId=IB015159&examType=Mid+Term 200 - 76.787 ms
-[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779699200090 401 - 82.629 ms - message: -
-[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779699200094 401 - 0.400 ms - message: -
-[31merror[39m: GET /v1/institute/getOneInstitute/IB307486 401 - 5.210 ms - message: -
-[31merror[39m: GET /v1/institute/getOneInstitute/IB307486 401 - 2.859 ms - message: -
-[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779699202385 401 - 1.871 ms - message: -
-[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779699202386 401 - 1.078 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 27.734 ms
-[32minfo[39m: POST /v1/user/login 200 - 450.069 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779699333742 200 - 143.070 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779699333743 200 - 120.489 ms
-[32minfo[39m: OPTIONS /v1/sessions/createSession 204 - 14.162 ms
-[31merror[39m: POST /v1/sessions/createSession 409 - 286.639 ms - message: -
-[32minfo[39m: OPTIONS /v1/sessions/createSession 204 - 3.100 ms
-[32minfo[39m: POST /v1/sessions/createSession 201 - 76.926 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779699844596 200 - 21.207 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779699844597 200 - 13.081 ms
-[32minfo[39m: OPTIONS /v1/sessions/createSession 204 - 2.406 ms
-[32minfo[39m: POST /v1/sessions/createSession 201 - 135.594 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779700049516 200 - 66.824 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779700049517 200 - 60.422 ms
-[32minfo[39m: OPTIONS /v1/sessions/createSession 204 - 4.189 ms
-[32minfo[39m: POST /v1/sessions/createSession 201 - 118.601 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779700169668 200 - 78.507 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779700169669 200 - 69.532 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 260.332 ms - message: -
-[32minfo[39m: GET /v1/institute/slug/mathematics 200 - 250.550 ms
-[32minfo[39m: GET /v1/institute/slug/mathematics 200 - 229.221 ms
-[32minfo[39m: GET /v1/institute/slug/mathematics 200 - 235.548 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 224.796 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 6.663 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.270 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.587 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 277.807 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.021 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 1.580 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.785 ms
-[32minfo[39m: POST /v1/user/login 200 - 201.118 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 253.466 ms - message: -
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 47.798 ms - message: -
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779791864799 200 - 203.471 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779791864805 200 - 213.405 ms
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 31.234 ms - message: Not found
-[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 24.608 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 17.917 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 5.494 ms
-[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 7.768 ms - message: Not found
-[31merror[39m: GET /uploads/institutes/logos/logo-1779772560785.png 404 - 10.589 ms - message: Not found
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779791949865 200 - 366.546 ms
-[31merror[39m: POST /v1/institute/register 409 - 289.042 ms - message: -
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779791963027 200 - 382.357 ms
-[31merror[39m: POST /v1/institute/register 409 - 299.537 ms - message: -
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779791969145 200 - 101.359 ms
-[31merror[39m: POST /v1/institute/register 409 - 258.314 ms - message: -
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779791977820 200 - 90.195 ms
-[31merror[39m: POST /v1/institute/register 409 - 268.887 ms - message: -
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779791981545 200 - 90.451 ms
-[32minfo[39m: POST /v1/institute/register 201 - 3837.285 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 200 - 213.235 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 200 - 2.434 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 299.912 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 4.729 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 42.131 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 3.245 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 36.872 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 1.413 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 58.934 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 3.032 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 6.028 ms
-[32minfo[39m: POST /v1/user/login 200 - 444.206 ms
-[31merror[39m: GET /v1/student/getAllStudents 500 - 6090.697 ms - message: -
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 6020.419 ms - message: -
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 6022.386 ms - message: -
-[32minfo[39m: GET /v1/teacher/getAllTeachers - - - ms
-[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 10069.317 ms - message: -
-[31merror[39m: GET /v1/student/getAllStudents 500 - 11773.205 ms - message: -
-[31merror[39m: GET /v1/student/getAllStudents 500 - 3819.818 ms - message: -
-[32minfo[39m: GET /v1/student/getAllStudents 200 - 346.044 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 316.797 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 329.979 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 119.191 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779793754193 200 - 119.367 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779793754195 200 - 132.222 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793755991 200 - 100.194 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793755992 200 - 84.967 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779793757580 200 - 81.590 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779793757580 200 - 79.895 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779793757581 200 - 70.552 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779793757581 200 - 83.273 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779793759359 200 - 64.407 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779793759358 200 - 83.658 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 258.746 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 6.876 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.108 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779771981336 401 - 10.349 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.910 ms
+[31merror[39m: POST /v1/user/refresh-token 404 - 375.833 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.310 ms
+[32minfo[39m: POST /v1/user/login 200 - 917.661 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779772083604 200 - 324.504 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779772083607 200 - 349.184 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569490591.png 200 - 5.811 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 200 - 9.255 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.240 ms
+[31merror[39m: POST /v1/user/login 400 - 221.453 ms - message: -
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB065139 200 - 194.056 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.201 ms
+[31merror[39m: POST /v1/user/login 400 - 252.956 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.339 ms
+[31merror[39m: POST /v1/user/login 400 - 288.963 ms - message: -
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779772255719 200 - 322.876 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 4.682 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569490591.png 304 - 1.178 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB065139 200 - 396.392 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779772559722 200 - 957.965 ms
+[32minfo[39m: POST /v1/institute/register 201 - 10529.850 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.342 ms
+[32minfo[39m: POST /v1/user/login 200 - 725.661 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779772742274 200 - 422.236 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779772742269 200 - 432.553 ms
+[32minfo[39m: OPTIONS /v1/sessions/createSession 204 - 0.315 ms
+[32minfo[39m: POST /v1/sessions/createSession 201 - 1193.026 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779772794999 200 - 118.474 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779772795000 200 - 156.466 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772801642 200 - 137.290 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772801643 200 - 136.436 ms
+[32minfo[39m: OPTIONS /v1/class/createClass 204 - 0.265 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 769.485 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772814862 200 - 173.951 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772814865 200 - 215.951 ms
+[32minfo[39m: OPTIONS /v1/class/createClass 204 - 0.686 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 197.500 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772823692 200 - 270.793 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772823691 200 - 276.294 ms
+[32minfo[39m: OPTIONS /v1/class/createClass 204 - 0.240 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 201.848 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772830794 200 - 132.694 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772830793 200 - 144.141 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772834093 200 - 207.457 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772834093 200 - 208.460 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772834095 200 - 248.011 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772834094 200 - 252.383 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772836455 200 - 167.032 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772836456 200 - 167.846 ms
+[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.400 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 330.489 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772844097 200 - 113.502 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772844098 200 - 122.472 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772844099 200 - 186.111 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772844099 200 - 186.556 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772845908 200 - 93.626 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772845909 200 - 92.411 ms
+[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.219 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 324.978 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772853003 200 - 110.798 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772853004 200 - 106.504 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772853004 200 - 102.286 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772853003 200 - 113.196 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772855738 200 - 164.506 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772855740 200 - 151.239 ms
+[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.231 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 14017.842 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772875967 200 - 22036.920 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772875965 200 - 22050.714 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772875966 200 - 22041.647 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772875967 - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772906317 200 - 14010.774 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772906315 200 - 14016.258 ms
+[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.382 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 10019.485 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772948050 200 - 400.508 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772948050 200 - 477.472 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779772948052 200 - 511.237 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772948053 200 - 552.239 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779772982870 200 - 9862.281 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779772982871 200 - 9857.804 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772982870 200 - 9934.956 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772982872 200 - 9929.248 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772998512 200 - 6447.162 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779772998510 200 - 6447.302 ms
+[32minfo[39m: OPTIONS /v1/subject/createSubject 204 - 0.222 ms
+[32minfo[39m: POST /v1/subject/createSubject 201 - 9639.910 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779773022994 200 - 7112.747 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773022994 200 - 7111.874 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773022997 200 - 21878.526 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779773022996 200 - 22064.661 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773042449 200 - 16902.170 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773042450 200 - 16898.648 ms
+[32minfo[39m: OPTIONS /v1/subject/createSubject 204 - 0.213 ms
+[32minfo[39m: POST /v1/subject/createSubject 201 - 21996.142 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779773104797 - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773104797 - - - ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779773104799 - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779773104799 - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.230 ms
+[32minfo[39m: POST /v1/user/login 200 - 635.816 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779773218991 200 - 322.124 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 2.471 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569490591.png 304 - 2.554 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779772560785.png 200 - 8.662 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779773218992 200 - 496.357 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779774079821 200 - 324.702 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779774079824 200 - 320.715 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779774079824 200 - 374.629 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779774079822 200 - 437.976 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 576.776 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 219.235 ms
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 983.295 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 143.718 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 301.816 ms
+[32minfo[39m: GET /v1/student/getAllStudents - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses - - - ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779774699769 - - - ms
+[32minfo[39m: GET /v1/class/getAllClasses - - - ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779774699765 - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.296 ms
 [32minfo[39m: POST /v1/user/login - - - ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 1.444 ms
-[31merror[39m: POST /v1/user/login 400 - 13259.430 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.825 ms
-[31merror[39m: POST /v1/user/login 400 - 13348.298 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 1.916 ms
-[31merror[39m: POST /v1/user/login 400 - 6166.368 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.999 ms
-[31merror[39m: POST /v1/user/login 400 - 6139.642 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 1.148 ms
-[31merror[39m: POST /v1/user/login 400 - 6075.930 ms - message: -
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 356.983 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 8.846 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 7.511 ms
-[32minfo[39m: POST /v1/user/login 200 - 264.400 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 147.632 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 152.748 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 156.283 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 466.414 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 526.421 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 606.303 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 56.083 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 120.079 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 14.420 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 306.516 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 572.119 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 136.390 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 174.295 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 196.769 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 126.290 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 324.459 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 8.700 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 351.319 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 124.713 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 117.978 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779796229600 200 - 183.032 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779796229604 200 - 153.186 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 682.877 ms - message: -
-[31merror[39m: GET /v1/student/getAllStudents 401 - 45.148 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 2.819 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 492.706 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 140.634 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 200 - 322.336 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 2.496 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 369.592 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 346.543 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: OPTIONS /v1/user/login 204 - 2.241 ms
-[32minfo[39m: POST /v1/user/login 200 - 492.419 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779858789759 200 - 207.837 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779858789761 200 - 287.354 ms
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 8.431 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 7.169 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 7.729 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 14.100 ms - message: Not found
-[31merror[39m: GET /uploads/institutes/logos/logo-1779772560785.png 404 - 15.461 ms - message: Not found
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 200 - 10.670 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 200 - 16.894 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB471772 200 - 437.663 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB471772 304 - 149.630 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779859239471 200 - 304.260 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779859239465 200 - 380.553 ms
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 24.234 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 17.999 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 1.646 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 5.222 ms - message: Not found
-[31merror[39m: GET /uploads/institutes/logos/logo-1779772560785.png 404 - 3.712 ms - message: Not found
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 200 - 170.135 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 304 - 137.099 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779859258992 200 - 345.755 ms
-[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779859258990 200 - 408.369 ms
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 4.066 ms - message: Not found
-[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 3.932 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 2.912 ms - message: Not found
-[31merror[39m: Error: Not found
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
-    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
-    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
-    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
-    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
-    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
-    at SendStream.emit (node:events:518:28)
-    at SendStream.emit (node:domain:489:12)
-    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
-[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 5.153 ms - message: Not found
-[31merror[39m: GET /uploads/institutes/logos/logo-1779772560785.png 404 - 14.238 ms - message: Not found
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 304 - 221.344 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB308402 200 - 184.442 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB841255 200 - 182.185 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB632892 200 - 181.225 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB654770 200 - 207.378 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB471772 304 - 165.465 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 304 - 199.293 ms
-[31merror[39m: GET /v1/institute/slug/delhi 404 - 309.416 ms - message: -
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 304 - 420.340 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 200 - 58.851 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 7.916 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 304 - 467.024 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 304 - 154.400 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 304 - 158.908 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 1.034 ms
-[32minfo[39m: POST /v1/user/login 200 - 420.573 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 58.443 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 35.997 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[31merror[39m: GET /v1/subject/getAllSubjects?_t=1779865305903 401 - 57.137 ms - message: -
-[31merror[39m: GET /v1/class/getAllClasses?_t=1779865305907 401 - 4.517 ms - message: -
-[31merror[39m: GET /v1/subject/getAllSubjects?_t=1779865305908 401 - 0.567 ms - message: -
-[31merror[39m: GET /v1/class/getAllClasses?_t=1779865305908 401 - 0.413 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.498 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.087 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.105 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.096 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 406.291 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 421.076 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 440.507 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 573.872 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779865305903 200 - 96.227 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779865305908 200 - 112.891 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779865305908 200 - 96.904 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779865305907 200 - 111.760 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779865399926 200 - 369.947 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779865399928 200 - 310.177 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779865399928 200 - 328.257 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779865399927 200 - 366.309 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=4 500 - 472.887 ms - message: -
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 89.229 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 334.230 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 325.396 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 36.137 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 8.413 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 88.181 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 538.685 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779866622897 200 - 875.591 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779866622886 200 - 1252.659 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779866622906 200 - 753.332 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779866622906 200 - 686.027 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 353.052 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 142.971 ms
-[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 500 - 803.397 ms - message: -
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 185.169 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 420.424 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 2.242 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 468.215 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 474.808 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 522.480 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 784.221 ms - message: -
-[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 12.954 ms - message: -
-[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 5.210 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 4.547 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.911 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 635.571 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 521.689 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 185.573 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 317.689 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 401 - 49.551 ms - message: -
-[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 401 - 0.662 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.382 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.114 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 488.976 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 395.404 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 109.370 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 75.131 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 200 - 97.229 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 99.008 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 295.363 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 5.598 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 327.059 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 393.066 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 133.312 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 146.686 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 79.630 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 387.746 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 337.835 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 6.797 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 1.514 ms
-[32minfo[39m: POST /v1/user/login 200 - 455.105 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 78.166 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 43.540 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 380.719 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 96.438 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 3.937 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 500.248 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 80.466 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 365.314 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=7 200 - 284.196 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=8 200 - 84.286 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=9 200 - 88.559 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=10 200 - 78.717 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=11 200 - 79.841 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=12 200 - 83.513 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=1 200 - 79.427 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=2 200 - 95.971 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=3 200 - 81.136 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=4 200 - 82.181 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=5 200 - 77.204 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=6 200 - 86.301 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=7 200 - 84.708 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=8 200 - 83.377 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=9 200 - 89.929 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=10 200 - 83.955 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=9 304 - 101.671 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=8 304 - 77.831 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=7 304 - 85.497 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=6 304 - 96.233 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=5 304 - 111.413 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=4 304 - 97.212 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=3 304 - 93.195 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=2 304 - 95.278 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2027&month=1 304 - 91.972 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=12 304 - 93.816 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 1.257 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 346.482 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=12 200 - 90.020 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=11 304 - 88.023 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=10 304 - 96.568 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=9 304 - 86.463 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=8 304 - 110.173 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=7 304 - 86.514 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 88.797 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 83.599 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=4 200 - 79.608 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 80.946 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 12.008 ms
-[32minfo[39m: POST /v1/academic-calendar - - - ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 408.838 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 16.343 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 401.730 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 3.993 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 358.139 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 76.391 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar/EVT-83483E1F 204 - 1.737 ms
-[32minfo[39m: DELETE /v1/academic-calendar/EVT-83483E1F 200 - 1010.713 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 92.257 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 1.047 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 406.535 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 113.846 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 1.016 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 421.477 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 125.095 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 0.954 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 313.396 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 96.096 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 362.361 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 78.975 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 313.860 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 91.114 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 88.202 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 80.613 ms
-[32minfo[39m: GET /v1/student/getAllStudents 200 - 177.938 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873836211 200 - 196.055 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873836212 200 - 229.665 ms
-[32minfo[39m: OPTIONS /v1/class/createClass 204 - 1.920 ms
-[32minfo[39m: POST /v1/class/createClass 201 - 257.248 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873846456 200 - 174.126 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873846457 200 - 149.865 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779873850694 200 - 192.700 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779873850691 200 - 212.228 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 475.838 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 90.158 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779873874390 200 - 185.072 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779873874391 200 - 223.683 ms
-[32minfo[39m: OPTIONS /v1/sessions/createSession 204 - 0.923 ms
-[32minfo[39m: POST /v1/sessions/createSession 201 - 858.662 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779873891647 200 - 100.245 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779873891646 200 - 103.731 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873897179 200 - 80.047 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873897178 200 - 102.478 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779873899757 200 - 127.974 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779873899759 200 - 178.590 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873899757 200 - 184.643 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873899759 200 - 229.421 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873905586 200 - 117.686 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873905587 200 - 133.657 ms
-[32minfo[39m: OPTIONS /v1/section/createSection 204 - 0.672 ms
-[32minfo[39m: POST /v1/section/createSection 201 - 177.540 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779873910510 200 - 72.577 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873910511 200 - 89.474 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873910510 200 - 97.391 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779873910511 200 - 95.048 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779873913306 200 - 90.892 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779873913305 200 - 104.919 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873913306 200 - 97.676 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873913306 304 - 78.487 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873916120 200 - 77.439 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873916119 200 - 112.034 ms
-[32minfo[39m: OPTIONS /v1/subject/createSubject 204 - 5.875 ms
-[32minfo[39m: POST /v1/subject/createSubject 201 - 216.485 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873924984 200 - 109.899 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779873924983 200 - 137.227 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779873924985 200 - 141.268 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873924985 200 - 141.259 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779873928333 200 - 72.587 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779873928335 200 - 74.686 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873929300 200 - 70.991 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779873929299 200 - 79.255 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779873929300 200 - 74.493 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779873929300 304 - 69.519 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 87.738 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 69.749 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 372.695 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 113.109 ms
-[31merror[39m: POST /v1/teacher/createTeacher 409 - 803.771 ms - message: -
-[32minfo[39m: POST /v1/teacher/createTeacher 201 - 534.235 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 193.572 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 137.998 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 303.936 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 5.914 ms
-[32minfo[39m: GET /v1/teacher/getOneTeacher/IB119747 200 - 375.034 ms
-[32minfo[39m: GET /v1/teacher/getOneTeacher/IB119747 304 - 75.293 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 3.312 ms
-[32minfo[39m: POST /v1/user/login 200 - 449.997 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 115.293 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 56.514 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 1021.215 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 188.992 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 660.251 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 15.195 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 419.896 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 198.593 ms
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 307.177 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 1.979 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 358.679 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 1.532 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 329.632 ms - message: -
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 0.720 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 54.780 ms - message: -
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 1.349 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 363.285 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 137.067 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 363.849 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=7 304 - 162.057 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 127.228 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 126.496 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=4 304 - 178.346 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 281.203 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 392.063 ms
-[32minfo[39m: GET /v1/class/getAllClasses 200 - 180.479 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779875661192 200 - 216.615 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779875661196 200 - 236.932 ms
-[32minfo[39m: GET /v1/class/getAllClasses 304 - 159.872 ms
-[32minfo[39m: GET /v1/section/allSections?classId=IB619755 200 - 109.263 ms
-[32minfo[39m: POST /v1/student/createStudent 201 - 1218.207 ms
-[32minfo[39m: GET /v1/student/getAllStudents 200 - 121.978 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 341.301 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 10.324 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 384.301 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 310.703 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 2.818 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 6.527 ms
-[31merror[39m: POST /v1/user/login 400 - 459.771 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.815 ms
-[32minfo[39m: POST /v1/user/login 200 - 201.025 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 52.322 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 31.954 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 289.231 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 40.094 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 1.144 ms
-[32minfo[39m: POST /v1/user/login 200 - 468.026 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 52.893 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 39.599 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 535.685 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 290.950 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 176.878 ms
-[32minfo[39m: GET /v1/student/getAllStudents 304 - 140.882 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 49.618 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 49.974 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.887 ms
-[32minfo[39m: POST /v1/user/login 200 - 384.029 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 78.821 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 45.290 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 1613.348 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 34.734 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 402.211 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 172.405 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 400.245 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 115.345 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 1.243 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 421.758 ms - message: -
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 0.509 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 158.808 ms - message: -
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 55.416 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 15.309 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 278.834 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 1.633 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 324.120 ms - message: -
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 448.190 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 4.531 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 59.080 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 146.111 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 1.762 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 910.373 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 353.307 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 1424.812 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 122.454 ms - message: -
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 149.264 ms
-[31merror[39m: GET /v1/institute/slug/delhi 404 - 115.119 ms - message: -
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 57.624 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 239.425 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 6.530 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 9.377 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 200 - 306.912 ms
-[31merror[39m: GET /v1/class/getAllClasses?_t=1779878295594 401 - 48.659 ms - message: -
-[31merror[39m: GET /v1/class/getAllClasses?_t=1779878295764 401 - 5.811 ms - message: -
-[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 401 - 3.528 ms - message: -
-[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 401 - 3.396 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 17.775 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 75.040 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.119 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.179 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 1124.976 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 188.956 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 445.429 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 510.284 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 801.950 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 513.705 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878295594 200 - 172.405 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878295764 200 - 178.467 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 257.298 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 583.198 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 498.407 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878336400 200 - 728.786 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 450.638 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 430.907 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878391576 200 - 788.680 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 49.589 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878391941 200 - 364.902 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 407.789 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 126.144 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 47.557 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 0.421 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 474.492 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878473833 200 - 624.680 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 23.741 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 440.898 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779878495701 200 - 391.245 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878495701 200 - 407.263 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878495703 200 - 403.957 ms
-[32minfo[39m: GET /v1/section/allSections?_t=1779878495702 200 - 406.119 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878497113 200 - 211.534 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878497112 200 - 261.908 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 272.810 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 118.458 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 795.374 ms
-[31merror[39m: GET /v1/institute/slug/delhi 404 - 448.925 ms - message: -
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 530.381 ms - message: -
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878564977 200 - 1796.088 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878566001 200 - 930.140 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 88.024 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 984.759 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 41.695 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 304 - 726.292 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 164.917 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 11.153 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 101.206 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 8.217 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 809.901 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 115.980 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779878731746&classId=IB619755 200 - 542.735 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 7.773 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 342.789 ms - message: -
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 444.321 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 148.738 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878823924 200 - 458.751 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779878823933 200 - 384.250 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 412.297 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 116.552 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779879158014 200 - 728.480 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779879158506 200 - 427.461 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779879158746 200 - 343.984 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 469.127 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779879159448 200 - 91.968 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779879159450 200 - 110.073 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779879159452 200 - 112.679 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 127.702 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 119.111 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 725.254 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 182.726 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 119.361 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 467.190 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779879467616 200 - 769.266 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 466.275 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 104.216 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779879468704 200 - 153.440 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779879602524&classId=IB619755 200 - 417.525 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 2.855 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 581.618 ms - message: -
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 4.363 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 341.648 ms - message: -
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 0.480 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 304.029 ms - message: -
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779879863999&classId=IB619755 200 - 553.373 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 2.665 ms
-[31merror[39m: POST /v1/academic-calendar 401 - 13.079 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.569 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 497.412 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 49.750 ms - message: -
-[32minfo[39m: Connected to PostgreSQL Database
-[32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
-[32minfo[39m: Connected to PostgreSQL Database
-[31merror[39m: Error connecting to PostgreSQL / syncing models
-info: Connected to PostgreSQL Database
-error: Error connecting to PostgreSQL / syncing models
-[32minfo[39m: Connected to PostgreSQL Database
-[31merror[39m: Error connecting to PostgreSQL / syncing models
-[32minfo[39m: Connected to PostgreSQL Database
-[31merror[39m: Error connecting to PostgreSQL / syncing models
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.390 ms
+[32minfo[39m: POST /v1/user/login - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.307 ms
+[32minfo[39m: POST /v1/user/login - - - ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.575 ms
+[32minfo[39m: POST /v1/user/login - - - ms
 [32minfo[39m: Connected to PostgreSQL Database
 [31merror[39m: Error connecting to PostgreSQL / syncing models
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 409.300 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779881807146 200 - 457.002 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 444.337 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779881807640 200 - 78.830 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 1.274 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779881816312&classId=IB619755 200 - 175.172 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 1.195 ms
-[31merror[39m: POST /v1/academic-calendar 403 - 108.989 ms - message: -
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 75.302 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 6.236 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779881833631 200 - 164.543 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779881833810 200 - 92.968 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 268.492 ms
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 56.043 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 4.202 ms
-[32minfo[39m: OPTIONS /v1/user/login 204 - 3.469 ms
-[32minfo[39m: POST /v1/user/login 200 - 513.382 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 492.389 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 74.144 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 14.286 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779881972399 200 - 578.323 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 18.733 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779881972873 200 - 479.874 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 638.982 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779881973919 200 - 332.599 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779881973970 200 - 315.123 ms
-[32minfo[39m: GET /v1/institute/getOneInstitute/IB188783 200 - 1607.004 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 404.901 ms
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 743.091 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779882565067 200 - 1433.378 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 7.809 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 1023.303 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 216.543 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 0.958 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779882567137 200 - 240.248 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779882598397 200 - 416.693 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779882598395 200 - 457.533 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 467.290 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779882598934 200 - 81.910 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779882598932 200 - 86.375 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 171.499 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779882607455&classId=IB619755 200 - 106.122 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 3.336 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 454.856 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 109.876 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 3.080 ms
+[32minfo[39m: POST /v1/user/login 200 - 825.751 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779780382292 200 - 326.157 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779780382294 200 - 343.745 ms
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779772560785.png 304 - 18.713 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 23.860 ms
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779968193.png 404 - 19.085 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 19.148 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 19.932 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB113021 200 - 213.162 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.757 ms
+[32minfo[39m: POST /v1/user/login 200 - 418.927 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779883143228&classId=IB619755 200 - 441.610 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 2.930 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 101.252 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 135.166 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 330.320 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 8.178 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779883204346 200 - 406.605 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 429.170 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779883204767 200 - 88.388 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779883216352&classId=IB619755 200 - 274.150 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 0.500 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 287.127 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 118.340 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779883253036&classId=IB619755 200 - 353.331 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 0.512 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 456.501 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 140.537 ms
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
-[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
@@ -1300,103 +372,501 @@ error: Error connecting to PostgreSQL / syncing models
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
 [32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779883615050&classId=IB619755 200 - 508.832 ms
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[31merror[39m: GET /v1/class/getAllClasses?_t=1779883716721 401 - 135.920 ms - message: -
-[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 401 - 53.866 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.349 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 3.065 ms
-[31merror[39m: GET /v1/institute/slug/delhi 404 - 2413.075 ms - message: -
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 4641.594 ms
-[31merror[39m: GET /v1/institute/getOneInstitute/IB188783 401 - 17.752 ms - message: -
-[32minfo[39m: POST /v1/user/refresh-token 200 - 1782.002 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 103.026 ms
-[31merror[39m: POST /v1/user/refresh-token 403 - 132.905 ms - message: -
-[32minfo[39m: POST /v1/user/refresh-token 200 - 461.868 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779883716721 200 - 288.804 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 272.212 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779883723814 200 - 139.912 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 421.371 ms - message: -
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/exam/assigned 401 - 7.686 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 401 - 1.292 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 589.646 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 4.844 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 454.619 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779885458424 200 - 544.131 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779885459563 200 - 97.038 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 402.489 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=7 304 - 140.458 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=8 304 - 131.895 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=9 304 - 189.594 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=8 304 - 176.161 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=7 304 - 138.067 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 122.611 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 135.121 ms
-[31merror[39m: GET /v1/class/getAllClasses?_t=1779885603411 401 - 2.267 ms - message: -
-[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 401 - 0.399 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 1.560 ms
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.478 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 668.112 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 1.735 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 661.553 ms
-[32minfo[39m: POST /v1/user/refresh-token 200 - 568.783 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779885603411 200 - 77.816 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779885604308 200 - 76.137 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 118.514 ms
-[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 754.228 ms
-[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 12.918 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779886739244 200 - 1290.068 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 978.392 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779886740613 200 - 155.799 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 754.323 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779886766383 200 - 332.487 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 391.660 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779886766772 200 - 92.274 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779886812515&classId=IB619755 200 - 400.649 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 5.150 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 529.935 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 157.596 ms
+[32minfo[39m: Models synced with PostgreSQL
+[31merror[39m: GET /v1/exam/assigned 500 - 14.244 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
-[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779943594292 401 - 17.955 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.369 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 407.169 ms - message: -
-[31merror[39m: POST /v1/user/refresh-token 403 - 422.441 ms - message: -
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 62.600 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.924 ms
-[31merror[39m: POST /v1/user/login 401 - 338.776 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.318 ms
-[31merror[39m: POST /v1/user/refresh-token 403 - 43.547 ms - message: -
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 40.978 ms - message: -
-[32minfo[39m: OPTIONS /v1/user/login 204 - 0.797 ms
-[32minfo[39m: POST /v1/user/login 200 - 646.668 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 68.915 ms - message: -
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 75.285 ms - message: -
-[32minfo[39m: GET /v1/student/getAllStudents 200 - 381.912 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 142.545 ms
-[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 118.708 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779943690638 200 - 205.534 ms
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779943690639 200 - 236.098 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 369.427 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779943690899 200 - 155.791 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779943690857 200 - 196.193 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 194.842 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 535.311 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 200 - 624.058 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 153.333 ms
-[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779943994095&classId=IB619755 200 - 373.229 ms
-[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 0.332 ms
-[32minfo[39m: POST /v1/academic-calendar 201 - 148.842 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 141.508 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 413.420 ms
-[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 257.688 ms - message: -
-[32minfo[39m: GET /v1/class/getAllClasses?_t=1779944562396 200 - 339.628 ms
-[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779944562777 200 - 109.021 ms
-[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 453.906 ms
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[31merror[39m: GET /v1/exam/assigned 500 - 4.746 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779782937454 401 - 1.842 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.075 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.801 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 749.465 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 581.635 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779782937454 200 - 268.230 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 200 - 384.930 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779772560785.png 304 - 1.949 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 1.190 ms
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 12.567 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 12.259 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 13.421 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 2.819 ms - message: Not found
+[31merror[39m: GET /v1/exam/assigned 500 - 1.588 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 2.806 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 1.561 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 500 - 1.163 ms - message: -
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 280.390 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: OPTIONS /v1/user/login 204 - 3.428 ms
+[32minfo[39m: POST /v1/user/login 200 - 552.795 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 192.871 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 123.315 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 137.371 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783337597 200 - 116.852 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783337599 200 - 147.345 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779783340623 200 - 79.040 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779783340625 200 - 79.902 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783343277 200 - 81.873 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779783343276 200 - 90.182 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783343279 200 - 87.822 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1779783343279 200 - 93.216 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783345961 200 - 92.049 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779783345961 200 - 101.637 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779783345963 200 - 101.028 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779783345962 200 - 108.544 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 282.371 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 276.998 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 286.388 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 281.072 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 328.054 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 90.967 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 85.671 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 88.012 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 100.903 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 117.510 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 72.261 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 92.986 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 101.398 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 125.652 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 77.175 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 83.505 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 91.003 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 115.383 ms
+[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 0.512 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 400.104 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 274.475 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 307.121 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 306.628 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 304.591 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 143.763 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 403.807 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 115.052 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 135.070 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 142.657 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 144.428 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.417 ms
+[31merror[39m: POST /v1/user/login 400 - 329.742 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.311 ms
+[31merror[39m: POST /v1/user/login 400 - 307.116 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 118.700 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 107.250 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.272 ms
+[31merror[39m: POST /v1/user/login 400 - 349.395 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 52.895 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.442 ms
+[31merror[39m: POST /v1/user/login 429 - 43.448 ms - message: -
+[31merror[39m: POST /v1/user/login 429 - 44.577 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.310 ms
+[31merror[39m: POST /v1/user/login 429 - 299.542 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.395 ms
+[31merror[39m: POST /v1/user/login 429 - 306.448 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.478 ms
+[32minfo[39m: POST /v1/user/login 200 - 302.762 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 204.386 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 115.477 ms
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 668.478 ms - message: -
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 456.962 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 117.621 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 152.345 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 246.869 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 263.625 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 272.615 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 267.060 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 82.221 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 315.022 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 80.142 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 79.813 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 86.462 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 125.101 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.398 ms
+[32minfo[39m: POST /v1/user/login 200 - 752.141 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 118.279 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 89.915 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 103.275 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 147.067 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 149.651 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 215.322 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 613.144 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 609.710 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 608.522 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 677.443 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 90.659 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 103.922 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 126.072 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 190.415 ms
+[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 0.342 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 434.147 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 299.526 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 297.955 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 296.238 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 301.106 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 363.122 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 91.783 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 129.934 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 127.029 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 124.494 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 138.879 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 99.139 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 98.878 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 330.332 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 80.031 ms
+[31merror[39m: POST /v1/user/login 400 - 273.427 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: OPTIONS /v1/user/login 204 - 2.769 ms
+[32minfo[39m: POST /v1/user/login 200 - 1730.030 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 271.095 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 298.597 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 376.857 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 139.408 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 680.263 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 197.582 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 506.617 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.610 ms
+[32minfo[39m: POST /v1/user/login 200 - 438.908 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 479.786 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 468.418 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 468.972 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 535.389 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 529.352 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 133.389 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 140.154 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 122.030 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 136.475 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 208.266 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 133.722 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 129.675 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 177.144 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 202.700 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 323.782 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 332.016 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 289.039 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 289.039 ms
+[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 0.444 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 1418.957 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 463.774 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 461.862 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 470.918 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 499.818 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 539.832 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 122.259 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 122.457 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 159.547 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 170.551 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 175.936 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB617241 200 - 584.509 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 629.769 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 637.851 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 633.763 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB617241 304 - 124.138 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 690.325 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 102.673 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 112.154 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 101.822 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 147.568 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 718.221 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 715.985 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 729.879 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 740.350 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 93.354 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 825.235 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 107.943 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 96.882 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 118.056 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 246.754 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.201 ms
+[32minfo[39m: POST /v1/user/login 200 - 709.103 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 103.801 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 86.882 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 117.639 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 98.325 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 456.111 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.357 ms
+[32minfo[39m: POST /v1/user/login 200 - 541.480 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 136.004 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779790764211 200 - 324.730 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 374.241 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779790764214 200 - 523.944 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 216.443 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 200 - 306.342 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 1155.178 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 125.969 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779791707222 200 - 395.162 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779791707225 200 - 384.380 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 437.369 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 116.349 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 815.244 ms
+[31merror[39m: POST /v1/student/createStudent 409 - 1724.618 ms - message: -
+[32minfo[39m: POST /v1/student/createStudent 201 - 1423.658 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 140.682 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/class/getAllClasses 401 - 7.220 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779793719011 401 - 1.440 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 2.579 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779793719017 401 - 1.642 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.379 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.277 ms
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.341 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.314 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 314.764 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 284.133 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 283.499 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 279.385 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793719011 200 - 127.841 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793719017 200 - 111.258 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 175.390 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 95.803 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 121.041 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793724545 200 - 80.154 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 82.203 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779793724547 200 - 91.318 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 79.315 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 76.189 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 985.214 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 121.603 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1779794984698 200 - 432.378 ms
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 27.924 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 28.551 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 30.099 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779772560785.png 304 - 8.570 ms
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 11.177 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 15.856 ms - message: Not found
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779569477449.png 304 - 2.068 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 671.952 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 131.773 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779794991376 200 - 155.467 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779794991381 200 - 177.733 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 115.895 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 141.738 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 1452.012 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 168.806 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779795637186 401 - 9.474 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.538 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779795637191 401 - 1.516 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.147 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.404 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.351 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.213 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 329.822 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 292.019 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 309.625 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 315.885 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779795637186 200 - 82.685 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779795637191 200 - 83.566 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 164.581 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 82.129 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 100.380 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 1392.867 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 371.192 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 20553.090 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 20737.316 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779796557817 200 - 452.650 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779796557821 200 - 493.971 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 528.694 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 117.366 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB462947 304 - 357.302 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 1123.757 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 454.634 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/exam/assigned 401 - 11.099 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.481 ms
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.354 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 411.900 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 408.196 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 113.672 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 87.985 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 466.134 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 408.288 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.332 ms
+[32minfo[39m: POST /v1/user/login 200 - 501.684 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 230.360 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 250.831 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 149.565 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 157.843 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 541.976 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 248.213 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 490.200 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 145.972 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 543.425 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 80.638 ms
+[31merror[39m: GET /v1/student/getAllStudents 401 - 31.109 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 2.232 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 370.739 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 147.313 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.407 ms
+[32minfo[39m: POST /v1/user/login 200 - 332.087 ms

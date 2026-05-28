@@ -224,6 +224,7 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
       className = "",
       sectionId = "",
       session = "",
+
     } = query;
 
     const studentRole = await Role.findOne({ where: { role: "STUDENT" } });

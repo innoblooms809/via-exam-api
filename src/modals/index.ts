@@ -11,6 +11,7 @@ import Exam from "./Exam.modal";
 import Session from "./Session.modal";
 import QuestionPaper from "./question-paper/QuestionPaper.modal";
 import AcademicCalendar from "./AcademicCalendar.modal";
+import Notification from "./Notification.modal";
 
 export {
   User,
@@ -25,7 +26,8 @@ export {
   Exam,
   Session,
   QuestionPaper,
-  AcademicCalendar
+  AcademicCalendar,
+  Notification
 };
 
 // ROLE ↔ ACCESS
@@ -543,3 +545,17 @@ StudentProfile.belongsTo(Section, {
 // //   sourceKey: "examId",
 // //   as: "questionPapers",
 // // });
+
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICATION ↔ USER
+// ═══════════════════════════════════════════════════════════════
+Notification.belongsTo(User, {
+  foreignKey: "userId",
+  targetKey: "userId",
+  as: "user",
+});
+User.hasMany(Notification, {
+  foreignKey: "userId",
+  sourceKey: "userId",
+  as: "notifications",
+});
