@@ -357,3 +357,15 @@ error: Error connecting to PostgreSQL / syncing models
 [31merror[39m: GET /v1/institute/getOneInstitute/IB188783 401 - 17.752 ms - message: -
 [31merror[39m: POST /v1/user/refresh-token 403 - 132.905 ms - message: -
 [31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 421.371 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1779885603411 401 - 2.267 ms - message: -
+[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 401 - 0.399 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779943594292 401 - 17.955 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 407.169 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 422.441 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 62.600 ms - message: -
+[31merror[39m: POST /v1/user/login 401 - 338.776 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 43.547 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 40.978 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 68.915 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 75.285 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 257.688 ms - message: -
