@@ -1322,3 +1322,81 @@ error: Error connecting to PostgreSQL / syncing models
 [32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 272.212 ms
 [32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779883723814 200 - 139.912 ms
 [31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 421.371 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 589.646 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 4.844 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 454.619 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779885458424 200 - 544.131 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779885459563 200 - 97.038 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 402.489 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=7 304 - 140.458 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=8 304 - 131.895 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=9 304 - 189.594 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=8 304 - 176.161 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=7 304 - 138.067 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 122.611 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 135.121 ms
+[31merror[39m: GET /v1/class/getAllClasses?_t=1779885603411 401 - 2.267 ms - message: -
+[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 401 - 0.399 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 1.560 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.478 ms
+[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 668.112 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 1.735 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 661.553 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 568.783 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779885603411 200 - 77.816 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779885604308 200 - 76.137 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 118.514 ms
+[32minfo[39m: GET /v1/institute/slug/nostrud-nihil-cupidi 304 - 754.228 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779791981685.png 304 - 12.918 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779886739244 200 - 1290.068 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 978.392 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779886740613 200 - 155.799 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 754.323 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779886766383 200 - 332.487 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 391.660 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779886766772 200 - 92.274 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779886812515&classId=IB619755 200 - 400.649 ms
+[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 5.150 ms
+[32minfo[39m: POST /v1/academic-calendar 201 - 529.935 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 157.596 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1779943594292 401 - 17.955 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.369 ms
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 407.169 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 422.441 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 62.600 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.924 ms
+[31merror[39m: POST /v1/user/login 401 - 338.776 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.318 ms
+[31merror[39m: POST /v1/user/refresh-token 403 - 43.547 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 40.978 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.797 ms
+[32minfo[39m: POST /v1/user/login 200 - 646.668 ms
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 68.915 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 75.285 ms - message: -
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 381.912 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 142.545 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 118.708 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779943690638 200 - 205.534 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779943690639 200 - 236.098 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 369.427 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779943690899 200 - 155.791 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779943690857 200 - 196.193 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 194.842 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 535.311 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 200 - 624.058 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 153.333 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1779943994095&classId=IB619755 200 - 373.229 ms
+[32minfo[39m: OPTIONS /v1/academic-calendar 204 - 0.332 ms
+[32minfo[39m: POST /v1/academic-calendar 201 - 148.842 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 200 - 141.508 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 413.420 ms
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 257.688 ms - message: -
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1779944562396 200 - 339.628 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1779944562777 200 - 109.021 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=5 304 - 453.906 ms
