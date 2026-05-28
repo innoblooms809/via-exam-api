@@ -17,6 +17,8 @@ import { session } from "passport";
 import standeranswerRoutes from "./question-answer/stander-answer.routes";
 import healthRoutes from "./health.route";
 import academicCalendarRoutes from "./academicCalendar.route";
+import authRoutes from "./auth.route";
+import notificationRoutes from "./notification.route";
 // import studentRoutes from './student.route'
 // import captchaRoutes from './captcha.route'
 
@@ -82,6 +84,14 @@ const defaultRoutes = [
   {
     path: "/academic-calendar",
     route: academicCalendarRoutes,
+  },
+  {
+    path: "/auth",
+    route: authRoutes,
+  },
+  {
+    path: "/notifications",
+    route: notificationRoutes,
   },
   
   // {

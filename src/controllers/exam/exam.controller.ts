@@ -28,6 +28,19 @@ const getAllExams = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const getAssignedExams = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await ExamService.getAssignedExams(req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 const getExamById = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await ExamService.getExamById(
@@ -101,4 +114,5 @@ export default {
   updateExamStatus,
   updateExam,
   deleteExam,
+  getAssignedExams,
 };
