@@ -9,10 +9,6 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
       req.body, req.files, req.viaExamUser
     );
   
-    console.log("🎓 Student result:", result);
-console.log("📧 Email field:", req.body.email);
-console.log("📧 EmailId field:", req.body.emailId);
-console.log("🔑 plainPassword:", result?.data?.plainPassword);
 
     if (!result.error) {
       sendEmailToNewUser({
@@ -43,6 +39,7 @@ const getAllStudents = async (req: any, res: Response): Promise<any> => {
 const getStudentById = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await StudentService.getStudentById(req.params.userId, req.viaExamUser);
+    console.log(result);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
