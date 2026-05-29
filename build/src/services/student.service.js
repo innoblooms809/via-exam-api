@@ -262,7 +262,8 @@ const getAllStudents = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
                 instituteId: u.instituteId,
                 rollNumber: (_b = (_a = u.studentProfile) === null || _a === void 0 ? void 0 : _a.rollNumber) !== null && _b !== void 0 ? _b : null,
                 className: (_d = (_c = u.studentProfile) === null || _c === void 0 ? void 0 : _c.className) !== null && _d !== void 0 ? _d : null,
-                sectionId: (_j = (_g = (_f = (_e = u.studentProfile) === null || _e === void 0 ? void 0 : _e.section) === null || _f === void 0 ? void 0 : _f.sectionName) !== null && _g !== void 0 ? _g : (_h = u.studentProfile) === null || _h === void 0 ? void 0 : _h.sectionId) !== null && _j !== void 0 ? _j : null,
+                sectionId: (_f = (_e = u.studentProfile) === null || _e === void 0 ? void 0 : _e.sectionId) !== null && _f !== void 0 ? _f : null,
+                sectionName: (_j = (_h = (_g = u.studentProfile) === null || _g === void 0 ? void 0 : _g.section) === null || _h === void 0 ? void 0 : _h.sectionName) !== null && _j !== void 0 ? _j : null,
                 session: (_l = (_k = u.studentProfile) === null || _k === void 0 ? void 0 : _k.session) !== null && _l !== void 0 ? _l : null,
                 fatherName: (_o = (_m = u.studentProfile) === null || _m === void 0 ? void 0 : _m.fatherName) !== null && _o !== void 0 ? _o : null,
                 gender: (_q = (_p = u.studentProfile) === null || _p === void 0 ? void 0 : _p.gender) !== null && _q !== void 0 ? _q : null,
@@ -291,8 +292,15 @@ const getAllStudents = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
 const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     var _b, _c;
     try {
-        const student = yield User_modal_1.default.findOne({
-            where: { userId, instituteId: createdBy.instituteId },
+        const instituteId = createdBy === null || createdBy === void 0 ? void 0 : createdBy.instituteId;
+        const userWhere = { userId };
+        const profileWhere = { rollNumber: userId };
+        if (instituteId) {
+            userWhere.instituteId = instituteId;
+            profileWhere.instituteId = instituteId;
+        }
+        let student = yield User_modal_1.default.findOne({
+            where: userWhere,
             include: [
                 { model: Role_modal_1.default, as: "role" },
                 {
@@ -305,6 +313,31 @@ const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
             ],
             attributes: { exclude: ["password", "refreshToken"] },
         });
+        if (!student) {
+            const profile = yield Student_modal_1.default.findOne({
+                where: profileWhere,
+            });
+            if (profile && profile.userId) {
+                const userSecondWhere = { userId: profile.userId };
+                if (instituteId) {
+                    userSecondWhere.instituteId = instituteId;
+                }
+                student = yield User_modal_1.default.findOne({
+                    where: userSecondWhere,
+                    include: [
+                        { model: Role_modal_1.default, as: "role" },
+                        {
+                            model: Student_modal_1.default,
+                            as: "studentProfile",
+                            include: [
+                                { model: Section_modal_1.default, as: "section", required: false },
+                            ],
+                        },
+                    ],
+                    attributes: { exclude: ["password", "refreshToken"] },
+                });
+            }
+        }
         if (!student) {
             return {
                 error: true,
@@ -321,7 +354,7 @@ const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
             status: s.status,
             instituteId: s.instituteId,
             studentProfile: s.studentProfile
-                ? Object.assign(Object.assign({}, s.studentProfile), { sectionId: (_c = (_b = s.studentProfile.section) === null || _b === void 0 ? void 0 : _b.sectionName) !== null && _c !== void 0 ? _c : s.studentProfile.sectionId }) : null,
+                ? Object.assign(Object.assign({}, s.studentProfile), { sectionId: s.studentProfile.sectionId, sectionName: (_c = (_b = s.studentProfile.section) === null || _b === void 0 ? void 0 : _b.sectionName) !== null && _c !== void 0 ? _c : null }) : null,
         };
         return {
             error: false,
@@ -340,7 +373,7 @@ const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
 });
 // ─── UPDATE STUDENT ───────────────────────────────────────────────────────────
 const updateStudent = (userId, body, files, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _d, _e, _f, _g, _h, _j, _k, _l, _m;
+    var _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
     const t = yield sequelize_1.sequelize.transaction();
     try {
         const user = yield User_modal_1.default.findOne({
@@ -368,6 +401,20 @@ const updateStudent = (userId, body, files, createdBy) => __awaiter(void 0, void
                 };
             }
         }
+        // Check email unique if email is being updated
+        if (body.email && body.email !== user.emailId) {
+            const emailExists = yield User_modal_1.default.findOne({
+                where: { emailId: body.email },
+            });
+            if (emailExists) {
+                yield t.rollback();
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Email address is already registered.",
+                };
+            }
+        }
         const profile = yield Student_modal_1.default.findOne({ where: { userId } });
         // Update user
         yield user.update({
@@ -375,24 +422,27 @@ const updateStudent = (userId, body, files, createdBy) => __awaiter(void 0, void
                 ? `${body.firstName} ${body.lastName}`
                 : user.userName,
             phoneNumber: (_d = body.mobile) !== null && _d !== void 0 ? _d : user.phoneNumber,
+            emailId: (_e = body.email) !== null && _e !== void 0 ? _e : user.emailId,
         }, { transaction: t });
         // Update profile
         if (profile) {
-            const profileUrl = ((_e = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _e === void 0 ? void 0 : _e[0])
+            const profileUrl = ((_f = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _f === void 0 ? void 0 : _f[0])
                 ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
                 : profile.profileUrl;
-            const targetClassName = (_f = body.className) !== null && _f !== void 0 ? _f : profile.className;
+            const targetClassName = (_g = body.className) !== null && _g !== void 0 ? _g : profile.className;
             const resolvedClassId = yield resolveClassId(body.classId || targetClassName, createdBy.instituteId);
-            const targetSectionInput = (_g = body.sectionId) !== null && _g !== void 0 ? _g : profile.sectionId;
+            const targetSectionInput = (_h = body.sectionId) !== null && _h !== void 0 ? _h : profile.sectionId;
             const resolvedSectionId = yield resolveSectionId(targetSectionInput, resolvedClassId || "", createdBy.instituteId);
             yield profile.update({
-                fatherName: (_h = body.fatherName) !== null && _h !== void 0 ? _h : profile.fatherName,
-                gender: (_j = body.gender) !== null && _j !== void 0 ? _j : profile.gender,
+                fatherName: (_j = body.fatherName) !== null && _j !== void 0 ? _j : profile.fatherName,
+                gender: (_k = body.gender) !== null && _k !== void 0 ? _k : profile.gender,
                 sectionId: resolvedSectionId,
-                className: (_k = body.className) !== null && _k !== void 0 ? _k : profile.className,
+                className: (_l = body.className) !== null && _l !== void 0 ? _l : profile.className,
                 classId: resolvedClassId,
-                session: (_l = body.session) !== null && _l !== void 0 ? _l : profile.session,
-                address: (_m = body.address) !== null && _m !== void 0 ? _m : profile.address,
+                session: (_m = body.session) !== null && _m !== void 0 ? _m : profile.session,
+                address: (_o = body.address) !== null && _o !== void 0 ? _o : profile.address,
+                dob: (_p = body.dob) !== null && _p !== void 0 ? _p : profile.dob,
+                aadhar: (_q = body.aadhar) !== null && _q !== void 0 ? _q : profile.aadhar,
                 profileUrl,
             }, { transaction: t });
         }

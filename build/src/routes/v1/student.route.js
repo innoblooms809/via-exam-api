@@ -22,8 +22,7 @@ router.get("/getAllStudents", auth_1.authenticate,
 //   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
 student_controller_1.default.getAllStudents);
 // GET    /v1/students/:userId
-router.get("/getStudentById/:userId", 
-// authenticate,
+router.get("/getStudentById/:userId", auth_1.authenticate, 
 //   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
 student_controller_1.default.getStudentById);
 // PUT    /v1/students/:userId

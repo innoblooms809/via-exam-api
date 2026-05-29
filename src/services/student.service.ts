@@ -314,7 +314,6 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
 // ─── GET ONE STUDENT ──────────────────────────────────────────────────────────
 const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
   try {
-    console.log("userId", userId);
     const instituteId = createdBy?.instituteId;
     const userWhere: any = { userId };
     const profileWhere: any = { rollNumber: userId };
