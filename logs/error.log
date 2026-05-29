@@ -1496,3 +1496,28 @@
     at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
 [31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 1.595 ms - message: Not found
 [31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 4.247 ms - message: Not found
+[31merror[39m: GET /v1/section/allSections?_t=1780053619989 401 - 2.635 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions 401 - 0.404 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.482 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 0.632 ms - message: -
+[31merror[39m: POST /v1/subject/createSubject 409 - 169.593 ms - message: -
+[31merror[39m: GET /v1/student/getAllStudents 401 - 4.172 ms - message: -
+[31merror[39m: POST /v1/class/createClass 409 - 406.638 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 178.789 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 187.299 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 153.450 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/undefined 404 - 105.055 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/undefined 404 - 76.795 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/undefined 404 - 95.639 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/undefined 404 - 78.966 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/undefined 404 - 111.186 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/undefined 404 - 77.447 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/undefined 401 - 0.627 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 404 - 539.759 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/IB788418 401 - 54.992 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 420.887 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 152.032 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 363.387 ms - message: -
+[31merror[39m: GET /v1/sessions/getOneSession/undefined 404 - 523.875 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 410.551 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 435.052 ms - message: -

@@ -77,10 +77,14 @@ const getAllClasses = (createdBy) => __awaiter(void 0, void 0, void 0, function*
                 {
                     model: Section_modal_1.default,
                     as: "sections",
+                    where: { isDeleted: false },
+                    required: false,
                 },
                 {
                     model: Subject_modal_1.default,
                     as: "subjects",
+                    where: { isDeleted: false },
+                    required: false,
                 },
             ],
             order: [["className", "ASC"]],
@@ -116,10 +120,14 @@ const getClassById = (classId, createdBy) => __awaiter(void 0, void 0, void 0, f
                 {
                     model: Section_modal_1.default,
                     as: "sections",
+                    where: { isDeleted: false },
+                    required: false,
                 },
                 {
                     model: Subject_modal_1.default,
                     as: "subjects",
+                    where: { isDeleted: false },
+                    required: false,
                 },
             ],
         });
