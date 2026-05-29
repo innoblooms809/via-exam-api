@@ -71,10 +71,14 @@ const getAllClasses = async (createdBy: any): Promise<any> => {
         {
           model: Section,
           as: "sections",
+          where: { isDeleted: false },
+          required: false,
         },
         {
           model: Subject,
           as: "subjects",
+          where: { isDeleted: false },
+          required: false,
         },
       ],
       order: [["className", "ASC"]],
@@ -111,10 +115,14 @@ const getClassById = async (classId: string, createdBy: any): Promise<any> => {
         {
           model: Section,
           as: "sections",
+          where: { isDeleted: false },
+          required: false,
         },
         {
           model: Subject,
           as: "subjects",
+          where: { isDeleted: false },
+          required: false,
         },
       ],
     });
