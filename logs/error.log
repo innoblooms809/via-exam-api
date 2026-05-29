@@ -441,3 +441,712 @@
 [31merror[39m: GET /v1/exam/assigned 401 - 11.099 ms - message: -
 [31merror[39m: GET /v1/notifications/getNotifications 401 - 1.354 ms - message: -
 [31merror[39m: GET /v1/student/getAllStudents 401 - 31.109 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 15.873 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 18.259 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 17.034 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 19.155 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 20.727 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 7.787 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 8.159 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 9.007 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 10.694 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 15.385 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 4.977 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 5.739 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 6.109 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 7.306 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 8.856 ms - message: Not found
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779867180565 401 - 15.374 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1779867180607 401 - 2.108 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 15.760 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 14.518 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 17.322 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 18.303 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 26.908 ms - message: Not found
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 5.049 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 401 - 6.621 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 2.344 ms - message: -
+[31merror[39m: POST /v1/exam/createExam 409 - 413.674 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 0.844 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 7.997 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 4.853 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.232 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 107.443 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 55.881 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 57.792 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 71.759 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 70.810 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 9.625 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779791981685.png 404 - 8.094 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 11.076 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 18.693 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779778193623.png 404 - 26.629 ms - message: Not found
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.225 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 500 - 127.651 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 406.328 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 232.589 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 439.207 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 203.055 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 215.738 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 0.987 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 500 - 6.284 ms - message: -
+[31merror[39m: GET /v1/exam/getAllExams? 401 - 1.144 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 0.780 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions 401 - 0.804 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.902 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.093 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions 401 - 1.928 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 3.445 ms - message: -
+[31merror[39m: GET /v1/exam/getAllExams? 401 - 2.081 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 2.379 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 5.189 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 55.233 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 41.302 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 38.146 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 37.757 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 404 - 9.223 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 7.787 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 10.795 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 13.840 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779950811384.jpeg 404 - 13.636 ms - message: Not found
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 0.958 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 2.392 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 2.264 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 11.814 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 9.449 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 404 - 12.481 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 12.071 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 12.191 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779950811384.jpeg 404 - 12.914 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/slug/maryam-memorial-school 404 - 5.391 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/slug/noor-ul-huda 404 - 2.447 ms - message: Not found
+[31merror[39m: POST /v1/institute/register 409 - 660.622 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 404 - 29.040 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 25.201 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 30.011 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 29.024 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 7.891 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779950811384.jpeg 404 - 7.644 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 2.774 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 8.822 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 9.197 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 20.197 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 404 - 8.511 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779950811384.jpeg 404 - 23.547 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\Via-Exam-Api\Via-Exam-Api\package\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/slug/new-era-public-school 404 - 2.307 ms - message: Not found
