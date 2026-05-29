@@ -285,7 +285,8 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
       instituteId: u.instituteId,
       rollNumber: u.studentProfile?.rollNumber ?? null,
       className: u.studentProfile?.className ?? null,
-      sectionId: u.studentProfile?.section?.sectionName ?? u.studentProfile?.sectionId ?? null,
+      sectionId: u.studentProfile?.sectionId ?? null,
+      sectionName: u.studentProfile?.section?.sectionName ?? null,
       session: u.studentProfile?.session ?? null,
       fatherName: u.studentProfile?.fatherName ?? null,
       gender: u.studentProfile?.gender ?? null,
@@ -313,8 +314,18 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
 // ─── GET ONE STUDENT ──────────────────────────────────────────────────────────
 const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
   try {
-    const student = await UserModal.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
+    console.log("userId", userId);
+    const instituteId = createdBy?.instituteId;
+    const userWhere: any = { userId };
+    const profileWhere: any = { rollNumber: userId };
+
+    if (instituteId) {
+      userWhere.instituteId = instituteId;
+      profileWhere.instituteId = instituteId;
+    }
+
+    let student = await UserModal.findOne({
+      where: userWhere,
       include: [
         { model: Role, as: "role" },
         {
@@ -327,6 +338,32 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
       ],
       attributes: { exclude: ["password", "refreshToken"] },
     });
+
+    if (!student) {
+      const profile = await StudentProfile.findOne({
+        where: profileWhere,
+      });
+      if (profile && profile.userId) {
+        const userSecondWhere: any = { userId: profile.userId };
+        if (instituteId) {
+          userSecondWhere.instituteId = instituteId;
+        }
+        student = await UserModal.findOne({
+          where: userSecondWhere,
+          include: [
+            { model: Role, as: "role" },
+            {
+              model: StudentProfile,
+              as: "studentProfile",
+              include: [
+                { model: Section, as: "section", required: false },
+              ],
+            },
+          ],
+          attributes: { exclude: ["password", "refreshToken"] },
+        });
+      }
+    }
 
     if (!student) {
       return {
@@ -347,7 +384,8 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
       studentProfile: s.studentProfile
         ? {
           ...s.studentProfile,
-          sectionId: s.studentProfile.section?.sectionName ?? s.studentProfile.sectionId,
+          sectionId: s.studentProfile.sectionId,
+          sectionName: s.studentProfile.section?.sectionName ?? null,
         }
         : null,
     };
@@ -404,6 +442,21 @@ const updateStudent = async (
       }
     }
 
+    // Check email unique if email is being updated
+    if (body.email && body.email !== user.emailId) {
+      const emailExists = await UserModal.findOne({
+        where: { emailId: body.email },
+      });
+      if (emailExists) {
+        await t.rollback();
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Email address is already registered.",
+        };
+      }
+    }
+
     const profile = await StudentProfile.findOne({ where: { userId } });
 
     // Update user
@@ -414,6 +467,7 @@ const updateStudent = async (
             ? `${body.firstName} ${body.lastName}`
             : user.userName,
         phoneNumber: body.mobile ?? user.phoneNumber,
+        emailId: body.email ?? user.emailId,
       },
       { transaction: t },
     );
@@ -439,6 +493,8 @@ const updateStudent = async (
           classId: resolvedClassId,
           session: body.session ?? profile.session,
           address: body.address ?? profile.address,
+          dob: body.dob ?? profile.dob,
+          aadhar: body.aadhar ?? profile.aadhar,
           profileUrl,
         },
         { transaction: t },
