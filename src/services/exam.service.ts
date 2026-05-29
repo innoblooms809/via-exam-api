@@ -6,6 +6,7 @@ import Class from "../modals/Class.modal";
 import Section from "../modals/Section.modal";
 import Subject from "../modals/Subject.modal";
 import Session from "../modals/Session.modal";
+import Notification from "../modals/Notification.modal";
 import RegHelper from "../utils/helper";
 import { Op } from "sequelize";
 
@@ -80,6 +81,18 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       duration: body.duration ? Number(body.duration) : null,
       instructions: body.instructions || null,
       status: "Draft",
+    });
+
+    // 6. Send notification to assigned teacher
+    const notificationId = await RegHelper.generateUserId();
+    await Notification.create({
+      notificationId,
+      instituteId,
+      userId: teacher.userId,
+      type: "EXAM_ASSIGNED",
+      title: "New Exam Assigned",
+      message: `A ${body.examType} exam has been assigned to you.`,
+      referenceId: examId,
     });
 
     return {

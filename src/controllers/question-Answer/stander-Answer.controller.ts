@@ -1,9 +1,3 @@
-
-// ======================================================
-// CONTROLLER
-// src/controllers/questionPaperAnswer.controller.ts
-// ======================================================
-
 import { Request, Response } from "express";
 import QuestionPaperAnswerService from "../../services/question-answer/stander-answer.service";
 import Session from "../../modals/Session.modal";
@@ -21,7 +15,6 @@ export const createQuestionPaperAnswer = async (
 ): Promise<any> => {
   try {
     const {
-   
       paperId,
       examId,
       teacherId,
@@ -32,9 +25,7 @@ export const createQuestionPaperAnswer = async (
 
     const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
 
-    // BASIC VALIDATION
     if (
-   
       !instituteId ||
       !paperId ||
       !examId ||
@@ -51,7 +42,6 @@ export const createQuestionPaperAnswer = async (
     const result =
       await QuestionPaperAnswerService.createQuestionPaperAnswer(
         {
-       
           instituteId,
           paperId,
           examId,
@@ -74,8 +64,6 @@ export const createQuestionPaperAnswer = async (
     });
   }
 };
-
-
 
 export const uploadImageController = async (
   req: Request,
@@ -121,16 +109,11 @@ export const getQuestionPaperAnswerBySelection = async (
       classVal,
       subject,
       examType,
-     
       session,
       paperSet,
     } = req.body;
 
     const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
-
-    // ─────────────────────────────────────────────
-    // FIND SESSION + CLASS
-    // ─────────────────────────────────────────────
 
     const [sessionData, classData] = await Promise.all([
       Session.findOne({
@@ -164,10 +147,6 @@ export const getQuestionPaperAnswerBySelection = async (
       });
     }
 
-    // ─────────────────────────────────────────────
-    // FIND SUBJECT
-    // ─────────────────────────────────────────────
-
     const subjectData = await Subject.findOne({
       where: {
         subjectName: subject,
@@ -184,17 +163,12 @@ export const getQuestionPaperAnswerBySelection = async (
       });
     }
 
-    // ─────────────────────────────────────────────
-    // FIND EXAM
-    // ─────────────────────────────────────────────
-
     const exam = await Exam.findOne({
       where: {
         sessionId: sessionData.sessionId,
         classId: classData.classId,
         subjectId: subjectData.subjectId,
         examType,
-       
         instituteId,
         isDeleted: false,
       },
@@ -206,10 +180,6 @@ export const getQuestionPaperAnswerBySelection = async (
         message: "Exam not found.",
       });
     }
-
-    // ─────────────────────────────────────────────
-    // FIND QUESTION PAPER ANSWER
-    // ─────────────────────────────────────────────
 
     const questionPaperAnswer = await QuestionPaperAnswer.findOne({
       where: {
@@ -224,10 +194,6 @@ export const getQuestionPaperAnswerBySelection = async (
         message: "Question paper answer not found for selected exam.",
       });
     }
-
-    // ─────────────────────────────────────────────
-    // SUCCESS
-    // ─────────────────────────────────────────────
 
     return res.status(httpStatus.OK).json({
       error: false,
@@ -272,6 +238,131 @@ export const getQuestionPaperAnswerUploads = async (req: Request, res: Response)
     return res.status(500).json({
       error: true,
       message: e.message,
+    });
+  }
+};
+
+// ─── APPROVAL WORKFLOW CONTROLLERS ─────────────────────────────────────────
+
+export const submitAnswerSheet = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { answerId } = req.params;
+    const teacherId = req.viaExamUser.userId;
+
+    const answer = await QuestionPaperAnswerService.submitForApproval(answerId, teacherId);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Answer sheet submitted for approval.",
+      data: answer,
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
+export const approveAnswerSheet = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { answerId } = req.params;
+    const reviewerId = req.viaExamUser.userId;
+
+    const answer = await QuestionPaperAnswerService.approveAnswer(answerId, reviewerId);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Answer sheet approved.",
+      data: answer,
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
+export const rejectAnswerSheet = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { answerId } = req.params;
+    const reviewerId = req.viaExamUser.userId;
+    const { rejectionNote } = req.body;
+
+    const answer = await QuestionPaperAnswerService.rejectAnswer(answerId, reviewerId, rejectionNote);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Answer sheet rejected.",
+      data: answer,
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
+export const publishAnswerSheet = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { answerId } = req.params;
+
+    const answer = await QuestionPaperAnswerService.publishAnswer(answerId);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Answer sheet published.",
+      data: answer,
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
+export const getPendingAnswerSheets = async (req: any, res: Response): Promise<any> => {
+  try {
+    const instituteId = req.viaExamUser.instituteId;
+
+    const answers = await QuestionPaperAnswerService.getPendingAnswers(instituteId);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Pending answer sheets fetched.",
+      data: { answers },
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
+export const getAllAnswerSheets = async (req: any, res: Response): Promise<any> => {
+  try {
+    const instituteId = req.viaExamUser.instituteId;
+    const { status, examId, teacherId } = req.query;
+
+    const answers = await QuestionPaperAnswerService.getAnswers(instituteId, {
+      status: status as string,
+      examId: examId as string,
+      teacherId: teacherId as string,
+    });
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Answer sheets fetched.",
+      data: { answers },
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      message: error.message,
     });
   }
 };

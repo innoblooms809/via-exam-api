@@ -169,7 +169,7 @@ const authenticate = async (
 
 const authorize = (allowedRoles: string[]) => {
   return (req: any, res: Response, next: NextFunction): any => {
-    const userRole = req.viaExamUser?.role?.roleName;
+    const userRole = req.viaExamUser?.role?.role;
 
     if (!userRole) {
       return res.status(httpStatus.FORBIDDEN).json({
