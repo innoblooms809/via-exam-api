@@ -16,6 +16,10 @@ const http_status_1 = __importDefault(require("http-status"));
 const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
 const User_modal_1 = __importDefault(require("../modals/User.modal"));
 const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
+const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
+const Section_modal_1 = __importDefault(require("../modals/Section.modal"));
+const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
+const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const sequelize_1 = require("sequelize");
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
@@ -124,6 +128,52 @@ const getAllExams = (query, requestedBy) => __awaiter(void 0, void 0, void 0, fu
             statusCode: http_status_1.default.OK,
             message: "Exams fetched successfully.",
             data: { exams, total: exams.length },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// ─── GET ASSIGNED EXAMS (FOR TEACHER) ─────────────────────────────────────────
+const getAssignedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = requestedBy.instituteId;
+        const teacherId = requestedBy.userId;
+        const exams = yield Exam_modal_1.default.findAll({
+            where: {
+                instituteId,
+                isDeleted: false,
+                teacherId
+            },
+            include: [
+                { model: Class_modal_1.default, as: "class", attributes: ["className"] },
+                { model: Section_modal_1.default, as: "section", attributes: ["sectionName"] },
+                { model: Subject_modal_1.default, as: "subject", attributes: ["subjectName"] },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionName"] },
+            ],
+            order: [["createdAt", "DESC"]],
+        });
+        const formattedExams = exams.map((exam) => {
+            var _a, _b, _c, _d;
+            return ({
+                id: exam.examId,
+                className: ((_a = exam.class) === null || _a === void 0 ? void 0 : _a.className) || "N/A",
+                sectionName: ((_b = exam.section) === null || _b === void 0 ? void 0 : _b.sectionName) || "N/A",
+                subjectName: ((_c = exam.subject) === null || _c === void 0 ? void 0 : _c.subjectName) || "N/A",
+                sessionName: ((_d = exam.session) === null || _d === void 0 ? void 0 : _d.sessionName) || "N/A",
+                examType: exam.examType,
+                status: exam.status,
+            });
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Assigned exams fetched successfully.",
+            data: { exams: formattedExams },
         };
     }
     catch (e) {
@@ -315,4 +365,5 @@ exports.default = {
     updateExamStatus,
     updateExam,
     deleteExam,
+    getAssignedExams,
 };

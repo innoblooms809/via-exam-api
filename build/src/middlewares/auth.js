@@ -153,7 +153,7 @@ exports.authenticate = authenticate;
 const authorize = (allowedRoles) => {
     return (req, res, next) => {
         var _a, _b;
-        const userRole = (_b = (_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.role) === null || _b === void 0 ? void 0 : _b.roleName;
+        const userRole = (_b = (_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.role) === null || _b === void 0 ? void 0 : _b.role;
         if (!userRole) {
             return res.status(http_status_1.default.FORBIDDEN).json({
                 error: true,

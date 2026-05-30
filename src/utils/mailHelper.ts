@@ -443,12 +443,14 @@ export const sendAdminCredentials = async (data: {
       </html>
     `;
 
-    await transporter.sendMail({
+    const response=await transporter.sendMail({
       from: `"ViaExam" <${config.email.smtp.auth.user}>`,
       to: data.adminEmail,
       subject: `Welcome to ViaExam — Your Admin Credentials for ${data.instituteName}`,
       html,
     });
+
+    console.log("📩 NODEMAILER RESPONSE:", response);
 
     console.log(`✅ Credentials email sent to ${data.adminEmail}`);
     return true;

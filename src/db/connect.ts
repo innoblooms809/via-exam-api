@@ -9,8 +9,7 @@ const connectDB = async (fn: any) => {
     await import("../modals/index"); // Ensure all models are imported and registered
 
     await sequelize.sync({ force: false });
-    //  // Sync models with the database
-    // sequelize.sync({ force: true })
+    
     logger.info("Models synced with PostgreSQL");
     fn();
   } catch (err: any) {

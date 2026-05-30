@@ -40,4 +40,7 @@ institute_controller_1.default.softDeleteInstitute);
 router.patch("/:instituteId/status", auth_1.authenticate, 
 // authorize(["super_admin"]),
 institute_controller_1.default.toggleInstituteStatus);
+// GET    /api/viaexam/institute/slug/:slug
+// Public: Used on login pages to fetch basic institute info like logo
+router.get("/slug/:slug", institute_controller_1.default.getInstituteBySlug);
 exports.default = router;

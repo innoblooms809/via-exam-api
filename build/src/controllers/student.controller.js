@@ -15,8 +15,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const student_service_1 = __importDefault(require("../services/student.service"));
 const mailHelper_1 = require("../utils/mailHelper");
 const createStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const result = yield student_service_1.default.createStudent(req.body, req.files, req.viaExamUser);
+        console.log("🎓 Student result:", result);
+        console.log("📧 Email field:", req.body.email);
+        console.log("📧 EmailId field:", req.body.emailId);
+        console.log("🔑 plainPassword:", (_a = result === null || result === void 0 ? void 0 : result.data) === null || _a === void 0 ? void 0 : _a.plainPassword);
         if (!result.error) {
             (0, mailHelper_1.sendEmailToNewUser)({
                 emailId: req.body.email,

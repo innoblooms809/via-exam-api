@@ -553,6 +553,37 @@ const toggleInstituteStatus = (instituteId, status) => __awaiter(void 0, void 0,
         };
     }
 });
+const getInstituteBySlug = (slug) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const institute = yield Institute_modal_1.default.findOne({
+            where: {
+                slug,
+                isDeleted: false,
+            },
+            attributes: ["instituteName", "logoUrl", "bannerUrl", "slug", "status", "city"],
+        });
+        if (!institute) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Institute not found.",
+            };
+        }
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Institute fetched successfully.",
+            data: institute,
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 exports.default = {
     registerInstitute,
     getAllInstitutes,
@@ -561,4 +592,5 @@ exports.default = {
     softDeleteInstitute,
     toggleInstituteStatus,
     resendAdminCredentials,
+    getInstituteBySlug,
 };

@@ -20,6 +20,9 @@ const scanner_route_1 = __importDefault(require("./scanner.route"));
 const student_route_1 = __importDefault(require("./student.route"));
 const stander_answer_routes_1 = __importDefault(require("./question-answer/stander-answer.routes"));
 const health_route_1 = __importDefault(require("./health.route"));
+const academicCalendar_route_1 = __importDefault(require("./academicCalendar.route"));
+const auth_route_1 = __importDefault(require("./auth.route"));
+const notification_route_1 = __importDefault(require("./notification.route"));
 // import studentRoutes from './student.route'
 // import captchaRoutes from './captcha.route'
 const router = express_1.default.Router();
@@ -79,6 +82,18 @@ const defaultRoutes = [
     {
         path: "/student",
         route: student_route_1.default,
+    },
+    {
+        path: "/academic-calendar",
+        route: academicCalendar_route_1.default,
+    },
+    {
+        path: "/auth",
+        route: auth_route_1.default,
+    },
+    {
+        path: "/notifications",
+        route: notification_route_1.default,
     },
     // {
     //   path: '/captcha',

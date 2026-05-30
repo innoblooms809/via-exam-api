@@ -106,6 +106,7 @@ const loginViaExamUser = async (
       emailId: result.data.user.emailId,
       phoneNumber: result.data.user.phoneNumber,
       roleId: result.data.user.roleId,
+      role: result.data.user.role?.role?.toLowerCase() || null,
       instituteId: result.data.user.instituteId,
       status: result.data.user.status
     };
