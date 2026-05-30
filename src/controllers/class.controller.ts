@@ -17,6 +17,7 @@ const createClass = async (
     return res.status(result.statusCode).send(result);
 
   } catch (error: any) {
+    console.error("POST /v1/class/createClass 500 - error:", error);
 
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
