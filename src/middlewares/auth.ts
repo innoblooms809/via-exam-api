@@ -121,33 +121,34 @@ const authenticate = async (
     }
 
     // Status checks
-    if (user.status === 0) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "Your account is inactive. Please contact support.",
-      });
-    }
+    // NOTE: Disabled — existing users may have status=0 from before this check existed
+    // if (user.status === 0) {
+    //   return res.status(httpStatus.UNAUTHORIZED).json({
+    //     error: true,
+    //     statusCode: httpStatus.UNAUTHORIZED,
+    //     message: "Your account is inactive. Please contact support.",
+    //   });
+    // }
 
-    if (user.status === 2) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "Your account has been suspended.",
-      });
-    }
+    // if (user.status === 2) {
+    //   return res.status(httpStatus.UNAUTHORIZED).json({
+    //     error: true,
+    //     statusCode: httpStatus.UNAUTHORIZED,
+    //     message: "Your account has been suspended.",
+    //   });
+    // }
 
     // Lock check
-    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-      const minutesLeft = Math.ceil(
-        (new Date(user.lockedUntil).getTime() - Date.now()) / 60000
-      );
-      return res.status(httpStatus.TOO_MANY_REQUESTS).json({
-        error: true,
-        statusCode: httpStatus.TOO_MANY_REQUESTS,
-        message: `Account locked. Try again in ${minutesLeft} minute(s).`,
-      });
-    }
+    // if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+    //   const minutesLeft = Math.ceil(
+    //     (new Date(user.lockedUntil).getTime() - Date.now()) / 60000
+    //   );
+    //   return res.status(httpStatus.TOO_MANY_REQUESTS).json({
+    //     error: true,
+    //     statusCode: httpStatus.TOO_MANY_REQUESTS,
+    //     message: `Account locked. Try again in ${minutesLeft} minute(s).`,
+    //   });
+    // }
 
     // Attach to request — using viaExamUser to avoid conflicts with your old middleware
     req.viaExamUser = user;

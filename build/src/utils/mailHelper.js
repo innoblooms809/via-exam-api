@@ -318,12 +318,17 @@ const sendEmailToNewUser = (requestBody) => __awaiter(void 0, void 0, void 0, fu
     //   html:    htmlContentFile,
     // };
     try {
-        yield transporter.sendMail({
+        const info = yield transporter.sendMail({
             from: `"ViaExam" <${config_1.default.email.smtp.auth.user}>`,
             to: emailId,
             subject: "Registration Completed",
             html: htmlContentFile,
         });
+        console.log("✅ MAIL SENT SUCCESSFULLY");
+        console.log("📨 Accepted:", info.accepted);
+        console.log("❌ Rejected:", info.rejected);
+        console.log("🆔 Message ID:", info.messageId);
+        console.log("📩 Response:", info.response);
         return true;
     }
     catch (error) {
