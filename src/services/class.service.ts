@@ -8,7 +8,8 @@ import Subject from "../modals/Subject.modal";
 const createClass = async (body: any, createdBy: any): Promise<any> => {
   try {
 
-    if (!body.className) {
+    const className = body.className?.trim();
+    if (!className) {
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
@@ -17,20 +18,34 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
     }
     const instituteId = createdBy.instituteId;
 
-    const exists = await Class.findOne({
+    const exists: any = await Class.findOne({
       where: {
         instituteId,
-        className: body.className,
-        isDeleted: false,
+        className,
       },
     });
 
     if (exists) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Class already exists",
-      };
+      if (!exists.isDeleted) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Class already exists",
+        };
+      } else {
+        // Restore the soft-deleted class
+        await exists.update({
+          isDeleted: false,
+          isActive: true,
+        });
+
+        return {
+          error: false,
+          statusCode: httpStatus.OK, // or CREATED, returning OK as it was restored
+          message: "Class restored successfully.",
+          data: exists,
+        };
+      }
     }
 
     const classId = await RegHelper.generateUserId();
@@ -38,7 +53,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
     const newClass = await Class.create({
       classId,
       instituteId,
-      className: body.className,
+      className,
     });
 
     return {
@@ -48,6 +63,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
       data: newClass,
     };
   } catch (e: any) {
+    console.error("POST /v1/class/createClass 500 - Error in service:", e);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -173,26 +189,28 @@ const updateClass = async (
       };
     }
 
-    if (body.className) {
-  const exists = await Class.findOne({
-    where: {
-      instituteId: createdBy.instituteId,
-      className: body.className,
-      isDeleted: false,
-    },
-  });
+    const className = body.className?.trim();
+    if (className) {
+      const exists: any = await Class.findOne({
+        where: {
+          instituteId: createdBy.instituteId,
+          className,
+        },
+      });
 
-  if (exists && exists.classId !== classId) {
-    return {
-      error: true,
-      statusCode: httpStatus.CONFLICT,
-      message: "Class name already exists.",
-    };
-  }
-}
+      if (exists && exists.classId !== classId) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: exists.isDeleted
+            ? "A deleted class with this name already exists. Please restore it or use a different name."
+            : "Class name already exists.",
+        };
+      }
+    }
 
     await classData.update({
-      className: body.className ?? classData.className,
+      className: className ?? classData.className,
     });
 
     return {
