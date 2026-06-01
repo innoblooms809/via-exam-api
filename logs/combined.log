@@ -2531,3 +2531,77 @@
     at SendStream.emit (node:domain:489:12)
     at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
 [31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 4.656 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780289130841 200 - 297.469 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780289130844 200 - 303.226 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 18.856 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 21.782 ms - message: Not found
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 22.188 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 23.896 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 26.765 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 27.185 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 5.911 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 7.870 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB853836 200 - 170.529 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB853836 304 - 144.246 ms
+[32minfo[39m: OPTIONS /v1/institute/resendCredentials/IB853836 204 - 0.352 ms
+[32minfo[39m: POST /v1/institute/resendCredentials/IB853836 200 - 3680.648 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 9.607 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.312 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.472 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.419 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 329.541 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 338.663 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 196.470 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 155.569 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.294 ms
+[32minfo[39m: POST /v1/user/login 200 - 479.558 ms
