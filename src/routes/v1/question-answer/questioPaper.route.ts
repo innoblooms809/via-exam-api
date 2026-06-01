@@ -47,32 +47,32 @@ router.post(
 
 // Teacher submits paper for review
 router.patch(
-  "/:paperId/submit",
+  "/submitQuestionPaper/:paperId/submit",
   authenticate,
   submitQuestionPaper
 );
 
 // Admin/Examiner approve
 router.patch(
-  "/:paperId/approve",
+  "/approveQuestionPaper/:paperId/approve",
   authenticate,
-  authorize(["ADMIN", "EXAMINER"]),
+  // authorize(["ADMIN", "EXAMINER"]),
   approveQuestionPaper
 );
 
 // Admin/Examiner reject
 router.patch(
-  "/:paperId/reject",
+  "/rejectQuestionPaper/:paperId/reject",
   authenticate,
-  authorize(["ADMIN", "EXAMINER"]),
+  // authorize(["ADMIN", "EXAMINER"]),
   rejectQuestionPaper
 );
 
 // Admin publish
 router.patch(
-  "/:paperId/publish",
+  "/publishQuestionPaper/:paperId/publish",
   authenticate,
-  authorize(["ADMIN"]),
+  // authorize(["ADMIN"]),
   publishQuestionPaper
 );
 
@@ -80,13 +80,13 @@ router.patch(
 router.get(
   "/pending",
   authenticate,
-  authorize(["ADMIN", "EXAMINER"]),
+  // authorize(["ADMIN", "EXAMINER"]),
   getPendingQuestionPapers
 );
 
 // Get all papers with optional filters (status, examId, teacherId)
 router.get(
-  "/",
+  "/getAllQuestionPapers",
   authenticate,
   getAllQuestionPapers
 );

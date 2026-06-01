@@ -4,7 +4,7 @@ import svgCaptcha from "svg-captcha"; // same as your boilerplate
 import jwt from "jsonwebtoken";
 import tokenService from "../../services/token.service"; // reuse your existing tokenService
 import Service from "../../services/auth/user.service";
-import { sendEmailToNewUser } from "../../utils/mailHelper"; // reuse your mail helper
+import { sendUserCredentials } from "../../utils/mailHelper"; // reuse your mail helper
 import config from "../../config/config";
 import UserModal from "../../modals/User.modal";
 
@@ -79,7 +79,7 @@ const loginViaExamUser = async (
 
     await UserModal.update(
       { refreshToken: token.refresh.token },
-      { where: { userId: result.data.user.userId } }
+      { where: { userId: result.data.user.userId } },
     );
 
     // Set tokens as httpOnly cookies
@@ -100,7 +100,6 @@ const loginViaExamUser = async (
 
     // Send basic user data to frontend (exclude sensitive information)
     const userData = {
-     
       userName: result.data.user.userName,
       userId: result.data.user.userId,
       emailId: result.data.user.emailId,
@@ -108,7 +107,7 @@ const loginViaExamUser = async (
       roleId: result.data.user.roleId,
       role: result.data.user.role?.role?.toLowerCase() || null,
       instituteId: result.data.user.instituteId,
-      status: result.data.user.status
+      status: result.data.user.status,
     };
 
     return res.status(httpStatus.OK).send({
@@ -116,7 +115,6 @@ const loginViaExamUser = async (
       statusCode: httpStatus.OK,
       message: "User logged in successfully",
       data: userData,
-      
     });
   } catch (error) {
     console.error(error);
@@ -129,7 +127,10 @@ const loginViaExamUser = async (
   }
 };
 
-const refreshAccessToken = async (req: Request, res: Response): Promise<any> => {
+const refreshAccessToken = async (
+  req: Request,
+  res: Response,
+): Promise<any> => {
   try {
     const refreshToken = getCookieValue(req, "refreshToken");
 
@@ -188,18 +189,18 @@ const refreshAccessToken = async (req: Request, res: Response): Promise<any> => 
 
     await UserModal.update(
       { refreshToken: token.refresh.token },
-      { where: { userId: user.userId } }
+      { where: { userId: user.userId } },
     );
 
     res.cookie("accessToken", token.access.token, {
       httpOnly: true,
-      secure:false,
+      secure: false,
       maxAge: config.jwt.accessExpirationMinutes * 60 * 1000,
       sameSite: "lax",
     });
 
     res.cookie("refreshToken", token.refresh.token, {
-      httpOnly:true,
+      httpOnly: true,
       secure: false,
       maxAge: config.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
       sameSite: "lax",
@@ -225,14 +226,27 @@ const refreshAccessToken = async (req: Request, res: Response): Promise<any> => 
  * POST /api/viaexam/auth/create-user
  * Mirrors your createUser() — also sends welcome email
  */
-const createViaExamUser = async (req: Request, res: Response): Promise<any> => {
+const createViaExamUser = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await Service.viaExamUserCreate(req);
 
     if (!result.error) {
-      // Reuse your existing mail helper
-      sendEmailToNewUser({ ...req.body, password: result.password }).catch((err) => {
-        console.error("Background seeding email dispatch failed:", err);
+      const slug = req.viaExamUser?.institute?.slug;
+      const loginUrl = slug
+        ? `${config.frontendUrl}/${slug}/auth/signin`
+        : `${config.frontendUrl}/auth/signin`;
+
+      sendUserCredentials({
+        userName:
+          req.body.userName ||
+          `${req.body.firstName || ""} ${req.body.lastName || ""}`.trim(),
+        email: req.body.emailId || req.body.email,
+        phone: req.body.phoneNumber || "",
+        password: result.password,
+        role: req.body.role || "User",
+        loginUrl,
+      }).catch((err) => {
+        console.error("Background user email dispatch failed:", err);
       });
     }
 
@@ -256,16 +270,16 @@ const logoutViaExamUser = async (req: any, res: Response): Promise<any> => {
   try {
     // Clear access token cookie
     res.clearCookie("accessToken", {
-  httpOnly: true,
-  secure: false,
-  sameSite: "lax",
-});
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
 
-res.clearCookie("refreshToken", {
-  httpOnly: true,
-  secure: false,
-  sameSite: "lax",
-});
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
 
     const result = await Service.viaExamUserLogout(req.viaExamUser.userId);
     return res.status(result.statusCode).send(result);

@@ -46,32 +46,32 @@ router.get(
 
 // Teacher submits answer sheet for review
 router.patch(
-  "/:answerId/submit",
+  "/submitAnswerSheet/:answerId/submit",
   authenticate,
   submitAnswerSheet
 );
 
 // Admin/Examiner approve
 router.patch(
-  "/:answerId/approve",
+  "/approveAnswerSheet/:answerId/approve",
   authenticate,
-  authorize(["ADMIN", "EXAMINER"]),
+  // authorize(["ADMIN", "EXAMINER"]),
   approveAnswerSheet
 );
 
 // Admin/Examiner reject
 router.patch(
-  "/:answerId/reject",
+  "/rejectAnswerSheet/:answerId/reject",
   authenticate,
-  authorize(["ADMIN", "EXAMINER"]),
+  // authorize(["ADMIN", "EXAMINER"]),
   rejectAnswerSheet
 );
 
 // Admin publish
 router.patch(
-  "/:answerId/publish",
+  "/publishAnswerSheet/:answerId/publish",
   authenticate,
-  authorize(["ADMIN"]),
+  // authorize(["ADMIN"]),
   publishAnswerSheet
 );
 
@@ -79,7 +79,7 @@ router.patch(
 router.get(
   "/pending",
   authenticate,
-  authorize(["ADMIN", "EXAMINER"]),
+  // authorize(["ADMIN", "EXAMINER"]),
   getPendingAnswerSheets
 );
 
