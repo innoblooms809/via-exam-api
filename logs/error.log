@@ -661,3 +661,53 @@
     at SendStream.emit (node:domain:489:12)
     at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
 [31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 4.656 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 18.856 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 21.782 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 5.911 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 7.870 ms - message: Not found
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 9.607 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.312 ms - message: -
