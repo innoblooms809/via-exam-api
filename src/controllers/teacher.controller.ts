@@ -1,7 +1,8 @@
 import httpStatus from "http-status";
 import { Response } from "express";
 import TeacherService from "../services/teacher.service";
-import { sendEmailToNewUser } from "../utils/mailHelper";
+import config from "../config/config";
+import { sendUserCredentials } from "../utils/mailHelper";
 
 const createTeacher = async (req: any, res: Response): Promise<any> => {
   try {
@@ -12,13 +13,20 @@ const createTeacher = async (req: any, res: Response): Promise<any> => {
     );
 
     if (!result.error) {
-      sendEmailToNewUser({
-        emailId:     req.body.emailId,
-        phoneNumber: req.body.phoneNumber,
-        userName:    `${req.body.firstName} ${req.body.lastName}`,
-        password:    result.data.plainPassword,
+      const slug = req.viaExamUser?.institute?.slug;
+      const loginUrl = slug
+        ? `${config.frontendUrl}/${slug}/auth/signin`
+        : `${config.frontendUrl}/auth/signin`;
+
+      sendUserCredentials({
+        userName: `${req.body.firstName} ${req.body.lastName}`,
+        email:    req.body.emailId,
+        phone:    req.body.phoneNumber,
+        password: result.data.plainPassword,
+        role:     "Teacher",
+        loginUrl,
       }).catch((err) => {
-        console.error("Background email dispatch failed:", err);
+        console.error("Background teacher email dispatch failed:", err);
       });
     }
 

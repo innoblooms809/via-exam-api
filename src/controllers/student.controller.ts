@@ -1,7 +1,8 @@
 import httpStatus from "http-status";
 import { Response } from "express";
 import StudentService from "../services/student.service";
-import { sendEmailToNewUser } from "../utils/mailHelper";
+import config from "../config/config";
+import { sendUserCredentials } from "../utils/mailHelper";
 
 const createStudent = async (req: any, res: Response): Promise<any> => {
   try {
@@ -11,11 +12,18 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
   
 
     if (!result.error) {
-      sendEmailToNewUser({
-        emailId:     req.body.email,
-        phoneNumber: req.body.mobile,
-        userName:    `${req.body.firstName} ${req.body.lastName}`,
-        password:    result.data.plainPassword,
+      const slug = req.viaExamUser?.institute?.slug;
+      const loginUrl = slug
+        ? `${config.frontendUrl}/${slug}/auth/signin`
+        : `${config.frontendUrl}/auth/signin`;
+
+      sendUserCredentials({
+        userName: `${req.body.firstName} ${req.body.lastName}`,
+        email:    req.body.email,
+        phone:    req.body.mobile,
+        password: result.data.plainPassword,
+        role:     "Student",
+        loginUrl,
       }).catch((err) => {
         console.error("Background student email dispatch failed:", err);
       });
