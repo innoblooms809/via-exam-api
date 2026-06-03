@@ -3,6 +3,9 @@ import UserModal from "../modals/User.modal";
 import TeacherProfile from "../modals/TeacherProfile.modal";
 import Role from "../modals/Role.modal";
 import Institute from "../modals/Institute.modal";
+import Class from "../modals/Class.modal";
+import Subject from "../modals/Subject.modal";
+import SubjectTeacher from "../modals/SubjectTeacher.modal";
 import EncryptPassword from "../utils/encryption";
 import RegHelper from "../utils/helper";
 import exclude from "../utils/exclude";
@@ -17,6 +20,7 @@ const createTeacher = async (
 ): Promise<any> => {
   const t = await sequelize.transaction();
   try {
+
     // 1. Get instituteId from admin token
     const instituteId = createdBy.instituteId;
     if (!instituteId) {
@@ -67,18 +71,7 @@ const createTeacher = async (
       };
     }
 
-    // 5. Check employeeID unique within institute
-    const empExists = await TeacherProfile.findOne({
-      where: { employeeID: body.employeeID, instituteId },
-    });
-    if (empExists) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Employee ID already exists in this institute.",
-      };
-    }
+
 
     // 6. Find TEACHER role
     const teacherRole = await Role.findOne({ where: { role: "TEACHER" } });
@@ -89,6 +82,27 @@ const createTeacher = async (
         statusCode: httpStatus.INTERNAL_SERVER_ERROR,
         message: "TEACHER role not found. Please seed roles.",
       };
+    }
+
+    // Validate class assignment: ensure class does not already have a class teacher
+    if (body.teacherType === "Class Teacher" && body.classId) {
+      const cls = await Class.findOne({
+        where: { classId: body.classId, instituteId, isDeleted: false },
+        transaction: t,
+      });
+      if (cls && cls.classTeacherId) {
+        const existingTeacher = await UserModal.findOne({
+          where: { userId: cls.classTeacherId, instituteId },
+          transaction: t,
+        });
+        const teacherName = existingTeacher ? existingTeacher.userName : "another teacher";
+        await t.rollback();
+        return {
+          error: true,
+          statusCode: httpStatus.BAD_REQUEST,
+          message: `Class "${cls.className}" already has a Class Teacher assigned: ${teacherName}. Please choose a different class.`,
+        };
+      }
     }
 
     // 7. Profile photo
@@ -117,16 +131,18 @@ const createTeacher = async (
       { transaction: t },
     );
 
+
     // 9. Create teacher profile record
     await TeacherProfile.create(
       {
         userId: newUser.userId,
         instituteId,
-        employeeID: body.employeeID,
+
         teacherType: body.teacherType,
         qualification: body.qualification,
         specialization: body.specialization || null,
         experience: body.experience || null,
+        address: body.address || null,
         joiningDate: new Date(body.joiningDate),
         dob: new Date(body.dob),
         profileUrl,
@@ -136,21 +152,29 @@ const createTeacher = async (
       { transaction: t },
     );
 
+
+    // Assign teacher to Class if they are a Class Teacher
+    if (body.teacherType === "Class Teacher" && body.classId) {
+      const cls = await Class.findOne({
+        where: { classId: body.classId, instituteId },
+        transaction: t,
+      });
+      if (cls) {
+        await cls.update({ classTeacherId: newUser.userId }, { transaction: t });
+      } else {
+      }
+    }
+
     // 10. Commit
     await t.commit();
 
-    const userResponse = exclude(newUser.toJSON(), [
-      "password",
-      "refreshToken",
-    ]);
+
 
     return {
       error: false,
       statusCode: httpStatus.CREATED,
       message: "Teacher created successfully.",
       data: {
-        user: userResponse,
-        plainPassword, // ← send via email
         instituteName: institute.instituteName,
       },
     };
@@ -194,24 +218,50 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
       order: [["userName", "ASC"]],
     });
 
-    let result = teachers.map((u: any) => ({
-      userId: u.userId,
-      userName: u.userName,
-      emailId: u.emailId,
-      phoneNumber: u.phoneNumber,
-      status: u.status,
-      instituteId: u.instituteId,
-      employeeID: u.teacherProfile?.employeeID ?? null,
-      teacherType: u.teacherProfile?.teacherType ?? null,
-      qualification: u.teacherProfile?.qualification ?? null,
-      specialization: u.teacherProfile?.specialization ?? null,
-      experience: u.teacherProfile?.experience ?? null,
-      joiningDate: u.teacherProfile?.joiningDate ?? null,
-      dob: u.teacherProfile?.dob ?? null,
-      profileUrl: u.teacherProfile?.profileUrl ?? null,
-      isExaminer: u.teacherProfile?.isExaminer ?? false,
-      examinerSince: u.teacherProfile?.examinerSince ?? null,
-    }));
+    const teacherIds = teachers.map((u: any) => u.userId);
+
+    const assignedClasses = await Class.findAll({
+      where: {
+        classTeacherId: { [Op.in]: teacherIds },
+        instituteId: createdBy.instituteId,
+        isDeleted: false,
+      },
+    });
+
+    const assignedSubjects = await Subject.findAll({
+      where: {
+        teacherId: { [Op.in]: teacherIds },
+        instituteId: createdBy.instituteId,
+        isDeleted: false,
+      },
+    });
+
+    let result = teachers.map((u: any) => {
+      const cls = assignedClasses.find((c: any) => c.classTeacherId === u.userId);
+      const subs = assignedSubjects.filter((s: any) => s.teacherId === u.userId);
+
+      return {
+        userId: u.userId,
+        userName: u.userName,
+        emailId: u.emailId,
+        phoneNumber: u.phoneNumber,
+        status: u.status,
+        instituteId: u.instituteId,
+
+        address: u.teacherProfile?.address ?? null,
+        teacherType: u.teacherProfile?.teacherType ?? null,
+        qualification: u.teacherProfile?.qualification ?? null,
+        specialization: u.teacherProfile?.specialization ?? null,
+        experience: u.teacherProfile?.experience ?? null,
+        joiningDate: u.teacherProfile?.joiningDate ?? null,
+        dob: u.teacherProfile?.dob ?? null,
+        profileUrl: u.teacherProfile?.profileUrl ?? null,
+        isExaminer: u.teacherProfile?.isExaminer ?? false,
+        examinerSince: u.teacherProfile?.examinerSince ?? null,
+        assignedClass: cls ? { classId: cls.classId, className: cls.className } : null,
+        assignedSubjects: subs.map((s: any) => ({ subjectId: s.subjectId, subjectName: s.subjectName })),
+      };
+    });
 
     // Filter by examiner flag
     if (isExaminer === "true") result = result.filter((r) => r.isExaminer);
@@ -257,11 +307,31 @@ const getTeacherById = async (userId: string, createdBy: any): Promise<any> => {
       };
     }
 
+    // Find assigned class if teacher is Class Teacher
+
+    const allClassesForTeacher = await Class.findAll({
+      where: { classTeacherId: userId }
+    });
+
+    const assignedClass = await Class.findOne({
+      where: { classTeacherId: userId, instituteId: createdBy.instituteId, isDeleted: false },
+    });
+
+    const teacherData: any = teacher.toJSON();
+    if (assignedClass) {
+      teacherData.assignedClass = {
+        classId: assignedClass.classId,
+        className: assignedClass.className,
+      };
+    } else {
+      teacherData.assignedClass = null;
+    }
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Teacher fetched successfully.",
-      data: teacher,
+      data: teacherData,
+      
     };
   } catch (e: any) {
     return {
@@ -320,10 +390,59 @@ const updateTeacher = async (
           qualification: body.qualification ?? profile.qualification,
           specialization: body.specialization ?? profile.specialization,
           experience: body.experience ?? profile.experience,
+          address: body.address ?? profile.address,
           profileUrl,
         },
         { transaction: t },
       );
+
+      // If teacherType is updated to something other than "Class Teacher",
+      // remove them as class teacher from any class they were assigned to.
+      const newTeacherType = body.teacherType ?? profile.teacherType;
+      if (newTeacherType !== "Class Teacher") {
+        const cls = await Class.findOne({
+          where: { classTeacherId: userId, instituteId: createdBy.instituteId },
+          transaction: t,
+        });
+        if (cls) {
+          await cls.update({ classTeacherId: null }, { transaction: t });
+        }
+      } else {
+        // If teacher is a Class Teacher and classId is updated
+        if (body.classId !== undefined) {
+          // 1. Clear this teacher from any class they are currently assigned to
+          await Class.update(
+            { classTeacherId: null },
+            { where: { classTeacherId: userId, instituteId: createdBy.instituteId }, transaction: t }
+          );
+
+          // 2. If a classId is specified, validate and assign it
+          if (body.classId) {
+            const newClass = await Class.findOne({
+              where: { classId: body.classId, instituteId: createdBy.instituteId, isDeleted: false },
+              transaction: t,
+            });
+
+            if (newClass) {
+              // Ensure that class is not already assigned to another teacher!
+              if (newClass.classTeacherId && newClass.classTeacherId !== userId) {
+                const existingTeacher = await UserModal.findOne({
+                  where: { userId: newClass.classTeacherId, instituteId: createdBy.instituteId },
+                  transaction: t,
+                });
+                const teacherName = existingTeacher ? existingTeacher.userName : "another teacher";
+                await t.rollback();
+                return {
+                  error: true,
+                  statusCode: httpStatus.BAD_REQUEST,
+                  message: `Class "${newClass.className}" already has a Class Teacher assigned: ${teacherName}. Please choose a different class.`,
+                };
+              }
+              await newClass.update({ classTeacherId: userId }, { transaction: t });
+            }
+          }
+        }
+      }
     }
 
     await t.commit();
@@ -360,6 +479,14 @@ const deleteTeacher = async (userId: string, createdBy: any): Promise<any> => {
     }
 
     await user.update({ status: 0 });
+
+    // Unassign teacher from any class they were teaching
+    const assignedClass = await Class.findOne({
+      where: { classTeacherId: userId, instituteId: createdBy.instituteId },
+    });
+    if (assignedClass) {
+      await assignedClass.update({ classTeacherId: null });
+    }
 
     return {
       error: false,
@@ -462,6 +589,150 @@ const removeExaminer = async (userId: string, createdBy: any): Promise<any> => {
   }
 };
 
+// ─── GET DEACTIVATED TEACHERS ──────────────────────────────────────────────────
+const getDeactivatedTeachers = async (createdBy: any, query: any): Promise<any> => {
+  try {
+    const { search = "" } = query;
+    const teacherRole = await Role.findOne({ where: { role: "TEACHER" } });
+
+    const where: any = {
+      instituteId: createdBy.instituteId,
+      roleId: teacherRole?.id,
+      status: 0, // 0 = Deactivated
+    };
+
+    if (search) {
+      where[Op.or] = [
+        { userName: { [Op.iLike]: `%${search}%` } },
+        { emailId: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+
+    const teachers = await UserModal.findAll({
+      where,
+      include: [
+        { model: Role, as: "role" },
+        { model: TeacherProfile, as: "teacherProfile", required: false },
+      ],
+      attributes: { exclude: ["password", "refreshToken"] },
+      order: [["userName", "ASC"]],
+    });
+
+    const result = teachers.map((u: any) => ({
+      userId: u.userId,
+      userName: u.userName,
+      emailId: u.emailId,
+      phoneNumber: u.phoneNumber,
+      status: u.status,
+      instituteId: u.instituteId,
+
+      address: u.teacherProfile?.address ?? null,
+      teacherType: u.teacherProfile?.teacherType ?? null,
+      qualification: u.teacherProfile?.qualification ?? null,
+      specialization: u.teacherProfile?.specialization ?? null,
+      experience: u.teacherProfile?.experience ?? null,
+      joiningDate: u.teacherProfile?.joiningDate ?? null,
+      dob: u.teacherProfile?.dob ?? null,
+      profileUrl: u.teacherProfile?.profileUrl ?? null,
+      isExaminer: u.teacherProfile?.isExaminer ?? false,
+      examinerSince: u.teacherProfile?.examinerSince ?? null,
+    }));
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Deactivated teachers fetched successfully.",
+      data: {
+        teachers: result,
+        total: result.length,
+      },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: e.message,
+    };
+  }
+};
+
+// ─── REACTIVATE TEACHER ──────────────────────────────────────────────────────
+const reactivateTeacher = async (userId: string, createdBy: any): Promise<any> => {
+  try {
+    const user = await UserModal.findOne({
+      where: { userId, instituteId: createdBy.instituteId },
+    });
+
+    if (!user) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Teacher not found.",
+      };
+    }
+
+    await user.update({ status: 1 });
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Teacher reactivated successfully.",
+      data: {},
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
+// ─── GET MY ASSIGNMENTS ─────────────────────────────────────────────────────────
+const getMyAssignments = async (teacherId: string): Promise<any> => {
+  try {
+    const assignedSubjects = await Subject.findAll({
+      where: {
+        teacherId,
+        isActive: true,
+        isDeleted: false,
+      },
+      include: [
+        {
+          model: Class,
+          as: "class",
+          attributes: ["classId", "className"],
+          required: false,
+        },
+      ],
+    });
+
+    const assignedClasses = await Class.findAll({
+      where: {
+        classTeacherId: teacherId,
+        isActive: true,
+        isDeleted: false,
+      },
+    });
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Assignments fetched successfully",
+      data: {
+        assignedSubjects,
+        assignedClasses,
+      },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 export default {
   createTeacher,
   getAllTeachers,
@@ -470,4 +741,7 @@ export default {
   deleteTeacher,
   assignExaminer,
   removeExaminer,
+  getDeactivatedTeachers,
+  reactivateTeacher,
+  getMyAssignments,
 };

@@ -39,6 +39,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const http_status_1 = __importDefault(require("http-status"));
 const User_modal_1 = __importDefault(require("../modals/User.modal"));
 const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
+const Institute_modal_1 = __importDefault(require("../modals/Institute.modal"));
 const config_1 = __importDefault(require("../config/config"));
 const getCookieValue = (req, name) => {
     var _a, _b;
@@ -97,9 +98,12 @@ const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
                 message: "Invalid token payload.",
             });
         }
-        // Fetch fresh user with role
+        // Fetch fresh user with role and institute
         const user = yield User_modal_1.default.findOne({
-            include: [{ model: Role_modal_1.default, as: "role" }],
+            include: [
+                { model: Role_modal_1.default, as: "role" },
+                { model: Institute_modal_1.default, as: "institute" },
+            ],
             where: { userId },
         });
         if (!user) {

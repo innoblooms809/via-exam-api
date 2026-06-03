@@ -237,7 +237,7 @@ const seed = async () => {
     {
       userId: "USER-TEACHER-001",
       instituteId: "INST-DEMO-001",
-      employeeID: "EMP-T-001",
+
       teacherType: "Full Time",
       qualification: "M.Sc Mathematics, B.Ed",
       specialization: "Algebra",
@@ -256,7 +256,7 @@ const seed = async () => {
     {
       userId: "USER-EXAMINER-001",
       instituteId: "INST-DEMO-001",
-      employeeID: "EMP-E-001",
+
       teacherType: "Full Time",
       qualification: "M.A English, B.Ed",
       specialization: "Literature",
@@ -384,10 +384,7 @@ const seed = async () => {
     { type: QueryTypes.SELECT }
   );
 
-  console.log("Seed complete.");
-  console.log(`Default password for seeded users: ${passwordPlainText}`);
-  console.log("Current public tables:");
-  tables.forEach((table) => console.log(`- ${table.table_name}`));
+
 };
 
 seed()

@@ -5,6 +5,7 @@ import EncryptPassword from "../../utils/encryption"; // reuse your existing uti
 import RegHelper from "../../utils/helper"; // reuse your existing utility
 import exclude from "../../utils/exclude"; // reuse your existing utility
 import { Op } from "sequelize";
+import InstituteModal from "../../modals/Institute.modal";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -105,12 +106,43 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
  * type 1 = email login, type 2 = mobile login
  * Adds: account lockout, status checks
  */
-const viaExamUserLogin = async (emailId: string, password: string) => {
+const viaExamUserLogin = async (slug: string, emailId: string, password: string) => {
   try {
-    console.log("EMAIL RECEIVED:", emailId);
-    const user = await getViaExamUserByEmail(emailId);
-    console.log("USER FOUND:", user?.emailId);
-    console.log("HASHED PASSWORD:", user?.password);
+    // Build where clause dynamically
+    const whereClause: any = {
+      emailId: { [Op.iLike]: emailId },
+    };
+
+    if (slug) {
+      // Institute-scoped login — resolve slug → instituteId
+      const institute = await InstituteModal.findOne({
+        where: { slug, status: 1, isDeleted: false },
+      });
+
+      if (!institute) {
+        return {
+          error: true,
+          statusCode: httpStatus.NOT_FOUND,
+          message: "Institute not found.",
+        };
+      }
+
+      whereClause.instituteId = institute.instituteId;
+    } else {
+      // Super admin login — no institute scope
+      whereClause.instituteId = null;
+    }
+
+    // Find user inside institute scope (or super admin with null instituteId)
+    const user = await UserModal.findOne({
+      include: [
+        {
+          model: Role,
+          as: "role",
+        },
+      ],
+      where: whereClause,
+    });
 
     if (!user) {
       return {
@@ -120,7 +152,7 @@ const viaExamUserLogin = async (emailId: string, password: string) => {
       };
     }
 
-    // status check
+    // Account status checks
     if (user.status === 0) {
       return {
         error: true,
@@ -137,7 +169,7 @@ const viaExamUserLogin = async (emailId: string, password: string) => {
       };
     }
 
-    // lock check (SAFE VERSION)
+    // Lock check
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
       return {
         error: true,
@@ -146,10 +178,7 @@ const viaExamUserLogin = async (emailId: string, password: string) => {
       };
     }
 
-    const isMatch = await EncryptPassword.isPasswordMatch(
-      password,
-      user.password,
-    );
+    const isMatch = await EncryptPassword.isPasswordMatch(password, user.password);
 
     if (!isMatch) {
       const attempts = (user.loginAttempts || 0) + 1;
@@ -160,12 +189,22 @@ const viaExamUserLogin = async (emailId: string, password: string) => {
             loginAttempts: attempts,
             lockedUntil: new Date(Date.now() + LOCK_DURATION_MINUTES * 60000),
           },
-          { where: { userId: user.userId } },
+          {
+            where: {
+              userId: user.userId,
+            },
+          }
         );
       } else {
         await UserModal.update(
-          { loginAttempts: attempts },
-          { where: { userId: user.userId } },
+          {
+            loginAttempts: attempts,
+          },
+          {
+            where: {
+              userId: user.userId,
+            },
+          }
         );
       }
 
@@ -176,13 +215,18 @@ const viaExamUserLogin = async (emailId: string, password: string) => {
       };
     }
 
+    // Reset lock info after successful login
     await UserModal.update(
       {
         loginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: new Date(),
       },
-      { where: { userId: user.userId } },
+      {
+        where: {
+          userId: user.userId,
+        },
+      }
     );
 
     const userResponse = exclude(user.toJSON(), ["password", "refreshToken"]);
@@ -190,7 +234,9 @@ const viaExamUserLogin = async (emailId: string, password: string) => {
     return {
       error: false,
       statusCode: httpStatus.OK,
-      data: { user: userResponse },
+      data: {
+        user: userResponse,
+      },
     };
   } catch (e: any) {
     return {
