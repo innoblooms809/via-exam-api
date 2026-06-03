@@ -58,12 +58,12 @@ const getCaptcha = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {
-        const { emailId, password } = req.body;
+        const { slug, emailId, password } = req.body;
         // CAPTCHA check — identical to your boilerplate
         // if (captcha !== req.session.captcha) {
         //   return res.status(400).json({ message: "Invalid CAPTCHA" });
         // }
-        const result = yield user_service_1.default.viaExamUserLogin(emailId, password);
+        const result = yield user_service_1.default.viaExamUserLogin(slug, emailId, password);
         if (result.error) {
             return res.status(result.statusCode).send(result);
         }

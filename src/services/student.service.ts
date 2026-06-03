@@ -265,6 +265,11 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
             Object.keys(profileWhere).length > 0 ? profileWhere : undefined,
           include: [
             {
+              model: Class,
+              as: "class",
+              required: false,
+            },
+            {
               model: Section,
               as: "section",
               required: false,
@@ -331,7 +336,8 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
           model: StudentProfile,
           as: "studentProfile",
           include: [
-            { model: Section, as: "section", required: false },
+            { model: Class, as: "class", where: { isDeleted: false }, required: false },
+            { model: Section, as: "section", where: { isDeleted: false }, required: false },
           ],
         },
       ],
@@ -355,7 +361,8 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
               model: StudentProfile,
               as: "studentProfile",
               include: [
-                { model: Section, as: "section", required: false },
+                { model: Class, as: "class", where: { isDeleted: false }, required: false },
+                { model: Section, as: "section", where: { isDeleted: false }, required: false },
               ],
             },
           ],

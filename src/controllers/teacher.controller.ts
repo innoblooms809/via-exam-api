@@ -96,6 +96,35 @@ const removeExaminer = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const getDeactivatedTeachers = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await TeacherService.getDeactivatedTeachers(req.viaExamUser, req.query);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    console.error("getDeactivatedTeachers Controller Error:", error);
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
+const reactivateTeacher = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await TeacherService.reactivateTeacher(req.params.userId, req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    console.error("reactivateTeacher Controller Error:", error);
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
+const getMyAssignments = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await TeacherService.getMyAssignments(req.viaExamUser.userId);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
 export default {
   createTeacher,
   getAllTeachers,
@@ -104,4 +133,7 @@ export default {
   deleteTeacher,
   assignExaminer,
   removeExaminer,
+  getDeactivatedTeachers,
+  reactivateTeacher,
+  getMyAssignments,
 };

@@ -10,7 +10,7 @@ const initSuperAdmin = async () => {
     });
 
     if (!role) {
-      console.log("⚠️ Creating SUPER_ADMIN role...");
+
       role = await Role.create({ role: "SUPER_ADMIN" });
     }
 
@@ -19,7 +19,7 @@ const initSuperAdmin = async () => {
     });
 
     if (existing) {
-      console.log("✅ SuperAdmin already exists — skipping.");
+
       return;
     }
 
@@ -37,7 +37,7 @@ const initSuperAdmin = async () => {
       status: 1,
     });
 
-    console.log("✅ SuperAdmin created!");
+
   } catch (e: any) {
     console.error("FULL ERROR:", e); // IMPORTANT
   }

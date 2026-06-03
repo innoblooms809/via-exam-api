@@ -187,7 +187,6 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
     yield upsertById(TeacherProfile_modal_1.default, { userId: "USER-TEACHER-001" }, {
         userId: "USER-TEACHER-001",
         instituteId: "INST-DEMO-001",
-        employeeID: "EMP-T-001",
         teacherType: "Full Time",
         qualification: "M.Sc Mathematics, B.Ed",
         specialization: "Algebra",
@@ -201,7 +200,6 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
     yield upsertById(TeacherProfile_modal_1.default, { userId: "USER-EXAMINER-001" }, {
         userId: "USER-EXAMINER-001",
         instituteId: "INST-DEMO-001",
-        employeeID: "EMP-E-001",
         teacherType: "Full Time",
         qualification: "M.A English, B.Ed",
         specialization: "Literature",
@@ -303,10 +301,6 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
       where table_schema = 'public'
         and table_type = 'BASE TABLE'
       order by table_name`, { type: sequelize_1.QueryTypes.SELECT });
-    console.log("Seed complete.");
-    console.log(`Default password for seeded users: ${passwordPlainText}`);
-    console.log("Current public tables:");
-    tables.forEach((table) => console.log(`- ${table.table_name}`));
 });
 seed()
     .catch((error) => {

@@ -96,6 +96,35 @@ const removeExaminer = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
     }
 });
+const getDeactivatedTeachers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield teacher_service_1.default.getDeactivatedTeachers(req.viaExamUser, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        console.error("getDeactivatedTeachers Controller Error:", error);
+        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    }
+});
+const reactivateTeacher = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield teacher_service_1.default.reactivateTeacher(req.params.userId, req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        console.error("reactivateTeacher Controller Error:", error);
+        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    }
+});
+const getMyAssignments = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield teacher_service_1.default.getMyAssignments(req.viaExamUser.userId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    }
+});
 exports.default = {
     createTeacher,
     getAllTeachers,
@@ -104,4 +133,7 @@ exports.default = {
     deleteTeacher,
     assignExaminer,
     removeExaminer,
+    getDeactivatedTeachers,
+    reactivateTeacher,
+    getMyAssignments,
 };
