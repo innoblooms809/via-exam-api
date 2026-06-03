@@ -22,14 +22,12 @@ const initSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
             where: { role: "SUPER_ADMIN" },
         });
         if (!role) {
-            console.log("⚠️ Creating SUPER_ADMIN role...");
             role = yield Role_modal_1.default.create({ role: "SUPER_ADMIN" });
         }
         const existing = yield User_modal_1.default.findOne({
             where: { roleId: role.id },
         });
         if (existing) {
-            console.log("✅ SuperAdmin already exists — skipping.");
             return;
         }
         const encryptedPassword = yield encryption_1.default.encryptPassword("SuperAdmin@123");
@@ -44,7 +42,6 @@ const initSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
             instituteId: null,
             status: 1,
         });
-        console.log("✅ SuperAdmin created!");
     }
     catch (e) {
         console.error("FULL ERROR:", e); // IMPORTANT

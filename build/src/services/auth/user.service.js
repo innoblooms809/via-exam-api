@@ -30,6 +30,7 @@ const encryption_1 = __importDefault(require("../../utils/encryption")); // reus
 const helper_1 = __importDefault(require("../../utils/helper")); // reuse your existing utility
 const exclude_1 = __importDefault(require("../../utils/exclude")); // reuse your existing utility
 const sequelize_1 = require("sequelize");
+const Institute_modal_1 = __importDefault(require("../../modals/Institute.modal"));
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_MINUTES = 30;
@@ -47,8 +48,8 @@ const getViaExamUserByEmail = (emailId) => __awaiter(void 0, void 0, void 0, fun
         ],
         where: {
             emailId: {
-                [sequelize_1.Op.iLike]: emailId
-            }
+                [sequelize_1.Op.iLike]: emailId,
+            },
         },
     });
 });
@@ -119,9 +120,40 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
  * type 1 = email login, type 2 = mobile login
  * Adds: account lockout, status checks
  */
-const viaExamUserLogin = (emailId, password) => __awaiter(void 0, void 0, void 0, function* () {
+const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const user = yield getViaExamUserByEmail(emailId);
+        // Build where clause dynamically
+        const whereClause = {
+            emailId: { [sequelize_1.Op.iLike]: emailId },
+        };
+        if (slug) {
+            // Institute-scoped login — resolve slug → instituteId
+            const institute = yield Institute_modal_1.default.findOne({
+                where: { slug, status: 1, isDeleted: false },
+            });
+            if (!institute) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.NOT_FOUND,
+                    message: "Institute not found.",
+                };
+            }
+            whereClause.instituteId = institute.instituteId;
+        }
+        else {
+            // Super admin login — no institute scope
+            whereClause.instituteId = null;
+        }
+        // Find user inside institute scope (or super admin with null instituteId)
+        const user = yield User_modal_1.default.findOne({
+            include: [
+                {
+                    model: Role_modal_1.default,
+                    as: "role",
+                },
+            ],
+            where: whereClause,
+        });
         if (!user) {
             return {
                 error: true,
@@ -129,7 +161,7 @@ const viaExamUserLogin = (emailId, password) => __awaiter(void 0, void 0, void 0
                 message: "Invalid credentials.",
             };
         }
-        // status check
+        // Account status checks
         if (user.status === 0) {
             return {
                 error: true,
@@ -144,7 +176,7 @@ const viaExamUserLogin = (emailId, password) => __awaiter(void 0, void 0, void 0
                 message: "Account suspended.",
             };
         }
-        // lock check (SAFE VERSION)
+        // Lock check
         if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
             return {
                 error: true,
@@ -159,10 +191,20 @@ const viaExamUserLogin = (emailId, password) => __awaiter(void 0, void 0, void 0
                 yield User_modal_1.default.update({
                     loginAttempts: attempts,
                     lockedUntil: new Date(Date.now() + LOCK_DURATION_MINUTES * 60000),
-                }, { where: { userId: user.userId } });
+                }, {
+                    where: {
+                        userId: user.userId,
+                    },
+                });
             }
             else {
-                yield User_modal_1.default.update({ loginAttempts: attempts }, { where: { userId: user.userId } });
+                yield User_modal_1.default.update({
+                    loginAttempts: attempts,
+                }, {
+                    where: {
+                        userId: user.userId,
+                    },
+                });
             }
             return {
                 error: true,
@@ -170,16 +212,23 @@ const viaExamUserLogin = (emailId, password) => __awaiter(void 0, void 0, void 0
                 message: "Invalid credentials.",
             };
         }
+        // Reset lock info after successful login
         yield User_modal_1.default.update({
             loginAttempts: 0,
             lockedUntil: null,
             lastLoginAt: new Date(),
-        }, { where: { userId: user.userId } });
+        }, {
+            where: {
+                userId: user.userId,
+            },
+        });
         const userResponse = (0, exclude_1.default)(user.toJSON(), ["password", "refreshToken"]);
         return {
             error: false,
             statusCode: http_status_1.default.OK,
-            data: { user: userResponse },
+            data: {
+                user: userResponse,
+            },
         };
     }
     catch (e) {

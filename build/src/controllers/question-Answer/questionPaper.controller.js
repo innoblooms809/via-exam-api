@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getQuestionPaperUploads = exports.getQuestionPaperBySelection = exports.uploadImageController = exports.createQuestionPaper = void 0;
+exports.getAllQuestionPapers = exports.getPendingQuestionPapers = exports.publishQuestionPaper = exports.rejectQuestionPaper = exports.approveQuestionPaper = exports.submitQuestionPaper = exports.getQuestionPaperUploads = exports.getQuestionPaperBySelection = exports.uploadImageController = exports.createQuestionPaper = void 0;
 const sequelize_1 = require("sequelize");
 const questionPaper_service_1 = require("../../services/question-answer/questionPaper.service");
 const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-paper/QuestionPaper.modal"));
@@ -30,7 +30,6 @@ const getQuestionPaperErrorMessage = (error) => {
         if (fields.includes("paperId")) {
             return "Question paper ID already exists";
         }
-        // Composite unique index: (examId, paper_set) — one set per exam
         if (fields.includes("paper_set") ||
             (error === null || error === void 0 ? void 0 : error.constraint) === "uq_question_paper_exam_paper_set") {
             return "A question paper with this Set already exists for the selected exam. Please choose a different Set.";
@@ -50,9 +49,6 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
     try {
         const { examId, teacherId, paperSet, content, } = req.body;
         const instituteId = ((_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.instituteId) || req.body.instituteId;
-        // ─────────────────────────────────────────────
-        // 1. Basic validation
-        // ─────────────────────────────────────────────
         if (!instituteId ||
             !examId ||
             !paperSet ||
@@ -66,14 +62,6 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
                 message: "teacherId must be a string",
             });
         }
-        // if (paperId !== undefined && typeof paperId !== "string") {
-        //   return res.status(400).json({
-        //     message: "paperId must be a string",
-        //   });
-        // }
-        // ─────────────────────────────────────────────
-        // 2. Call service
-        // ─────────────────────────────────────────────
         yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
             instituteId,
             examId,
@@ -81,12 +69,8 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
             paperSet,
             content,
         });
-        // ─────────────────────────────────────────────
-        // 3. Response
-        // ─────────────────────────────────────────────
         return res.status(201).json({
             message: "Question paper created successfully",
-            // data: paperId,
         });
     }
     catch (error) {
@@ -126,15 +110,11 @@ const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.uploadImageController = uploadImageController;
-// ─────────────────────────────────────────────────────────────────
 const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _c;
     try {
         const { classVal, subject, examType, session, paperSet, } = req.body;
         const instituteId = ((_c = req.viaExamUser) === null || _c === void 0 ? void 0 : _c.instituteId) || req.body.instituteId;
-        // ─────────────────────────────────────────────
-        // FIND SESSION + CLASS
-        // ─────────────────────────────────────────────
         const [sessionData, classData] = yield Promise.all([
             Session_modal_1.default.findOne({
                 where: {
@@ -163,9 +143,6 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
                 message: "Class not found.",
             });
         }
-        // ─────────────────────────────────────────────
-        // FIND SUBJECT
-        // ─────────────────────────────────────────────
         const subjectData = yield Subject_modal_1.default.findOne({
             where: {
                 subjectName: subject,
@@ -180,9 +157,6 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
                 message: "Subject not found.",
             });
         }
-        // ─────────────────────────────────────────────
-        // FIND EXAM
-        // ─────────────────────────────────────────────
         const exam = yield Exam_modal_1.default.findOne({
             where: {
                 sessionId: sessionData.sessionId,
@@ -199,9 +173,6 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
                 message: "Exam not found.",
             });
         }
-        // ─────────────────────────────────────────────
-        // FIND QUESTION PAPER
-        // ─────────────────────────────────────────────
         const questionPaper = yield QuestionPaper_modal_1.default.findOne({
             where: {
                 examId: exam.examId,
@@ -214,9 +185,6 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
                 message: "Question paper not found for selected exam.",
             });
         }
-        // ─────────────────────────────────────────────
-        // SUCCESS
-        // ─────────────────────────────────────────────
         return res.status(http_status_1.default.OK).json({
             error: false,
             message: "Question paper fetched successfully.",
@@ -262,3 +230,121 @@ const getQuestionPaperUploads = (req, res) => __awaiter(void 0, void 0, void 0, 
     }
 });
 exports.getQuestionPaperUploads = getQuestionPaperUploads;
+// ─── APPROVAL WORKFLOW CONTROLLERS ─────────────────────────────────────────
+const submitQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { paperId } = req.params;
+        const teacherId = req.viaExamUser.userId;
+        const paper = yield questionPaper_service_1.QuestionPaperService.submitForApproval(paperId, teacherId);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Question paper submitted for approval.",
+            data: paper,
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.submitQuestionPaper = submitQuestionPaper;
+const approveQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { paperId } = req.params;
+        const reviewerId = req.viaExamUser.userId;
+        const paper = yield questionPaper_service_1.QuestionPaperService.approvePaper(paperId, reviewerId);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Question paper approved.",
+            data: paper,
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.approveQuestionPaper = approveQuestionPaper;
+const rejectQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { paperId } = req.params;
+        const reviewerId = req.viaExamUser.userId;
+        const { rejectionNote } = req.body;
+        const paper = yield questionPaper_service_1.QuestionPaperService.rejectPaper(paperId, reviewerId, rejectionNote);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Question paper rejected.",
+            data: paper,
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.rejectQuestionPaper = rejectQuestionPaper;
+const publishQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { paperId } = req.params;
+        const paper = yield questionPaper_service_1.QuestionPaperService.publishPaper(paperId);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Question paper published.",
+            data: paper,
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.publishQuestionPaper = publishQuestionPaper;
+const getPendingQuestionPapers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = req.viaExamUser.instituteId;
+        const papers = yield questionPaper_service_1.QuestionPaperService.getPendingPapers(instituteId);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Pending question papers fetched.",
+            data: { papers },
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.getPendingQuestionPapers = getPendingQuestionPapers;
+const getAllQuestionPapers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = req.viaExamUser.instituteId;
+        const { status, examId, teacherId } = req.query;
+        const papers = yield questionPaper_service_1.QuestionPaperService.getPapers(instituteId, {
+            status: status,
+            examId: examId,
+            teacherId: teacherId,
+        });
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Question papers fetched.",
+            data: { papers },
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.getAllQuestionPapers = getAllQuestionPapers;

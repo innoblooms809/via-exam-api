@@ -17,10 +17,13 @@ const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const Section_modal_1 = __importDefault(require("../modals/Section.modal"));
 const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
+const User_modal_1 = __importDefault(require("../modals/User.modal"));
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
 const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        if (!body.className) {
+        const className = (_a = body.className) === null || _a === void 0 ? void 0 : _a.trim();
+        if (!className) {
             return {
                 error: true,
                 statusCode: http_status_1.default.BAD_REQUEST,
@@ -31,22 +34,36 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
         const exists = yield Class_modal_1.default.findOne({
             where: {
                 instituteId,
-                className: body.className,
-                isDeleted: false,
+                className,
             },
         });
         if (exists) {
-            return {
-                error: true,
-                statusCode: http_status_1.default.CONFLICT,
-                message: "Class already exists",
-            };
+            if (!exists.isDeleted) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Class already exists",
+                };
+            }
+            else {
+                // Restore the soft-deleted class
+                yield exists.update({
+                    isDeleted: false,
+                    isActive: true,
+                });
+                return {
+                    error: false,
+                    statusCode: http_status_1.default.OK,
+                    message: "Class restored successfully.",
+                    data: exists,
+                };
+            }
         }
         const classId = yield helper_1.default.generateUserId();
         const newClass = yield Class_modal_1.default.create({
             classId,
             instituteId,
-            className: body.className,
+            className,
         });
         return {
             error: false,
@@ -56,6 +73,7 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
         };
     }
     catch (e) {
+        console.error("POST /v1/class/createClass 500 - Error in service:", e);
         return {
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -84,6 +102,12 @@ const getAllClasses = (createdBy) => __awaiter(void 0, void 0, void 0, function*
                     model: Subject_modal_1.default,
                     as: "subjects",
                     where: { isDeleted: false },
+                    required: false,
+                },
+                {
+                    model: User_modal_1.default,
+                    as: "classTeacher",
+                    attributes: ["userId", "userName", "emailId"],
                     required: false,
                 },
             ],
@@ -129,6 +153,12 @@ const getClassById = (classId, createdBy) => __awaiter(void 0, void 0, void 0, f
                     where: { isDeleted: false },
                     required: false,
                 },
+                {
+                    model: User_modal_1.default,
+                    as: "classTeacher",
+                    attributes: ["userId", "userName", "emailId"],
+                    required: false,
+                },
             ],
         });
         if (!classData) {
@@ -155,7 +185,7 @@ const getClassById = (classId, createdBy) => __awaiter(void 0, void 0, void 0, f
 });
 // ─── UPDATE CLASS ─────────────────────────────────────────────────────────────
 const updateClass = (classId, body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _b;
     try {
         const classData = yield Class_modal_1.default.findOne({
             where: {
@@ -171,24 +201,26 @@ const updateClass = (classId, body, createdBy) => __awaiter(void 0, void 0, void
                 message: "Class not found.",
             };
         }
-        if (body.className) {
+        const className = (_b = body.className) === null || _b === void 0 ? void 0 : _b.trim();
+        if (className) {
             const exists = yield Class_modal_1.default.findOne({
                 where: {
                     instituteId: createdBy.instituteId,
-                    className: body.className,
-                    isDeleted: false,
+                    className,
                 },
             });
             if (exists && exists.classId !== classId) {
                 return {
                     error: true,
                     statusCode: http_status_1.default.CONFLICT,
-                    message: "Class name already exists.",
+                    message: exists.isDeleted
+                        ? "A deleted class with this name already exists. Please restore it or use a different name."
+                        : "Class name already exists.",
                 };
             }
         }
         yield classData.update({
-            className: (_a = body.className) !== null && _a !== void 0 ? _a : classData.className,
+            className: className !== null && className !== void 0 ? className : classData.className,
         });
         return {
             error: false,

@@ -53,15 +53,30 @@ const createSection = (body, createdBy) => __awaiter(void 0, void 0, void 0, fun
                 classId: body.classId,
                 instituteId: createdBy.instituteId,
                 sectionName: body.sectionName,
-                isDeleted: false,
             },
         });
         if (exists) {
-            return {
-                error: true,
-                statusCode: http_status_1.default.CONFLICT,
-                message: "Section already exists.",
-            };
+            if (!exists.isDeleted) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Section already exists.",
+                };
+            }
+            else {
+                // Reactivate soft-deleted section
+                yield exists.update({
+                    isDeleted: false,
+                    isActive: true,
+                    classTeacherId: body.classTeacherId || null,
+                });
+                return {
+                    error: false,
+                    statusCode: http_status_1.default.OK,
+                    message: "Section restored successfully.",
+                    data: exists,
+                };
+            }
         }
         let teacher = null;
         if (body.classTeacherId) {
@@ -118,6 +133,13 @@ const getAllSections = (query, createdBy) => __awaiter(void 0, void 0, void 0, f
             where,
             include: [
                 {
+                    model: Class_modal_1.default,
+                    as: "class",
+                    attributes: ["classId", "className"],
+                    where: { isDeleted: false },
+                    required: true,
+                },
+                {
                     model: User_modal_1.default,
                     as: "classTeacher",
                     attributes: ["userId", "userName", "emailId"],
@@ -154,6 +176,13 @@ const getSectionById = (sectionId, createdBy) => __awaiter(void 0, void 0, void 
                 isDeleted: false,
             },
             include: [
+                {
+                    model: Class_modal_1.default,
+                    as: "class",
+                    attributes: ["classId", "className"],
+                    where: { isDeleted: false },
+                    required: true,
+                },
                 {
                     model: User_modal_1.default,
                     as: "classTeacher",
