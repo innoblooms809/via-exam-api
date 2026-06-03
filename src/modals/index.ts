@@ -50,13 +50,13 @@ Role.hasMany(User, { foreignKey: "roleId", as: "users" });
 // ═══════════════════════════════════════════════════════════════
 Institute.hasMany(User, {
   foreignKey: "instituteId",
-  sourceKey:  "instituteId",
-  as:         "users",
+  sourceKey: "instituteId",
+  as: "users",
 });
 User.belongsTo(Institute, {
   foreignKey: "instituteId",
-  targetKey:  "instituteId",
-  as:         "institute",
+  targetKey: "instituteId",
+  as: "institute",
 });
 
 
@@ -66,13 +66,13 @@ User.belongsTo(Institute, {
 // ═══════════════════════════════════════════════════════════════
 User.hasOne(TeacherProfile, {
   foreignKey: "userId",
-  sourceKey:  "userId",
-  as:         "teacherProfile",
+  sourceKey: "userId",
+  as: "teacherProfile",
 });
 TeacherProfile.belongsTo(User, {
   foreignKey: "userId",
-  targetKey:  "userId",
-  as:         "user",
+  targetKey: "userId",
+  as: "user",
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -80,13 +80,13 @@ TeacherProfile.belongsTo(User, {
 // ═══════════════════════════════════════════════════════════════
 User.hasOne(StudentProfile, {
   foreignKey: "userId",
-  sourceKey:  "userId",
-  as:         "studentProfile",
+  sourceKey: "userId",
+  as: "studentProfile",
 });
 StudentProfile.belongsTo(User, {
   foreignKey: "userId",
-  targetKey:  "userId",
-  as:         "user",
+  targetKey: "userId",
+  as: "user",
 });
 
 
@@ -95,13 +95,13 @@ StudentProfile.belongsTo(User, {
 // ═══════════════════════════════════════
 Institute.hasMany(Session, {
   foreignKey: "instituteId",
-  sourceKey:  "instituteId",
-  as:         "sessions",
+  sourceKey: "instituteId",
+  as: "sessions",
 });
 Session.belongsTo(Institute, {
   foreignKey: "instituteId",
-  targetKey:  "instituteId",
-  as:         "institute",
+  targetKey: "instituteId",
+  as: "institute",
 });
 
 // ═══════════════════════════════════════
@@ -118,13 +118,13 @@ Exam.belongsTo(Session, {
 // ═══════════════════════════════════════════════════════════════
 Institute.hasMany(Class, {
   foreignKey: "instituteId",
-  sourceKey:  "instituteId",
-  as:         "classes",
+  sourceKey: "instituteId",
+  as: "classes",
 });
 Class.belongsTo(Institute, {
   foreignKey: "instituteId",
-  targetKey:  "instituteId",
-  as:         "institute",
+  targetKey: "instituteId",
+  as: "institute",
 });
 
 
@@ -133,13 +133,13 @@ Class.belongsTo(Institute, {
 // ═══════════════════════════════════════════════════════════════
 Institute.hasMany(Exam, {
   foreignKey: "instituteId",
-  sourceKey:  "instituteId",
-  as:         "exams",
+  sourceKey: "instituteId",
+  as: "exams",
 });
 Exam.belongsTo(Institute, {
   foreignKey: "instituteId",
-  targetKey:  "instituteId",
-  as:         "institute",
+  targetKey: "instituteId",
+  as: "institute",
 });
 
 
@@ -148,8 +148,8 @@ Exam.belongsTo(Institute, {
 // ═══════════════════════════════════════════════════════════════
 Class.belongsTo(User, {
   foreignKey: "classTeacherId",
-  targetKey:  "userId",
-  as:         "classTeacher",
+  targetKey: "userId",
+  as: "classTeacher",
 });
 
 
@@ -159,13 +159,13 @@ Class.belongsTo(User, {
 // ═══════════════════════════════════════════════════════════════
 Class.hasMany(Section, {
   foreignKey: "classId",
-  sourceKey:  "classId",
-  as:         "sections",
+  sourceKey: "classId",
+  as: "sections",
 });
 Section.belongsTo(Class, {
   foreignKey: "classId",
-  targetKey:  "classId",
-  as:         "class",
+  targetKey: "classId",
+  as: "class",
 });
 
 
@@ -174,13 +174,13 @@ Section.belongsTo(Class, {
 // ═══════════════════════════════════════════════════════════════
 Class.hasMany(Subject, {
   foreignKey: "classId",
-  sourceKey:  "classId",
-  as:         "subjects",
+  sourceKey: "classId",
+  as: "subjects",
 });
 Subject.belongsTo(Class, {
   foreignKey: "classId",
-  targetKey:  "classId",
-  as:         "class",
+  targetKey: "classId",
+  as: "class",
 });
 
 
@@ -190,13 +190,13 @@ Subject.belongsTo(Class, {
 // ═══════════════════════════════════════════════════════════════
 Class.hasMany(Exam, {
   foreignKey: "classId",
-  sourceKey:  "classId",
-  as:         "exams",
+  sourceKey: "classId",
+  as: "exams",
 });
 Exam.belongsTo(Class, {
   foreignKey: "classId",
-  targetKey:  "classId",
-  as:         "class",
+  targetKey: "classId",
+  as: "class",
 });
 
 
@@ -205,13 +205,13 @@ Exam.belongsTo(Class, {
 // ═══════════════════════════════════════════════════════════════
 Institute.hasMany(Section, {
   foreignKey: "instituteId",
-  sourceKey:  "instituteId",
-  as:         "sections",
+  sourceKey: "instituteId",
+  as: "sections",
 });
 Section.belongsTo(Institute, {
   foreignKey: "instituteId",
-  targetKey:  "instituteId",
-  as:         "institute",
+  targetKey: "instituteId",
+  as: "institute",
 });
 
 
@@ -220,8 +220,8 @@ Section.belongsTo(Institute, {
 // ═══════════════════════════════════════════════════════════════
 Section.belongsTo(User, {
   foreignKey: "classTeacherId",
-  targetKey:  "userId",
-  as:         "classTeacher",
+  targetKey: "userId",
+  as: "classTeacher",
 });
 
 
@@ -230,13 +230,13 @@ Section.belongsTo(User, {
 // ═══════════════════════════════════════════════════════════════
 Section.hasMany(Subject, {
   foreignKey: "sectionId",
-  sourceKey:  "sectionId",
-  as:         "subjects",
+  sourceKey: "sectionId",
+  as: "subjects",
 });
 Subject.belongsTo(Section, {
   foreignKey: "sectionId",
-  targetKey:  "sectionId",
-  as:         "section",
+  targetKey: "sectionId",
+  as: "section",
 });
 
 
@@ -245,13 +245,13 @@ Subject.belongsTo(Section, {
 // ═══════════════════════════════════════════════════════════════
 Section.hasMany(Exam, {
   foreignKey: "sectionId",
-  sourceKey:  "sectionId",
-  as:         "exams",
+  sourceKey: "sectionId",
+  as: "exams",
 });
 Exam.belongsTo(Section, {
   foreignKey: "sectionId",
-  targetKey:  "sectionId",
-  as:         "section",
+  targetKey: "sectionId",
+  as: "section",
 });
 
 
@@ -260,13 +260,13 @@ Exam.belongsTo(Section, {
 // ═══════════════════════════════════════════════════════════════
 Institute.hasMany(Subject, {
   foreignKey: "instituteId",
-  sourceKey:  "instituteId",
-  as:         "subjects",
+  sourceKey: "instituteId",
+  as: "subjects",
 });
 Subject.belongsTo(Institute, {
   foreignKey: "instituteId",
-  targetKey:  "instituteId",
-  as:         "institute",
+  targetKey: "instituteId",
+  as: "institute",
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -274,13 +274,13 @@ Subject.belongsTo(Institute, {
 // ═══════════════════════════════════════════════════════════════
 Subject.belongsTo(User, {
   foreignKey: "teacherId",
-  targetKey:  "userId",
-  as:         "teacher",
+  targetKey: "userId",
+  as: "teacher",
 });
 User.hasMany(Subject, {
   foreignKey: "teacherId",
-  sourceKey:  "userId",
-  as:         "teachingSubjects",
+  sourceKey: "userId",
+  as: "teachingSubjects",
 });
 
 
@@ -289,8 +289,8 @@ User.hasMany(Subject, {
 // ═══════════════════════════════════════════════════════════════
 Subject.hasMany(Exam, {
   foreignKey: "subjectId",
-  sourceKey:  "subjectId",
-  as:         "exams",
+  sourceKey: "subjectId",
+  as: "exams",
 });
 Exam.belongsTo(Subject, {
   foreignKey: "subjectId",
@@ -303,13 +303,13 @@ Exam.belongsTo(Subject, {
 // ═══════════════════════════════════════════════════════════════
 User.hasMany(Exam, {
   foreignKey: "teacherId",
-  sourceKey:  "userId",
-  as:         "teacherExams",
+  sourceKey: "userId",
+  as: "teacherExams",
 });
 Exam.belongsTo(User, {
   foreignKey: "teacherId",
-  targetKey:  "userId",
-  as:         "teacher",
+  targetKey: "userId",
+  as: "teacher",
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -317,18 +317,18 @@ Exam.belongsTo(User, {
 // ═══════════════════════════════════════════════════════════════
 QuestionPaper.belongsTo(User, {
   foreignKey: "teacherId",
-  targetKey:  "userId",
-  as:         "teacher",
+  targetKey: "userId",
+  as: "teacher",
 });
 QuestionPaper.belongsTo(Exam, {
   foreignKey: "examId",
-  targetKey:  "examId",
-  as:         "exam",
+  targetKey: "examId",
+  as: "exam",
 });
 Exam.hasMany(QuestionPaper, {
   foreignKey: "examId",
-  sourceKey:  "examId",
-  as:         "questionPapers",
+  sourceKey: "examId",
+  as: "questionPapers",
 });
 
 
@@ -337,24 +337,24 @@ Exam.hasMany(QuestionPaper, {
 // ═══════════════════════════════════════════════════════════════
 Class.hasMany(StudentProfile, {
   foreignKey: "classId",
-  sourceKey:  "classId",
-  as:         "students",
+  sourceKey: "classId",
+  as: "students",
 });
 StudentProfile.belongsTo(Class, {
   foreignKey: "classId",
-  targetKey:  "classId",
-  as:         "class",
+  targetKey: "classId",
+  as: "class",
 });
 
 Section.hasMany(StudentProfile, {
   foreignKey: "sectionId",
-  sourceKey:  "sectionId",
-  as:         "students",
+  sourceKey: "sectionId",
+  as: "students",
 });
 StudentProfile.belongsTo(Section, {
   foreignKey: "sectionId",
-  targetKey:  "sectionId",
-  as:         "section",
+  targetKey: "sectionId",
+  as: "section",
 });
 
 

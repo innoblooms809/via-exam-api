@@ -40,7 +40,7 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
       };
     }
 
-    if (body.teacherId) {
+    if (body.teacherId && body.teacherId !== "null" && body.teacherId !== "") {
       const teacher = await User.findOne({
         where: {
           userId: body.teacherId,
@@ -58,25 +58,14 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
       }
     }
 
-    // Check duplicate
+    // Check duplicate or soft-deleted
     const exists = await Subject.findOne({
       where: {
         instituteId,
         classId: body.classId,
         subjectName: body.subjectName,
-        isDeleted: false,
       },
     });
-
-    if (exists) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Subject already exists.",
-      };
-    }
-
-    const subjectId = await RegHelper.generateUserId();
 
     if (
       body.passingMarks &&
@@ -89,6 +78,35 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
         message: "Passing marks cannot be greater than total marks.",
       };
     }
+
+    if (exists) {
+      if (!exists.isDeleted) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Subject already exists.",
+        };
+      } else {
+        // Reactivate soft-deleted subject
+        await exists.update({
+          isDeleted: false,
+          isActive: true,
+          subjectCode: body.subjectCode ?? null,
+          teacherId: body.teacherId ?? null,
+          totalMarks: body.totalMarks ?? 100,
+          passingMarks: body.passingMarks ?? 35,
+        });
+
+        return {
+          error: false,
+          statusCode: httpStatus.OK,
+          message: "Subject restored successfully.",
+          data: exists,
+        };
+      }
+    }
+
+    const subjectId = await RegHelper.generateUserId();
 
     const newSubject = await Subject.create({
       subjectId,
@@ -135,6 +153,8 @@ const getAllSubjects = async (query: any, createdBy: any): Promise<any> => {
         {
           model: Class,
           as: "class",
+          where: { isDeleted: false },
+          required: true,
         },
         {
           model: User,
@@ -180,6 +200,8 @@ const getSubjectById = async (
         {
           model: Class,
           as: "class",
+          where: { isDeleted: false },
+          required: true,
         },
         {
           model: User,
@@ -253,7 +275,7 @@ const updateSubject = async (
         };
       }
     }
-    if (body.teacherId) {
+    if (body.teacherId && body.teacherId !== "null" && body.teacherId !== "") {
       const teacher = await User.findOne({
         where: {
           userId: body.teacherId,
@@ -285,7 +307,7 @@ const updateSubject = async (
     await subject.update({
       subjectName: body.subjectName ?? subject.subjectName,
       subjectCode: body.subjectCode ?? subject.subjectCode,
-      teacherId: body.teacherId ?? subject.teacherId,
+      teacherId: body.teacherId !== undefined ? (body.teacherId === "null" || body.teacherId === "" || body.teacherId === null ? null : body.teacherId) : subject.teacherId,
       totalMarks,
       passingMarks,
     });

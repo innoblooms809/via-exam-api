@@ -193,7 +193,6 @@ exports.sendOtpEmail = exports.sendAdminCredentials = exports.sendUserCredential
 // // Function to send OTP email with external HTML content
 // export const sendEmailToNewUser = async (requestBody: any) => {
 //   const { emailId, phoneNumber, userName, password } = requestBody;
-// console.log(emailId, phoneNumber, userName, password )
 //   // Read the HTML file asynchronously
 //   const htmlContent = await fs.promises.readFile(path.join(__dirname, 'welcome.html'), 'utf8');
 //   // You can modify the HTML content, e.g., replacing placeholders with dynamic data
@@ -245,7 +244,6 @@ exports.sendOtpEmail = exports.sendAdminCredentials = exports.sendUserCredential
 //     };
 //     try {
 //       await this.newTransport().sendMail(mailOptions);
-//       console.log("Email sent successfully");
 //     } catch (err) {
 //       console.error("Error sending email:", err);
 //       throw new Error("Failed to send email.");
@@ -304,7 +302,6 @@ const transporter = nodemailer_1.default.createTransport({
 // ─── Existing function — keep as is ───────────────────────────────────────────
 const sendEmailToNewUser = (requestBody) => __awaiter(void 0, void 0, void 0, function* () {
     const { emailId, phoneNumber, userName, password } = requestBody;
-    console.log(emailId, phoneNumber, userName, password);
     const htmlContent = yield fs_1.default.promises.readFile(path_1.default.join(__dirname, "welcome.html"), "utf8");
     const htmlContentFile = htmlContent
         .replace("{{emailId}}", emailId)
@@ -324,11 +321,6 @@ const sendEmailToNewUser = (requestBody) => __awaiter(void 0, void 0, void 0, fu
             subject: "Registration Completed",
             html: htmlContentFile,
         });
-        console.log("✅ MAIL SENT SUCCESSFULLY");
-        console.log("📨 Accepted:", info.accepted);
-        console.log("❌ Rejected:", info.rejected);
-        console.log("🆔 Message ID:", info.messageId);
-        console.log("📩 Response:", info.response);
         return true;
     }
     catch (error) {

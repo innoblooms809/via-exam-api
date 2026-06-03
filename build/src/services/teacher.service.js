@@ -17,9 +17,10 @@ const User_modal_1 = __importDefault(require("../modals/User.modal"));
 const TeacherProfile_modal_1 = __importDefault(require("../modals/TeacherProfile.modal"));
 const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
 const Institute_modal_1 = __importDefault(require("../modals/Institute.modal"));
+const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
+const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
 const encryption_1 = __importDefault(require("../utils/encryption"));
 const helper_1 = __importDefault(require("../utils/helper"));
-const exclude_1 = __importDefault(require("../utils/exclude"));
 const sequelize_1 = require("../config/sequelize");
 const sequelize_2 = require("sequelize");
 // ─── CREATE TEACHER ───────────────────────────────────────────────────────────
@@ -73,18 +74,6 @@ const createTeacher = (body, files, createdBy) => __awaiter(void 0, void 0, void
                 message: "Phone number is already registered.",
             };
         }
-        // 5. Check employeeID unique within institute
-        const empExists = yield TeacherProfile_modal_1.default.findOne({
-            where: { employeeID: body.employeeID, instituteId },
-        });
-        if (empExists) {
-            yield t.rollback();
-            return {
-                error: true,
-                statusCode: http_status_1.default.CONFLICT,
-                message: "Employee ID already exists in this institute.",
-            };
-        }
         // 6. Find TEACHER role
         const teacherRole = yield Role_modal_1.default.findOne({ where: { role: "TEACHER" } });
         if (!teacherRole) {
@@ -94,6 +83,26 @@ const createTeacher = (body, files, createdBy) => __awaiter(void 0, void 0, void
                 statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
                 message: "TEACHER role not found. Please seed roles.",
             };
+        }
+        // Validate class assignment: ensure class does not already have a class teacher
+        if (body.teacherType === "Class Teacher" && body.classId) {
+            const cls = yield Class_modal_1.default.findOne({
+                where: { classId: body.classId, instituteId, isDeleted: false },
+                transaction: t,
+            });
+            if (cls && cls.classTeacherId) {
+                const existingTeacher = yield User_modal_1.default.findOne({
+                    where: { userId: cls.classTeacherId, instituteId },
+                    transaction: t,
+                });
+                const teacherName = existingTeacher ? existingTeacher.userName : "another teacher";
+                yield t.rollback();
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.BAD_REQUEST,
+                    message: `Class "${cls.className}" already has a Class Teacher assigned: ${teacherName}. Please choose a different class.`,
+                };
+            }
         }
         // 7. Profile photo
         const profileUrl = ((_a = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _a === void 0 ? void 0 : _a[0])
@@ -117,30 +126,36 @@ const createTeacher = (body, files, createdBy) => __awaiter(void 0, void 0, void
         yield TeacherProfile_modal_1.default.create({
             userId: newUser.userId,
             instituteId,
-            employeeID: body.employeeID,
             teacherType: body.teacherType,
             qualification: body.qualification,
             specialization: body.specialization || null,
             experience: body.experience || null,
+            address: body.address || null,
             joiningDate: new Date(body.joiningDate),
             dob: new Date(body.dob),
             profileUrl,
             isExaminer: false,
             examinerSince: null,
         }, { transaction: t });
+        // Assign teacher to Class if they are a Class Teacher
+        if (body.teacherType === "Class Teacher" && body.classId) {
+            const cls = yield Class_modal_1.default.findOne({
+                where: { classId: body.classId, instituteId },
+                transaction: t,
+            });
+            if (cls) {
+                yield cls.update({ classTeacherId: newUser.userId }, { transaction: t });
+            }
+            else {
+            }
+        }
         // 10. Commit
         yield t.commit();
-        const userResponse = (0, exclude_1.default)(newUser.toJSON(), [
-            "password",
-            "refreshToken",
-        ]);
         return {
             error: false,
             statusCode: http_status_1.default.CREATED,
             message: "Teacher created successfully.",
             data: {
-                user: userResponse,
-                plainPassword,
                 instituteName: institute.instituteName,
             },
         };
@@ -180,16 +195,33 @@ const getAllTeachers = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
             attributes: { exclude: ["password", "refreshToken"] },
             order: [["userName", "ASC"]],
         });
+        const teacherIds = teachers.map((u) => u.userId);
+        const assignedClasses = yield Class_modal_1.default.findAll({
+            where: {
+                classTeacherId: { [sequelize_2.Op.in]: teacherIds },
+                instituteId: createdBy.instituteId,
+                isDeleted: false,
+            },
+        });
+        const assignedSubjects = yield Subject_modal_1.default.findAll({
+            where: {
+                teacherId: { [sequelize_2.Op.in]: teacherIds },
+                instituteId: createdBy.instituteId,
+                isDeleted: false,
+            },
+        });
         let result = teachers.map((u) => {
             var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
-            return ({
+            const cls = assignedClasses.find((c) => c.classTeacherId === u.userId);
+            const subs = assignedSubjects.filter((s) => s.teacherId === u.userId);
+            return {
                 userId: u.userId,
                 userName: u.userName,
                 emailId: u.emailId,
                 phoneNumber: u.phoneNumber,
                 status: u.status,
                 instituteId: u.instituteId,
-                employeeID: (_b = (_a = u.teacherProfile) === null || _a === void 0 ? void 0 : _a.employeeID) !== null && _b !== void 0 ? _b : null,
+                address: (_b = (_a = u.teacherProfile) === null || _a === void 0 ? void 0 : _a.address) !== null && _b !== void 0 ? _b : null,
                 teacherType: (_d = (_c = u.teacherProfile) === null || _c === void 0 ? void 0 : _c.teacherType) !== null && _d !== void 0 ? _d : null,
                 qualification: (_f = (_e = u.teacherProfile) === null || _e === void 0 ? void 0 : _e.qualification) !== null && _f !== void 0 ? _f : null,
                 specialization: (_h = (_g = u.teacherProfile) === null || _g === void 0 ? void 0 : _g.specialization) !== null && _h !== void 0 ? _h : null,
@@ -199,7 +231,9 @@ const getAllTeachers = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
                 profileUrl: (_r = (_q = u.teacherProfile) === null || _q === void 0 ? void 0 : _q.profileUrl) !== null && _r !== void 0 ? _r : null,
                 isExaminer: (_t = (_s = u.teacherProfile) === null || _s === void 0 ? void 0 : _s.isExaminer) !== null && _t !== void 0 ? _t : false,
                 examinerSince: (_v = (_u = u.teacherProfile) === null || _u === void 0 ? void 0 : _u.examinerSince) !== null && _v !== void 0 ? _v : null,
-            });
+                assignedClass: cls ? { classId: cls.classId, className: cls.className } : null,
+                assignedSubjects: subs.map((s) => ({ subjectId: s.subjectId, subjectName: s.subjectName })),
+            };
         });
         // Filter by examiner flag
         if (isExaminer === "true")
@@ -244,11 +278,28 @@ const getTeacherById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
                 message: "Teacher not found.",
             };
         }
+        // Find assigned class if teacher is Class Teacher
+        const allClassesForTeacher = yield Class_modal_1.default.findAll({
+            where: { classTeacherId: userId }
+        });
+        const assignedClass = yield Class_modal_1.default.findOne({
+            where: { classTeacherId: userId, instituteId: createdBy.instituteId, isDeleted: false },
+        });
+        const teacherData = teacher.toJSON();
+        if (assignedClass) {
+            teacherData.assignedClass = {
+                classId: assignedClass.classId,
+                className: assignedClass.className,
+            };
+        }
+        else {
+            teacherData.assignedClass = null;
+        }
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Teacher fetched successfully.",
-            data: teacher,
+            data: teacherData,
         };
     }
     catch (e) {
@@ -261,7 +312,7 @@ const getTeacherById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
 });
 // ─── UPDATE TEACHER ───────────────────────────────────────────────────────────
 const updateTeacher = (userId, body, files, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b, _c, _d, _e, _f, _g;
+    var _b, _c, _d, _e, _f, _g, _h, _j;
     const t = yield sequelize_1.sequelize.transaction();
     try {
         const user = yield User_modal_1.default.findOne({
@@ -293,8 +344,52 @@ const updateTeacher = (userId, body, files, createdBy) => __awaiter(void 0, void
                 qualification: (_e = body.qualification) !== null && _e !== void 0 ? _e : profile.qualification,
                 specialization: (_f = body.specialization) !== null && _f !== void 0 ? _f : profile.specialization,
                 experience: (_g = body.experience) !== null && _g !== void 0 ? _g : profile.experience,
+                address: (_h = body.address) !== null && _h !== void 0 ? _h : profile.address,
                 profileUrl,
             }, { transaction: t });
+            // If teacherType is updated to something other than "Class Teacher",
+            // remove them as class teacher from any class they were assigned to.
+            const newTeacherType = (_j = body.teacherType) !== null && _j !== void 0 ? _j : profile.teacherType;
+            if (newTeacherType !== "Class Teacher") {
+                const cls = yield Class_modal_1.default.findOne({
+                    where: { classTeacherId: userId, instituteId: createdBy.instituteId },
+                    transaction: t,
+                });
+                if (cls) {
+                    yield cls.update({ classTeacherId: null }, { transaction: t });
+                }
+            }
+            else {
+                // If teacher is a Class Teacher and classId is updated
+                if (body.classId !== undefined) {
+                    // 1. Clear this teacher from any class they are currently assigned to
+                    yield Class_modal_1.default.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId: createdBy.instituteId }, transaction: t });
+                    // 2. If a classId is specified, validate and assign it
+                    if (body.classId) {
+                        const newClass = yield Class_modal_1.default.findOne({
+                            where: { classId: body.classId, instituteId: createdBy.instituteId, isDeleted: false },
+                            transaction: t,
+                        });
+                        if (newClass) {
+                            // Ensure that class is not already assigned to another teacher!
+                            if (newClass.classTeacherId && newClass.classTeacherId !== userId) {
+                                const existingTeacher = yield User_modal_1.default.findOne({
+                                    where: { userId: newClass.classTeacherId, instituteId: createdBy.instituteId },
+                                    transaction: t,
+                                });
+                                const teacherName = existingTeacher ? existingTeacher.userName : "another teacher";
+                                yield t.rollback();
+                                return {
+                                    error: true,
+                                    statusCode: http_status_1.default.BAD_REQUEST,
+                                    message: `Class "${newClass.className}" already has a Class Teacher assigned: ${teacherName}. Please choose a different class.`,
+                                };
+                            }
+                            yield newClass.update({ classTeacherId: userId }, { transaction: t });
+                        }
+                    }
+                }
+            }
         }
         yield t.commit();
         return {
@@ -327,6 +422,13 @@ const deleteTeacher = (userId, createdBy) => __awaiter(void 0, void 0, void 0, f
             };
         }
         yield user.update({ status: 0 });
+        // Unassign teacher from any class they were teaching
+        const assignedClass = yield Class_modal_1.default.findOne({
+            where: { classTeacherId: userId, instituteId: createdBy.instituteId },
+        });
+        if (assignedClass) {
+            yield assignedClass.update({ classTeacherId: null });
+        }
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -420,6 +522,142 @@ const removeExaminer = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
         };
     }
 });
+// ─── GET DEACTIVATED TEACHERS ──────────────────────────────────────────────────
+const getDeactivatedTeachers = (createdBy, query) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { search = "" } = query;
+        const teacherRole = yield Role_modal_1.default.findOne({ where: { role: "TEACHER" } });
+        const where = {
+            instituteId: createdBy.instituteId,
+            roleId: teacherRole === null || teacherRole === void 0 ? void 0 : teacherRole.id,
+            status: 0, // 0 = Deactivated
+        };
+        if (search) {
+            where[sequelize_2.Op.or] = [
+                { userName: { [sequelize_2.Op.iLike]: `%${search}%` } },
+                { emailId: { [sequelize_2.Op.iLike]: `%${search}%` } },
+            ];
+        }
+        const teachers = yield User_modal_1.default.findAll({
+            where,
+            include: [
+                { model: Role_modal_1.default, as: "role" },
+                { model: TeacherProfile_modal_1.default, as: "teacherProfile", required: false },
+            ],
+            attributes: { exclude: ["password", "refreshToken"] },
+            order: [["userName", "ASC"]],
+        });
+        const result = teachers.map((u) => {
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
+            return ({
+                userId: u.userId,
+                userName: u.userName,
+                emailId: u.emailId,
+                phoneNumber: u.phoneNumber,
+                status: u.status,
+                instituteId: u.instituteId,
+                address: (_b = (_a = u.teacherProfile) === null || _a === void 0 ? void 0 : _a.address) !== null && _b !== void 0 ? _b : null,
+                teacherType: (_d = (_c = u.teacherProfile) === null || _c === void 0 ? void 0 : _c.teacherType) !== null && _d !== void 0 ? _d : null,
+                qualification: (_f = (_e = u.teacherProfile) === null || _e === void 0 ? void 0 : _e.qualification) !== null && _f !== void 0 ? _f : null,
+                specialization: (_h = (_g = u.teacherProfile) === null || _g === void 0 ? void 0 : _g.specialization) !== null && _h !== void 0 ? _h : null,
+                experience: (_k = (_j = u.teacherProfile) === null || _j === void 0 ? void 0 : _j.experience) !== null && _k !== void 0 ? _k : null,
+                joiningDate: (_m = (_l = u.teacherProfile) === null || _l === void 0 ? void 0 : _l.joiningDate) !== null && _m !== void 0 ? _m : null,
+                dob: (_p = (_o = u.teacherProfile) === null || _o === void 0 ? void 0 : _o.dob) !== null && _p !== void 0 ? _p : null,
+                profileUrl: (_r = (_q = u.teacherProfile) === null || _q === void 0 ? void 0 : _q.profileUrl) !== null && _r !== void 0 ? _r : null,
+                isExaminer: (_t = (_s = u.teacherProfile) === null || _s === void 0 ? void 0 : _s.isExaminer) !== null && _t !== void 0 ? _t : false,
+                examinerSince: (_v = (_u = u.teacherProfile) === null || _u === void 0 ? void 0 : _u.examinerSince) !== null && _v !== void 0 ? _v : null,
+            });
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Deactivated teachers fetched successfully.",
+            data: {
+                teachers: result,
+                total: result.length,
+            },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: e.message,
+        };
+    }
+});
+// ─── REACTIVATE TEACHER ──────────────────────────────────────────────────────
+const reactivateTeacher = (userId, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield User_modal_1.default.findOne({
+            where: { userId, instituteId: createdBy.instituteId },
+        });
+        if (!user) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Teacher not found.",
+            };
+        }
+        yield user.update({ status: 1 });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Teacher reactivated successfully.",
+            data: {},
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// ─── GET MY ASSIGNMENTS ─────────────────────────────────────────────────────────
+const getMyAssignments = (teacherId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const assignedSubjects = yield Subject_modal_1.default.findAll({
+            where: {
+                teacherId,
+                isActive: true,
+                isDeleted: false,
+            },
+            include: [
+                {
+                    model: Class_modal_1.default,
+                    as: "class",
+                    attributes: ["classId", "className"],
+                    required: false,
+                },
+            ],
+        });
+        const assignedClasses = yield Class_modal_1.default.findAll({
+            where: {
+                classTeacherId: teacherId,
+                isActive: true,
+                isDeleted: false,
+            },
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Assignments fetched successfully",
+            data: {
+                assignedSubjects,
+                assignedClasses,
+            },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 exports.default = {
     createTeacher,
     getAllTeachers,
@@ -428,4 +666,7 @@ exports.default = {
     deleteTeacher,
     assignExaminer,
     removeExaminer,
+    getDeactivatedTeachers,
+    reactivateTeacher,
+    getMyAssignments,
 };
