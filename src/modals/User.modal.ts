@@ -154,28 +154,4 @@ User.init(
   }
 );
 
-// Association — matches your existing pattern: User.belongsTo(Role, ...)
-//  User.hasMany(Access, { foreignKey: 'roleId', as: 'permissions' })
-// User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
-// //  One user has one teacher profile
-// User.hasOne(TeacherProfile, {
-//   foreignKey: "userId",
-//   sourceKey:  "userId",
-//   as:         "teacherProfile",
-// });
-
-
-
-// User.hasOne(StudentProfile, {
-//   foreignKey: "userId",
-//   sourceKey:  "userId",
-//   as:         "studentProfile",
-// });
-
-// StudentProfile.belongsTo(User, {
-//   foreignKey: "userId",
-//   targetKey:  "userId",
-//   as:         "user",
-// });
-
 export default User;

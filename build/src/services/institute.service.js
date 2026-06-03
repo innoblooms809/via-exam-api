@@ -584,6 +584,52 @@ const getInstituteBySlug = (slug) => __awaiter(void 0, void 0, void 0, function*
         };
     }
 });
+// ─── GET CREDENTIALS ───────────────────────────────────────────────────────────
+const getInstituteCredentials = (instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
+        if (!institute) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Institute not found.",
+            };
+        }
+        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+        const adminUser = yield User_modal_1.default.findOne({
+            where: { instituteId: institute.instituteId, roleId: adminRole === null || adminRole === void 0 ? void 0 : adminRole.id },
+        });
+        if (!adminUser) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Admin user not found for this institute.",
+            };
+        }
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Credentials fetched successfully.",
+            data: {
+                adminEmail: adminUser.emailId,
+            },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 exports.default = {
     registerInstitute,
     getAllInstitutes,
@@ -593,4 +639,5 @@ exports.default = {
     toggleInstituteStatus,
     resendAdminCredentials,
     getInstituteBySlug,
+    getInstituteCredentials,
 };

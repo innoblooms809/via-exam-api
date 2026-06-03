@@ -1,7 +1,7 @@
-import { Router } from "express";
+import {Router} from "express";
 import Controller from "../../controllers/student.controller";
-import { authenticate, authorize } from "../../middlewares/auth";
-import { studentUpload } from "../../utils/multer";
+import { authenticate} from "../../middlewares/auth";
+import { studentUpload} from "../../utils/multer";
 
 const router = Router();
 

@@ -75,30 +75,4 @@ Subject.init(
   }
 );
 
-// Subject.belongsTo(Institute, {
-//   foreignKey: "instituteId",
-//   targetKey: "instituteId",
-//   as: "institute",
-// });
-
-
-// Subject.belongsTo(Class, {
-//   foreignKey: "classId",
-//   targetKey: "classId",
-//   as: "class",
-// });
-
-
-// Subject.belongsTo(User, {
-//   foreignKey: "teacherId",
-//   targetKey: "userId",
-//   as: "teacher",
-// });
-
-// Subject.hasMany(Exam, {
-//   foreignKey: "subjectId",
-//   sourceKey: "subjectId",
-//   as: "exams",
-// });
-
 export default Subject;

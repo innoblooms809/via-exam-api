@@ -49,7 +49,7 @@ QuestionPaperAnswer.init({
         defaultValue: {},
     },
     status: {
-        type: sequelize_1.DataTypes.ENUM("DRAFT", "SUBMITTED", "APPROVED", "REJECTED"),
+        type: sequelize_1.DataTypes.ENUM("DRAFT", "PENDING_APPROVAL", "APPROVED", "REJECTED", "PUBLISHED"),
         allowNull: false,
         defaultValue: "DRAFT",
     },
@@ -69,6 +69,11 @@ QuestionPaperAnswer.init({
         defaultValue: null,
     },
     rejectedAt: {
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+    },
+    publishedAt: {
         type: sequelize_1.DataTypes.DATE,
         allowNull: true,
         defaultValue: null,

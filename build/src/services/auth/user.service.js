@@ -47,8 +47,8 @@ const getViaExamUserByEmail = (emailId) => __awaiter(void 0, void 0, void 0, fun
         ],
         where: {
             emailId: {
-                [sequelize_1.Op.iLike]: emailId
-            }
+                [sequelize_1.Op.iLike]: emailId,
+            },
         },
     });
 });
@@ -121,7 +121,10 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
  */
 const viaExamUserLogin = (emailId, password) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        console.log("EMAIL RECEIVED:", emailId);
         const user = yield getViaExamUserByEmail(emailId);
+        console.log("USER FOUND:", user === null || user === void 0 ? void 0 : user.emailId);
+        console.log("HASHED PASSWORD:", user === null || user === void 0 ? void 0 : user.password);
         if (!user) {
             return {
                 error: true,

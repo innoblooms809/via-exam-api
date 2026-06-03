@@ -656,6 +656,56 @@ const getInstituteBySlug = async (slug: string): Promise<any> => {
   }
 };
 
+// ─── GET CREDENTIALS ───────────────────────────────────────────────────────────
+const getInstituteCredentials = async (instituteId: string): Promise<any> => {
+  try {
+    const whereCondition: any = {
+      isDeleted: false,
+      [Op.or]: [
+        { instituteId },
+        ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+      ],
+    };
+    const institute = await Institute.findOne({ where: whereCondition });
+
+    if (!institute) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Institute not found.",
+      };
+    }
+
+    const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
+    const adminUser = await UserModal.findOne({
+      where: { instituteId: institute.instituteId, roleId: adminRole?.id },
+    });
+
+    if (!adminUser) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Admin user not found for this institute.",
+      };
+    }
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Credentials fetched successfully.",
+      data: {
+        adminEmail: adminUser.emailId,
+      },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 export default {
   registerInstitute,
   getAllInstitutes,
@@ -665,4 +715,5 @@ export default {
   toggleInstituteStatus,
   resendAdminCredentials,
   getInstituteBySlug,
+  getInstituteCredentials,
 };

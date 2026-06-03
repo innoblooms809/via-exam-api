@@ -46,48 +46,4 @@ Class.init({
         },
     ],
 });
-// // Class belongs to Institute
-// Class.belongsTo(Institute, {
-//   foreignKey: "instituteId",
-//   targetKey: "instituteId",
-//   as: "institute",
-// });
-// // Class has one class teacher
-// // Class.belongsTo(User, {
-// //   foreignKey: "classTeacherId",
-// //   targetKey: "userId",
-// //   as: "classTeacher",
-// // });
-// // Class has many students
-// // Class.hasMany(StudentProfile, {
-// //   foreignKey: "classId",
-// //   sourceKey: "classId",
-// //   as: "students",
-// // });
-// // Class has many exams
-// // Class.hasMany(Exam, {
-// //   foreignKey: "classId",
-// //   sourceKey: "classId",
-// //   as: "exams",
-// // });
-// // Class.hasMany(Section, { foreignKey: "classId", sourceKey: "classId", as: "sections" });
-// // Section.belongsTo(Class, { foreignKey: "classId", targetKey: "classId", as: "class" });
-// // Class belongs to Session
-// // Class.belongsTo(Session, {
-// //   foreignKey: "sessionId",
-// //   targetKey: "sessionId",
-// //   as: "session",
-// // });
-// // Class has many Sections
-// Class.hasMany(Section, {
-//   foreignKey: "classId",
-//   sourceKey: "classId",
-//   as: "sections",
-// });
-// // Class has many Subjects
-// Class.hasMany(Subject, {
-//   foreignKey: "classId",
-//   sourceKey: "classId",
-//   as: "subjects",
-// });
 exports.default = Class;
