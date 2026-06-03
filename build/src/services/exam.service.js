@@ -20,6 +20,7 @@ const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const Section_modal_1 = __importDefault(require("../modals/Section.modal"));
 const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
 const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
+const Notification_modal_1 = __importDefault(require("../modals/Notification.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const sequelize_1 = require("sequelize");
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
@@ -85,6 +86,17 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
             duration: body.duration ? Number(body.duration) : null,
             instructions: body.instructions || null,
             status: "Draft",
+        });
+        // 6. Send notification to assigned teacher
+        const notificationId = yield helper_1.default.generateUserId();
+        yield Notification_modal_1.default.create({
+            notificationId,
+            instituteId,
+            userId: teacher.userId,
+            type: "EXAM_ASSIGNED",
+            title: "New Exam Assigned",
+            message: `A ${body.examType} exam has been assigned to you.`,
+            referenceId: examId,
         });
         return {
             error: false,

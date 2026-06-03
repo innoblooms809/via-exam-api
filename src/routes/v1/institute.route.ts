@@ -72,4 +72,11 @@ router.get(
   Controller.getInstituteBySlug
 );
 
+// GET    /api/viaexam/institute/credentials/:instituteId
+router.get(
+  "/credentials/:instituteId",
+  authenticate,
+  Controller.getInstituteCredentials,
+);
+
 export default router;

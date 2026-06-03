@@ -43,4 +43,6 @@ institute_controller_1.default.toggleInstituteStatus);
 // GET    /api/viaexam/institute/slug/:slug
 // Public: Used on login pages to fetch basic institute info like logo
 router.get("/slug/:slug", institute_controller_1.default.getInstituteBySlug);
+// GET    /api/viaexam/institute/credentials/:instituteId
+router.get("/credentials/:instituteId", auth_1.authenticate, institute_controller_1.default.getInstituteCredentials);
 exports.default = router;

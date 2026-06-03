@@ -33,25 +33,4 @@ Section.init({
         },
     ],
 });
-// Section.belongsTo(Institute, {
-//   foreignKey: "instituteId",
-//   targetKey: "instituteId",
-//   as: "institute",
-// });
-// Section.belongsTo(Class, {
-//   foreignKey: "classId",
-//   targetKey: "classId",
-//   as: "class",
-// });
-// // Section belongs to class teacher
-// Section.belongsTo(User, {
-//   foreignKey: "classTeacherId",
-//   targetKey: "userId",
-//   as: "classTeacher",
-// });
-// Section.belongsTo(User, {
-//   foreignKey: "classTeacherId",
-//   targetKey: "userId",
-//   as: "classTeacher",
-// });
 exports.default = Section;

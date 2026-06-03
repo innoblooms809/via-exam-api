@@ -143,6 +143,22 @@ const getInstituteBySlug = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// ─── GET CREDENTIALS ──────────────────────────────────────────────────────────
+const getInstituteCredentials = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await InstituteService.getInstituteCredentials(
+      req.params.instituteId,
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export default {
   registerInstitute,
   getAllInstitutes,
@@ -152,4 +168,5 @@ export default {
   toggleInstituteStatus,
   resendAdminCredentials,
   getInstituteBySlug,
+  getInstituteCredentials,
 };

@@ -2531,3 +2531,1356 @@
     at SendStream.emit (node:domain:489:12)
     at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
 [31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 4.656 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 19.129 ms
+[32minfo[39m: POST /v1/user/login 200 - 264.584 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.974 ms
+[32minfo[39m: POST /v1/user/login 200 - 435.577 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.479 ms
+[32minfo[39m: POST /v1/user/login 200 - 458.649 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.242 ms
+[32minfo[39m: POST /v1/user/login 200 - 392.484 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.276 ms
+[32minfo[39m: POST /v1/user/login 200 - 384.303 ms
+[31merror[39m: GET /v1/exam/assigned 401 - 17.154 ms - message: -
+[31merror[39m: GET /v1/exam/assigned 401 - 1.300 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.866 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.464 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 373.750 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 372.686 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 118.040 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 135.703 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 65.920 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 7.980 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 116.453 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 110.103 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 224.294 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 4.694 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 400.049 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 117.474 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 216.137 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780296786169 200 - 168.944 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 225.112 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780296786171 200 - 258.806 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 114.067 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.320 ms
+[32minfo[39m: POST /v1/user/login 200 - 431.747 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 5.757 ms
+[32minfo[39m: POST /v1/user/login 200 - 579.672 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780304155000 200 - 328.489 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780304155006 200 - 357.723 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 42.528 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 50.433 ms - message: Not found
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 41.469 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 40.721 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 41.852 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 42.904 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 3.835 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB860656 200 - 307.961 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 309.689 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 179.690 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780304913125 200 - 275.345 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 80.682 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780304913144 200 - 306.508 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 574.097 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 521.683 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 47.233 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 153.901 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 104.606 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780304913600 200 - 104.319 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780304913612 200 - 116.336 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 117.020 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 5.362 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 7.425 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 11.842 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780304922544 200 - 118.453 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 1.603 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.039 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 2.104 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 1.084 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 4.429 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 13.941 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 16.857 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 67.697 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 102.573 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 50.744 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 59.635 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 203.540 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 191.846 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 345.677 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780304926609 200 - 262.117 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 376.083 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780304926592 200 - 337.340 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 214.472 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780304927024 200 - 117.690 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 124.655 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780304927021 200 - 148.481 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 97.164 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 5.217 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 6.086 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 7.072 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 431.585 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 77.143 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 66.267 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 54.343 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780305177318 200 - 580.458 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 0.701 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 0.639 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 0.965 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 0.835 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 3.200 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 17.604 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 16.753 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780305196092 200 - 447.543 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 0.987 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 0.713 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 0.945 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 0.859 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 4.445 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 5.329 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 20.345 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780305289316 200 - 478.868 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 1.633 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 6.854 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 0.570 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 0.619 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 5.395 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 8.770 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 10.286 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 310.607 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 53.277 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 400.433 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 0.668 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 93.749 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 0.988 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 128.464 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 117.740 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780305387432 200 - 123.089 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780305387445 200 - 141.368 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 270.977 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 785.263 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.700 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 599.847 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 181.873 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 970.246 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 582.037 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 3.724 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780305505611 200 - 328.068 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 341.200 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780305505622 200 - 329.397 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 361.809 ms
+[31merror[39m: GET /v1/exam/assigned 401 - 2.244 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.266 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.769 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 1.789 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 598.906 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 133.446 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 681.269 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 668.003 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 274.958 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 385.867 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 61.133 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 45.318 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 112.313 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 146.569 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 317.376 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 414.234 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 43.867 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 114.562 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.706 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.367 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 287.044 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780306947319 200 - 103.642 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 147.553 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780306947331 200 - 158.823 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 96.646 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 333.140 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 2.040 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 452.603 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 165.155 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780307081483 200 - 159.760 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780307081491 200 - 184.160 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 93.243 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780307449306 200 - 486.480 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780307449313 200 - 533.595 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 5.579 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 6.497 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 80.520 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 91.764 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 102.463 ms - message: Not found
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 19.326 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 28.738 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB860656 304 - 826.897 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 526.936 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 156.519 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 55.067 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 2.004 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 57.595 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 200 - 531.890 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.504 ms
+[32minfo[39m: POST /v1/user/login 200 - 633.484 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 44.022 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 57.070 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 200 - 1251.335 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780313295119 401 - 7.844 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780313295125 401 - 0.861 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.454 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 445.628 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 428.101 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780313295125 200 - 208.169 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780313295119 200 - 260.468 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 7.763 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 7.202 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 6.258 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 20.157 ms - message: Not found
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 8.448 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 16.506 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 12.459 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB860656 304 - 489.562 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB860656 304 - 219.251 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 443.401 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 474.139 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 503.725 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 517.554 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 113.318 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 551.831 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 95.906 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 79.700 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 111.103 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 148.131 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 112.486 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 121.106 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 128.681 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 170.733 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 93.578 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 113.421 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 111.329 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 130.891 ms
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.705 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.826 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.309 ms
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.202 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 319.551 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 333.501 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 121.584 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 122.440 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 443.573 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 436.412 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 460.139 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 462.220 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 92.196 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 528.743 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 130.410 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 121.981 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 121.489 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 137.305 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 78.594 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 88.168 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 144.838 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 155.037 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 97.733 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 97.088 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 117.588 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 137.631 ms
+[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 0.276 ms
+[31merror[39m: POST /v1/exam/createExam 409 - 456.880 ms - message: -
+[32minfo[39m: OPTIONS /v1/exam/createExam 204 - 0.283 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 583.099 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 257.409 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 274.779 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 200 - 328.351 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 346.655 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 401.132 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 193.126 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 213.898 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 229.380 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 244.102 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 209.237 ms
+[31merror[39m: GET /v1/institute/getOneInstitute/IB860656 401 - 17.719 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 1.444 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 383.048 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB860656 304 - 169.355 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 41.583 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 4.959 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 309.161 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 313.739 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 332.622 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 382.546 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 385.621 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 38.216 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 76.185 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 0.642 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 77.269 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 200 - 275.693 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 373.229 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 426.436 ms
+[32minfo[39m: GET /v1/exam/getAllExams 200 - 468.307 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 457.042 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 462.839 ms
+[32minfo[39m: POST /v1/user/login 200 - 471.053 ms
+[32minfo[39m: POST /v1/user/login 200 - 444.532 ms
+[32minfo[39m: POST /v1/user/login 200 - 581.509 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780377946422 200 - 172.618 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780377946424 200 - 224.817 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 12.110 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 13.187 ms - message: Not found
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 200 - 20.902 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 200 - 19.367 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 200 - 21.046 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 200 - 24.783 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 2.889 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780378087212 200 - 401.189 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780378087214 200 - 451.236 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 7.360 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 12.253 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 15.884 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB860656?_t=1780378089303 404 - 3.775 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB860656 200 - 241.945 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB292372?_t=1780378102547 404 - 2.421 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 200 - 374.811 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780378114085 200 - 393.441 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 1.334 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 0.614 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 1.336 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 0.771 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 4.374 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 4.957 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 6.496 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB860656?_t=1780378126881 404 - 6.217 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB860656 304 - 456.507 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780378606496 200 - 122.239 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 7.216 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 2.364 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 1.030 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 1.729 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 16.167 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 21.041 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 23.129 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB853836?_t=1780378612327 200 - 190.604 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB853836 200 - 206.911 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 217.928 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 2.606 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 52.383 ms
+[32minfo[39m: POST /v1/user/login 200 - 554.803 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 40.134 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 110.061 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 200 - 155.875 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 94.407 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 339.073 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.634 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 328.521 ms
+[32minfo[39m: GET /v1/institute/credentials/IB292372?_t=1780380129259 200 - 420.744 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 304 - 453.684 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 53.614 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 47.001 ms
+[32minfo[39m: POST /v1/user/login 200 - 407.293 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 31.938 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 29.221 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 399.498 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780380230229 200 - 160.208 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 204.036 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780380230231 200 - 246.733 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 142.694 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 104.463 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780380234117 200 - 175.723 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780380234114 200 - 184.318 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 96.674 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 2241.123 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 118.444 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780380271093 200 - 97.703 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 129.037 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780380271096 200 - 129.195 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 95.716 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780380344645 200 - 317.582 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 347.499 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780380344641 200 - 361.494 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 80.416 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 1755.122 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780381363359 200 - 360.196 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780381363361 200 - 372.950 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 391.834 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 140.330 ms
+[32minfo[39m: GET /v1/teacher/getOneTeacher/IB230289 200 - 96.694 ms
+[32minfo[39m: GET /v1/teacher/getOneTeacher/IB230289 304 - 160.242 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 200 - 322.328 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 304 - 221.522 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 266.216 ms
+[32minfo[39m: GET /v1/teacher/getOneTeacher/IB230289 304 - 313.537 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 304 - 166.908 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 274.413 ms
+[32minfo[39m: GET /v1/teacher/getOneTeacher/IB230289 304 - 342.977 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 304 - 165.903 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 127.242 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780381727669 200 - 120.118 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 156.554 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780381727672 200 - 156.784 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 93.051 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 372.880 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780381759976 200 - 375.000 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780381759983 200 - 401.685 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 82.450 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB541498 200 - 319.471 ms
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780383570333 401 - 1.834 ms - message: -
+[31merror[39m: GET /v1/section/allSections 401 - 1.862 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 12.024 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 1.354 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780383570338 401 - 0.603 ms - message: -
+[31merror[39m: GET /v1/section/allSections 401 - 1.119 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.920 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 1.248 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 268.178 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 287.695 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 318.338 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 79.481 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 356.299 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 335.936 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 348.025 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 52.443 ms - message: -
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 53.283 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.941 ms
+[32minfo[39m: POST /v1/user/login 200 - 433.100 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 42.182 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 46.802 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780383591713 200 - 303.659 ms
+[32minfo[39m: GET /v1/section/allSections 200 - 320.096 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 333.732 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 351.272 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 87.298 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780383591717 200 - 388.714 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 80.570 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 92.574 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1780383611422&classId=IB541498&section=A&subjectId=IB102515&examType=Mid%20Term 200 - 278.245 ms
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 387.256 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 381.912 ms - message: -
+[32minfo[39m: GET /v1/student/getAllStudents?className=3&sectionId=A 200 - 453.368 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 227.640 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780383623601 200 - 264.656 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 270.419 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 264.824 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 273.745 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 251.150 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 333.796 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 347.610 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780383655461 200 - 406.000 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 419.643 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1780383682840&classId=IB541498&section=A&subjectId=IB102515&examType=Mid%20Term 200 - 429.313 ms
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 557.605 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 571.886 ms - message: -
+[32minfo[39m: GET /v1/student/getAllStudents?className=3&sectionId=A 304 - 661.265 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 261.538 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 373.944 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 400.606 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 403.738 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780383786964 200 - 418.072 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1780383814894&classId=IB541498&section=A&subjectId=IB102515&examType=Mid%20Term 200 - 420.801 ms
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 580.763 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 594.204 ms - message: -
+[32minfo[39m: GET /v1/student/getAllStudents?className=3&sectionId=A 304 - 622.628 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780384813420 200 - 278.320 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780384813423 200 - 300.127 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 200 - 326.342 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780384813722 200 - 70.945 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780384813755 200 - 68.606 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 109.775 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 102.790 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 365.567 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 90.875 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780384903898 200 - 187.212 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 272.792 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780384904136 200 - 117.521 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 418.567 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 479.135 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 43.763 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780385380289 200 - 226.767 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 269.578 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780385380964 200 - 113.005 ms
+[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 401 - 0.426 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 37.840 ms - message: -
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 34.063 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.443 ms
+[32minfo[39m: POST /v1/user/login 200 - 409.399 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 36.700 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 32.384 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780385418754 200 - 158.971 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780385418765 200 - 200.569 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 221.842 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780385418969 200 - 84.644 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 122.228 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780385419091 200 - 81.155 ms
+[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 401 - 1.103 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 348.729 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 209.863 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 383.105 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 162.955 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 806.014 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 531.527 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 717.974 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 128.752 ms
+[31merror[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 401 - 3.064 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 370.392 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 249.057 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 146.389 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780392752278 200 - 213.147 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 300.605 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392752520 200 - 115.050 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 415.928 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 436.662 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 396.660 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780393550291 200 - 420.025 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780393550288 200 - 466.026 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393550749 200 - 89.976 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 151.181 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393550784 200 - 94.086 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 323.645 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 200 - 638.789 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 304 - 170.187 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 4.793 ms
+[31merror[39m: GET /v1/exam/assigned 401 - 3.430 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 0.681 ms - message: -
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 230.203 ms
+[31merror[39m: POST /v1/user/refresh-token 403 - 135.931 ms - message: -
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.049 ms
+[31merror[39m: POST /v1/user/refresh-token 403 - 164.238 ms - message: -
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 44.181 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.570 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 482.580 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 181.943 ms
+[31merror[39m: GET /v1/student/getAllStudents 401 - 4.548 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 690.616 ms - message: -
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 53.979 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 0.689 ms
+[32minfo[39m: POST /v1/user/login 200 - 484.959 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 35.418 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 51.899 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 728.515 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 178.784 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395484695 200 - 212.444 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395484698 200 - 270.928 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 168.781 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 147.849 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 125.197 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780395610432 200 - 569.319 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780395610432 200 - 588.857 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780395610434 200 - 751.669 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780395610435 200 - 773.884 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780395615761 200 - 118.627 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780395615763 200 - 156.202 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 178.723 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395615900 200 - 87.786 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395615952 200 - 83.665 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 130.220 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780395640402 200 - 353.622 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780395640402 200 - 373.045 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780395640403 200 - 369.208 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780395640403 200 - 384.861 ms
+[31merror[39m: GET /v1/sessions/getAllSessions 401 - 1.012 ms - message: -
+[31merror[39m: GET /v1/exam/getAllExams 401 - 1.343 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.954 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 5.745 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.985 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions 401 - 0.876 ms - message: -
+[31merror[39m: GET /v1/exam/getAllExams 401 - 0.818 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 2.955 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 0.658 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.788 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 269.123 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 290.859 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 294.246 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 270.303 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 283.545 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 273.946 ms
+[31merror[39m: POST /v1/user/refresh-token 403 - 37.064 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 41.284 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 39.558 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 41.936 ms - message: -
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 76.779 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 100.302 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 81.477 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 153.453 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 134.674 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions - - - ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 36.597 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.031 ms
+[31merror[39m: POST /v1/user/login 400 - 302.132 ms - message: -
+[32minfo[39m: POST /v1/user/login 200 - 482.526 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 59.201 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 63.386 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780397792334 200 - 381.342 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780397792337 200 - 413.798 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 500.880 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397792778 200 - 95.136 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397792737 200 - 163.032 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 150.331 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 422.906 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 169.069 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 118.609 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 406.388 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 958.767 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 421.994 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780399318986 200 - 339.481 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 373.511 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780399318989 200 - 406.287 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 150.970 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 385.195 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 416.988 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 439.374 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 458.683 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 98.035 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 505.285 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 89.304 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 93.530 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 120.332 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 159.854 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB346377 200 - 900.769 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 896.516 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 915.572 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 911.006 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB346377 304 - 84.950 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 979.388 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 86.588 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 83.157 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 136.116 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 130.597 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 426.071 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 457.271 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 452.746 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 490.916 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 520.001 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 128.518 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 107.593 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 144.452 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 129.158 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 148.289 ms
+[31merror[39m: GET /v1/student/getAllStudents 401 - 1.178 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 351.977 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 194.980 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780400819624 200 - 180.702 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 218.722 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780400819627 200 - 236.192 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 87.897 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 179.217 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 130.685 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 548.618 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 623.021 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 618.915 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 635.503 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 87.374 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 89.743 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 675.386 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 91.397 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 104.421 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 149.817 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB346377 304 - 125.651 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 122.387 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 126.778 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 121.021 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 185.616 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB346377 304 - 86.527 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 85.625 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 96.541 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 105.434 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 189.071 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 452.571 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 592.413 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB346377 304 - 633.797 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 629.576 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 643.981 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 678.282 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780401255080 200 - 790.510 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780401255083 200 - 851.779 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 3.649 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 3.185 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 3.741 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 12.033 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 12.475 ms - message: Not found
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 8.044 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 1.633 ms - message: Not found
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 427.518 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 452.628 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 491.616 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 519.138 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 89.689 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 526.325 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 86.905 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 133.913 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 90.895 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 90.025 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 391.314 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780401563563 200 - 223.671 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 287.404 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780401563566 200 - 309.553 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 133.487 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 212.179 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 149.674 ms
+[32minfo[39m: DELETE /v1/teacher/deleteTeacher/IB230289 200 - 383.981 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 122.403 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780464002219 401 - 21.746 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780464002226 401 - 2.139 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 1385.990 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 1524.919 ms - message: -
+[32minfo[39m: POST /v1/user/login 200 - 429.783 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780464067025 200 - 468.726 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780464067030 200 - 540.185 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 6.096 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 6.513 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 6.825 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 7.575 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 29.376 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 27.203 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 3.664 ms - message: Not found
+[31merror[39m: GET /v1/institute/getOneInstitute/IB853836 401 - 21.887 ms - message: -
+[31merror[39m: GET /v1/institute/credentials/IB853836?_t=1780467693890 401 - 4.098 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 373.538 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 394.852 ms - message: -
+[32minfo[39m: POST /v1/user/login 200 - 598.686 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780467727701 200 - 282.825 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780467727704 200 - 366.070 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 3.593 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 3.482 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 3.929 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 4.412 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 14.013 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 3.254 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 1.583 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB853836 200 - 227.045 ms
+[32minfo[39m: GET /v1/institute/credentials/IB853836?_t=1780467730856 200 - 261.963 ms
+[32minfo[39m: GET /v1/institute/credentials/IB292372?_t=1780467806630 200 - 547.370 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 200 - 528.051 ms
+[32minfo[39m: POST /v1/institute/resendCredentials/IB292372 200 - 9148.915 ms
+[31merror[39m: GET /v1/institute/credentials/IB292372?_t=1780480152690 401 - 6.594 ms - message: -
+[31merror[39m: GET /v1/institute/getOneInstitute/IB292372 401 - 0.771 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 582.394 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 597.657 ms - message: -
+[32minfo[39m: POST /v1/user/login 200 - 669.188 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780480172801 200 - 344.204 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780047398294.png 304 - 2.203 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.536 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780039154737.png 304 - 0.628 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780480172804 200 - 398.409 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1779951124283.jpeg 304 - 2.171 ms
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 4.444 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 6.645 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\projects\ViaExamApi\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\projects\ViaExamApi\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\projects\ViaExamApi\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 8.383 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB292372?_t=1780480178330 200 - 275.102 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB292372 200 - 296.665 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 152.486 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 1.039 ms
+[32minfo[39m: POST /v1/user/login 200 - 443.388 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 41.622 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 48.361 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 135.949 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 88.451 ms
+[32minfo[39m: GET /v1/institute/slug/handwara-public-school 304 - 260.839 ms
+[32minfo[39m: GET /uploads/institutes/logos/logo-1780046512619.png 304 - 0.715 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 267.435 ms
+[32minfo[39m: PATCH /v1/notifications/notification/IB356706/read 200 - 465.903 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 185.429 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 133.975 ms

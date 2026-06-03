@@ -26,10 +26,4 @@ Session.init({
         },
     ],
 });
-// ─── ASSOCIATIONS ─────────────────────────────────────────
-// Session.belongsTo(Institute, {
-//   foreignKey: "instituteId",
-//   targetKey: "instituteId",
-//   as: "institute",
-// });
 exports.default = Session;
