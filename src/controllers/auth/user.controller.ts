@@ -58,14 +58,18 @@ const loginViaExamUser = async (
   res: Response,
 ): Promise<any> => {
   try {
-    const { emailId, password } = req.body;
+    const { slug, emailId, password } = req.body;
 
     // CAPTCHA check — identical to your boilerplate
     // if (captcha !== req.session.captcha) {
     //   return res.status(400).json({ message: "Invalid CAPTCHA" });
     // }
 
-    const result = await Service.viaExamUserLogin(emailId, password);
+  const result = await Service.viaExamUserLogin(
+  slug,
+  emailId,
+  password
+);
 
     if (result.error) {
       return res.status(result.statusCode).send(result);
@@ -106,7 +110,7 @@ const loginViaExamUser = async (
       emailId: result.data.user.emailId,
       phoneNumber: result.data.user.phoneNumber,
       roleId: result.data.user.roleId,
-      role: result.data.user.role?.role?.toLowerCase() || null,
+      role: (result.data.user as any).role?.role?.toLowerCase() || null,
       instituteId: result.data.user.instituteId,
       status: result.data.user.status
     };
