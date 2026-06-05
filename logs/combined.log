@@ -5251,3 +5251,2211 @@
 [32minfo[39m: GET /v1/class/getAllClasses 304 - 76.897 ms
 [32minfo[39m: GET /v1/sessions/getAllSessions 304 - 79.420 ms
 [32minfo[39m: GET /v1/subject/getAllSubjects 304 - 79.483 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 2.654 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.600 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.476 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 14.446 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 2.186 ms
+[32minfo[39m: POST /v1/user/login 200 - 96.037 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780246725635 200 - 90.700 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780246725633 200 - 99.445 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 20.246 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780246729126 200 - 24.986 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780246729127 200 - 24.105 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 2.658 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780246745001 200 - 83.246 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780246745003 200 - 80.700 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 3.181 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 6.451 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 55.489 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/institute/getOneInstitute/IB545769 401 - 66.331 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.986 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 76.239 ms - message: Not found
+[32minfo[39m: POST /v1/user/refresh-token 200 - 361.378 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 47.273 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 164.947 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 6.531 ms
+[32minfo[39m: POST /v1/user/login 200 - 220.581 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.267 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 5.036 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 4.873 ms
+[32minfo[39m: POST /v1/user/login 200 - 229.635 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780255939896 200 - 97.581 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780255939897 200 - 96.939 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 29.798 ms - message: Not found
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.482 ms
+[32minfo[39m: POST /v1/user/login 200 - 26.788 ms
+[31merror[39m: GET /v1/institute/getOneInstitute/IB545769 401 - 31.443 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 0.583 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 34.667 ms - message: Not found
+[32minfo[39m: POST /v1/user/refresh-token 200 - 221.163 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 48.315 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780258163361 200 - 26.078 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 22.025 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 2.377 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 24.970 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780258366796 200 - 620.874 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 119.129 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 114.701 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 233.786 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780258385859 200 - 206.333 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 7.136 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 3.992 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 17.161 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 10.226 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 177.331 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 17.055 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 24.036 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 1.859 ms
+[32minfo[39m: POST /v1/user/login 200 - 92.016 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290785004 200 - 30.838 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290785003 200 - 34.821 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 18.941 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 10.284 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769 200 - 18.864 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290793823 200 - 8.604 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 3.149 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 10.360 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 8.755 ms
+[32minfo[39m: GET /v1/institute/credentials/IB784848 200 - 9.026 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB784848 200 - 14.101 ms
+[32minfo[39m: GET /v1/institute/credentials/IB481451 200 - 11.211 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB481451 200 - 11.181 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290880743 200 - 148.373 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 7.740 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 11.974 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 19.769 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290886263 200 - 7.011 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 2.814 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290886872 200 - 8.378 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 3.006 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290950431 200 - 243.291 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 24.716 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: OPTIONS /v1/user/login 204 - 1.741 ms
+[32minfo[39m: POST /v1/user/login 200 - 129.219 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290994716 200 - 36.910 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780290994718 200 - 37.791 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 4.946 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 20.050 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 18.097 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 36.844 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 24.933 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 58.310 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 57.421 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780291698175 200 - 688.625 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 42.605 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 26.587 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 42.840 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780291712656 200 - 113.444 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 7.607 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780291718454 200 - 47.558 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 2.195 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 14.378 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 25.062 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780294775806 401 - 65.747 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 1.248 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 442.502 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780294775806 200 - 115.691 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 48.373 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780295394549 200 - 264.999 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 26.108 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780295707090 200 - 217.101 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780295707096 200 - 134.909 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 21.173 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 49.667 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 48.387 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 78.124 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 90.221 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 7.811 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.264 ms
+[32minfo[39m: POST /v1/user/login 200 - 104.869 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 5.268 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.219 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 86.673 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780295821726 200 - 103.612 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 114.745 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780295821731 200 - 108.185 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 20.698 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 29.210 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 11.849 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 174.160 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 171.186 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 187.691 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 195.573 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 194.967 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 50.151 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 57.121 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 65.655 ms
+[32minfo[39m: GET /v1/exam/getAllExams? 304 - 32.607 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 52.013 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 29.628 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 29.941 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 31.889 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 31.976 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 17.666 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 17.864 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 45.729 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 41.580 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 92.989 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 8.683 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 125.057 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 10.808 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 177.109 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 10.271 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 71.096 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780296440359 200 - 308.444 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 45.153 ms - message: Not found
+[32minfo[39m: OPTIONS /v1/user/login 204 - 2.043 ms
+[32minfo[39m: POST /v1/user/login 200 - 64.631 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780296557243 200 - 63.534 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780296557242 200 - 85.712 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 14.370 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 17.763 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 20.106 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.778 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 1.117 ms
+[32minfo[39m: POST /v1/user/login 200 - 70.354 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 6.725 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 9.345 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 11.884 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 7.346 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 87.039 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 12.561 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 243.413 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 7.394 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 110.705 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 9.793 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 385.798 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 232.720 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 241.424 ms
+[32minfo[39m: GET /v1/section/allSections 200 - 300.445 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780297995758 200 - 410.715 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780297995771 200 - 296.587 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 24.600 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 51.784 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 43.067 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 28.307 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 14.916 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780298010422 200 - 70.867 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 76.532 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 79.197 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 76.597 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780298010424 200 - 74.028 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 26.005 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 22.035 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 21.071 ms
+[32minfo[39m: OPTIONS /v1/question-papers/getQuestionPaperBySet 204 - 0.282 ms
+[32minfo[39m: OPTIONS /v1/question-paper-answers/getQuestionPaperAnswerBySet 204 - 0.190 ms
+[32minfo[39m: GET /v1/scanner/getAllSheets?_t=1780298018826&classId=IB043089&section=C&subjectId=IB502240&examType=Mid+Term 200 - 60.078 ms
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 78.481 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 76.112 ms - message: -
+[32minfo[39m: GET /v1/student/getAllStudents?className=4&sectionId=C 200 - 114.849 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 102.325 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 8.328 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 56.126 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 72.727 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780299348026 401 - 78.604 ms - message: -
+[32minfo[39m: OPTIONS /v1/user/refresh-token 204 - 2.376 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 399.818 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780299348026 200 - 90.998 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 57.734 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 19.162 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 25.887 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: OPTIONS /v1/user/login 204 - 11.376 ms
+[32minfo[39m: POST /v1/user/login 200 - 320.563 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780311440076 200 - 147.289 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780311440079 200 - 128.457 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 70.609 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 304 - 123.365 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 143.920 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 88.412 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780312111710 200 - 61.799 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780312111708 200 - 59.341 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 11.296 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769 200 - 17.510 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 20.824 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780313252240 200 - 181.359 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780313252246 200 - 144.718 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 16.615 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780313259989 200 - 26.953 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 25.896 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 200 - 62.024 ms
+[32minfo[39m: POST /v1/user/login 200 - 102.256 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 5.785 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.800 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 29.381 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 66.273 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780313289369 200 - 65.726 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780313289372 200 - 65.873 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.121 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 23.933 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 19.157 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 294.344 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 210.340 ms
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 646.966 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 47.819 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 26.853 ms
+[32minfo[39m: POST /v1/user/login 200 - 320.666 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780314748505 200 - 75.793 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780314748509 200 - 70.197 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 24.690 ms - message: Not found
+[32minfo[39m: POST /v1/user/login 200 - 344.072 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780315134840 200 - 378.871 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780315134848 200 - 298.006 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 24.217 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780315461704 200 - 342.336 ms
+[32minfo[39m: POST /v1/institute/register 201 - 242.699 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780315465608 200 - 21.510 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780315465610 200 - 20.645 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 16.090 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB242661?_t=1780315652727 200 - 243.609 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB242661 200 - 396.359 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780315658313 200 - 10.034 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 18.391 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 58.164 ms
+[32minfo[39m: POST /v1/user/login 200 - 62.369 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 6.363 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.024 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 127.573 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 7.396 ms
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 255.495 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 23.619 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 14.049 ms
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 138.734 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 18.313 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 19.559 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 37.417 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780315997797 200 - 39.843 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 54.633 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780315997799 200 - 53.954 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.560 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316084521 200 - 158.578 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316084517 200 - 168.322 ms
+[32minfo[39m: POST /v1/sessions/createSession 201 - 131.361 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316133420 200 - 27.067 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316133422 200 - 26.308 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316140732 200 - 29.313 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316140733 200 - 29.261 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 67.244 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316155077 200 - 44.088 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316155075 200 - 41.944 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780316164984 200 - 54.226 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780316164986 200 - 52.602 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316164986 200 - 36.070 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316164985 200 - 57.348 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316167374 200 - 16.878 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316167377 200 - 13.679 ms
+[32minfo[39m: POST /v1/subject/createSubject 201 - 25.498 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316176281 200 - 45.710 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316176280 200 - 42.095 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780316176281 200 - 47.206 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780316176279 200 - 60.313 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316237063 200 - 146.298 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316237065 200 - 136.326 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 200 - 159.083 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 14.391 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316237291 200 - 20.459 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316237345 200 - 22.748 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 103.570 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 6.271 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 21.219 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316300130 200 - 28.381 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316300132 200 - 27.983 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 31.950 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 12.951 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 19.904 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 11.331 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 130.708 ms
+[32minfo[39m: GET /v1/exam/getAllExams 200 - 142.238 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 141.239 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 137.390 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 148.041 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 32.023 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 32.318 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 44.971 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 40.335 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 36.242 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 15.445 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 15.816 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 21.002 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 37.057 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 24.513 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 25.551 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 21.397 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 23.032 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 104.204 ms
+[32minfo[39m: GET /v1/exam/getAllExams 200 - 47.062 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 69.117 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 78.577 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 88.562 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 91.016 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 50.600 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 43.170 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 30.722 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 30.522 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 17.163 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316414844 200 - 164.296 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780316414840 200 - 192.844 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780316414842 200 - 189.924 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316414845 200 - 175.441 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780316414845 200 - 170.509 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780316414841 200 - 195.522 ms
+[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 46.000 ms
+[32minfo[39m: POST /v1/question-papers/createQuestionPaper 201 - 157.009 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 480.102 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780379038376 200 - 79.828 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780379038379 200 - 70.761 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 36.213 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB242661?_t=1780379155036 200 - 196.365 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB242661 200 - 309.788 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780379497322 200 - 273.187 ms
+[32minfo[39m: POST /v1/institute/register 201 - 674.942 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780379507505 200 - 25.508 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780379507508 200 - 21.047 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 22.173 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB810291 200 - 17.961 ms
+[32minfo[39m: GET /v1/institute/credentials/IB810291?_t=1780379515123 200 - 18.056 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780379971439 200 - 181.647 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780379971434 200 - 387.055 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 21.652 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB810291?_t=1780379974749 200 - 20.726 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB810291 304 - 33.116 ms
+[32minfo[39m: POST /v1/institute/resendCredentials/IB810291 200 - 129.654 ms
+[32minfo[39m: POST /v1/user/login 200 - 450.907 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780388313896 200 - 157.316 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780388313898 200 - 57.197 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 23.411 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB242661?_t=1780388320883 200 - 25.577 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB242661 304 - 25.128 ms
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 200 - 104.037 ms
+[32minfo[39m: POST /v1/user/login 200 - 43.137 ms
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 304 - 9.079 ms
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 304 - 1.769 ms
+[32minfo[39m: GET /v1/institute/credentials/IB784848?_t=1780388352475 200 - 84.291 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB784848 200 - 86.713 ms
+[32minfo[39m: GET /v1/institute/credentials/IB242661?_t=1780388356763 200 - 19.242 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB242661 304 - 21.664 ms
+[32minfo[39m: GET /v1/institute/credentials/IB810291?_t=1780388359747 200 - 9.042 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB810291 200 - 14.360 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780388362436 200 - 9.971 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 13.734 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 12.654 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780388364963 200 - 14.676 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780388376628 200 - 66.911 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 65.614 ms
+[32minfo[39m: GET /v1/institute/credentials/IB784848?_t=1780388386092 200 - 9.880 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB784848 304 - 9.380 ms
+[32minfo[39m: GET /v1/institute/slug/ut-accusantium-aperi 200 - 182.028 ms
+[32minfo[39m: POST /v1/user/login 200 - 46.040 ms
+[32minfo[39m: GET /v1/institute/slug/ut-accusantium-aperi 304 - 2.914 ms
+[32minfo[39m: GET /v1/institute/slug/ut-accusantium-aperi 304 - 10.582 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 548.196 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780389035022 200 - 83.759 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 103.815 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780389035026 200 - 99.584 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.248 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780389128787 200 - 383.390 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 27.794 ms - message: Not found
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 132.920 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 11.954 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780389149791 200 - 35.242 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780389149793 200 - 36.332 ms
+[32minfo[39m: GET /v1/class/getClassById/IB043089 200 - 463.087 ms
+[32minfo[39m: GET /v1/class/getClassById/IB043089 304 - 126.663 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 164.768 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 26.430 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780389210107 200 - 41.570 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780389210104 200 - 46.736 ms
+[31merror[39m: POST /v1/class/createClass 409 - 91.101 ms - message: -
+[32minfo[39m: POST /v1/class/createClass 201 - 61.864 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780389229507 200 - 59.400 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780389229509 200 - 59.256 ms
+[32minfo[39m: DELETE /v1/class/deleteClass/IB928502 200 - 27.633 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780389233601 200 - 17.034 ms
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780390390209 401 - 43.146 ms - message: -
+[32minfo[39m: GET /v1/institute/slug/ut-accusantium-aperi 304 - 582.432 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 338.292 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780390390209 200 - 61.873 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780390498656 200 - 159.662 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780390498660 200 - 136.856 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780390515141 200 - 248.363 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780390515144 200 - 233.272 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780390515145 200 - 232.067 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780390515142 200 - 229.049 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780391122668 200 - 358.978 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 38.207 ms - message: Not found
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 200 - 337.412 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780391165529 200 - 330.971 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780391165520 200 - 358.058 ms
+[32minfo[39m: GET /v1/academic-calendar/monthly?year=2026&month=6 304 - 15.526 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780391166016 200 - 19.505 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780391166018 200 - 17.317 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780391166809 200 - 51.035 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780391166813 200 - 41.682 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780391166810 200 - 60.209 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780391166814 200 - 34.120 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 80.991 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780391230726 200 - 31.821 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 40.431 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780391230729 200 - 35.485 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 7.686 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780391257922 200 - 88.790 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780391257919 200 - 84.373 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780391442897 200 - 104.866 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780391442900 200 - 112.766 ms
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 304 - 248.423 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 612.299 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 76.233 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392168598 200 - 109.588 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392168592 200 - 106.221 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 16.075 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392181688 200 - 364.842 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392181694 200 - 346.907 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 365.099 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.387 ms
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780392226666 401 - 1.912 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780392226668 401 - 0.589 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 4.373 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.715 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 164.519 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 161.683 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 203.911 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 160.584 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392226668 200 - 37.221 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392226666 200 - 32.630 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 37.232 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.067 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 103.785 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392250100 200 - 42.975 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 47.496 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392250102 200 - 30.971 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.372 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392252442 200 - 13.922 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 20.521 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392252445 200 - 17.041 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.763 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB043089 200 - 114.884 ms
+[32minfo[39m: POST /v1/student/createStudent 201 - 662.867 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 49.198 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392642509 200 - 32.843 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392642514 200 - 28.652 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 45.428 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 33.301 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392656386 200 - 166.824 ms
+[32minfo[39m: GET /v1/student/getStudentById/IB017254 200 - 192.579 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392656387 200 - 158.179 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 199.339 ms
+[32minfo[39m: GET /v1/student/getStudentById/IB017254 304 - 19.705 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.741 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB043089 304 - 16.677 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 30.470 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392663464 200 - 27.038 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 30.234 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392663466 200 - 32.814 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 16.884 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 19.795 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392665417 200 - 14.519 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780392665412 200 - 22.055 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 8.455 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393720613 200 - 444.455 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393720617 200 - 284.625 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 304.185 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.565 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393741500 200 - 99.864 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393741502 200 - 89.364 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 104.034 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.464 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 69.108 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393750690 200 - 35.381 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393750692 200 - 20.810 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 41.513 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 7.235 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB043089 304 - 13.128 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393773901 200 - 97.584 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393773907 200 - 95.064 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 101.842 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 8.749 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393781179 200 - 5.952 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393781176 200 - 11.841 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 12.929 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.252 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393877160 200 - 98.269 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 103.644 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780393877162 200 - 99.924 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.053 ms
+[31merror[39m: GET /v1/class/getAllClasses 401 - 8.673 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780394678113 401 - 1.809 ms - message: -
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 304 - 457.767 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 390.648 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 211.744 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780394678113 200 - 33.839 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 56.594 ms
+[32minfo[39m: GET /v1/institute/slug/ut-accusantium-aperi 304 - 825.713 ms
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 304 - 256.680 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780395256028 200 - 658.262 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 313.006 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395256950 200 - 334.678 ms
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 304 - 50.413 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395257006 200 - 95.997 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780395256031 200 - 615.796 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 21.794 ms
+[32minfo[39m: GET /v1/institute/slug/ut-accusantium-aperi 304 - 348.618 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780395270843 200 - 613.901 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780395270844 200 - 415.225 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395687649 200 - 402.892 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395687653 200 - 185.427 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 203.040 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 35.675 ms
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 304 - 1413.701 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395957111 200 - 1028.695 ms
+[32minfo[39m: GET /v1/institute/slug/vel-qui-qui-et-volup 304 - 5.879 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780395957104 200 - 1222.963 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 1146.314 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 15.935 ms
+[32minfo[39m: GET /v1/institute/slug/ut-accusantium-aperi 304 - 640.053 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780396135466 200 - 533.284 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396135468 200 - 507.857 ms
+[32minfo[39m: POST /v1/user/login 200 - 138.615 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780396152717 200 - 56.273 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780396152714 200 - 60.665 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 55.142 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB242661?_t=1780396155630 200 - 27.441 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB242661 304 - 24.742 ms
+[32minfo[39m: GET /v1/institute/credentials/IB242661?_t=1780396163462 200 - 11.742 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB242661 304 - 9.411 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780396166501 200 - 11.072 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 11.750 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 56.470 ms
+[32minfo[39m: POST /v1/user/login 200 - 27.865 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.376 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.113 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 59.443 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396188615 200 - 54.079 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396188617 200 - 46.195 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 54.075 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.104 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396191718 200 - 16.824 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396191722 200 - 13.782 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 19.306 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 4.591 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396325158 200 - 146.166 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396325160 200 - 140.279 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 148.958 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.397 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 18.269 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 20.119 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396326785 200 - 19.300 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396326786 200 - 16.092 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 16.955 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396474453 200 - 142.523 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396474450 200 - 152.122 ms
+[32minfo[39m: PATCH /v1/sessions/IB546716/activate 200 - 70.541 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780396480199 200 - 5.432 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396486211 200 - 28.954 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396486213 200 - 29.359 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 32.768 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396492097 200 - 14.557 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396492096 200 - 16.448 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780396498434 200 - 37.452 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780396498433 200 - 56.847 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396498435 200 - 38.933 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396498433 200 - 39.518 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396504712 200 - 26.864 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396504714 200 - 24.470 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 179.045 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780396528428 200 - 71.839 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780396528432 200 - 77.426 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396528432 200 - 77.480 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396528429 200 - 68.372 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396535346 200 - 56.957 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780396535344 200 - 61.081 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780396535346 200 - 51.264 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396535345 200 - 55.663 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396537900 200 - 14.025 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396537901 200 - 14.710 ms
+[32minfo[39m: POST /v1/subject/createSubject 201 - 65.676 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780396584746 200 - 52.110 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396584747 200 - 49.049 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780396584743 200 - 47.442 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780396584744 200 - 54.917 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 75.359 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 11.787 ms
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 309.024 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 29.197 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 17.703 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 147.211 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 144.731 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 144.210 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 138.444 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 121.682 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 24.783 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 22.590 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 31.195 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 21.514 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 31.297 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 19.572 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 26.830 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 31.260 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 36.855 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 20.762 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 20.395 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 23.912 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 31.368 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 104.439 ms
+[32minfo[39m: GET /v1/exam/getAllExams 200 - 35.109 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 50.580 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 55.019 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 61.636 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 65.752 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 28.638 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 30.307 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 28.288 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 39.144 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 40.094 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB823150 200 - 265.072 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 199.748 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 195.707 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 205.726 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 208.338 ms
+[32minfo[39m: GET /v1/exam/getOneExam/IB823150 304 - 20.331 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 34.890 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 31.262 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 41.282 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 33.668 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 134.123 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 147.920 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 115.437 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 152.659 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 124.507 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 13.317 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 24.673 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 26.636 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 33.997 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 30.491 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 82.166 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397584966 200 - 44.648 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 52.179 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397584968 200 - 47.133 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 15.108 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.874 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397588338 200 - 16.473 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397588342 200 - 21.767 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 12.113 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 12.485 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 15.948 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397592156 200 - 40.382 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397592158 200 - 36.104 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.465 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 20.181 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397594386 200 - 19.556 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397594395 200 - 16.985 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.961 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 7.451 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.651 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397598255 200 - 10.856 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397598256 200 - 10.251 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 7.004 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397620127 200 - 74.128 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397620125 200 - 82.460 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 93.130 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.547 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 19.636 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397622025 200 - 14.756 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397622026 200 - 15.020 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 22.495 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 7.430 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 12.798 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397622885 200 - 13.544 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397622888 200 - 12.845 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 15.926 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 10.331 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 44.074 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397624634 200 - 37.201 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397624635 200 - 37.724 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 28.543 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397717611 200 - 168.900 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397717607 200 - 189.103 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 298.761 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.253 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 40.366 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.242 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397719008 200 - 13.945 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397719010 200 - 14.322 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.392 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 152.352 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397767868 200 - 155.556 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397767871 200 - 156.293 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 39.816 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 65.681 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397806115 200 - 21.869 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 29.502 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780397806117 200 - 26.561 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 8.374 ms
+[31merror[39m: GET /v1/student/getAllStudents 401 - 63.001 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 359.910 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 65.311 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 84.261 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398828976 200 - 96.987 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398828983 200 - 58.536 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.924 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 77.141 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398838011 200 - 13.034 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398838014 200 - 21.331 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 32.666 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.373 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 33.183 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398838463 200 - 24.718 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398838468 200 - 22.877 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 15.103 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 186.076 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 59.173 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398858657 200 - 61.187 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398858659 200 - 65.370 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.687 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398861247 200 - 15.749 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398861250 200 - 14.518 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 26.079 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.352 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 11.422 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398863528 200 - 28.211 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398863529 200 - 25.122 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 30.374 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 9.845 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 8.871 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398865687 200 - 16.263 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398865696 200 - 16.708 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.088 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398867714 200 - 8.445 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398867716 200 - 11.857 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 15.783 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.451 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 8.565 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398868989 200 - 18.518 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.694 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398868991 200 - 17.647 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.754 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.415 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398875526 200 - 11.688 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398875529 200 - 10.603 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.977 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 8.271 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398878017 200 - 7.465 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398878018 200 - 7.877 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.693 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.384 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398879656 200 - 8.967 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780398879658 200 - 7.890 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.343 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780398885340 200 - 51.678 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 28.159 ms - message: Not found
+[31merror[39m: POST /v1/student/createBulkStudents 401 - 110.402 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 413.006 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 686.761 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 22.446 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780401320726 200 - 24.880 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780401320723 200 - 36.856 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.893 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 27.746 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.367 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780401325132 200 - 18.561 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780401325134 200 - 18.405 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 12.250 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 7.007 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 6.960 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780401330160 200 - 25.065 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780401330166 200 - 13.641 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 29.235 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 4.920 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 375.134 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780402021097 200 - 385.790 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780402021086 200 - 650.378 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 19.569 ms
+[31merror[39m: POST /v1/student/createBulkStudents 401 - 267.006 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 361.712 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 374.273 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 57.369 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403209457 200 - 52.539 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403209453 200 - 69.725 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 27.372 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 30.401 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 24.953 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403213620 200 - 25.188 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403213624 200 - 24.391 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.440 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 365.195 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 244.129 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403224853 200 - 18.989 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403224849 200 - 41.478 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 49.058 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 27.901 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403301627 200 - 129.135 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403301615 200 - 139.735 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 169.183 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.210 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 386.309 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 67.264 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403463744 200 - 74.627 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 75.508 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 18.528 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.805 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403466315 200 - 17.288 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403466319 200 - 28.012 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 21.328 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403468184 200 - 15.237 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403468186 200 - 9.388 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.956 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 6.856 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 11.209 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403470227 200 - 14.407 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.314 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403470229 200 - 13.040 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.062 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.335 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403475435 200 - 14.003 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403475439 200 - 10.230 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 9.276 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 165.138 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 106.303 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403523629 200 - 110.974 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403523668 200 - 95.287 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 173.442 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 60.190 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 17.404 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 169.432 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 875.002 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 200 - 247.942 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780403999912 200 - 354.288 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 415.871 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 358.611 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 363.240 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780404256720 200 - 263.462 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 248.874 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780404859860 200 - 450.129 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 76.438 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 124.654 ms
+[32minfo[39m: POST /v1/user/login 200 - 27.604 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780467356992 200 - 49.505 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780467356994 200 - 50.833 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 10.950 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB242661?_t=1780467360521 200 - 18.709 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB242661 304 - 17.949 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780467364264 200 - 11.635 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 10.917 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 49.473 ms
+[32minfo[39m: POST /v1/user/login 200 - 91.895 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 9.816 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.016 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 8.483 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.793 ms
+[32minfo[39m: POST /v1/user/login 200 - 20.307 ms
+[32minfo[39m: POST /v1/user/login 200 - 19.920 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.817 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 1.893 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 89.957 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.115 ms
+[32minfo[39m: POST /v1/user/login 200 - 28.500 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.561 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 1.803 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 6.935 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.098 ms
+[32minfo[39m: POST /v1/user/login 200 - 91.114 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 8.940 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.425 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.473 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 6.280 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[31merror[39m: POST /v1/user/login 400 - 186.775 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 6.056 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 4.809 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[31merror[39m: POST /v1/user/login 400 - 20.104 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 5.571 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 1.834 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 2.501 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 6.005 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 5.549 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 4.539 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 2.299 ms - message: -
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 134.312 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780477846777 200 - 63.484 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780477846779 200 - 59.928 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 19.729 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB810291?_t=1780477848176 200 - 28.906 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB810291 304 - 23.800 ms
+[32minfo[39m: GET /v1/institute/credentials/IB242661?_t=1780477852598 200 - 15.387 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB242661 304 - 10.142 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780477855630 200 - 9.172 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 8.952 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780477859263 200 - 8.988 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 304 - 11.173 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 5.512 ms
+[32minfo[39m: POST /v1/user/login 200 - 87.098 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 4.558 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.530 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 5.018 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.781 ms
+[31merror[39m: POST /v1/user/login 400 - 8.688 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 3.686 ms - message: -
+[32minfo[39m: POST /v1/user/login 200 - 22.910 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.792 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.535 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780479363677 200 - 375.528 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 46.695 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 15.737 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 73.308 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 17.780 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 308.855 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 4.941 ms
+[31merror[39m: POST /v1/user/login 400 - 139.878 ms - message: -
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780479653792 200 - 119.141 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 88.733 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 66.638 ms
+[32minfo[39m: POST /v1/user/login 200 - 84.559 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 4.775 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 4.251 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 41.481 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 12.982 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 117.729 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 12.056 ms
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 514.913 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 32.631 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 16.281 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 5.125 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 4.610 ms
+[32minfo[39m: POST /v1/user/login 200 - 40.035 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 90.546 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.702 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 200 - 111.545 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 12.515 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 187.085 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 19.636 ms
+[32minfo[39m: POST /v1/user/login 200 - 120.934 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 8.720 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 6.529 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 25.010 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 6.990 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.720 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780480695871 200 - 41.543 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 31.533 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB810291?_t=1780480703813 200 - 28.191 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB810291 304 - 34.167 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 9.460 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.470 ms
+[32minfo[39m: POST /v1/user/login 200 - 25.222 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 6.946 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 1.698 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.699 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 23.109 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 15.047 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: POST /v1/user/login 400 - 634.620 ms - message: -
+[32minfo[39m: POST /v1/user/login 200 - 87.314 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780487845626 200 - 59.004 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780487845628 200 - 55.782 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 21.190 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB810291?_t=1780487847193 200 - 18.741 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB810291 304 - 19.655 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780488951344 200 - 236.153 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 12.302 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 91.301 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780505715123 200 - 128.698 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780505715132 200 - 122.910 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 15.902 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 159.996 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780541091254 200 - 53.343 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780541091258 200 - 52.686 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 19.126 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB810291?_t=1780541097240 200 - 43.320 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB810291 304 - 41.187 ms
+[32minfo[39m: GET /v1/institute/credentials/IB545769?_t=1780541192814 200 - 390.904 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB545769 200 - 307.109 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 89.551 ms
+[32minfo[39m: POST /v1/user/login 200 - 110.318 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 5.189 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.999 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 15.638 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 4.904 ms
+[31merror[39m: POST /v1/user/login 400 - 11.696 ms - message: -
+[32minfo[39m: POST /v1/user/login 200 - 45.904 ms
+[32minfo[39m: POST /v1/user/login 200 - 66.042 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 3.970 ms
+[32minfo[39m: GET /v1/institute/slug/obcaecati-consequatu 304 - 2.708 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 35.648 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 17.181 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 147.589 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780551185618 200 - 58.239 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780551185620 200 - 54.718 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 14.641 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780552188954 200 - 305.977 ms
+[31merror[39m: POST /v1/institute/register 409 - 64.708 ms - message: -
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780552212769 200 - 182.879 ms
+[32minfo[39m: POST /v1/institute/register 201 - 3754.441 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780552220006 200 - 41.785 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780552220015 200 - 33.688 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 36.633 ms - message: Not found
+[32minfo[39m: POST /v1/user/login 200 - 362.466 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780552967083 200 - 43.573 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780552967081 200 - 47.338 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 28.663 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780552968380 200 - 18.922 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 200 - 23.813 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780552991076 200 - 104.830 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 114.168 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780553263271 200 - 230.578 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 228.055 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780553492986 200 - 218.103 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 13.482 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 232.452 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780553546490 200 - 469.813 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780553864861 200 - 288.539 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 36.290 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 23.011 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780553868508 200 - 31.399 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780554056813 200 - 286.960 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 9.777 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 23.758 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780554059410 200 - 32.965 ms
+[32minfo[39m: POST /v1/user/login 200 - 643.269 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780554782618 200 - 94.986 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780554782620 200 - 91.456 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 24.941 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780554783994 200 - 28.262 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 25.770 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780555042472 200 - 302.118 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 145.821 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780555461725 200 - 219.729 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 163.224 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 251.123 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780556180753 200 - 386.760 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 16.394 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780556184949 200 - 13.365 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780556241094 200 - 117.988 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 26.085 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB784848 304 - 18.403 ms
+[32minfo[39m: GET /v1/institute/credentials/IB784848?_t=1780556246301 200 - 27.226 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780556256705 200 - 10.402 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 2.318 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780556259027 200 - 5.184 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 15.618 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780556310209 200 - 57.510 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 56.748 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780558644680 401 - 65.090 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 442.113 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780558644680 200 - 81.870 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 52.803 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 17.797 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780558647093 200 - 25.178 ms
+[32minfo[39m: POST /v1/institute/resendCredentials/IB300882 200 - 3330.373 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 199.579 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780560371874 200 - 55.210 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780560371871 200 - 59.301 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 12.014 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780560375182 200 - 18.623 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 200 - 17.869 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780562848834 401 - 76.480 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 443.347 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780562848834 200 - 258.350 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 23.825 ms - message: Not found
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 304 - 27.341 ms
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780562851693 200 - 37.706 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 200 - 90.111 ms
+[32minfo[39m: POST /v1/user/login 200 - 366.496 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 5.124 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 3.215 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 94.700 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 123.138 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780563016970 200 - 119.222 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780563016974 200 - 111.145 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 27.880 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780563020855 200 - 21.489 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780563020861 200 - 19.537 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 33.958 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 12.045 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780563413439 200 - 235.875 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780563413444 200 - 213.424 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 227.236 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 32.812 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780564852205 401 - 65.869 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 387.513 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780564852205 200 - 130.091 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 41.131 ms - message: Not found
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 828.061 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 115.472 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780564993171 200 - 87.874 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780564993127 200 - 124.062 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 18.795 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 154.012 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.522 ms
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780568664774 401 - 62.784 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 529.499 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780568664774 200 - 64.619 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 37.302 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 30.103 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780568670058 200 - 69.744 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780568670082 200 - 46.062 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 21.885 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 91.838 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.604 ms
+[31merror[39m: GET /v1/class/getAllClasses 401 - 12.675 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780570629607 401 - 2.040 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780570629628 401 - 0.710 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.851 ms - message: -
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 560.763 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 216.178 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 252.271 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 17.868 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 251.127 ms
+[32minfo[39m: POST /v1/user/refresh-token 200 - 326.189 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 67.642 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780570629607 200 - 31.126 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780570629628 200 - 29.190 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 23.990 ms
+[31merror[39m: POST /v1/student/createBulkStudents 401 - 53.573 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 277.709 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 329.240 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780572775234 200 - 27.345 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780572775238 200 - 20.520 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 36.652 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 8.873 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 47.836 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780572780916 200 - 17.822 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780572780917 200 - 28.654 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 37.705 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 8.868 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.171 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780572783421 200 - 14.648 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780572783425 200 - 13.762 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.601 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573043966 200 - 637.664 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573043969 200 - 445.280 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 448.436 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.546 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 71.639 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573048662 200 - 23.276 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573048666 200 - 19.293 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 27.959 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 9.660 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573123030 200 - 99.526 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573123028 200 - 122.973 ms
+[32minfo[39m: POST /v1/sessions/createSession 201 - 227.359 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573153721 200 - 12.601 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573153724 200 - 13.533 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573161315 200 - 66.156 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573161312 200 - 75.706 ms
+[32minfo[39m: POST /v1/class/createClass 201 - 30.176 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573169928 200 - 32.231 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573169931 200 - 35.531 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573175299 200 - 73.352 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780573175298 200 - 112.015 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780573175300 200 - 92.888 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573175301 200 - 86.089 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573176677 200 - 30.617 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573176678 200 - 26.057 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 32.665 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780573183840 200 - 35.006 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573183840 200 - 34.305 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573183842 200 - 28.564 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1780573183841 200 - 47.711 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780573196786 200 - 129.593 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780573196790 200 - 120.884 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573196787 200 - 127.203 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573196791 200 - 119.306 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573198470 200 - 27.069 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573198467 200 - 26.406 ms
+[32minfo[39m: POST /v1/subject/createSubject 201 - 28.107 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780573208103 200 - 40.500 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573208104 200 - 71.307 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1780573208105 200 - 85.834 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1780573208106 200 - 92.412 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 119.569 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 6.123 ms
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 484.905 ms - message: -
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 199.471 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 37.481 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 20.803 ms
+[32minfo[39m: GET /v1/exam/getAllExams 200 - 167.994 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 142.660 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 157.487 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 145.511 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 140.069 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 13.208 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 33.682 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 31.969 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 24.630 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 33.878 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 21.715 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 20.759 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 20.438 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 23.156 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 21.152 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.118 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 21.552 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 23.899 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 112.678 ms
+[32minfo[39m: GET /v1/exam/getAllExams 200 - 11.826 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 18.445 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 65.395 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 91.445 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 87.960 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 71.984 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 119.342 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 56.704 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 23.051 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 19.253 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 82.790 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573609195 200 - 26.418 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 33.698 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573609197 200 - 33.663 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 11.209 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573610433 200 - 13.853 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 24.626 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573610436 200 - 18.257 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 11.756 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573614685 200 - 8.468 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 7.980 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573614687 200 - 6.784 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 14.049 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB968016 200 - 11.436 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573633079 200 - 79.151 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573633081 200 - 78.392 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 84.027 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 5.116 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573639457 200 - 17.783 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 14.240 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 21.111 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 279.047 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573698695 200 - 235.930 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 224.670 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 2.562 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 9.989 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780573707439 200 - 14.867 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB968016 304 - 19.492 ms
+[32minfo[39m: POST /v1/student/createBulkStudents 201 - 651.162 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780574111379 200 - 114.422 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780574111386 200 - 111.105 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 118.023 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 13.342 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 71.471 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 15.692 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780574114583 200 - 14.005 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780574114587 200 - 16.589 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 21.816 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 94.668 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 32.263 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780574131694 200 - 37.671 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 47.733 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780574131698 200 - 47.071 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 18.867 ms
+[32minfo[39m: GET /v1/institute/slug/eos-doloremque-recu 304 - 734.488 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 291.383 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780574165981 200 - 36.392 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1780574165994 200 - 24.652 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 89.862 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 10.325 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB968016 304 - 921.569 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780574529271 200 - 793.991 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 38.352 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 599.023 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780639762536 200 - 215.756 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780639762545 200 - 187.943 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 60.094 ms - message: Not found

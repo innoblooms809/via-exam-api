@@ -1566,3 +1566,999 @@
 [31merror[39m: POST /v1/class/createClass 500 - 220.916 ms - message: -
 [31merror[39m: POST /v1/class/createClass 500 - 556.860 ms - message: -
 [31merror[39m: POST /v1/class/createClass 401 - 17.788 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 20.246 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 2.658 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 3.181 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 6.451 ms - message: Not found
+[31merror[39m: GET /v1/institute/getOneInstitute/IB545769 401 - 66.331 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 76.239 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 29.798 ms - message: Not found
+[31merror[39m: GET /v1/institute/getOneInstitute/IB545769 401 - 31.443 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 34.667 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 22.025 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 2.377 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 119.129 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 114.701 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 7.136 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 3.992 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 10.226 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /v1/institute/credentials/IB545769 404 - 17.055 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 18.941 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 3.149 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 7.740 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 2.814 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 3.006 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 24.716 ms - message: Not found
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 4.946 ms - message: Not found
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 42.605 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 7.607 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 2.195 ms - message: Not found
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780294775806 401 - 65.747 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 48.373 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 26.108 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 21.173 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 45.153 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 14.370 ms - message: Not found
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 78.481 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 76.112 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780299348026 401 - 78.604 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 57.734 ms - message: Not found
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 70.609 ms - message: Not found
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 11.296 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 16.615 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 24.690 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 24.217 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 16.090 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 36.213 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 22.173 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 21.652 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 23.411 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 27.794 ms - message: Not found
+[31merror[39m: POST /v1/class/createClass 409 - 91.101 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780390390209 401 - 43.146 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 38.207 ms - message: Not found
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780392226666 401 - 1.912 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780392226668 401 - 0.589 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 4.373 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.715 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 8.673 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780394678113 401 - 1.809 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 55.142 ms - message: Not found
+[31merror[39m: GET /v1/student/getAllStudents 401 - 63.001 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 28.159 ms - message: Not found
+[31merror[39m: POST /v1/student/createBulkStudents 401 - 110.402 ms - message: -
+[31merror[39m: POST /v1/student/createBulkStudents 401 - 267.006 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 76.438 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 10.950 ms - message: Not found
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: POST /v1/user/login 400 - 186.775 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 6.056 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 4.809 ms - message: -
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: POST /v1/user/login 400 - 20.104 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 5.571 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 1.834 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 2.501 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 6.005 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 5.549 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 4.539 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 2.299 ms - message: -
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at Function.listen (D:\Company1\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Company1\via-exam-api\src\index.ts:10:16)
+    at D:\Company1\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Company1\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 19.729 ms - message: Not found
+[31merror[39m: POST /v1/user/login 400 - 8.688 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 3.686 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 46.695 ms - message: Not found
+[31merror[39m: POST /v1/user/login 400 - 139.878 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 31.533 ms - message: Not found
+[31merror[39m: POST /v1/user/login 400 - 634.620 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 21.190 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 12.302 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 15.902 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 19.126 ms - message: Not found
+[31merror[39m: POST /v1/user/login 400 - 11.696 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 14.641 ms - message: Not found
+[31merror[39m: POST /v1/institute/register 409 - 64.708 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 36.633 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 28.663 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 13.482 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 36.290 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 9.777 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 24.941 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 26.085 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 2.318 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 15.618 ms - message: Not found
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780558644680 401 - 65.090 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 52.803 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 12.014 ms - message: Not found
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780562848834 401 - 76.480 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 23.825 ms - message: Not found
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780564852205 401 - 65.869 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 41.131 ms - message: Not found
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780568664774 401 - 62.784 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 37.302 ms - message: Not found
+[31merror[39m: GET /v1/class/getAllClasses 401 - 12.675 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780570629607 401 - 2.040 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780570629628 401 - 0.710 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.851 ms - message: -
+[31merror[39m: POST /v1/student/createBulkStudents 401 - 53.573 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 484.905 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 38.352 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 60.094 ms - message: Not found

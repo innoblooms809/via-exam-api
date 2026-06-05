@@ -28,16 +28,25 @@ const sequelize_2 = require("sequelize");
 const resolveClassId = (inputClass, instituteId) => __awaiter(void 0, void 0, void 0, function* () {
     if (!inputClass)
         return null;
+    const candidates = [inputClass];
+    // Try stripping "Class " prefix (e.g. "Class 10" → "10")
+    if (inputClass.startsWith("Class "))
+        candidates.push(inputClass.slice(6));
+    // Try adding "Class " prefix (e.g. "10" → "Class 10")
+    if (!inputClass.startsWith("Class "))
+        candidates.push(`Class ${inputClass}`);
     const byId = yield Class_modal_1.default.findOne({
         where: { classId: inputClass, instituteId, isDeleted: false },
     });
     if (byId)
         return byId.classId;
-    const byName = yield Class_modal_1.default.findOne({
-        where: { className: inputClass, instituteId, isDeleted: false },
-    });
-    if (byName)
-        return byName.classId;
+    for (const name of candidates) {
+        const byName = yield Class_modal_1.default.findOne({
+            where: { className: name, instituteId, isDeleted: false },
+        });
+        if (byName)
+            return byName.classId;
+    }
     return null;
 });
 const resolveSectionId = (inputSection, classId, instituteId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -565,7 +574,7 @@ const bulkCreateStudents = (students, createdBy) => __awaiter(void 0, void 0, vo
                 created++;
             }
             catch (err) {
-                errors.push(`Row ${created + skipped + 1}: Failed`);
+                errors.push(`Row ${created + skipped + 1}: Failed — ${(err === null || err === void 0 ? void 0 : err.message) || err}`);
                 skipped++;
             }
         }

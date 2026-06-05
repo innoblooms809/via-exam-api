@@ -21,6 +21,7 @@ const createClass = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
+        console.error("POST /v1/class/createClass 500 - error:", error);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
