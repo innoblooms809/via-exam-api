@@ -31,6 +31,7 @@ import { NextFunction, Response } from "express";
 import httpStatus from "http-status";
 import UserModal from "../modals/User.modal";
 import Role from "../modals/Role.modal";
+import Institute from "../modals/Institute.modal";
 import config from "../config/config";
 
 const getCookieValue = (req: any, name: string): string | undefined => {
@@ -106,9 +107,12 @@ const authenticate = async (
       });
     }
 
-    // Fetch fresh user with role
+    // Fetch fresh user with role and institute
     const user = await UserModal.findOne({
-      include: [{ model: Role, as: "role" }],
+      include: [
+        { model: Role, as: "role" },
+        { model: Institute, as: "institute" },
+      ],
       where: { userId },
     });
 
