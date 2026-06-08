@@ -2,8 +2,8 @@ import httpStatus from "http-status";
 import UserModal from "../../modals/User.modal";
 import Role from "../../modals/Role.modal";
 import EncryptPassword from "../../utils/encryption"; // reuse your existing utility
-import RegHelper from "../../utils/helper";           // reuse your existing utility
-import exclude from "../../utils/exclude";            // reuse your existing utility
+import RegHelper from "../../utils/helper"; // reuse your existing utility
+import exclude from "../../utils/exclude"; // reuse your existing utility
 import { Op } from "sequelize";
 import Institute from "../../modals/Institute.modal";
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -26,8 +26,8 @@ const getViaExamUserByEmail = async (emailId: string): Promise<any> => {
     ],
     where: {
       emailId: {
-        [Op.iLike]: emailId
-      }
+        [Op.iLike]: emailId,
+      },
     },
   });
 };
@@ -183,7 +183,7 @@ const viaExamUserLogin = async (
 
     const isMatch = await EncryptPassword.isPasswordMatch(
       password,
-      user.password
+      user.password,
     );
 
     if (!isMatch) {
@@ -197,6 +197,7 @@ const viaExamUserLogin = async (
               Date.now() + LOCK_DURATION_MINUTES * 60000
             ),
           },
+<<<<<<< HEAD
           {
             where: {
               userId: user.userId,
@@ -213,6 +214,14 @@ const viaExamUserLogin = async (
               userId: user.userId,
             },
           }
+=======
+          { where: { userId: user.userId } },
+        );
+      } else {
+        await UserModal.update(
+          { loginAttempts: attempts },
+          { where: { userId: user.userId } },
+>>>>>>> 6e6ad199d3a6278084326f18539b135eb572da88
         );
       }
 
@@ -230,11 +239,15 @@ const viaExamUserLogin = async (
         lockedUntil: null,
         lastLoginAt: new Date(),
       },
+<<<<<<< HEAD
       {
         where: {
           userId: user.userId,
         },
       }
+=======
+      { where: { userId: user.userId } },
+>>>>>>> 6e6ad199d3a6278084326f18539b135eb572da88
     );
 
     const userResponse = exclude(
@@ -263,10 +276,7 @@ const viaExamUserLogin = async (
  */
 const viaExamUserLogout = async (userId: string): Promise<any> => {
   try {
-    await UserModal.update(
-      { refreshToken: null },
-      { where: { userId } }
-    );
+    await UserModal.update({ refreshToken: null }, { where: { userId } });
     return {
       error: false,
       statusCode: httpStatus.OK,

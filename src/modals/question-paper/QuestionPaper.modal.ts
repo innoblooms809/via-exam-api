@@ -24,13 +24,14 @@ interface QuestionPaperAttributes {
 
   content: object;
 
-  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
+  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PUBLISHED";
 
   rejectionNote: string | null;
 
   submittedAt: Date | null;
   approvedAt: Date | null;
   rejectedAt: Date | null;
+  publishedAt: Date | null;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -50,6 +51,7 @@ interface QuestionPaperCreationAttributes
     | "submittedAt"
     | "approvedAt"
     | "rejectedAt"
+    | "publishedAt"
     | "createdAt"
     | "updatedAt"
     | "deletedAt"
@@ -79,13 +81,14 @@ class QuestionPaper
 
   public content!: object;
 
-  public status!: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
+  public status!: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PUBLISHED";
 
   public rejectionNote!: string | null;
 
   public submittedAt!: Date | null;
   public approvedAt!: Date | null;
   public rejectedAt!: Date | null;
+  public publishedAt!: Date | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -170,9 +173,10 @@ QuestionPaper.init(
     status: {
       type: DataTypes.ENUM(
         "DRAFT",
-        "SUBMITTED",
+        "PENDING_APPROVAL",
         "APPROVED",
-        "REJECTED"
+        "REJECTED",
+        "PUBLISHED"
       ),
       allowNull: false,
       defaultValue: "DRAFT",
@@ -197,6 +201,12 @@ QuestionPaper.init(
     },
 
     rejectedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
+
+    publishedAt: {
       type: DataTypes.DATE,
       allowNull: true,
       defaultValue: null,
