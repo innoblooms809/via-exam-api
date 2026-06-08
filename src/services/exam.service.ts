@@ -130,6 +130,11 @@ const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
 
     const exams = await Exam.findAll({
       where,
+      include: [
+        { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
+        { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+      ],
       order: [["createdAt", "DESC"]],
     });
 
@@ -161,9 +166,9 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
         teacherId 
       },
       include: [
-        { model: Class, as: "class", attributes: ["className"] },
-        { model: Section, as: "section", attributes: ["sectionName"] },
-        { model: Subject, as: "subject", attributes: ["subjectName"] },
+        { model: Class, as: "class", attributes: ["className"], where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", attributes: ["sectionName"], required: false }, // exams might not have section
+        { model: Subject, as: "subject", attributes: ["subjectName"], where: { isDeleted: false }, required: true },
         { model: Session, as: "session", attributes: ["sessionName"] },
       ],
       order: [["createdAt", "DESC"]],
@@ -199,6 +204,11 @@ const getExamById = async (examId: string, requestedBy: any): Promise<any> => {
   try {
     const exam = await Exam.findOne({
       where: { examId, isDeleted: false },
+      include: [
+        { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
+        { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+      ],
     });
 
     if (!exam) {

@@ -96,7 +96,7 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
             roleId: result.data.user.roleId,
             role: ((_b = (_a = result.data.user.role) === null || _a === void 0 ? void 0 : _a.role) === null || _b === void 0 ? void 0 : _b.toLowerCase()) || null,
             instituteId: result.data.user.instituteId,
-            status: result.data.user.status
+            status: result.data.user.status,
         };
         return res.status(http_status_1.default.OK).send({
             error: false,
@@ -198,12 +198,24 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
  * Mirrors your createUser() — also sends welcome email
  */
 const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _e, _f;
     try {
         const result = yield user_service_1.default.viaExamUserCreate(req);
         if (!result.error) {
-            // Reuse your existing mail helper
-            (0, mailHelper_1.sendEmailToNewUser)(Object.assign(Object.assign({}, req.body), { password: result.password })).catch((err) => {
-                console.error("Background seeding email dispatch failed:", err);
+            const slug = (_f = (_e = req.viaExamUser) === null || _e === void 0 ? void 0 : _e.institute) === null || _f === void 0 ? void 0 : _f.slug;
+            const loginUrl = slug
+                ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
+                : `${config_1.default.frontendUrl}/auth/signin`;
+            (0, mailHelper_1.sendUserCredentials)({
+                userName: req.body.userName ||
+                    `${req.body.firstName || ""} ${req.body.lastName || ""}`.trim(),
+                email: req.body.emailId || req.body.email,
+                phone: req.body.phoneNumber || "",
+                password: result.password,
+                role: req.body.role || "User",
+                loginUrl,
+            }).catch((err) => {
+                console.error("Background user email dispatch failed:", err);
             });
         }
         return res.status(result.statusCode).send(result);

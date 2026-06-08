@@ -13,16 +13,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const student_service_1 = __importDefault(require("../services/student.service"));
+const config_1 = __importDefault(require("../config/config"));
 const mailHelper_1 = require("../utils/mailHelper");
 const createStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     try {
         const result = yield student_service_1.default.createStudent(req.body, req.files, req.viaExamUser);
         if (!result.error) {
-            (0, mailHelper_1.sendEmailToNewUser)({
-                emailId: req.body.email,
-                phoneNumber: req.body.mobile,
+            const slug = (_b = (_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.institute) === null || _b === void 0 ? void 0 : _b.slug;
+            const loginUrl = slug
+                ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
+                : `${config_1.default.frontendUrl}/auth/signin`;
+            (0, mailHelper_1.sendUserCredentials)({
                 userName: `${req.body.firstName} ${req.body.lastName}`,
+                email: req.body.email,
+                phone: req.body.mobile,
                 password: result.data.plainPassword,
+                role: "Student",
+                loginUrl,
             }).catch((err) => {
                 console.error("Background student email dispatch failed:", err);
             });

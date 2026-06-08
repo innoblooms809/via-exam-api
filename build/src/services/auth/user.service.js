@@ -48,8 +48,8 @@ const getViaExamUserByEmail = (emailId) => __awaiter(void 0, void 0, void 0, fun
         ],
         where: {
             emailId: {
-                [sequelize_1.Op.iLike]: emailId
-            }
+                [sequelize_1.Op.iLike]: emailId,
+            },
         },
     });
 });

@@ -42,18 +42,33 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
     const exists = await Section.findOne({
       where: {
         classId: body.classId,
-         instituteId: createdBy.instituteId,
+        instituteId: createdBy.instituteId,
         sectionName: body.sectionName,
-        isDeleted: false,
       },
     });
 
     if (exists) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Section already exists.",
-      };
+      if (!exists.isDeleted) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Section already exists.",
+        };
+      } else {
+        // Reactivate soft-deleted section
+        await exists.update({
+          isDeleted: false,
+          isActive: true,
+          classTeacherId: body.classTeacherId || null,
+        });
+
+        return {
+          error: false,
+          statusCode: httpStatus.OK,
+          message: "Section restored successfully.",
+          data: exists,
+        };
+      }
     }
 
     let teacher = null;
@@ -117,6 +132,13 @@ const getAllSections = async (query: any, createdBy: any): Promise<any> => {
       where,
       include: [
         {
+          model: Class,
+          as: "class",
+          attributes: ["classId", "className"],
+          where: { isDeleted: false },
+          required: true,
+        },
+        {
           model: User,
           as: "classTeacher",
           attributes: ["userId", "userName", "emailId"],
@@ -157,6 +179,13 @@ const getSectionById = async (
         isDeleted: false,
       },
       include: [
+        {
+          model: Class,
+          as: "class",
+          attributes: ["classId", "className"],
+          where: { isDeleted: false },
+          required: true,
+        },
         {
           model: User,
           as: "classTeacher",

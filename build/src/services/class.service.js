@@ -17,6 +17,7 @@ const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const Section_modal_1 = __importDefault(require("../modals/Section.modal"));
 const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
+const User_modal_1 = __importDefault(require("../modals/User.modal"));
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
 const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -103,6 +104,12 @@ const getAllClasses = (createdBy) => __awaiter(void 0, void 0, void 0, function*
                     where: { isDeleted: false },
                     required: false,
                 },
+                {
+                    model: User_modal_1.default,
+                    as: "classTeacher",
+                    attributes: ["userId", "userName", "emailId"],
+                    required: false,
+                },
             ],
             order: [["className", "ASC"]],
         });
@@ -144,6 +151,12 @@ const getClassById = (classId, createdBy) => __awaiter(void 0, void 0, void 0, f
                     model: Subject_modal_1.default,
                     as: "subjects",
                     where: { isDeleted: false },
+                    required: false,
+                },
+                {
+                    model: User_modal_1.default,
+                    as: "classTeacher",
+                    attributes: ["userId", "userName", "emailId"],
                     required: false,
                 },
             ],

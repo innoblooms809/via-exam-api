@@ -189,7 +189,7 @@
 // // Function to send OTP email with external HTML content
 // export const sendEmailToNewUser = async (requestBody: any) => {
 //   const { emailId, phoneNumber, userName, password } = requestBody;
-// console.log(emailId, phoneNumber, userName, password )
+
 //   // Read the HTML file asynchronously
 //   const htmlContent = await fs.promises.readFile(path.join(__dirname, 'welcome.html'), 'utf8');
 
@@ -249,7 +249,7 @@
 
 //     try {
 //       await this.newTransport().sendMail(mailOptions);
-//       console.log("Email sent successfully");
+
 //     } catch (err) {
 //       console.error("Error sending email:", err);
 //       throw new Error("Failed to send email.");
@@ -315,7 +315,7 @@ const transporter = nodemailer.createTransport({
 // ─── Existing function — keep as is ───────────────────────────────────────────
 export const sendEmailToNewUser = async (requestBody: any) => {
   const { emailId, phoneNumber, userName, password } = requestBody;
-  console.log(emailId, phoneNumber, userName, password);
+
 
   const htmlContent = await fs.promises.readFile(
     path.join(__dirname, "welcome.html"),
@@ -343,11 +343,7 @@ export const sendEmailToNewUser = async (requestBody: any) => {
       html: htmlContentFile,
     });
 
-    console.log("✅ MAIL SENT SUCCESSFULLY");
-    console.log("📨 Accepted:", info.accepted);
-    console.log("❌ Rejected:", info.rejected);
-    console.log("🆔 Message ID:", info.messageId);
-    console.log("📩 Response:", info.response);
+
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
@@ -446,7 +442,7 @@ export const sendUserCredentials = async (data: {
       html,
     });
 
-    console.log(`✅ Credentials email sent to ${data.email} for ${data.role}`);
+
     return true;
   } catch (e: any) {
     console.error(`❌ sendUserCredentials failed for ${data.email}:`, e.message);
@@ -550,9 +546,7 @@ export const sendAdminCredentials = async (data: {
       html,
     });
 
-    console.log("📩 NODEMAILER RESPONSE:", response);
 
-    console.log(`✅ Credentials email sent to ${data.adminEmail}`);
     return true;
   } catch (e: any) {
     console.error("❌ sendAdminCredentials failed:", e.message);

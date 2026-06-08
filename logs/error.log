@@ -3223,4 +3223,851 @@
 [31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 7.870 ms - message: Not found
 [31merror[39m: GET /v1/teacher/getAllTeachers 401 - 9.607 ms - message: -
 [31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.312 ms - message: -
+<<<<<<< HEAD
 >>>>>>> 6e6ad199d3a6278084326f18539b135eb572da88
+=======
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780292482605 401 - 11.011 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780292482607 401 - 0.707 ms - message: -
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 10.525 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 9.241 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 2.999 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 8.857 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 3.690 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 4.203 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 4.810 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 3.652 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 2.403 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 2.179 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 3.091 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 2.682 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 6.352 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 4.235 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 4.377 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 5.457 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 4.194 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 2.559 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 2.445 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 2.464 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 2.207 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 1.874 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 3.310 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779779452922.png 404 - 3.136 ms - message: Not found
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.989 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 401 - 10.874 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 894.192 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 6.261 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.690 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 401 - 33.397 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 71.406 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 889.914 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 386.332 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 401 - 20.922 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 400 - 1461.577 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 400 - 422.896 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 400 - 619.342 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 400 - 422.442 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB529124 400 - 1050.987 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB529124 400 - 366.314 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780312589525 401 - 9.425 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780312589525 401 - 1.718 ms - message: -
+[31merror[39m: GET /v1/teacher/getOneTeacher/IB529124 401 - 0.654 ms - message: -
+[31merror[39m: GET /v1/teacher/getOneTeacher/IB529124 401 - 0.467 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.985 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 404 - 51.488 ms - message: -
+[31merror[39m: GET /v1/teacher/getOneTeacher/IB529124 401 - 2.321 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780312630634 401 - 0.592 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 404 - 245.696 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 404 - 300.254 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.649 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 404 - 159.393 ms - message: -
+[31merror[39m: POST /v1/user/login 400 - 766.146 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.878 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.388 ms - message: -
+[31merror[39m: GET /v1/institute/slug/delhi-public-school 404 - 487.214 ms - message: -
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 17.746 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 4.456 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 1.257 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 19.814 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 19.095 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 1.897 ms - message: Not found
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB626274 400 - 1046.582 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB776015 400 - 1000.811 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB181664 400 - 1114.600 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB181664 400 - 1113.457 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB776015 400 - 796.395 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB626274 400 - 851.929 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB776015 400 - 979.079 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB776015 401 - 3.396 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB626274 400 - 497.753 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780379453679 401 - 7.444 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780379453681 401 - 1.145 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB529124 400 - 427.898 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780381461397&classId=IB314498 401 - 10.984 ms - message: -
+[31merror[39m: PUT /v1/teacher/updateTeacher/IB867708 400 - 2312.075 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780385478628&classId=IB785654 401 - 43.784 ms - message: -
+[31merror[39m: GET /v1/subject/getSubjectById/IB595572 401 - 18.704 ms - message: -
+[31merror[39m: GET /v1/subject/getSubjectById/IB595572 401 - 0.752 ms - message: -
+[31merror[39m: PATCH /v1/subject/updateSubject/IB937498 401 - 15.253 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780392081572 401 - 2.408 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780392081573 401 - 2.013 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780392081573 401 - 0.715 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780392081573 401 - 2.560 ms - message: -
+[31merror[39m: POST /v1/subject/createSubject 500 - 435.783 ms - message: -
+[31merror[39m: POST /v1/subject/createSubject 401 - 20.000 ms - message: -
+[31merror[39m: POST /v1/section/createSection 500 - 300.359 ms - message: -
+[31merror[39m: POST /v1/section/createSection 409 - 176.368 ms - message: -
+[31merror[39m: PATCH /v1/section/updateSection/IB961231 409 - 131.622 ms - message: -
+[31merror[39m: POST /v1/class/createClass 409 - 429.612 ms - message: -
+[31merror[39m: POST /v1/class/createClass 409 - 164.963 ms - message: -
+[31merror[39m: GET /v1/class/getClassById/IB314498 404 - 153.029 ms - message: -
+[31merror[39m: GET /v1/class/getClassById/IB314498 404 - 120.737 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780397815283 401 - 55.075 ms - message: -
+[31merror[39m: POST /v1/class/createClass 401 - 18.339 ms - message: -
+[31merror[39m: PUT /v1/class/updateClass/IB314498 409 - 671.950 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions 401 - 10.318 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 1.868 ms - message: -
+[31merror[39m: GET /v1/exam/getAllExams? 401 - 2.450 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 2.929 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.777 ms - message: -
+[31merror[39m: GET /v1/teacher/getOneTeacher/IB923885 500 - 470.484 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 393.181 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 217.823 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 109.045 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 104.194 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 173.988 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 139.405 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 435.706 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 200.570 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 727.532 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 378.286 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 2.761 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780464885723 401 - 45.127 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780464885724 401 - 5.633 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780464885724 401 - 3.609 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 710.020 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 768.397 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 1.370 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.756 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 0.339 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780470420059 401 - 3.047 ms - message: -
+[31merror[39m: GET /v1/teacher/getOneTeacher/IB278041 401 - 0.871 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780470420059 401 - 0.606 ms - message: -
+[31merror[39m: GET /v1/teacher/getOneTeacher/IB278041 401 - 0.405 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780472361556 401 - 13.704 ms - message: -
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 6.836 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 5.442 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 1.517 ms - message: Not found
+[31merror[39m: GET /v1/student/getAllStudents 401 - 22.381 ms - message: -
+[31merror[39m: POST /v1/student/createStudent 409 - 846.527 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780476912769 401 - 3.805 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.286 ms - message: -
+[31merror[39m: GET /v1/student/getStudentById/IB604062 401 - 0.273 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780476912770 401 - 0.221 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 0.360 ms - message: -
+[31merror[39m: GET /v1/student/getStudentById/IB604062 401 - 0.186 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 409 - 948.000 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 546.129 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 1225.919 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 401 - 12.725 ms - message: -
+[31merror[39m: POST /v1/exam/createExam 409 - 501.976 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 576.461 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780481045530 401 - 12.199 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.461 ms - message: -
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 522.905 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 206.995 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 552.771 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 582.309 ms - message: -
+[31merror[39m: GET /v1/section/allSections?_t=1780482869400 401 - 7.661 ms - message: -
+[31merror[39m: GET /v1/section/allSections?_t=1780482869401 401 - 0.567 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 603.348 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780490192056 401 - 9.022 ms - message: -
+[31merror[39m: GET /v1/teacher/my-assignments?_t=1780490192093 401 - 1.881 ms - message: -
+[31merror[39m: GET /v1/notifications/getNotifications 401 - 1.059 ms - message: -
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 68.087 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 77.543 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 26.685 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 5.086 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 3.906 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 15.449 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 3.805 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 3.283 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 1.909 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 20.669 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 15.310 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 6.475 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 16.574 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 16.355 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 0.786 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 17.098 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 20.927 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 18.371 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 7.676 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 8.363 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 1.329 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 27.686 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 4.116 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 2.043 ms - message: Not found
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: Error: Not found
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/src/app.ts:111:8
+    at Layer.handle [as handle_request] (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:328:13)
+    at /Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:346:12)
+    at next (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/express/lib/router/index.js:280:10)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/serve-static/index.js:121:7)
+    at SendStream.emit (node:events:518:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (/Users/adityaraj/Desktop/VIA_EXAM_API/via-exam-api/node_modules/send/index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1780033203750.png 404 - 2.244 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 2.550 ms - message: Not found
+[31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 3.132 ms - message: Not found
+>>>>>>> b0c0f84a8f32f2283809038ed5bffcc2b0c08103
