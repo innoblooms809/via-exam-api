@@ -7459,3 +7459,36 @@
     at SendStream.emit (node:domain:489:12)
     at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
 [31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 60.094 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 171.463 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 140.898 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780905761355 200 - 184.596 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1780905761337 200 - 219.773 ms
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 37.484 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB300882?_t=1780905763006 200 - 26.592 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB300882 200 - 22.455 ms
