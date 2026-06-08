@@ -5,7 +5,7 @@ import EncryptPassword from "../../utils/encryption"; // reuse your existing uti
 import RegHelper from "../../utils/helper"; // reuse your existing utility
 import exclude from "../../utils/exclude"; // reuse your existing utility
 import { Op } from "sequelize";
-import Institute from "../../modals/Institute.modal";
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -105,47 +105,12 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
  * type 1 = email login, type 2 = mobile login
  * Adds: account lockout, status checks
  */
-const viaExamUserLogin = async (
-  slug: string | undefined,
-  emailId: string,
-  password: string
-) => {
+const viaExamUserLogin = async (emailId: string, password: string) => {
   try {
-    // Build where clause dynamically
-    const whereClause: any = {
-      emailId: { [Op.iLike]: emailId },
-    };
-
-    if (slug) {
-      // Institute-scoped login — resolve slug → instituteId
-      const institute = await Institute.findOne({
-        where: { slug, status: 1, isDeleted: false },
-      });
-
-      if (!institute) {
-        return {
-          error: true,
-          statusCode: httpStatus.NOT_FOUND,
-          message: "Institute not found.",
-        };
-      }
-
-      whereClause.instituteId = institute.instituteId;
-    } else {
-      // Super admin login — no institute scope
-      whereClause.instituteId = null;
-    }
-
-    // Find user inside institute scope (or super admin with null instituteId)
-    const user = await UserModal.findOne({
-      include: [
-        {
-          model: Role,
-          as: "role",
-        },
-      ],
-      where: whereClause,
-    });
+    console.log("EMAIL RECEIVED:", emailId);
+    const user = await getViaExamUserByEmail(emailId);
+    console.log("USER FOUND:", user?.emailId);
+    console.log("HASHED PASSWORD:", user?.password);
 
     if (!user) {
       return {
@@ -181,10 +146,7 @@ const viaExamUserLogin = async (
       };
     }
 
-    const isMatch = await EncryptPassword.isPasswordMatch(
-      password,
-      user.password,
-    );
+    const isMatch = await EncryptPassword.isPasswordMatch(password, user.password);
 
     if (!isMatch) {
       const attempts = (user.loginAttempts || 0) + 1;
@@ -197,31 +159,12 @@ const viaExamUserLogin = async (
               Date.now() + LOCK_DURATION_MINUTES * 60000
             ),
           },
-<<<<<<< HEAD
-          {
-            where: {
-              userId: user.userId,
-            },
-          }
-        );
-      } else {
-        await UserModal.update(
-          {
-            loginAttempts: attempts,
-          },
-          {
-            where: {
-              userId: user.userId,
-            },
-          }
-=======
           { where: { userId: user.userId } },
         );
       } else {
         await UserModal.update(
           { loginAttempts: attempts },
           { where: { userId: user.userId } },
->>>>>>> 6e6ad199d3a6278084326f18539b135eb572da88
         );
       }
 
@@ -239,15 +182,7 @@ const viaExamUserLogin = async (
         lockedUntil: null,
         lastLoginAt: new Date(),
       },
-<<<<<<< HEAD
-      {
-        where: {
-          userId: user.userId,
-        },
-      }
-=======
       { where: { userId: user.userId } },
->>>>>>> 6e6ad199d3a6278084326f18539b135eb572da88
     );
 
     const userResponse = exclude(

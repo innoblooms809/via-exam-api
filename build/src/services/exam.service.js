@@ -20,6 +20,7 @@ const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const Section_modal_1 = __importDefault(require("../modals/Section.modal"));
 const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
 const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
+const Notification_modal_1 = __importDefault(require("../modals/Notification.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const sequelize_1 = require("sequelize");
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
@@ -86,6 +87,17 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
             instructions: body.instructions || null,
             status: "Draft",
         });
+        // 6. Send notification to assigned teacher
+        const notificationId = yield helper_1.default.generateUserId();
+        yield Notification_modal_1.default.create({
+            notificationId,
+            instituteId,
+            userId: teacher.userId,
+            type: "EXAM_ASSIGNED",
+            title: "New Exam Assigned",
+            message: `A ${body.examType} exam has been assigned to you.`,
+            referenceId: examId,
+        });
         return {
             error: false,
             statusCode: http_status_1.default.CREATED,
@@ -121,6 +133,11 @@ const getAllExams = (query, requestedBy) => __awaiter(void 0, void 0, void 0, fu
         }
         const exams = yield Exam_modal_1.default.findAll({
             where,
+            include: [
+                { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: true },
+                { model: Subject_modal_1.default, as: "subject", where: { isDeleted: false }, required: true },
+                { model: User_modal_1.default, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+            ],
             order: [["createdAt", "DESC"]],
         });
         return {
@@ -150,9 +167,9 @@ const getAssignedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
                 teacherId
             },
             include: [
-                { model: Class_modal_1.default, as: "class", attributes: ["className"] },
-                { model: Section_modal_1.default, as: "section", attributes: ["sectionName"] },
-                { model: Subject_modal_1.default, as: "subject", attributes: ["subjectName"] },
+                { model: Class_modal_1.default, as: "class", attributes: ["className"], where: { isDeleted: false }, required: true },
+                { model: Section_modal_1.default, as: "section", attributes: ["sectionName"], required: false },
+                { model: Subject_modal_1.default, as: "subject", attributes: ["subjectName"], where: { isDeleted: false }, required: true },
                 { model: Session_modal_1.default, as: "session", attributes: ["sessionName"] },
             ],
             order: [["createdAt", "DESC"]],
@@ -189,6 +206,11 @@ const getExamById = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, f
     try {
         const exam = yield Exam_modal_1.default.findOne({
             where: { examId, isDeleted: false },
+            include: [
+                { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: true },
+                { model: Subject_modal_1.default, as: "subject", where: { isDeleted: false }, required: true },
+                { model: User_modal_1.default, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+            ],
         });
         if (!exam) {
             return {

@@ -13,18 +13,26 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const teacher_service_1 = __importDefault(require("../services/teacher.service"));
+const config_1 = __importDefault(require("../config/config"));
 const mailHelper_1 = require("../utils/mailHelper");
 const createTeacher = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     try {
         const result = yield teacher_service_1.default.createTeacher(req.body, req.files, req.viaExamUser);
         if (!result.error) {
-            (0, mailHelper_1.sendEmailToNewUser)({
-                emailId: req.body.emailId,
-                phoneNumber: req.body.phoneNumber,
+            const slug = (_b = (_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.institute) === null || _b === void 0 ? void 0 : _b.slug;
+            const loginUrl = slug
+                ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
+                : `${config_1.default.frontendUrl}/auth/signin`;
+            (0, mailHelper_1.sendUserCredentials)({
                 userName: `${req.body.firstName} ${req.body.lastName}`,
+                email: req.body.emailId,
+                phone: req.body.phoneNumber,
                 password: result.data.plainPassword,
+                role: "Teacher",
+                loginUrl,
             }).catch((err) => {
-                console.error("Background email dispatch failed:", err);
+                console.error("Background teacher email dispatch failed:", err);
             });
         }
         return res.status(result.statusCode).send(result);
@@ -88,6 +96,35 @@ const removeExaminer = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
     }
 });
+const getDeactivatedTeachers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield teacher_service_1.default.getDeactivatedTeachers(req.viaExamUser, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        console.error("getDeactivatedTeachers Controller Error:", error);
+        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    }
+});
+const reactivateTeacher = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield teacher_service_1.default.reactivateTeacher(req.params.userId, req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        console.error("reactivateTeacher Controller Error:", error);
+        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    }
+});
+const getMyAssignments = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield teacher_service_1.default.getMyAssignments(req.viaExamUser.userId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    }
+});
 exports.default = {
     createTeacher,
     getAllTeachers,
@@ -96,4 +133,7 @@ exports.default = {
     deleteTeacher,
     assignExaminer,
     removeExaminer,
+    getDeactivatedTeachers,
+    reactivateTeacher,
+    getMyAssignments,
 };

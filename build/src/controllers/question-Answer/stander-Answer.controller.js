@@ -1,8 +1,4 @@
 "use strict";
-// ======================================================
-// CONTROLLER
-// src/controllers/questionPaperAnswer.controller.ts
-// ======================================================
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -16,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getQuestionPaperAnswerUploads = exports.getQuestionPaperAnswerBySelection = exports.uploadImageController = exports.createQuestionPaperAnswer = void 0;
+exports.getAllAnswerSheets = exports.getPendingAnswerSheets = exports.publishAnswerSheet = exports.rejectAnswerSheet = exports.approveAnswerSheet = exports.submitAnswerSheet = exports.getQuestionPaperAnswerUploads = exports.getQuestionPaperAnswerBySelection = exports.uploadImageController = exports.createQuestionPaperAnswer = void 0;
 const stander_answer_service_1 = __importDefault(require("../../services/question-answer/stander-answer.service"));
 const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
 const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
@@ -31,7 +27,6 @@ const createQuestionPaperAnswer = (req, res) => __awaiter(void 0, void 0, void 0
     try {
         const { paperId, examId, teacherId, paperSet, answers, status, } = req.body;
         const instituteId = ((_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.instituteId) || req.body.instituteId;
-        // BASIC VALIDATION
         if (!instituteId ||
             !paperId ||
             !examId ||
@@ -96,9 +91,6 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
     try {
         const { classVal, subject, examType, session, paperSet, } = req.body;
         const instituteId = ((_b = req.viaExamUser) === null || _b === void 0 ? void 0 : _b.instituteId) || req.body.instituteId;
-        // ─────────────────────────────────────────────
-        // FIND SESSION + CLASS
-        // ─────────────────────────────────────────────
         const [sessionData, classData] = yield Promise.all([
             Session_modal_1.default.findOne({
                 where: {
@@ -127,9 +119,6 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
                 message: "Class not found.",
             });
         }
-        // ─────────────────────────────────────────────
-        // FIND SUBJECT
-        // ─────────────────────────────────────────────
         const subjectData = yield Subject_modal_1.default.findOne({
             where: {
                 subjectName: subject,
@@ -144,9 +133,6 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
                 message: "Subject not found.",
             });
         }
-        // ─────────────────────────────────────────────
-        // FIND EXAM
-        // ─────────────────────────────────────────────
         const exam = yield Exam_modal_1.default.findOne({
             where: {
                 sessionId: sessionData.sessionId,
@@ -163,9 +149,6 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
                 message: "Exam not found.",
             });
         }
-        // ─────────────────────────────────────────────
-        // FIND QUESTION PAPER ANSWER
-        // ─────────────────────────────────────────────
         const questionPaperAnswer = yield stander_answer_model_1.default.findOne({
             where: {
                 examId: exam.examId,
@@ -178,9 +161,6 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
                 message: "Question paper answer not found for selected exam.",
             });
         }
-        // ─────────────────────────────────────────────
-        // SUCCESS
-        // ─────────────────────────────────────────────
         return res.status(http_status_1.default.OK).json({
             error: false,
             message: "Question paper answer fetched successfully.",
@@ -225,3 +205,121 @@ const getQuestionPaperAnswerUploads = (req, res) => __awaiter(void 0, void 0, vo
     }
 });
 exports.getQuestionPaperAnswerUploads = getQuestionPaperAnswerUploads;
+// ─── APPROVAL WORKFLOW CONTROLLERS ─────────────────────────────────────────
+const submitAnswerSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { answerId } = req.params;
+        const teacherId = req.viaExamUser.userId;
+        const answer = yield stander_answer_service_1.default.submitForApproval(answerId, teacherId);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Answer sheet submitted for approval.",
+            data: answer,
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.submitAnswerSheet = submitAnswerSheet;
+const approveAnswerSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { answerId } = req.params;
+        const reviewerId = req.viaExamUser.userId;
+        const answer = yield stander_answer_service_1.default.approveAnswer(answerId, reviewerId);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Answer sheet approved.",
+            data: answer,
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.approveAnswerSheet = approveAnswerSheet;
+const rejectAnswerSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { answerId } = req.params;
+        const reviewerId = req.viaExamUser.userId;
+        const { rejectionNote } = req.body;
+        const answer = yield stander_answer_service_1.default.rejectAnswer(answerId, reviewerId, rejectionNote);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Answer sheet rejected.",
+            data: answer,
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.rejectAnswerSheet = rejectAnswerSheet;
+const publishAnswerSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { answerId } = req.params;
+        const answer = yield stander_answer_service_1.default.publishAnswer(answerId);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Answer sheet published.",
+            data: answer,
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.publishAnswerSheet = publishAnswerSheet;
+const getPendingAnswerSheets = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = req.viaExamUser.instituteId;
+        const answers = yield stander_answer_service_1.default.getPendingAnswers(instituteId);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Pending answer sheets fetched.",
+            data: { answers },
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.getPendingAnswerSheets = getPendingAnswerSheets;
+const getAllAnswerSheets = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = req.viaExamUser.instituteId;
+        const { status, examId, teacherId } = req.query;
+        const answers = yield stander_answer_service_1.default.getAnswers(instituteId, {
+            status: status,
+            examId: examId,
+            teacherId: teacherId,
+        });
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Answer sheets fetched.",
+            data: { answers },
+        });
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.getAllAnswerSheets = getAllAnswerSheets;

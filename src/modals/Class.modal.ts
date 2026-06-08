@@ -6,6 +6,7 @@ interface ClassAttributes {
   classId: string;
   instituteId: string; // FK → Institute
   className: string; // Class 1, Class 2 ... Class 12
+  classTeacherId?: string | null; // FK → User (class teacher)
   isActive: boolean;
   isDeleted?: boolean;
   createdAt?: Date;
@@ -13,13 +14,14 @@ interface ClassAttributes {
 }
 
 interface ClassCreationAttributes
-  extends Optional<ClassAttributes, "id" | "classId" | "isActive" | "isDeleted"> {}
+  extends Optional<ClassAttributes, "id" | "classId" | "classTeacherId" | "isActive" | "isDeleted"> {}
 
 class Class extends Model<ClassAttributes, ClassCreationAttributes> {
   public id!: number;
   public classId!: string;
   public instituteId!: string;
   public className!: string;
+  public classTeacherId!: string | null;
   public isActive!: boolean;
   public isDeleted!: boolean;
   public readonly createdAt!: Date;
@@ -42,9 +44,14 @@ Class.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-     className: {
+    className: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    classTeacherId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
     },
     isDeleted: {
       type: DataTypes.BOOLEAN,

@@ -250,6 +250,11 @@ const getAllStudents = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
                     where: Object.keys(profileWhere).length > 0 ? profileWhere : undefined,
                     include: [
                         {
+                            model: Class_modal_1.default,
+                            as: "class",
+                            required: false,
+                        },
+                        {
                             model: Section_modal_1.default,
                             as: "section",
                             required: false,
@@ -316,7 +321,8 @@ const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
                     model: Student_modal_1.default,
                     as: "studentProfile",
                     include: [
-                        { model: Section_modal_1.default, as: "section", required: false },
+                        { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: false },
+                        { model: Section_modal_1.default, as: "section", where: { isDeleted: false }, required: false },
                     ],
                 },
             ],
@@ -339,7 +345,8 @@ const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
                             model: Student_modal_1.default,
                             as: "studentProfile",
                             include: [
-                                { model: Section_modal_1.default, as: "section", required: false },
+                                { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: false },
+                                { model: Section_modal_1.default, as: "section", where: { isDeleted: false }, required: false },
                             ],
                         },
                     ],

@@ -3,6 +3,7 @@ import Class from "../modals/Class.modal";
 import RegHelper from "../utils/helper";
 import Section from "../modals/Section.modal";
 import Subject from "../modals/Subject.modal";
+import User from "../modals/User.modal";
 
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
 const createClass = async (body: any, createdBy: any): Promise<any> => {
@@ -96,6 +97,12 @@ const getAllClasses = async (createdBy: any): Promise<any> => {
           where: { isDeleted: false },
           required: false,
         },
+        {
+          model: User,
+          as: "classTeacher",
+          attributes: ["userId", "userName", "emailId"],
+          required: false,
+        },
       ],
       order: [["className", "ASC"]],
     });
@@ -138,6 +145,12 @@ const getClassById = async (classId: string, createdBy: any): Promise<any> => {
           model: Subject,
           as: "subjects",
           where: { isDeleted: false },
+          required: false,
+        },
+        {
+          model: User,
+          as: "classTeacher",
+          attributes: ["userId", "userName", "emailId"],
           required: false,
         },
       ],
