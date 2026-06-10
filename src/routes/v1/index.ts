@@ -19,8 +19,7 @@ import healthRoutes from "./health.route";
 import academicCalendarRoutes from "./academicCalendar.route";
 import authRoutes from "./auth.route";
 import notificationRoutes from "./notification.route";
-// import studentRoutes from './student.route'
-// import captchaRoutes from './captcha.route'
+import aiEvaluationRoutes from "./aiEvaluation.route";
 
 const router = express.Router();
 
@@ -92,6 +91,10 @@ const defaultRoutes = [
   {
     path: "/notifications",
     route: notificationRoutes,
+  },
+  {
+    path: "/ai-evaluation",
+    route: aiEvaluationRoutes,
   },
   
   // {

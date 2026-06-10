@@ -484,14 +484,49 @@ const updateStudent = async (
         ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
         : profile.profileUrl;
 
+      const targetRollNumber = body.rollNumber ?? profile.rollNumber;
       const targetClassName = body.className ?? profile.className;
       const resolvedClassId = await resolveClassId(body.classId || targetClassName, createdBy.instituteId);
 
       const targetSectionInput = body.sectionId ?? profile.sectionId;
       const resolvedSectionId = await resolveSectionId(targetSectionInput, resolvedClassId || "", createdBy.instituteId);
+      const targetSession = body.session ?? profile.session;
+
+      // Check roll number uniqueness if class, section, session, or rollNumber is being updated
+      if (
+        targetRollNumber !== profile.rollNumber ||
+        targetClassName !== profile.className ||
+        resolvedSectionId !== profile.sectionId ||
+        targetSession !== profile.session
+      ) {
+        const sectionRecord = await Section.findOne({
+          where: { sectionId: resolvedSectionId },
+        });
+        const sectionLabel = sectionRecord?.sectionName || resolvedSectionId;
+
+        const rollExists = await StudentProfile.findOne({
+          where: {
+            instituteId: createdBy.instituteId,
+            rollNumber: targetRollNumber,
+            className: targetClassName,
+            sectionId: resolvedSectionId,
+            session: targetSession,
+            id: { [Op.ne]: profile.id },
+          },
+        });
+        if (rollExists) {
+          await t.rollback();
+          return {
+            error: true,
+            statusCode: httpStatus.CONFLICT,
+            message: `Roll number ${targetRollNumber} already exists in ${targetClassName} Section ${sectionLabel} for session ${targetSession}.`,
+          };
+        }
+      }
 
       await profile.update(
         {
+          rollNumber: targetRollNumber,
           fatherName: body.fatherName ?? profile.fatherName,
           gender: body.gender ?? profile.gender,
           sectionId: resolvedSectionId,

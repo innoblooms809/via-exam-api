@@ -31,7 +31,9 @@ const createClass = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 // ─── GET ALL CLASSES ──────────────────────────────────────────────────────────
 const getAllClasses = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
+        console.log("GET /v1/class/getAllClasses - user:", (_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.id);
         const result = yield class_service_1.default.getAllClasses(req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }

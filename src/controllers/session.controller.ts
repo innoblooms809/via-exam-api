@@ -23,6 +23,7 @@ const createSession = async (req: any, res: Response): Promise<any> => {
 // ─── GET ALL ──────────────────────────────────────────────────────────────────
 const getAllSessions = async (req: any, res: Response): Promise<any> => {
   try {
+    console.log("GET /v1/sessions/getAllSessions - query:", req.query, "user:", req.viaExamUser?.id);
     const result = await SessionService.getAllSessions(
       req.viaExamUser,
       req.query

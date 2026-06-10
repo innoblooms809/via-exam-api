@@ -37,6 +37,7 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
 
 const getAllStudents = async (req: any, res: Response): Promise<any> => {
   try {
+    console.log("GET /v1/student/getAllStudents - query:", req.query, "user:", req.viaExamUser?.id);
     const result = await StudentService.getAllStudents(req.viaExamUser, req.query);
     return res.status(result.statusCode).send(result);
   } catch (error) {
@@ -55,6 +56,7 @@ const getStudentById = async (req: any, res: Response): Promise<any> => {
 
 const updateStudent = async (req: any, res: Response): Promise<any> => {
   try {
+    console.log("PUT /v1/student/updateStudent -", "params:", req.params, "body:", req.body, "user:", req.viaExamUser?.id);
     const result = await StudentService.updateStudent(
       req.params.userId, req.body, req.files, req.viaExamUser
     );

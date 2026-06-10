@@ -42,7 +42,9 @@ const createStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 const getAllStudents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _c;
     try {
+        console.log("GET /v1/student/getAllStudents - query:", req.query, "user:", (_c = req.viaExamUser) === null || _c === void 0 ? void 0 : _c.id);
         const result = yield student_service_1.default.getAllStudents(req.viaExamUser, req.query);
         return res.status(result.statusCode).send(result);
     }
@@ -60,7 +62,9 @@ const getStudentById = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 const updateStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _d;
     try {
+        console.log("PUT /v1/student/updateStudent -", "params:", req.params, "body:", req.body, "user:", (_d = req.viaExamUser) === null || _d === void 0 ? void 0 : _d.id);
         const result = yield student_service_1.default.updateStudent(req.params.userId, req.body, req.files, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }

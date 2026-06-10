@@ -30,7 +30,9 @@ const createSession = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 });
 // ─── GET ALL ──────────────────────────────────────────────────────────────────
 const getAllSessions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
+        console.log("GET /v1/sessions/getAllSessions - query:", req.query, "user:", (_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.id);
         const result = yield session_service_1.default.getAllSessions(req.viaExamUser, req.query);
         return res.status(result.statusCode).send(result);
     }
