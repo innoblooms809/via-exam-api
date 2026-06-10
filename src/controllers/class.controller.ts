@@ -34,7 +34,7 @@ const getAllClasses = async (
   res: Response
 ): Promise<any> => {
   try {
-
+    console.log("GET /v1/class/getAllClasses - user:", req.viaExamUser?.id);
     const result = await ClassService.getAllClasses(
           req.viaExamUser
     );

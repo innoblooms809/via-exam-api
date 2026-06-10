@@ -380,7 +380,7 @@ const getStudentById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
 });
 // ─── UPDATE STUDENT ───────────────────────────────────────────────────────────
 const updateStudent = (userId, body, files, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+    var _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
     const t = yield sequelize_1.sequelize.transaction();
     try {
         const user = yield User_modal_1.default.findOne({
@@ -436,20 +436,51 @@ const updateStudent = (userId, body, files, createdBy) => __awaiter(void 0, void
             const profileUrl = ((_f = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _f === void 0 ? void 0 : _f[0])
                 ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
                 : profile.profileUrl;
-            const targetClassName = (_g = body.className) !== null && _g !== void 0 ? _g : profile.className;
+            const targetRollNumber = (_g = body.rollNumber) !== null && _g !== void 0 ? _g : profile.rollNumber;
+            const targetClassName = (_h = body.className) !== null && _h !== void 0 ? _h : profile.className;
             const resolvedClassId = yield resolveClassId(body.classId || targetClassName, createdBy.instituteId);
-            const targetSectionInput = (_h = body.sectionId) !== null && _h !== void 0 ? _h : profile.sectionId;
+            const targetSectionInput = (_j = body.sectionId) !== null && _j !== void 0 ? _j : profile.sectionId;
             const resolvedSectionId = yield resolveSectionId(targetSectionInput, resolvedClassId || "", createdBy.instituteId);
+            const targetSession = (_k = body.session) !== null && _k !== void 0 ? _k : profile.session;
+            // Check roll number uniqueness if class, section, session, or rollNumber is being updated
+            if (targetRollNumber !== profile.rollNumber ||
+                targetClassName !== profile.className ||
+                resolvedSectionId !== profile.sectionId ||
+                targetSession !== profile.session) {
+                const sectionRecord = yield Section_modal_1.default.findOne({
+                    where: { sectionId: resolvedSectionId },
+                });
+                const sectionLabel = (sectionRecord === null || sectionRecord === void 0 ? void 0 : sectionRecord.sectionName) || resolvedSectionId;
+                const rollExists = yield Student_modal_1.default.findOne({
+                    where: {
+                        instituteId: createdBy.instituteId,
+                        rollNumber: targetRollNumber,
+                        className: targetClassName,
+                        sectionId: resolvedSectionId,
+                        session: targetSession,
+                        id: { [sequelize_2.Op.ne]: profile.id },
+                    },
+                });
+                if (rollExists) {
+                    yield t.rollback();
+                    return {
+                        error: true,
+                        statusCode: http_status_1.default.CONFLICT,
+                        message: `Roll number ${targetRollNumber} already exists in ${targetClassName} Section ${sectionLabel} for session ${targetSession}.`,
+                    };
+                }
+            }
             yield profile.update({
-                fatherName: (_j = body.fatherName) !== null && _j !== void 0 ? _j : profile.fatherName,
-                gender: (_k = body.gender) !== null && _k !== void 0 ? _k : profile.gender,
+                rollNumber: targetRollNumber,
+                fatherName: (_l = body.fatherName) !== null && _l !== void 0 ? _l : profile.fatherName,
+                gender: (_m = body.gender) !== null && _m !== void 0 ? _m : profile.gender,
                 sectionId: resolvedSectionId,
-                className: (_l = body.className) !== null && _l !== void 0 ? _l : profile.className,
+                className: (_o = body.className) !== null && _o !== void 0 ? _o : profile.className,
                 classId: resolvedClassId,
-                session: (_m = body.session) !== null && _m !== void 0 ? _m : profile.session,
-                address: (_o = body.address) !== null && _o !== void 0 ? _o : profile.address,
-                dob: (_p = body.dob) !== null && _p !== void 0 ? _p : profile.dob,
-                aadhar: (_q = body.aadhar) !== null && _q !== void 0 ? _q : profile.aadhar,
+                session: (_p = body.session) !== null && _p !== void 0 ? _p : profile.session,
+                address: (_q = body.address) !== null && _q !== void 0 ? _q : profile.address,
+                dob: (_r = body.dob) !== null && _r !== void 0 ? _r : profile.dob,
+                aadhar: (_s = body.aadhar) !== null && _s !== void 0 ? _s : profile.aadhar,
                 profileUrl,
             }, { transaction: t });
         }

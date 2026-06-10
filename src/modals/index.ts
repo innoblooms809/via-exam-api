@@ -12,6 +12,7 @@ import Session from "./Session.modal";
 import QuestionPaper from "./question-paper/QuestionPaper.modal";
 import AcademicCalendar from "./AcademicCalendar.modal";
 import Notification from "./Notification.modal";
+import AIEvaluation from "./AIEvaluation.modal";
 
 export {
   User,
@@ -27,7 +28,8 @@ export {
   Session,
   QuestionPaper,
   AcademicCalendar,
-  Notification
+  Notification,
+  AIEvaluation
 };
 
 // ROLE ↔ ACCESS
