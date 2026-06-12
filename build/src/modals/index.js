@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
+exports.ScannerProfile = exports.AIEvaluation = exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
 const User_modal_1 = __importDefault(require("./User.modal"));
 exports.User = User_modal_1.default;
 const Role_modal_1 = __importDefault(require("./Role.modal"));
@@ -32,6 +32,10 @@ const AcademicCalendar_modal_1 = __importDefault(require("./AcademicCalendar.mod
 exports.AcademicCalendar = AcademicCalendar_modal_1.default;
 const Notification_modal_1 = __importDefault(require("./Notification.modal"));
 exports.Notification = Notification_modal_1.default;
+const AIEvaluation_modal_1 = __importDefault(require("./AIEvaluation.modal"));
+exports.AIEvaluation = AIEvaluation_modal_1.default;
+const ScannerProfile_modal_1 = __importDefault(require("./ScannerProfile.modal"));
+exports.ScannerProfile = ScannerProfile_modal_1.default;
 // ROLE ↔ ACCESS
 // ═══════════════════════════════════════════════════════════════
 // ROLE ↔ ACCESS
@@ -81,6 +85,19 @@ User_modal_1.default.hasOne(Student_modal_1.default, {
     as: "studentProfile",
 });
 Student_modal_1.default.belongsTo(User_modal_1.default, {
+    foreignKey: "userId",
+    targetKey: "userId",
+    as: "user",
+});
+// ═══════════════════════════════════════════════════════════════
+// USER ↔ SCANNER PROFILE
+// ═══════════════════════════════════════════════════════════════
+User_modal_1.default.hasOne(ScannerProfile_modal_1.default, {
+    foreignKey: "userId",
+    sourceKey: "userId",
+    as: "scannerProfile",
+});
+ScannerProfile_modal_1.default.belongsTo(User_modal_1.default, {
     foreignKey: "userId",
     targetKey: "userId",
     as: "user",

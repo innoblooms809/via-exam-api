@@ -17,14 +17,14 @@ const class_route_1 = __importDefault(require("./class.route"));
 const section_route_1 = __importDefault(require("./section.route"));
 const subject_route_1 = __importDefault(require("./subject.route"));
 const scanner_route_1 = __importDefault(require("./scanner.route"));
+const scannerUser_route_1 = __importDefault(require("./scannerUser.route"));
 const student_route_1 = __importDefault(require("./student.route"));
 const stander_answer_routes_1 = __importDefault(require("./question-answer/stander-answer.routes"));
 const health_route_1 = __importDefault(require("./health.route"));
 const academicCalendar_route_1 = __importDefault(require("./academicCalendar.route"));
 const auth_route_1 = __importDefault(require("./auth.route"));
 const notification_route_1 = __importDefault(require("./notification.route"));
-// import studentRoutes from './student.route'
-// import captchaRoutes from './captcha.route'
+const aiEvaluation_route_1 = __importDefault(require("./aiEvaluation.route"));
 const router = express_1.default.Router();
 const defaultRoutes = [
     {
@@ -80,6 +80,10 @@ const defaultRoutes = [
         route: scanner_route_1.default,
     },
     {
+        path: "/scanner-user",
+        route: scannerUser_route_1.default,
+    },
+    {
         path: "/student",
         route: student_route_1.default,
     },
@@ -94,6 +98,10 @@ const defaultRoutes = [
     {
         path: "/notifications",
         route: notification_route_1.default,
+    },
+    {
+        path: "/ai-evaluation",
+        route: aiEvaluation_route_1.default,
     },
     // {
     //   path: '/captcha',

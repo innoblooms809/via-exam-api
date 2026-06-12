@@ -12,6 +12,7 @@ import classRoutes from "./class.route";
 import sectionRoutes from "./section.route";
 import subjectRoutes from "./subject.route";
 import scannerRoutes from "./scanner.route";
+import scannerUserRoutes from "./scannerUser.route";
 import studentRoutes from "./student.route";
 import { session } from "passport";
 import standeranswerRoutes from "./question-answer/stander-answer.routes";
@@ -75,6 +76,10 @@ const defaultRoutes = [
   {
     path: "/scanner",
     route: scannerRoutes,
+  },
+  {
+    path: "/scanner-user",
+    route: scannerUserRoutes,
   },
   {
     path: "/student",

@@ -21,6 +21,8 @@ const Section_modal_1 = __importDefault(require("../modals/Section.modal"));
 const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
 const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
 const Notification_modal_1 = __importDefault(require("../modals/Notification.modal"));
+const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
+const Scanner_modal_1 = __importDefault(require("../modals/Scanner.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const sequelize_1 = require("sequelize");
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
@@ -174,18 +176,36 @@ const getAssignedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
             ],
             order: [["createdAt", "DESC"]],
         });
-        const formattedExams = exams.map((exam) => {
-            var _a, _b, _c, _d;
-            return ({
+        const formattedExams = yield Promise.all(exams.map((exam) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            const totalStudents = yield Student_modal_1.default.count({
+                where: { instituteId, classId: exam.classId, isActive: true }
+            });
+            const uploadedSheets = yield Scanner_modal_1.default.count({
+                where: {
+                    instituteId,
+                    classId: exam.classId,
+                    subjectId: exam.subjectId,
+                    examType: exam.examType,
+                    isDeleted: false
+                }
+            });
+            return {
                 id: exam.examId,
-                className: ((_a = exam.class) === null || _a === void 0 ? void 0 : _a.className) || "N/A",
-                sectionName: ((_b = exam.section) === null || _b === void 0 ? void 0 : _b.sectionName) || "N/A",
-                subjectName: ((_c = exam.subject) === null || _c === void 0 ? void 0 : _c.subjectName) || "N/A",
-                sessionName: ((_d = exam.session) === null || _d === void 0 ? void 0 : _d.sessionName) || "N/A",
+                classId: ((_a = exam.class) === null || _a === void 0 ? void 0 : _a.classId) || exam.classId,
+                className: ((_b = exam.class) === null || _b === void 0 ? void 0 : _b.className) || "N/A",
+                sectionId: ((_c = exam.section) === null || _c === void 0 ? void 0 : _c.sectionId) || exam.sectionId,
+                sectionName: ((_d = exam.section) === null || _d === void 0 ? void 0 : _d.sectionName) || "N/A",
+                subjectId: ((_e = exam.subject) === null || _e === void 0 ? void 0 : _e.subjectId) || exam.subjectId,
+                subjectName: ((_f = exam.subject) === null || _f === void 0 ? void 0 : _f.subjectName) || "N/A",
+                sessionId: ((_g = exam.session) === null || _g === void 0 ? void 0 : _g.sessionId) || exam.sessionId,
+                sessionName: ((_h = exam.session) === null || _h === void 0 ? void 0 : _h.sessionName) || "N/A",
                 examType: exam.examType,
                 status: exam.status,
-            });
-        });
+                totalStudents,
+                uploadedSheets
+            };
+        })));
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -380,7 +400,63 @@ const deleteExam = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, fu
         };
     }
 });
+// ─── GET EXAM PROGRESS ────────────────────────────────────────────────────────
+const getExamProgress = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = requestedBy.instituteId;
+        const exam = yield Exam_modal_1.default.findOne({
+            where: { examId, instituteId, isDeleted: false },
+            include: [
+                { model: Class_modal_1.default, as: "class", attributes: ["classId", "className"], required: true },
+                { model: Subject_modal_1.default, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionName"] }
+            ]
+        });
+        if (!exam) {
+            return { error: true, statusCode: http_status_1.default.NOT_FOUND, message: "Exam not found." };
+        }
+        const sections = yield Section_modal_1.default.findAll({
+            where: { classId: exam.classId, isDeleted: false }
+        });
+        const progressData = yield Promise.all(sections.map((sec) => __awaiter(void 0, void 0, void 0, function* () {
+            const totalStudents = yield Student_modal_1.default.count({
+                where: { instituteId, classId: exam.classId, sectionId: sec.sectionId, isActive: true }
+            });
+            // Some sheets might be tracked by sectionName instead of ID, we check sectionId or sectionName.
+            const uploadedSheets = yield Scanner_modal_1.default.count({
+                where: {
+                    instituteId,
+                    classId: exam.classId,
+                    section: { [sequelize_1.Op.in]: [sec.sectionId, sec.sectionName] },
+                    subjectId: exam.subjectId,
+                    examType: exam.examType,
+                    isDeleted: false
+                }
+            });
+            return {
+                sectionId: sec.sectionId,
+                sectionName: sec.sectionName,
+                totalStudents,
+                uploadedSheets
+            };
+        })));
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Progress fetched successfully.",
+            data: { progress: progressData }
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 exports.default = {
+    getExamProgress,
     createExam,
     getAllExams,
     getExamById,

@@ -105,7 +105,20 @@ const deleteExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         });
     }
 });
+const getExamProgress = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield exam_service_1.default.getExamProgress(req.params.examId, req.viaExamUser);
+        return res.status(result.statusCode).json(result);
+    }
+    catch (e) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            message: `Something went wrong: ${e.message}`,
+        });
+    }
+});
 exports.default = {
+    getExamProgress,
     createExam,
     getAllExams,
     getExamById,
