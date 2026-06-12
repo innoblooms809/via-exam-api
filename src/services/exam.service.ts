@@ -7,6 +7,8 @@ import Section from "../modals/Section.modal";
 import Subject from "../modals/Subject.modal";
 import Session from "../modals/Session.modal";
 import Notification from "../modals/Notification.modal";
+import StudentProfile from "../modals/Student.modal";
+import Scanner from "../modals/Scanner.modal";
 import RegHelper from "../utils/helper";
 import { Op } from "sequelize";
 
@@ -174,14 +176,34 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
       order: [["createdAt", "DESC"]],
     });
 
-    const formattedExams = exams.map((exam: any) => ({
-      id: exam.examId,
-      className: exam.class?.className || "N/A",
-      sectionName: exam.section?.sectionName || "N/A",
-      subjectName: exam.subject?.subjectName || "N/A",
-      sessionName: exam.session?.sessionName || "N/A",
-      examType: exam.examType,
-      status: exam.status,
+    const formattedExams = await Promise.all(exams.map(async (exam: any) => {
+      const totalStudents = await StudentProfile.count({
+          where: { instituteId, classId: exam.classId, isActive: true }
+      });
+      const uploadedSheets = await Scanner.count({
+          where: { 
+            instituteId, 
+            classId: exam.classId, 
+            subjectId: exam.subjectId, 
+            examType: exam.examType,
+            isDeleted: false 
+          }
+      });
+      return {
+        id: exam.examId,
+        classId: exam.class?.classId || exam.classId,
+        className: exam.class?.className || "N/A",
+        sectionId: exam.section?.sectionId || exam.sectionId,
+        sectionName: exam.section?.sectionName || "N/A",
+        subjectId: exam.subject?.subjectId || exam.subjectId,
+        subjectName: exam.subject?.subjectName || "N/A",
+        sessionId: exam.session?.sessionId || exam.sessionId,
+        sessionName: exam.session?.sessionName || "N/A",
+        examType: exam.examType,
+        status: exam.status,
+        totalStudents,
+        uploadedSheets
+      };
     }));
 
     return {
@@ -408,7 +430,73 @@ const deleteExam = async (examId: string, requestedBy: any): Promise<any> => {
   }
 };
 
+
+// ─── GET EXAM PROGRESS ────────────────────────────────────────────────────────
+const getExamProgress = async (examId: string, requestedBy: any): Promise<any> => {
+  try {
+    const instituteId = requestedBy.instituteId;
+
+    const exam: any = await Exam.findOne({
+      where: { examId, instituteId, isDeleted: false },
+      include: [
+        { model: Class, as: "class", attributes: ["classId", "className"], required: true },
+        { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
+        { model: Session, as: "session", attributes: ["sessionName"] }
+      ]
+    });
+
+    if (!exam) {
+      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Exam not found." };
+    }
+
+    const sections: any = await Section.findAll({
+      where: { classId: exam.classId, isDeleted: false }
+    });
+
+    const progressData = await Promise.all(
+      sections.map(async (sec: any) => {
+        const totalStudents = await StudentProfile.count({
+          where: { instituteId, classId: exam.classId, sectionId: sec.sectionId, isActive: true }
+        });
+
+        // Some sheets might be tracked by sectionName instead of ID, we check sectionId or sectionName.
+        const uploadedSheets = await Scanner.count({
+          where: { 
+            instituteId, 
+            classId: exam.classId, 
+            section: { [Op.in]: [sec.sectionId, sec.sectionName] }, 
+            subjectId: exam.subjectId, 
+            examType: exam.examType,
+            isDeleted: false 
+          }
+        });
+
+        return {
+          sectionId: sec.sectionId,
+          sectionName: sec.sectionName,
+          totalStudents,
+          uploadedSheets
+        };
+      })
+    );
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Progress fetched successfully.",
+      data: { progress: progressData }
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 export default {
+  getExamProgress,
   createExam,
   getAllExams,
   getExamById,

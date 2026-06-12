@@ -107,7 +107,21 @@ const deleteExam = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+
+const getExamProgress = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await ExamService.getExamProgress(req.params.examId, req.viaExamUser);
+    return res.status(result.statusCode).json(result);
+  } catch (e: any) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      message: `Something went wrong: ${e.message}`,
+    });
+  }
+};
+
 export default {
+  getExamProgress,
   createExam,
   getAllExams,
   getExamById,

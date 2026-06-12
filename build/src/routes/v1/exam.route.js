@@ -27,4 +27,5 @@ router.put("/updateExam/:examId", auth_1.authenticate, exam_controller_1.default
 router.delete("/deleteExam/:examId", auth_1.authenticate, 
 //   authorize(["ADMIN", "EXAMINER"]),
 exam_controller_1.default.deleteExam);
+router.get("/progress/:examId", auth_1.authenticate, exam_controller_1.default.getExamProgress);
 exports.default = router;

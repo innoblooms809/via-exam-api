@@ -57,4 +57,11 @@ router.delete(
 
 
 
+
+router.get(
+  "/progress/:examId",
+  authenticate,
+  Controller.getExamProgress,
+);
+
 export default router;

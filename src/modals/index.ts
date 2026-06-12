@@ -13,6 +13,7 @@ import QuestionPaper from "./question-paper/QuestionPaper.modal";
 import AcademicCalendar from "./AcademicCalendar.modal";
 import Notification from "./Notification.modal";
 import AIEvaluation from "./AIEvaluation.modal";
+import ScannerProfile from "./ScannerProfile.modal";
 
 export {
   User,
@@ -29,7 +30,8 @@ export {
   QuestionPaper,
   AcademicCalendar,
   Notification,
-  AIEvaluation
+  AIEvaluation,
+  ScannerProfile
 };
 
 // ROLE ↔ ACCESS
@@ -90,6 +92,21 @@ StudentProfile.belongsTo(User, {
   targetKey: "userId",
   as: "user",
 });
+
+// ═══════════════════════════════════════════════════════════════
+// USER ↔ SCANNER PROFILE
+// ═══════════════════════════════════════════════════════════════
+User.hasOne(ScannerProfile, {
+  foreignKey: "userId",
+  sourceKey: "userId",
+  as: "scannerProfile",
+});
+ScannerProfile.belongsTo(User, {
+  foreignKey: "userId",
+  targetKey: "userId",
+  as: "user",
+});
+
 
 
 // ═══════════════════════════════════════
