@@ -157,6 +157,7 @@ const createTeacher = (body, files, createdBy) => __awaiter(void 0, void 0, void
             message: "Teacher created successfully.",
             data: {
                 instituteName: institute.instituteName,
+                plainPassword,
             },
         };
     }

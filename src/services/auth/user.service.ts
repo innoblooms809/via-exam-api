@@ -5,6 +5,7 @@ import EncryptPassword from "../../utils/encryption"; // reuse your existing uti
 import RegHelper from "../../utils/helper"; // reuse your existing utility
 import exclude from "../../utils/exclude"; // reuse your existing utility
 import { Op } from "sequelize";
+import Institute from "../../modals/Institute.modal";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -16,7 +17,17 @@ const LOCK_DURATION_MINUTES = 30;
 /**
  * Fetch ViaExam user by emailId — mirrors your getUserByEmail() pattern
  */
-const getViaExamUserByEmail = async (emailId: string): Promise<any> => {
+const getViaExamUserByEmail = async (emailId: string, instituteId?: string | null): Promise<any> => {
+  const where: any = {
+    emailId: {
+      [Op.iLike]: emailId,
+    },
+  };
+  if (instituteId) {
+    where.instituteId = instituteId;
+  } else if (instituteId === null) {
+    where.instituteId = { [Op.is]: null };
+  }
   return UserModal.findOne({
     include: [
       {
@@ -24,11 +35,7 @@ const getViaExamUserByEmail = async (emailId: string): Promise<any> => {
         as: "role",
       },
     ],
-    where: {
-      emailId: {
-        [Op.iLike]: emailId,
-      },
-    },
+    where,
   });
 };
 
@@ -105,10 +112,22 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
  * type 1 = email login, type 2 = mobile login
  * Adds: account lockout, status checks
  */
-const viaExamUserLogin = async (emailId: string, password: string) => {
+const viaExamUserLogin = async (slug: string, emailId: string, password: string) => {
   try {
     console.log("EMAIL RECEIVED:", emailId);
-    const user = await getViaExamUserByEmail(emailId);
+    let instituteId: string | null = null;
+    if (slug) {
+      const institute = await Institute.findOne({ where: { slug } });
+      if (!institute) {
+        return {
+          error: true,
+          statusCode: httpStatus.BAD_REQUEST,
+          message: "Invalid institute.",
+        };
+      }
+      instituteId = institute.instituteId;
+    }
+    const user = await getViaExamUserByEmail(emailId, instituteId);
     console.log("USER FOUND:", user?.emailId);
     console.log("HASHED PASSWORD:", user?.password);
 
