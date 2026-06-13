@@ -176,6 +176,7 @@ const createTeacher = async (
       message: "Teacher created successfully.",
       data: {
         instituteName: institute.instituteName,
+        plainPassword,
       },
     };
   } catch (e: any) {

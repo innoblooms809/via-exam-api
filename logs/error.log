@@ -4071,3 +4071,409 @@
 [31merror[39m: GET /uploads/institutes/logos/logo-1779782019895.png 404 - 2.550 ms - message: Not found
 [31merror[39m: GET /uploads/institutes/logos/logo-1779780698203.png 404 - 3.132 ms - message: Not found
 >>>>>>> b0c0f84a8f32f2283809038ed5bffcc2b0c08103
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 82.244 ms - message: Not found
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 156.650 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 8.984 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 164.742 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 29.549 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 38.367 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 8.076 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 351.620 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 183.086 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 1997.785 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 206.827 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 403.093 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 2537.758 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 500 - 744.495 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 643.881 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 401 - 96.628 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 237.551 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 739.263 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1780914612975 401 - 742.092 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 96.223 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 8.376 ms - message: Not found
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 362.745 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 36.576 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 581.257 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 401 - 115.938 ms - message: -
+[31merror[39m: POST /v1/teacher/createTeacher 500 - 408.889 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 72.964 ms - message: Not found
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 132.650 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 121.745 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 312.667 ms - message: -
+[31merror[39m: POST /v1/class/createClass 409 - 40.473 ms - message: -
+[31merror[39m: POST /v1/class/createClass 409 - 10.600 ms - message: -
+[31merror[39m: POST /v1/class/createClass 409 - 8.546 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 40.040 ms - message: Not found
+[31merror[39m: POST /v1/subject/createSubject 401 - 3.982 ms - message: -
+[31merror[39m: POST /v1/subject/createSubject 409 - 32.734 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 38.983 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 14.549 ms - message: Not found
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 72.506 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 29.410 ms - message: Not found
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 334.750 ms - message: -
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 10.636 ms - message: -
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 56.164 ms - message: -
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 54.988 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 105.649 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 170.879 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 359.250 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 27.729 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 195.154 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 26.979 ms - message: -
+[31merror[39m: GET /v1/exam/getAllExams 401 - 8.478 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 5.969 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 2.206 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions 401 - 4.452 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 3.275 ms - message: -
+[31merror[39m: GET /v1/exam/getAllExams 401 - 3.188 ms - message: -
+[31merror[39m: GET /v1/teacher/getAllTeachers 401 - 2.554 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses 401 - 3.079 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions 401 - 3.301 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects 401 - 5.989 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 67.596 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 28.902 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 7.755 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 41.113 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 37.498 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 35.896 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 33.417 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 500 - 101.009 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 40.954 ms - message: Not found
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 627.947 ms - message: -
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 68.365 ms - message: -
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 138.059 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 44.677 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 23.872 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 14.688 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 15.065 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 12.853 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 13.063 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/create 401 - 64.942 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 36.616 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 15.373 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 8.794 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/create 500 - 170.957 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 91.711 ms - message: -
+[31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 93.782 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 8.745 ms - message: Not found
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780988585925 401 - 1.549 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780988585926 401 - 0.465 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780988585926 401 - 0.576 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780988585926 401 - 7.445 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780988585931 401 - 0.548 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780988585931 401 - 0.507 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 19.709 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 59.265 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 59.496 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 28.129 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 22.742 ms - message: Not found
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780992370095 401 - 75.198 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780992370103 401 - 5.755 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780992370103 401 - 5.421 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1780992370105 401 - 4.539 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1780992370105 401 - 125.870 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1780992370105 401 - 2.775 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 31.844 ms - message: Not found
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1781002277228 401 - 92.843 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1781002277230 401 - 1.974 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1781002277234 401 - 3.255 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1781005347525 401 - 77.604 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 38.149 ms - message: Not found
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1781007669625 401 - 45.793 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 27.303 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 73.092 ms - message: Not found
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 124.919 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 19.239 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 21.626 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 12.349 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 10.022 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1781072830140 401 - 10.783 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1781072830140 401 - 1.491 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1781072830141 401 - 0.676 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1781074820386 401 - 24.257 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 33.225 ms - message: Not found
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 257.153 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 73.759 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 156.957 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 401 - 31.545 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 41.995 ms - message: Not found
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1781079886542 401 - 60.832 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 13.264 ms - message: Not found
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1781083375026 401 - 366.731 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1781083375027 401 - 3.196 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1781083375027 401 - 5.156 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1781083375037 401 - 1.561 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1781083375037 401 - 1.330 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1781083375037 401 - 1.642 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 5.604 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 12.484 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 13.180 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1781085275087 401 - 100.815 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1781085275086 401 - 1.734 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1781085275088 401 - 3.151 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1781085275102 401 - 1.024 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1781085275104 401 - 2.234 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1781085275104 401 - 2.260 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 3.516 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 3.359 ms - message: -
+[31merror[39m: POST /v1/user/refresh-token 403 - 17.157 ms - message: -
+[31merror[39m: GET /v1/institute/getAllInstitutes?_t=1781088418484 401 - 72.552 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 66.460 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 4.466 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:524:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Company1\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1779773754708.png 404 - 27.524 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Company1\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/uploadPdf 404 - 7.139 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Company1\via-exam-api\src\app.ts:111:8
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Company1\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Company1\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Company1\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/uploadPdf 404 - 3.038 ms - message: Not found

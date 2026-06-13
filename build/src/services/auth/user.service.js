@@ -38,7 +38,18 @@ const LOCK_DURATION_MINUTES = 30;
 /**
  * Fetch ViaExam user by emailId — mirrors your getUserByEmail() pattern
  */
-const getViaExamUserByEmail = (emailId) => __awaiter(void 0, void 0, void 0, function* () {
+const getViaExamUserByEmail = (emailId, instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+    const where = {
+        emailId: {
+            [sequelize_1.Op.iLike]: emailId,
+        },
+    };
+    if (instituteId) {
+        where.instituteId = instituteId;
+    }
+    else if (instituteId === null) {
+        where.instituteId = { [sequelize_1.Op.is]: null };
+    }
     return User_modal_1.default.findOne({
         include: [
             {
@@ -46,11 +57,7 @@ const getViaExamUserByEmail = (emailId) => __awaiter(void 0, void 0, void 0, fun
                 as: "role",
             },
         ],
-        where: {
-            emailId: {
-                [sequelize_1.Op.iLike]: emailId,
-            },
-        },
+        where,
     });
 });
 /**
@@ -122,38 +129,22 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
  */
 const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Build where clause dynamically
-        const whereClause = {
-            emailId: { [sequelize_1.Op.iLike]: emailId },
-        };
+        console.log("EMAIL RECEIVED:", emailId);
+        let instituteId = null;
         if (slug) {
-            // Institute-scoped login — resolve slug → instituteId
-            const institute = yield Institute_modal_1.default.findOne({
-                where: { slug, status: 1, isDeleted: false },
-            });
+            const institute = yield Institute_modal_1.default.findOne({ where: { slug } });
             if (!institute) {
                 return {
                     error: true,
-                    statusCode: http_status_1.default.NOT_FOUND,
-                    message: "Institute not found.",
+                    statusCode: http_status_1.default.BAD_REQUEST,
+                    message: "Invalid institute.",
                 };
             }
-            whereClause.instituteId = institute.instituteId;
+            instituteId = institute.instituteId;
         }
-        else {
-            // Super admin login — no institute scope
-            whereClause.instituteId = null;
-        }
-        // Find user inside institute scope (or super admin with null instituteId)
-        const user = yield User_modal_1.default.findOne({
-            include: [
-                {
-                    model: Role_modal_1.default,
-                    as: "role",
-                },
-            ],
-            where: whereClause,
-        });
+        const user = yield getViaExamUserByEmail(emailId, instituteId);
+        console.log("USER FOUND:", user === null || user === void 0 ? void 0 : user.emailId);
+        console.log("HASHED PASSWORD:", user === null || user === void 0 ? void 0 : user.password);
         if (!user) {
             return {
                 error: true,
@@ -191,20 +182,10 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
                 yield User_modal_1.default.update({
                     loginAttempts: attempts,
                     lockedUntil: new Date(Date.now() + LOCK_DURATION_MINUTES * 60000),
-                }, {
-                    where: {
-                        userId: user.userId,
-                    },
-                });
+                }, { where: { userId: user.userId } });
             }
             else {
-                yield User_modal_1.default.update({
-                    loginAttempts: attempts,
-                }, {
-                    where: {
-                        userId: user.userId,
-                    },
-                });
+                yield User_modal_1.default.update({ loginAttempts: attempts }, { where: { userId: user.userId } });
             }
             return {
                 error: true,
@@ -217,11 +198,7 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             loginAttempts: 0,
             lockedUntil: null,
             lastLoginAt: new Date(),
-        }, {
-            where: {
-                userId: user.userId,
-            },
-        });
+        }, { where: { userId: user.userId } });
         const userResponse = (0, exclude_1.default)(user.toJSON(), ["password", "refreshToken"]);
         return {
             error: false,
