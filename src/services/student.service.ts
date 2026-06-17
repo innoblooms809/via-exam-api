@@ -14,15 +14,23 @@ import { Op } from "sequelize";
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const resolveClassId = async (inputClass: string, instituteId: string): Promise<string | null> => {
   if (!inputClass) return null;
+  const candidates = [inputClass];
+  // Try stripping "Class " prefix (e.g. "Class 10" → "10")
+  if (inputClass.startsWith("Class ")) candidates.push(inputClass.slice(6));
+  // Try adding "Class " prefix (e.g. "10" → "Class 10")
+  if (!inputClass.startsWith("Class ")) candidates.push(`Class ${inputClass}`);
+
   const byId = await Class.findOne({
     where: { classId: inputClass, instituteId, isDeleted: false },
   });
   if (byId) return byId.classId;
 
-  const byName = await Class.findOne({
-    where: { className: inputClass, instituteId, isDeleted: false },
-  });
-  if (byName) return byName.classId;
+  for (const name of candidates) {
+    const byName = await Class.findOne({
+      where: { className: name, instituteId, isDeleted: false },
+    });
+    if (byName) return byName.classId;
+  }
 
   return null;
 };
@@ -683,8 +691,8 @@ const bulkCreateStudents = async (
         );
 
         created++;
-      } catch (err) {
-        errors.push(`Row ${created + skipped + 1}: Failed`);
+      } catch (err: any) {
+        errors.push(`Row ${created + skipped + 1}: Failed — ${err?.message || err}`);
         skipped++;
       }
     }

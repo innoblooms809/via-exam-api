@@ -563,16 +563,20 @@ export const sendOtpEmail = async ({
   userName: string;
   otp: string;
 }) => {
-  await transporter.sendMail({
-    from: process.env.MAIL_FROM,
-    to: toEmail,
-    subject: "Your Password Reset OTP",
-    html: `
-      <h2>Hello ${userName},</h2>
-      <p>Your OTP for password reset is:</p>
-      <h1 style="letter-spacing: 8px; color: #3b6ef6">${otp}</h1>
-      <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-      <p>If you did not request this, ignore this email.</p>
-    `,
-  });
+  try {
+    await transporter.sendMail({
+      from: config.email.from,
+      to: toEmail,
+      subject: "Your Password Reset OTP",
+      html: `
+        <h2>Hello ${userName},</h2>
+        <p>Your OTP for password reset is:</p>
+        <h1 style="letter-spacing: 8px; color: #3b6ef6">${otp}</h1>
+        <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+        <p>If you did not request this, ignore this email.</p>
+      `,
+    });
+  } catch (error) {
+    console.error("Failed to send OTP email:", error);
+  }
 };

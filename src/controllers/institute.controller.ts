@@ -23,8 +23,10 @@ const registerInstitute = async (req: any, res: Response): Promise<any> => {
 // RESEND ADMIN CREDENTIALS
 const resendAdminCredentials = async (req: any, res: Response): Promise<any> => {
   try {
+    const { password } = req.body;
     const result = await InstituteService.resendAdminCredentials(
       req.params.instituteId,
+      password,
     );
     return res.status(result.statusCode).send(result);
   } catch (error) {
@@ -127,6 +129,22 @@ const toggleInstituteStatus = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// ─── GET CREDENTIALS ──────────────────────────────────────────────────────────
+const getInstituteCredentials = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await InstituteService.getInstituteCredentials(
+      req.params.instituteId,
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 // ─── Get By Slug ──────────────────────────────────────────────────────────────
 const getInstituteBySlug = async (req: any, res: Response): Promise<any> => {
   try {
@@ -151,5 +169,6 @@ export default {
   softDeleteInstitute,
   toggleInstituteStatus,
   resendAdminCredentials,
+  getInstituteCredentials,
   getInstituteBySlug,
 };
