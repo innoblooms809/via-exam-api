@@ -2,6 +2,8 @@ import { Router } from "express";
 import userController from "../../controllers/auth/user.controller" // Adjust the path as needed
 // import { RoleType } from "../modals/Role.modal";
 import {authenticate,authorize} from "../../middlewares/auth";
+import validate from "../../middlewares/validate";
+import userValidation from "../../validations/user.validation";
 
 const router = Router();
 
@@ -15,10 +17,10 @@ router.get("/captcha", userController.getCaptcha);
 
 /**
  * POST /api/viaexam/auth/login
- * Body: { emailId, mobileNo, type, password, captcha }
- * type: 1 = email, 2 = mobile
+ * Body: { slug, emailId, password }
  */
 router.post("/login",
+   validate(userValidation.loginValidation),
    userController.loginViaExamUser);
 
 /**

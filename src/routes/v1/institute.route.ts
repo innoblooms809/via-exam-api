@@ -65,6 +65,13 @@ router.patch(
   // authorize(["super_admin"]),
   Controller.toggleInstituteStatus
 );
+// GET    /api/viaexam/institute/credentials/:instituteId
+router.get(
+  "/credentials/:instituteId",
+  authenticate,
+  Controller.getInstituteCredentials,
+);
+
 // GET    /api/viaexam/institute/slug/:slug
 // Public: Used on login pages to fetch basic institute info like logo
 router.get(

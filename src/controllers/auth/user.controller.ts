@@ -65,7 +65,11 @@ const loginViaExamUser = async (
     //   return res.status(400).json({ message: "Invalid CAPTCHA" });
     // }
 
-    const result = await Service.viaExamUserLogin(slug, emailId, password);
+  const result = await Service.viaExamUserLogin(
+  slug,
+  emailId,
+  password
+);
 
     if (result.error) {
       return res.status(result.statusCode).send(result);

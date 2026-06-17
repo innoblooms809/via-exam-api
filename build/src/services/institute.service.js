@@ -194,7 +194,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 // ----------RESEND ADMIN CREDENTIALS EMAIL (IF NOT RECEIVED)----------------
-const resendAdminCredentials = (instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+const resendAdminCredentials = (instituteId, password) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // 1. Find institute
         const whereCondition = {
@@ -224,8 +224,8 @@ const resendAdminCredentials = (instituteId) => __awaiter(void 0, void 0, void 0
                 message: "Admin user not found for this institute.",
             };
         }
-        // 3. Generate a new password
-        const newPassword = helper_1.default.generateTempPassword(); // see helper below
+        // 3. Use the provided password
+        const newPassword = password || helper_1.default.generateTempPassword();
         const encrypted = yield encryption_1.default.encryptPassword(newPassword);
         // 4. Update password in DB
         yield adminUser.update({ password: encrypted });
@@ -584,6 +584,52 @@ const getInstituteBySlug = (slug) => __awaiter(void 0, void 0, void 0, function*
         };
     }
 });
+// ─── GET CREDENTIALS ───────────────────────────────────────────────────────────
+const getInstituteCredentials = (instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
+        if (!institute) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Institute not found.",
+            };
+        }
+        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+        const adminUser = yield User_modal_1.default.findOne({
+            where: { instituteId: institute.instituteId, roleId: adminRole === null || adminRole === void 0 ? void 0 : adminRole.id },
+        });
+        if (!adminUser) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Admin user not found for this institute.",
+            };
+        }
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Credentials fetched successfully.",
+            data: {
+                adminEmail: adminUser.emailId,
+            },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 exports.default = {
     registerInstitute,
     getAllInstitutes,
@@ -593,4 +639,5 @@ exports.default = {
     toggleInstituteStatus,
     resendAdminCredentials,
     getInstituteBySlug,
+    getInstituteCredentials,
 };

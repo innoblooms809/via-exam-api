@@ -5,7 +5,7 @@ import EncryptPassword from "../../utils/encryption"; // reuse your existing uti
 import RegHelper from "../../utils/helper"; // reuse your existing utility
 import exclude from "../../utils/exclude"; // reuse your existing utility
 import { Op } from "sequelize";
-import InstituteModal from "../../modals/Institute.modal";
+import Institute from "../../modals/Institute.modal";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -17,7 +17,17 @@ const LOCK_DURATION_MINUTES = 30;
 /**
  * Fetch ViaExam user by emailId — mirrors your getUserByEmail() pattern
  */
-const getViaExamUserByEmail = async (emailId: string): Promise<any> => {
+const getViaExamUserByEmail = async (emailId: string, instituteId?: string | null): Promise<any> => {
+  const where: any = {
+    emailId: {
+      [Op.iLike]: emailId,
+    },
+  };
+  if (instituteId) {
+    where.instituteId = instituteId;
+  } else if (instituteId === null) {
+    where.instituteId = { [Op.is]: null };
+  }
   return UserModal.findOne({
     include: [
       {
@@ -25,11 +35,7 @@ const getViaExamUserByEmail = async (emailId: string): Promise<any> => {
         as: "role",
       },
     ],
-    where: {
-      emailId: {
-        [Op.iLike]: emailId,
-      },
-    },
+    where,
   });
 };
 
@@ -71,7 +77,7 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
         message: `This ${conflictFields.join(" & ")} is already registered.`,
       };
     }
-
+      
     // Reuse your existing helpers
     const password = await RegHelper.generatePassword();
     const encryptedPassword = await EncryptPassword.encryptPassword(password);
@@ -108,41 +114,22 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
  */
 const viaExamUserLogin = async (slug: string, emailId: string, password: string) => {
   try {
-    // Build where clause dynamically
-    const whereClause: any = {
-      emailId: { [Op.iLike]: emailId },
-    };
-
+    console.log("EMAIL RECEIVED:", emailId);
+    let instituteId: string | null = null;
     if (slug) {
-      // Institute-scoped login — resolve slug → instituteId
-      const institute = await InstituteModal.findOne({
-        where: { slug, status: 1, isDeleted: false },
-      });
-
+      const institute = await Institute.findOne({ where: { slug } });
       if (!institute) {
         return {
           error: true,
-          statusCode: httpStatus.NOT_FOUND,
-          message: "Institute not found.",
+          statusCode: httpStatus.BAD_REQUEST,
+          message: "Invalid institute.",
         };
       }
-
-      whereClause.instituteId = institute.instituteId;
-    } else {
-      // Super admin login — no institute scope
-      whereClause.instituteId = null;
+      instituteId = institute.instituteId;
     }
-
-    // Find user inside institute scope (or super admin with null instituteId)
-    const user = await UserModal.findOne({
-      include: [
-        {
-          model: Role,
-          as: "role",
-        },
-      ],
-      where: whereClause,
-    });
+    const user = await getViaExamUserByEmail(emailId, instituteId);
+    console.log("USER FOUND:", user?.emailId);
+    console.log("HASHED PASSWORD:", user?.password);
 
     if (!user) {
       return {
@@ -187,24 +174,16 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
         await UserModal.update(
           {
             loginAttempts: attempts,
-            lockedUntil: new Date(Date.now() + LOCK_DURATION_MINUTES * 60000),
+            lockedUntil: new Date(
+              Date.now() + LOCK_DURATION_MINUTES * 60000
+            ),
           },
-          {
-            where: {
-              userId: user.userId,
-            },
-          }
+          { where: { userId: user.userId } },
         );
       } else {
         await UserModal.update(
-          {
-            loginAttempts: attempts,
-          },
-          {
-            where: {
-              userId: user.userId,
-            },
-          }
+          { loginAttempts: attempts },
+          { where: { userId: user.userId } },
         );
       }
 
@@ -222,14 +201,13 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
         lockedUntil: null,
         lastLoginAt: new Date(),
       },
-      {
-        where: {
-          userId: user.userId,
-        },
-      }
+      { where: { userId: user.userId } },
     );
 
-    const userResponse = exclude(user.toJSON(), ["password", "refreshToken"]);
+    const userResponse = exclude(
+      user.toJSON(),
+      ["password", "refreshToken"]
+    );
 
     return {
       error: false,
@@ -245,7 +223,7 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       message: e.message,
     };
   }
-};
+};  
 
 /**
  * Logout — store/clear refresh token (mirrors your token invalidation pattern)
