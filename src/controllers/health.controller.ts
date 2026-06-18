@@ -35,9 +35,7 @@ export const getHealth = async (_req: Request, res: Response): Promise<any> => {
         heapTotal: `${(memUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
       },
       system: {
-        platform: os.platform(),
         nodeVersion: process.version,
-        hostname: os.hostname(),
       },
     });
   } catch (error: any) {
