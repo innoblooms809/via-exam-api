@@ -1,5 +1,6 @@
 import httpStatus from "http-status";
 import Scanner from "../modals/Scanner.modal";
+import AIEvaluation from "../modals/AIEvaluation.modal";
 import RegHelper from "../utils/helper";
 
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
@@ -123,11 +124,43 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
       order: [["createdAt", "DESC"]],
     });
 
+    const sheetIds = sheets.map((s: any) => s.sheetId);
+    const aiEvals =
+      sheetIds.length > 0
+        ? await AIEvaluation.findAll({
+            where: { sheetId: sheetIds },
+            attributes: ["sheetId", "totalScore", "status"],
+          })
+        : [];
+
+    const evalMap = new Map<string, any>();
+    aiEvals.forEach((ev: any) => {
+      evalMap.set(ev.sheetId, ev);
+    });
+
+    const enrichedSheets = sheets.map((sheet: any) => {
+      const s = sheet.toJSON();
+      const ev = evalMap.get(s.sheetId);
+      if (ev) {
+        if (ev.status === "Success") {
+          s.status = "Evaluated";
+          s.aiScore = ev.totalScore;
+        } else if (ev.status === "Pending") {
+          s.status = "Evaluating";
+          s.aiScore = null;
+        } else if (ev.status === "Failed") {
+          s.status = "Failed";
+          s.aiScore = null;
+        }
+      }
+      return s;
+    });
+
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Sheets fetched successfully.",
-      data: { sheets, total: sheets.length },
+      data: { sheets: enrichedSheets, total: enrichedSheets.length },
     };
   } catch (e: any) {
     return {
