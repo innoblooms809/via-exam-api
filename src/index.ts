@@ -11,6 +11,10 @@ const bootApp = () => {
     logger.info(`Listening on port ${config.port}`);
     await initSuperAdmin();
   });
+  // Set server timeouts to 1 hour to support slow CPU model processing
+  server.timeout = 3600000;
+  server.keepAliveTimeout = 3600000;
+  server.headersTimeout = 3605000;
 };
 
 connectDB(bootApp);

@@ -62,8 +62,38 @@ const getAllEvaluations = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// PUT /v1/ai-evaluation/sheet/:sheetId
+const updateEvaluation = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { sheetId } = req.params;
+    const { totalScore, evaluations, feedback } = req.body;
+    if (!sheetId) {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "sheetId parameter is required.",
+      });
+    }
+
+    const result = await AIEvaluationService.updateEvaluationBySheetId(sheetId, {
+      totalScore,
+      evaluations,
+      feedback,
+    });
+    return res.status(result.statusCode).send(result);
+  } catch (error: any) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: error.message || "Internal Server Error",
+    });
+  }
+};
+
 export default {
   evaluateSheet,
   getEvaluation,
   getAllEvaluations,
+  updateEvaluation,
 };
+
