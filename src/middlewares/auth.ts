@@ -154,6 +154,31 @@ const authenticate = async (
     //   });
     // }
 
+    // ─────────────────────────────────────────────
+    // TENANT BOUNDARY CHECK (X-School-Slug Header Guard)
+    // ── Purpose: Prevents cross-school data leaks when a user opens a different school's
+    // ── URL path in another browser tab or window.
+    // ── Verifies that the requested URL school slug ('X-School-Slug') matches the school
+    // ── assigned to the active user session in the database ('user.institute.slug').
+    // ─────────────────────────────────────────────
+    const userAny = user as any;
+    const userRole = userAny.role?.role;
+    // Extract school slug sent by frontend request interceptor
+    const requestSlug = (req.headers["x-school-slug"] || req.headers["x-tenant-slug"]) as string | undefined;
+
+    // SuperAdmin users ('SUPER_ADMIN') are exempted from tenant boundary locks so they can manage all schools
+    if (userRole !== "SUPER_ADMIN" && requestSlug && userAny.institute?.slug) {
+      const userSlug = userAny.institute.slug;
+      // If active session school does not match requested route school, reject with HTTP 403 Forbidden
+      if (userSlug !== requestSlug) {
+        return res.status(httpStatus.FORBIDDEN).json({
+          error: true,
+          statusCode: httpStatus.FORBIDDEN,
+          message: `Tenant mismatch. Your active session is for school '${userSlug}', but the requested route is '${requestSlug}'. Please log in again for '${requestSlug}'.`,
+        });
+      }
+    }
+
     // Attach to request — using viaExamUser to avoid conflicts with your old middleware
     req.viaExamUser = user;
     next();

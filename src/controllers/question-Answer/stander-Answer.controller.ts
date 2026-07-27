@@ -115,6 +115,15 @@ export const getQuestionPaperAnswerBySelection = async (
 
     const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
 
+    console.log("[getQuestionPaperAnswerBySelection] Request parameters:", {
+      classVal,
+      subject,
+      examType,
+      session,
+      paperSet,
+      instituteId,
+    });
+
     const [sessionData, classData] = await Promise.all([
       Session.findOne({
         where: {
@@ -134,6 +143,7 @@ export const getQuestionPaperAnswerBySelection = async (
     ]);
 
     if (!sessionData) {
+      console.warn(`[getQuestionPaperAnswerBySelection] 404: Session '${session}' not found for institute '${instituteId}'`);
       return res.status(httpStatus.NOT_FOUND).json({
         error: true,
         message: "Session not found.",
@@ -141,6 +151,7 @@ export const getQuestionPaperAnswerBySelection = async (
     }
 
     if (!classData) {
+      console.warn(`[getQuestionPaperAnswerBySelection] 404: Class '${classVal}' not found for institute '${instituteId}'`);
       return res.status(httpStatus.NOT_FOUND).json({
         error: true,
         message: "Class not found.",
@@ -157,6 +168,7 @@ export const getQuestionPaperAnswerBySelection = async (
     });
 
     if (!subjectData) {
+      console.warn(`[getQuestionPaperAnswerBySelection] 404: Subject '${subject}' not found for class '${classVal}' (classId: ${classData.classId})`);
       return res.status(httpStatus.NOT_FOUND).json({
         error: true,
         message: "Subject not found.",
@@ -175,6 +187,7 @@ export const getQuestionPaperAnswerBySelection = async (
     });
 
     if (!exam) {
+      console.warn(`[getQuestionPaperAnswerBySelection] 404: Exam not found for session '${session}', class '${classVal}', subject '${subject}', examType '${examType}'`);
       return res.status(httpStatus.NOT_FOUND).json({
         error: true,
         message: "Exam not found.",
@@ -189,6 +202,7 @@ export const getQuestionPaperAnswerBySelection = async (
     });
 
     if (!questionPaperAnswer) {
+      console.warn(`[getQuestionPaperAnswerBySelection] 404: Question paper answer not found for examId '${exam.examId}', paperSet '${paperSet}'`);
       return res.status(httpStatus.NOT_FOUND).json({
         error: true,
         message: "Question paper answer not found for selected exam.",
