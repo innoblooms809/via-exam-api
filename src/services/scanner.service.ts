@@ -128,9 +128,9 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
     const aiEvals =
       sheetIds.length > 0
         ? await AIEvaluation.findAll({
-            where: { sheetId: sheetIds },
-            attributes: ["sheetId", "totalScore", "status"],
-          })
+          where: { sheetId: sheetIds },
+          attributes: ["sheetId", "totalScore", "status"],
+        })
         : [];
 
     const evalMap = new Map<string, any>();

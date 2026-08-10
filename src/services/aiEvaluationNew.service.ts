@@ -28,7 +28,7 @@ const formatQuestionPaper = (
     if (typeof ansData === "string") {
       try {
         ansData = JSON.parse(ansData);
-      } catch {}
+      } catch { }
     }
     if (Array.isArray(ansData)) {
       ansData.forEach((a: any) => {
@@ -104,7 +104,7 @@ const formatQuestionPaper = (
   return { questions, answers };
 };
 
-// ─── TRIGGER EVALUATION V2 (OCR Pipeline on port 8003) ──────────────────────
+// ─── TRIGGER EVALUATION V2 (OCR Pipeline on port 8002) ──────────────────────
 const triggerEvaluationV2 = async (
   sheetId: string,
   force: boolean = false
@@ -360,9 +360,9 @@ const runBackgroundEvaluationV2 = async (
       }
     }
 
-    // 2. Call NEW evaluation pipeline on port 8003 (/evaluate-text)
+    // 2. Call NEW evaluation pipeline on port 8002 (/evaluate-text)
     const pipelineUrl =
-      process.env.OCR_PIPELINE_URL || "http://localhost:8003/evaluate-text";
+      process.env.OCR_PIPELINE_URL || "http://localhost:8006/evaluate-text";
 
     const pipelinePayload = {
       student_id: studentId,

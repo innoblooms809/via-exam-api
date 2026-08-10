@@ -19,29 +19,34 @@ const bootApp = () => {
 
 connectDB(bootApp);
 
-const exitHandler = () => {
+const shutdown = (signal: string) => {
+  logger.info(`${signal} received. Closing server...`);
   if (server) {
+    if (typeof (server as any).closeAllConnections === "function") {
+      (server as any).closeAllConnections();
+    }
     server.close(() => {
-      logger.info("Server closed");
-      process.exit(1);
+      logger.info("Server closed successfully.");
+      process.exit(0);
     });
+
+    // Fallback: force exit after 1s if connections hang
+    setTimeout(() => {
+      process.exit(0);
+    }, 1000);
   } else {
-    process.exit(1);
+    process.exit(0);
   }
 };
 
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGUSR2", () => shutdown("SIGUSR2"));
+
 const unexpectedErrorHandler = (error: unknown) => {
-  // console.error(JSON.stringify(error, null, 2));
   logger.error(error);
-  exitHandler();
+  shutdown("UNCAUGHT_ERROR");
 };
 
 process.on("uncaughtException", unexpectedErrorHandler);
 process.on("unhandledRejection", unexpectedErrorHandler);
-
-process.on("SIGTERM", () => {
-  logger.info("SIGTERM received");
-  if (server) {
-    server.close();
-  }
-});

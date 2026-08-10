@@ -8,12 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHealth = void 0;
-const os_1 = __importDefault(require("os"));
 const sequelize_1 = require("../config/sequelize");
 /**
  * GET /v1/health
@@ -46,9 +42,7 @@ const getHealth = (_req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 heapTotal: `${(memUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
             },
             system: {
-                platform: os_1.default.platform(),
                 nodeVersion: process.version,
-                hostname: os_1.default.hostname(),
             },
         });
     }

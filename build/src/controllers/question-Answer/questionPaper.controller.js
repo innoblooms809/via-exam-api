@@ -115,6 +115,14 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
     try {
         const { classVal, subject, examType, session, paperSet, } = req.body;
         const instituteId = ((_c = req.viaExamUser) === null || _c === void 0 ? void 0 : _c.instituteId) || req.body.instituteId;
+        console.log("[getQuestionPaperBySelection] Request parameters:", {
+            classVal,
+            subject,
+            examType,
+            session,
+            paperSet,
+            instituteId,
+        });
         const [sessionData, classData] = yield Promise.all([
             Session_modal_1.default.findOne({
                 where: {
@@ -132,12 +140,14 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
             }),
         ]);
         if (!sessionData) {
+            console.warn(`[getQuestionPaperBySelection] 404: Session '${session}' not found for institute '${instituteId}'`);
             return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
                 message: "Session not found.",
             });
         }
         if (!classData) {
+            console.warn(`[getQuestionPaperBySelection] 404: Class '${classVal}' not found for institute '${instituteId}'`);
             return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
                 message: "Class not found.",
@@ -152,6 +162,7 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
             },
         });
         if (!subjectData) {
+            console.warn(`[getQuestionPaperBySelection] 404: Subject '${subject}' not found for class '${classVal}' (classId: ${classData.classId})`);
             return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
                 message: "Subject not found.",
@@ -168,6 +179,7 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
             },
         });
         if (!exam) {
+            console.warn(`[getQuestionPaperBySelection] 404: Exam not found for session '${session}', class '${classVal}', subject '${subject}', examType '${examType}'`);
             return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
                 message: "Exam not found.",
@@ -180,6 +192,7 @@ const getQuestionPaperBySelection = (req, res) => __awaiter(void 0, void 0, void
             },
         });
         if (!questionPaper) {
+            console.warn(`[getQuestionPaperBySelection] 404: Question paper not found for examId '${exam.examId}', paperSet '${paperSet}'`);
             return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
                 message: "Question paper not found for selected exam.",

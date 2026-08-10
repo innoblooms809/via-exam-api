@@ -11,6 +11,7 @@ import StudentProfile from "../modals/Student.modal";
 import Scanner from "../modals/Scanner.modal";
 import RegHelper from "../utils/helper";
 import { Op } from "sequelize";
+import StudentService from "./student.service";
 
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
 const createExam = async (body: any, createdBy: any): Promise<any> => {
@@ -162,10 +163,10 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
     const teacherId = requestedBy.userId;
 
     const exams: any = await Exam.findAll({
-      where: { 
-        instituteId, 
+      where: {
+        instituteId,
         isDeleted: false,
-        teacherId 
+        teacherId
       },
       include: [
         { model: Class, as: "class", attributes: ["className"], where: { isDeleted: false }, required: true },
@@ -178,16 +179,16 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
 
     const formattedExams = await Promise.all(exams.map(async (exam: any) => {
       const totalStudents = await StudentProfile.count({
-          where: { instituteId, classId: exam.classId, isActive: true }
+        where: { instituteId, classId: exam.classId, isActive: true }
       });
       const uploadedSheets = await Scanner.count({
-          where: { 
-            instituteId, 
-            classId: exam.classId, 
-            subjectId: exam.subjectId, 
-            examType: exam.examType,
-            isDeleted: false 
-          }
+        where: {
+          instituteId,
+          classId: exam.classId,
+          subjectId: exam.subjectId,
+          examType: exam.examType,
+          isDeleted: false
+        }
       });
       return {
         id: exam.examId,
@@ -441,8 +442,8 @@ const getExamProgress = async (examId: string, requestedBy: any): Promise<any> =
       include: [
         { model: Class, as: "class", attributes: ["classId", "className"], required: true },
         { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
-        { model: Session, as: "session", attributes: ["sessionName"] }
-      ]
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"] },
+      ],
     });
 
     if (!exam) {
@@ -450,32 +451,56 @@ const getExamProgress = async (examId: string, requestedBy: any): Promise<any> =
     }
 
     const sections: any = await Section.findAll({
-      where: { classId: exam.classId, isDeleted: false }
+      where: { classId: exam.classId, isDeleted: false },
     });
+
+    const className = exam.class?.className || exam.classId;
+    const sessionName = exam.session?.sessionName || exam.sessionId || "";
 
     const progressData = await Promise.all(
       sections.map(async (sec: any) => {
-        const totalStudents = await StudentProfile.count({
-          where: { instituteId, classId: exam.classId, sectionId: sec.sectionId, isActive: true }
+        let studentsList: any[] = [];
+        try {
+          const studentRes = await StudentService.getAllStudents(requestedBy, {
+            className,
+            sectionId: sec.sectionName || sec.sectionId,
+            session: sessionName,
+          });
+          if (studentRes && !studentRes.error && Array.isArray(studentRes?.data?.students)) {
+            studentsList = studentRes.data.students;
+          }
+        } catch (err) {
+          console.error("Error fetching section progress students:", err);
+        }
+
+        const studentRolls = new Set(
+          studentsList.map((s: any) => String(s.rollNumber)).filter(Boolean)
+        );
+
+        const sheets = await Scanner.findAll({
+          where: {
+            instituteId,
+            classId: exam.classId,
+            section: { [Op.in]: [sec.sectionId, sec.sectionName] },
+            subjectId: exam.subjectId,
+            examType: exam.examType,
+            isDeleted: false,
+          },
+          attributes: ["sheetId", "rollNo"],
         });
 
-        // Some sheets might be tracked by sectionName instead of ID, we check sectionId or sectionName.
-        const uploadedSheets = await Scanner.count({
-          where: { 
-            instituteId, 
-            classId: exam.classId, 
-            section: { [Op.in]: [sec.sectionId, sec.sectionName] }, 
-            subjectId: exam.subjectId, 
-            examType: exam.examType,
-            isDeleted: false 
-          }
-        });
+        const orphanSheets = sheets.filter(
+          (sh: any) => !studentRolls.has(String(sh.rollNo))
+        );
+
+        const totalStudents = studentsList.length + orphanSheets.length;
+        const uploadedSheets = sheets.length;
 
         return {
           sectionId: sec.sectionId,
           sectionName: sec.sectionName,
           totalStudents,
-          uploadedSheets
+          uploadedSheets,
         };
       })
     );
@@ -484,7 +509,119 @@ const getExamProgress = async (examId: string, requestedBy: any): Promise<any> =
       error: false,
       statusCode: httpStatus.OK,
       message: "Progress fetched successfully.",
-      data: { progress: progressData }
+      data: { progress: progressData },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
+// ─── GET ASSIGNED EXAMS SUMMARY (section-aware counts) ────────────────────────
+// New endpoint for the answersheetevaluation page.
+// Unlike getAssignedExams, this filters totalStudents and uploadedSheets
+// by the exam's sectionId so counts match the uploaded-sheets detail page.
+const getAssignedExamsSummary = async (requestedBy: any): Promise<any> => {
+  try {
+    const instituteId = requestedBy.instituteId;
+    const teacherId = requestedBy.userId;
+
+    const exams: any = await Exam.findAll({
+      where: { instituteId, isDeleted: false, teacherId },
+      include: [
+        { model: Class, as: "class", attributes: ["classId", "className"], where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
+        { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], where: { isDeleted: false }, required: true },
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"] },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const formattedExams = await Promise.all(
+      exams.map(async (exam: any) => {
+        const className = exam.class?.className || exam.classId;
+        const sectionName = exam.section?.sectionName || exam.sectionId || "";
+        const sessionName = exam.session?.sessionName || exam.sessionId || "";
+
+        // 1. Get students matching exact same query as uploaded-sheets detail page
+        let studentsList: any[] = [];
+        try {
+          const studentRes = await StudentService.getAllStudents(requestedBy, {
+            className,
+            sectionId: sectionName,
+            session: sessionName,
+          });
+          if (studentRes && !studentRes.error && Array.isArray(studentRes?.data?.students)) {
+            studentsList = studentRes.data.students;
+          }
+        } catch (err) {
+          console.error("Error fetching students for exam summary:", err);
+        }
+
+        const studentRolls = new Set(
+          studentsList.map((s: any) => String(s.rollNumber)).filter(Boolean)
+        );
+
+        // 2. Get uploaded sheets matching the exam parameters
+        const sectionVals = Array.from(
+          new Set([exam.sectionId, exam.section?.sectionName].filter(Boolean))
+        );
+        const classVals = Array.from(
+          new Set([exam.classId, exam.class?.className].filter(Boolean))
+        );
+
+        const sheetWhere: any = {
+          instituteId,
+          subjectId: exam.subjectId,
+          examType: exam.examType,
+          isDeleted: false,
+        };
+
+        if (classVals.length > 0) {
+          sheetWhere.classId = { [Op.in]: classVals };
+        }
+        if (sectionVals.length > 0) {
+          sheetWhere.section = { [Op.in]: sectionVals };
+        }
+
+        const sheets = await Scanner.findAll({
+          where: sheetWhere,
+          attributes: ["sheetId", "rollNo"],
+        });
+
+        const orphanSheets = sheets.filter(
+          (sh: any) => !studentRolls.has(String(sh.rollNo))
+        );
+
+        const totalStudents = studentsList.length + orphanSheets.length;
+        const uploadedSheets = sheets.length;
+
+        return {
+          id: exam.examId,
+          classId: exam.class?.classId || exam.classId,
+          className: exam.class?.className || "N/A",
+          sectionId: exam.section?.sectionId || exam.sectionId || null,
+          sectionName: exam.section?.sectionName || "N/A",
+          subjectId: exam.subject?.subjectId || exam.subjectId,
+          subjectName: exam.subject?.subjectName || "N/A",
+          sessionId: exam.session?.sessionId || exam.sessionId,
+          sessionName: exam.session?.sessionName || "N/A",
+          examType: exam.examType,
+          status: exam.status,
+          totalStudents,
+          uploadedSheets,
+        };
+      })
+    );
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Assigned exams summary fetched successfully.",
+      data: { exams: formattedExams },
     };
   } catch (e: any) {
     return {
@@ -504,4 +641,5 @@ export default {
   updateExam,
   deleteExam,
   getAssignedExams,
+  getAssignedExamsSummary,
 };

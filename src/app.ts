@@ -43,10 +43,11 @@ app.use(xss());
 app.use(compression());
 
 // enable cors
-const corsOptions = {
-  origin: config.corsOrigin.includes(',') 
-    ? config.corsOrigin.split(',').map((o: string) => o.trim()) 
-    : config.corsOrigin,
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow all origins (including localhost, subdomains, and live tunnels)
+    callback(null, true);
+  },
   credentials: true,
 };
 
