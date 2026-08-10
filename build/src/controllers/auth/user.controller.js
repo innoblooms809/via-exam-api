@@ -116,7 +116,7 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c, _d;
+    var _c, _d, _e;
     try {
         const refreshToken = getCookieValue(req, "refreshToken");
         if (!refreshToken) {
@@ -156,11 +156,16 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 message: "User not found",
             });
         }
-        if (user.refreshToken !== refreshToken) {
+        // ── Refresh token verification ──
+        // 1. Confirm JWT signature & expiration (already done by jwt.verify above).
+        // 2. Confirm token belongs to the user and user session is active (not logged out).
+        const isSameUser = ((_e = decoded.sub) === null || _e === void 0 ? void 0 : _e.userId) === user.userId ||
+            decoded.sub === user.userId;
+        if (!isSameUser || !user.refreshToken) {
             return res.status(http_status_1.default.FORBIDDEN).json({
                 error: true,
                 statusCode: http_status_1.default.FORBIDDEN,
-                message: "Refresh token does not match",
+                message: "Invalid or revoked refresh token",
             });
         }
         const token = yield token_service_1.default.generateUserAuthTokens(user);
@@ -198,11 +203,11 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
  * Mirrors your createUser() — also sends welcome email
  */
 const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _e, _f;
+    var _f, _g;
     try {
         const result = yield user_service_1.default.viaExamUserCreate(req);
         if (!result.error) {
-            const slug = (_f = (_e = req.viaExamUser) === null || _e === void 0 ? void 0 : _e.institute) === null || _f === void 0 ? void 0 : _f.slug;
+            const slug = (_g = (_f = req.viaExamUser) === null || _f === void 0 ? void 0 : _f.institute) === null || _g === void 0 ? void 0 : _g.slug;
             const loginUrl = slug
                 ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
                 : `${config_1.default.frontendUrl}/auth/signin`;

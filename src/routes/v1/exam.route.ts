@@ -28,6 +28,12 @@ router.get(
 );
 
 router.get(
+  "/assigned-summary",
+  authenticate,
+  Controller.getAssignedExamsSummary,
+);
+
+router.get(
   "/getOneExam/:examId",
   authenticate,
 //   authorize(["ADMIN", "EXAMINER", "TEACHER"]),

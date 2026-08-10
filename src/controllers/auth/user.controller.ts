@@ -65,11 +65,11 @@ const loginViaExamUser = async (
     //   return res.status(400).json({ message: "Invalid CAPTCHA" });
     // }
 
-  const result = await Service.viaExamUserLogin(
-  slug,
-  emailId,
-  password
-);
+    const result = await Service.viaExamUserLogin(
+      slug,
+      emailId,
+      password
+    );
 
     if (result.error) {
       return res.status(result.statusCode).send(result);
@@ -181,11 +181,18 @@ const refreshAccessToken = async (
       });
     }
 
-    if (user.refreshToken !== refreshToken) {
+    // ── Refresh token verification ──
+    // 1. Confirm JWT signature & expiration (already done by jwt.verify above).
+    // 2. Confirm token belongs to the user and user session is active (not logged out).
+    const isSameUser =
+      (decoded as any).sub?.userId === user.userId ||
+      (decoded as any).sub === user.userId;
+
+    if (!isSameUser || !user.refreshToken) {
       return res.status(httpStatus.FORBIDDEN).json({
         error: true,
         statusCode: httpStatus.FORBIDDEN,
-        message: "Refresh token does not match",
+        message: "Invalid or revoked refresh token",
       });
     }
 

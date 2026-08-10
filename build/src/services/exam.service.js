@@ -25,6 +25,7 @@ const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
 const Scanner_modal_1 = __importDefault(require("../modals/Scanner.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const sequelize_1 = require("sequelize");
+const student_service_1 = __importDefault(require("./student.service"));
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
 const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -402,6 +403,7 @@ const deleteExam = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, fu
 });
 // ─── GET EXAM PROGRESS ────────────────────────────────────────────────────────
 const getExamProgress = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    var _j, _k;
     try {
         const instituteId = requestedBy.instituteId;
         const exam = yield Exam_modal_1.default.findOne({
@@ -409,42 +411,152 @@ const getExamProgress = (examId, requestedBy) => __awaiter(void 0, void 0, void 
             include: [
                 { model: Class_modal_1.default, as: "class", attributes: ["classId", "className"], required: true },
                 { model: Subject_modal_1.default, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
-                { model: Session_modal_1.default, as: "session", attributes: ["sessionName"] }
-            ]
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionId", "sessionName"] },
+            ],
         });
         if (!exam) {
             return { error: true, statusCode: http_status_1.default.NOT_FOUND, message: "Exam not found." };
         }
         const sections = yield Section_modal_1.default.findAll({
-            where: { classId: exam.classId, isDeleted: false }
+            where: { classId: exam.classId, isDeleted: false },
         });
+        const className = ((_j = exam.class) === null || _j === void 0 ? void 0 : _j.className) || exam.classId;
+        const sessionName = ((_k = exam.session) === null || _k === void 0 ? void 0 : _k.sessionName) || exam.sessionId || "";
         const progressData = yield Promise.all(sections.map((sec) => __awaiter(void 0, void 0, void 0, function* () {
-            const totalStudents = yield Student_modal_1.default.count({
-                where: { instituteId, classId: exam.classId, sectionId: sec.sectionId, isActive: true }
-            });
-            // Some sheets might be tracked by sectionName instead of ID, we check sectionId or sectionName.
-            const uploadedSheets = yield Scanner_modal_1.default.count({
+            var _l;
+            let studentsList = [];
+            try {
+                const studentRes = yield student_service_1.default.getAllStudents(requestedBy, {
+                    className,
+                    sectionId: sec.sectionName || sec.sectionId,
+                    session: sessionName,
+                });
+                if (studentRes && !studentRes.error && Array.isArray((_l = studentRes === null || studentRes === void 0 ? void 0 : studentRes.data) === null || _l === void 0 ? void 0 : _l.students)) {
+                    studentsList = studentRes.data.students;
+                }
+            }
+            catch (err) {
+                console.error("Error fetching section progress students:", err);
+            }
+            const studentRolls = new Set(studentsList.map((s) => String(s.rollNumber)).filter(Boolean));
+            const sheets = yield Scanner_modal_1.default.findAll({
                 where: {
                     instituteId,
                     classId: exam.classId,
                     section: { [sequelize_1.Op.in]: [sec.sectionId, sec.sectionName] },
                     subjectId: exam.subjectId,
                     examType: exam.examType,
-                    isDeleted: false
-                }
+                    isDeleted: false,
+                },
+                attributes: ["sheetId", "rollNo"],
             });
+            const orphanSheets = sheets.filter((sh) => !studentRolls.has(String(sh.rollNo)));
+            const totalStudents = studentsList.length + orphanSheets.length;
+            const uploadedSheets = sheets.length;
             return {
                 sectionId: sec.sectionId,
                 sectionName: sec.sectionName,
                 totalStudents,
-                uploadedSheets
+                uploadedSheets,
             };
         })));
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Progress fetched successfully.",
-            data: { progress: progressData }
+            data: { progress: progressData },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// ─── GET ASSIGNED EXAMS SUMMARY (section-aware counts) ────────────────────────
+// New endpoint for the answersheetevaluation page.
+// Unlike getAssignedExams, this filters totalStudents and uploadedSheets
+// by the exam's sectionId so counts match the uploaded-sheets detail page.
+const getAssignedExamsSummary = (requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = requestedBy.instituteId;
+        const teacherId = requestedBy.userId;
+        const exams = yield Exam_modal_1.default.findAll({
+            where: { instituteId, isDeleted: false, teacherId },
+            include: [
+                { model: Class_modal_1.default, as: "class", attributes: ["classId", "className"], where: { isDeleted: false }, required: true },
+                { model: Section_modal_1.default, as: "section", attributes: ["sectionId", "sectionName"], required: false },
+                { model: Subject_modal_1.default, as: "subject", attributes: ["subjectId", "subjectName"], where: { isDeleted: false }, required: true },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionId", "sessionName"] },
+            ],
+            order: [["createdAt", "DESC"]],
+        });
+        const formattedExams = yield Promise.all(exams.map((exam) => __awaiter(void 0, void 0, void 0, function* () {
+            var _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
+            const className = ((_m = exam.class) === null || _m === void 0 ? void 0 : _m.className) || exam.classId;
+            const sectionName = ((_o = exam.section) === null || _o === void 0 ? void 0 : _o.sectionName) || exam.sectionId || "";
+            const sessionName = ((_p = exam.session) === null || _p === void 0 ? void 0 : _p.sessionName) || exam.sessionId || "";
+            // 1. Get students matching exact same query as uploaded-sheets detail page
+            let studentsList = [];
+            try {
+                const studentRes = yield student_service_1.default.getAllStudents(requestedBy, {
+                    className,
+                    sectionId: sectionName,
+                    session: sessionName,
+                });
+                if (studentRes && !studentRes.error && Array.isArray((_q = studentRes === null || studentRes === void 0 ? void 0 : studentRes.data) === null || _q === void 0 ? void 0 : _q.students)) {
+                    studentsList = studentRes.data.students;
+                }
+            }
+            catch (err) {
+                console.error("Error fetching students for exam summary:", err);
+            }
+            const studentRolls = new Set(studentsList.map((s) => String(s.rollNumber)).filter(Boolean));
+            // 2. Get uploaded sheets matching the exam parameters
+            const sectionVals = Array.from(new Set([exam.sectionId, (_r = exam.section) === null || _r === void 0 ? void 0 : _r.sectionName].filter(Boolean)));
+            const classVals = Array.from(new Set([exam.classId, (_s = exam.class) === null || _s === void 0 ? void 0 : _s.className].filter(Boolean)));
+            const sheetWhere = {
+                instituteId,
+                subjectId: exam.subjectId,
+                examType: exam.examType,
+                isDeleted: false,
+            };
+            if (classVals.length > 0) {
+                sheetWhere.classId = { [sequelize_1.Op.in]: classVals };
+            }
+            if (sectionVals.length > 0) {
+                sheetWhere.section = { [sequelize_1.Op.in]: sectionVals };
+            }
+            const sheets = yield Scanner_modal_1.default.findAll({
+                where: sheetWhere,
+                attributes: ["sheetId", "rollNo"],
+            });
+            const orphanSheets = sheets.filter((sh) => !studentRolls.has(String(sh.rollNo)));
+            const totalStudents = studentsList.length + orphanSheets.length;
+            const uploadedSheets = sheets.length;
+            return {
+                id: exam.examId,
+                classId: ((_t = exam.class) === null || _t === void 0 ? void 0 : _t.classId) || exam.classId,
+                className: ((_u = exam.class) === null || _u === void 0 ? void 0 : _u.className) || "N/A",
+                sectionId: ((_v = exam.section) === null || _v === void 0 ? void 0 : _v.sectionId) || exam.sectionId || null,
+                sectionName: ((_w = exam.section) === null || _w === void 0 ? void 0 : _w.sectionName) || "N/A",
+                subjectId: ((_x = exam.subject) === null || _x === void 0 ? void 0 : _x.subjectId) || exam.subjectId,
+                subjectName: ((_y = exam.subject) === null || _y === void 0 ? void 0 : _y.subjectName) || "N/A",
+                sessionId: ((_z = exam.session) === null || _z === void 0 ? void 0 : _z.sessionId) || exam.sessionId,
+                sessionName: ((_0 = exam.session) === null || _0 === void 0 ? void 0 : _0.sessionName) || "N/A",
+                examType: exam.examType,
+                status: exam.status,
+                totalStudents,
+                uploadedSheets,
+            };
+        })));
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Assigned exams summary fetched successfully.",
+            data: { exams: formattedExams },
         };
     }
     catch (e) {
@@ -464,4 +576,5 @@ exports.default = {
     updateExam,
     deleteExam,
     getAssignedExams,
+    getAssignedExamsSummary,
 };
