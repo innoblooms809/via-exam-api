@@ -23,29 +23,37 @@ const bootApp = () => {
         logger_1.default.info(`Listening on port ${config_1.default.port}`);
         yield (0, superAdmin_1.default)();
     }));
+    // Set server timeouts to 1 hour to support slow CPU model processing
+    server.timeout = 3600000;
+    server.keepAliveTimeout = 3600000;
+    server.headersTimeout = 3605000;
 };
 (0, connect_1.default)(bootApp);
-const exitHandler = () => {
+const shutdown = (signal) => {
+    logger_1.default.info(`${signal} received. Closing server...`);
     if (server) {
+        if (typeof server.closeAllConnections === "function") {
+            server.closeAllConnections();
+        }
         server.close(() => {
-            logger_1.default.info("Server closed");
-            process.exit(1);
+            logger_1.default.info("Server closed successfully.");
+            process.exit(0);
         });
+        // Fallback: force exit after 1s if connections hang
+        setTimeout(() => {
+            process.exit(0);
+        }, 1000);
     }
     else {
-        process.exit(1);
+        process.exit(0);
     }
 };
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGUSR2", () => shutdown("SIGUSR2"));
 const unexpectedErrorHandler = (error) => {
-    // console.error(JSON.stringify(error, null, 2));
     logger_1.default.error(error);
-    exitHandler();
+    shutdown("UNCAUGHT_ERROR");
 };
 process.on("uncaughtException", unexpectedErrorHandler);
 process.on("unhandledRejection", unexpectedErrorHandler);
-process.on("SIGTERM", () => {
-    logger_1.default.info("SIGTERM received");
-    if (server) {
-        server.close();
-    }
-});

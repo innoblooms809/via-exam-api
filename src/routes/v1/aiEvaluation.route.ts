@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Controller from "../../controllers/aiEvaluation.controller";
 import NewController from "../../controllers/aiEvaluationNew.controller";
+import OCRNew5Controller from "../../controllers/ocrnew5.controller";
 import { authenticate } from "../../middlewares/auth";
 
 const router = Router();
@@ -12,12 +13,20 @@ router.post(
   Controller.evaluateSheet
 );
 
-// Trigger evaluation V2 (new — uses OCR pipeline on port 8003)
+// Trigger evaluation V2 (uses OCR pipeline on port 8003/8005)
 router.post(
   "/evaluate2",
   authenticate,
   NewController.evaluateSheet2
 );
+
+// Trigger evaluation OCRNew5 (uses multi-agent pipeline on port 8006)
+router.post(
+  "/evaluate-ocrnew5",
+  authenticate,
+  OCRNew5Controller.evaluateSheetOCRNew5
+);
+
 
 // Get evaluation result by sheet ID
 router.get(

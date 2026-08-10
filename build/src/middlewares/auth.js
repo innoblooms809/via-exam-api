@@ -59,7 +59,7 @@ const getCookieValue = (req, name) => {
 // Verifies JWT and attaches user to req.viaExamUser
 // Use on every protected route
 const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c, _d;
     try {
         const authHeader = req.headers.authorization;
         const cookieToken = getCookieValue(req, "accessToken");
@@ -140,6 +140,29 @@ const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         //     message: `Account locked. Try again in ${minutesLeft} minute(s).`,
         //   });
         // }
+        // ─────────────────────────────────────────────
+        // TENANT BOUNDARY CHECK (X-School-Slug Header Guard)
+        // ── Purpose: Prevents cross-school data leaks when a user opens a different school's
+        // ── URL path in another browser tab or window.
+        // ── Verifies that the requested URL school slug ('X-School-Slug') matches the school
+        // ── assigned to the active user session in the database ('user.institute.slug').
+        // ─────────────────────────────────────────────
+        const userAny = user;
+        const userRole = (_c = userAny.role) === null || _c === void 0 ? void 0 : _c.role;
+        // Extract school slug sent by frontend request interceptor
+        const requestSlug = (req.headers["x-school-slug"] || req.headers["x-tenant-slug"]);
+        // SuperAdmin users ('SUPER_ADMIN') are exempted from tenant boundary locks so they can manage all schools
+        if (userRole !== "SUPER_ADMIN" && requestSlug && ((_d = userAny.institute) === null || _d === void 0 ? void 0 : _d.slug)) {
+            const userSlug = userAny.institute.slug;
+            // If active session school does not match requested route school, reject with HTTP 403 Forbidden
+            if (userSlug !== requestSlug) {
+                return res.status(http_status_1.default.FORBIDDEN).json({
+                    error: true,
+                    statusCode: http_status_1.default.FORBIDDEN,
+                    message: `Tenant mismatch. Your active session is for school '${userSlug}', but the requested route is '${requestSlug}'. Please log in again for '${requestSlug}'.`,
+                });
+            }
+        }
         // Attach to request — using viaExamUser to avoid conflicts with your old middleware
         req.viaExamUser = user;
         next();

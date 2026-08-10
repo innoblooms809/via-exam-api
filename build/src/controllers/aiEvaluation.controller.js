@@ -72,8 +72,36 @@ const getAllEvaluations = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 });
+// PUT /v1/ai-evaluation/sheet/:sheetId
+const updateEvaluation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { sheetId } = req.params;
+        const { totalScore, evaluations, feedback } = req.body;
+        if (!sheetId) {
+            return res.status(http_status_1.default.BAD_REQUEST).json({
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "sheetId parameter is required.",
+            });
+        }
+        const result = yield aiEvaluation_service_1.default.updateEvaluationBySheetId(sheetId, {
+            totalScore,
+            evaluations,
+            feedback,
+        });
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: error.message || "Internal Server Error",
+        });
+    }
+});
 exports.default = {
     evaluateSheet,
     getEvaluation,
     getAllEvaluations,
+    updateEvaluation,
 };

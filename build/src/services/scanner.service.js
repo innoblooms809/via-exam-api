@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
 const Scanner_modal_1 = __importDefault(require("../modals/Scanner.modal"));
+const AIEvaluation_modal_1 = __importDefault(require("../modals/AIEvaluation.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
 const uploadSheets = (body, files, uploadedBy) => __awaiter(void 0, void 0, void 0, function* () {
@@ -117,11 +118,41 @@ const getAllSheets = (query, requestedBy) => __awaiter(void 0, void 0, void 0, f
             attributes: { exclude: ["fileBuffer"] },
             order: [["createdAt", "DESC"]],
         });
+        const sheetIds = sheets.map((s) => s.sheetId);
+        const aiEvals = sheetIds.length > 0
+            ? yield AIEvaluation_modal_1.default.findAll({
+                where: { sheetId: sheetIds },
+                attributes: ["sheetId", "totalScore", "status"],
+            })
+            : [];
+        const evalMap = new Map();
+        aiEvals.forEach((ev) => {
+            evalMap.set(ev.sheetId, ev);
+        });
+        const enrichedSheets = sheets.map((sheet) => {
+            const s = sheet.toJSON();
+            const ev = evalMap.get(s.sheetId);
+            if (ev) {
+                if (ev.status === "Success") {
+                    s.status = "Evaluated";
+                    s.aiScore = ev.totalScore;
+                }
+                else if (ev.status === "Pending") {
+                    s.status = "Evaluating";
+                    s.aiScore = null;
+                }
+                else if (ev.status === "Failed") {
+                    s.status = "Failed";
+                    s.aiScore = null;
+                }
+            }
+            return s;
+        });
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Sheets fetched successfully.",
-            data: { sheets, total: sheets.length },
+            data: { sheets: enrichedSheets, total: enrichedSheets.length },
         };
     }
     catch (e) {

@@ -117,6 +117,18 @@ const getExamProgress = (req, res) => __awaiter(void 0, void 0, void 0, function
         });
     }
 });
+const getAssignedExamsSummary = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield exam_service_1.default.getAssignedExamsSummary(req.viaExamUser);
+        return res.status(result.statusCode).json(result);
+    }
+    catch (e) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            message: `Something went wrong: ${e.message}`,
+        });
+    }
+});
 exports.default = {
     getExamProgress,
     createExam,
@@ -126,4 +138,5 @@ exports.default = {
     updateExam,
     deleteExam,
     getAssignedExams,
+    getAssignedExamsSummary,
 };
