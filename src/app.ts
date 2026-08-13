@@ -5,6 +5,7 @@ import cors from 'cors';
 import httpStatus from 'http-status';
 import config from './config/config';
 import morgan from './config/morgan';
+import logger from './config/logger';
 import xss from './middlewares/xss';
 import cookieParser from 'cookie-parser';
 import { authLimiter } from './middlewares/rateLimiter';
@@ -109,7 +110,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
-  next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
+  logger.warn(`404 Not Found: ${req.method} ${req.originalUrl}`);
+  next(new ApiError(httpStatus.NOT_FOUND, `Route ${req.method} ${req.originalUrl} Not Found`));
 });
 
 // convert error to ApiError, if needed

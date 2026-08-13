@@ -9,6 +9,7 @@ import ApiError from "../utils/ApiError";
 import RegHelper from "../utils/helper";
 import logger from "../config/logger";
 import axios from "axios";
+import FormData from "form-data";
 
 // Helper to format question paper content into text
 const formatQuestionPaper = (content: any, ansDoc?: any): { questions: string; answers: string } => {
@@ -113,11 +114,16 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
       }
 
       const ocrFormData = new FormData();
-      const fileBlob = new Blob([sheet.fileBuffer], { type: sheet.fileMimeType || "image/png" });
-      ocrFormData.append("file", fileBlob, fileName);
+      ocrFormData.append("file", sheet.fileBuffer, {
+        filename: fileName,
+        contentType: sheet.fileMimeType || "image/png",
+      });
 
       logger.info(`[OCRNew5 Service] Performing OCR on sheet image (${fileName})...`);
-      const ocrRes = await axios.post(ocrApiUrl, ocrFormData, { timeout: 3600000 });
+      const ocrRes = await axios.post(ocrApiUrl, ocrFormData, {
+        headers: ocrFormData.getHeaders(),
+        timeout: 3600000,
+      });
       if (ocrRes.data && ocrRes.data.combined_markdown) {
         studentAnsText = ocrRes.data.combined_markdown;
         logger.info(`[OCRNew5 Service] OCR successful (${studentAnsText.length} characters extracted).`);
