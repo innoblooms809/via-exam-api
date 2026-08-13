@@ -2,6 +2,7 @@ import { Router } from "express";
 import Controller from "../../controllers/aiEvaluation.controller";
 import NewController from "../../controllers/aiEvaluationNew.controller";
 import OCRNew5Controller from "../../controllers/ocrnew5.controller";
+import Pipeline6Controller from "../../controllers/pipeline6.controller";
 import { authenticate } from "../../middlewares/auth";
 
 const router = Router();
@@ -25,6 +26,19 @@ router.post(
   "/evaluate-ocrnew5",
   authenticate,
   OCRNew5Controller.evaluateSheetOCRNew5
+);
+
+// Trigger evaluation Pipeline 6.3 (uses 9-agent pipeline with rubric pre-warming on port 8007)
+router.post(
+  "/evaluate-pipeline6",
+  authenticate,
+  Pipeline6Controller.evaluateSheetPipeline6
+);
+
+router.post(
+  "/evaluate6",
+  authenticate,
+  Pipeline6Controller.evaluateSheetPipeline6
 );
 
 
