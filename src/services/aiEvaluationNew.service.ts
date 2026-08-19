@@ -384,11 +384,40 @@ const runBackgroundEvaluationV2 = async (
       return finalAnswerKeyText;
     })();
 
-    // 🚀 AWAIT BOTH THREADS IN PARALLEL
-    const [studentAnsOcr, finalAnswerKeyText] = await Promise.all([studentOcrTask, answerKeyAndRubricTask]);
+    // Thread 3: Parallel Visual Pre-Evaluation Task (Port 8006 — Runs parallel to Chandra OCR!)
+    const visualPreEvalTask = (async (): Promise<void> => {
+      try {
+        const visualPreEvalUrl = process.env.PIPELINE6_VISUAL_PREEVAL_URL || "http://localhost:8006/visual-pre-eval";
+        logger.info(`[V2] [Thread 3] Launching Parallel Visual Pre-Evaluation on Pipeline: ${visualPreEvalUrl}`);
+        const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
+        await axios.post(
+          visualPreEvalUrl,
+          {
+            student_id: studentId,
+            exam_id: examId,
+            question_paper_text: questionText,
+            answer_key_text: standardAnsText,
+            student_pdf_base64: pdfBase64,
+            max_marks: maxMarks,
+          },
+          { timeout: 120000 }
+        );
+        logger.info("[V2] [Thread 3] Parallel Visual Pre-Evaluation completed/cached successfully.");
+      } catch (err: any) {
+        logger.warn(`[V2] [Thread 3] Visual pre-evaluation notification warning (will infer on demand): ${err.message}`);
+      }
+    })();
+
+    // 🚀 AWAIT ALL THREADS IN PARALLEL
+    const [studentAnsOcr, finalAnswerKeyText] = await Promise.all([
+      studentOcrTask,
+      answerKeyAndRubricTask,
+      visualPreEvalTask,
+    ]);
 
     // 2. Call evaluation pipeline on port 8006 (/evaluate-text)
     const pipelineUrl = process.env.OCR_PIPELINE_URL || "http://localhost:8006/evaluate-text";
+    const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
     const pipelinePayload = {
       student_id: studentId,
       exam_id: examId,
@@ -396,6 +425,7 @@ const runBackgroundEvaluationV2 = async (
       answer_key_text: finalAnswerKeyText,
       student_answer_text: studentAnsOcr,
       max_marks: maxMarks,
+      student_pdf_base64: pdfBase64,
     };
 
     logger.info(`[V2] Sending extracted text to Pipeline on port 8006: ${pipelineUrl}`);
