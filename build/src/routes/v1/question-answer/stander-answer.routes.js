@@ -10,6 +10,7 @@ const auth_1 = require("../../../middlewares/auth");
 const router = express_1.default.Router();
 router.post("/create", auth_1.authenticate, stander_Answer_controller_1.createQuestionPaperAnswer);
 router.post("/image", auth_1.authenticate, multer_1.answerPaperUpload, stander_Answer_controller_1.uploadImageController);
+router.post("/upload-pdf", auth_1.authenticate, multer_1.answerPdfUpload, stander_Answer_controller_1.uploadPdfController);
 router.post("/getQuestionPaperAnswerBySet", auth_1.authenticate, stander_Answer_controller_1.getQuestionPaperAnswerBySelection);
 router.get("/uploads", auth_1.authenticate, stander_Answer_controller_1.getQuestionPaperAnswerUploads);
 // ─── APPROVAL WORKFLOW ROUTES ──────────────────────────────────────────────

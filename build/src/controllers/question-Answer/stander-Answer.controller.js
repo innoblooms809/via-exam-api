@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllAnswerSheets = exports.getPendingAnswerSheets = exports.publishAnswerSheet = exports.rejectAnswerSheet = exports.approveAnswerSheet = exports.submitAnswerSheet = exports.getQuestionPaperAnswerUploads = exports.getQuestionPaperAnswerBySelection = exports.uploadImageController = exports.createQuestionPaperAnswer = void 0;
+exports.getAllAnswerSheets = exports.getPendingAnswerSheets = exports.publishAnswerSheet = exports.rejectAnswerSheet = exports.approveAnswerSheet = exports.submitAnswerSheet = exports.getQuestionPaperAnswerUploads = exports.getQuestionPaperAnswerBySelection = exports.uploadPdfController = exports.uploadImageController = exports.uploadFileToCloudinary = exports.createQuestionPaperAnswer = void 0;
 const stander_answer_service_1 = __importDefault(require("../../services/question-answer/stander-answer.service"));
 const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
 const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
@@ -20,6 +20,7 @@ const Subject_modal_1 = __importDefault(require("../../modals/Subject.modal"));
 const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
 const stander_answer_model_1 = __importDefault(require("../../modals/question-paper/stander-answer.model"));
 const http_status_1 = __importDefault(require("http-status"));
+const cloudinary_1 = __importDefault(require("../../utils/cloudinary"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const createQuestionPaperAnswer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -61,15 +62,40 @@ const createQuestionPaperAnswer = (req, res) => __awaiter(void 0, void 0, void 0
     }
 });
 exports.createQuestionPaperAnswer = createQuestionPaperAnswer;
+const uploadFileToCloudinary = (file) => new Promise((resolve, reject) => {
+    const uploadStream = cloudinary_1.default.uploader.upload_stream({
+        folder: "answer-sheets",
+        resource_type: "auto",
+        public_id: `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+    }, (error, result) => {
+        if (error) {
+            reject(error);
+        }
+        else {
+            resolve((result === null || result === void 0 ? void 0 : result.secure_url) || "");
+        }
+    });
+    uploadStream.end(file.buffer);
+});
+exports.uploadFileToCloudinary = uploadFileToCloudinary;
 const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const files = req.files;
-        const toUploadUrl = (file) => `/${file.path.replace(/\\/g, "/").replace(/^uploads\//, "uploads/")}`;
         const diagramFiles = [
             ...((files === null || files === void 0 ? void 0 : files.diagram) || []),
             ...((files === null || files === void 0 ? void 0 : files.diagramUrls) || []),
         ];
-        const diagramUrls = diagramFiles.map(toUploadUrl);
+        const diagramUrls = [];
+        for (const file of diagramFiles) {
+            try {
+                const url = yield (0, exports.uploadFileToCloudinary)(file);
+                if (url)
+                    diagramUrls.push(url);
+            }
+            catch (e) {
+                console.error(`Cloudinary upload failed for ${file.originalname}:`, e.message);
+            }
+        }
         return res.status(200).json({
             error: false,
             message: "Images uploaded successfully",
@@ -86,11 +112,74 @@ const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.uploadImageController = uploadImageController;
+const uploadPdfController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b, _c;
+    try {
+        const files = Array.isArray(req.files)
+            ? req.files
+            : req.file
+                ? [req.file]
+                : [];
+        const urls = [];
+        for (const file of files) {
+            try {
+                const url = yield (0, exports.uploadFileToCloudinary)(file);
+                if (url)
+                    urls.push(url);
+            }
+            catch (e) {
+                console.error(`Cloudinary upload failed for ${file.originalname}:`, e.message);
+            }
+        }
+        if (urls.length === 0) {
+            return res.status(400).json({
+                error: true,
+                message: "No files uploaded successfully.",
+                data: { urls },
+            });
+        }
+        const { paperId, examId, paperSet } = req.body;
+        const instituteId = ((_b = req.viaExamUser) === null || _b === void 0 ? void 0 : _b.instituteId) || req.body.instituteId;
+        const teacherId = ((_c = req.viaExamUser) === null || _c === void 0 ? void 0 : _c.userId) || req.body.teacherId;
+        let dbResult = null;
+        if (paperId && examId && paperSet && instituteId && teacherId) {
+            try {
+                dbResult = yield stander_answer_service_1.default.saveAnswerSheetPdfUrl({
+                    paperId,
+                    examId,
+                    paperSet,
+                    instituteId,
+                    teacherId,
+                    pdfUrl: urls[0],
+                });
+            }
+            catch (dbErr) {
+                console.error("Failed to save answer sheet PDF url to database:", dbErr.message);
+            }
+        }
+        return res.status(200).json({
+            error: false,
+            message: "Answer sheet uploaded successfully",
+            data: {
+                urls,
+                url: urls[0],
+                questionPaperAnswer: dbResult,
+            },
+        });
+    }
+    catch (e) {
+        return res.status(500).json({
+            error: true,
+            message: e.message,
+        });
+    }
+});
+exports.uploadPdfController = uploadPdfController;
 const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b;
+    var _d;
     try {
         const { classVal, subject, examType, session, paperSet, } = req.body;
-        const instituteId = ((_b = req.viaExamUser) === null || _b === void 0 ? void 0 : _b.instituteId) || req.body.instituteId;
+        const instituteId = ((_d = req.viaExamUser) === null || _d === void 0 ? void 0 : _d.instituteId) || req.body.instituteId;
         console.log("[getQuestionPaperAnswerBySelection] Request parameters:", {
             classVal,
             subject,
