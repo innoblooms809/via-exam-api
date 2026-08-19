@@ -31,7 +31,10 @@ const envVarsSchema = joi_1.default.object()
     EMAIL_FROM: joi_1.default.string().description('the from field in the emails sent by the app'),
     CORS_ORIGIN: joi_1.default.string().default('http://localhost:3000'),
     SESSION_SECRET: joi_1.default.string().default('a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'),
-    FRONTEND_URL: joi_1.default.string().default('http://localhost:3000')
+    FRONTEND_URL: joi_1.default.string().default('http://localhost:3000'),
+    CLOUDINARY_CLOUD_NAME: joi_1.default.string().description('Cloudinary cloud name'),
+    CLOUDINARY_API_KEY: joi_1.default.string().description('Cloudinary API key'),
+    CLOUDINARY_API_SECRET: joi_1.default.string().description('Cloudinary API secret')
 })
     .unknown();
 const { value: envVars, error } = envVarsSchema
@@ -70,5 +73,10 @@ exports.default = {
         secret_key: envVars.SECRET_KEY,
         secret_iv: envVars.SECRET_IV,
         ecnryption_method: envVars.ECNRYPTION_METHOD
+    },
+    cloudinary: {
+        cloudName: envVars.CLOUDINARY_CLOUD_NAME,
+        apiKey: envVars.CLOUDINARY_API_KEY,
+        apiSecret: envVars.CLOUDINARY_API_SECRET
     }
 };
