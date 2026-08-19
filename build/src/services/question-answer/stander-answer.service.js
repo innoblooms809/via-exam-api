@@ -52,6 +52,47 @@ class QuestionPaperAnswerService {
         });
     }
     // ─────────────────────────────────────────────
+    // SAVE ANSWER SHEET PDF URL
+    // ─────────────────────────────────────────────
+    static saveAnswerSheetPdfUrl(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const existing = yield stander_answer_model_1.default.findOne({
+                    where: {
+                        paperId: data.paperId,
+                        paperSet: data.paperSet,
+                    },
+                });
+                if (existing) {
+                    yield existing.update({
+                        answers: { pdfUrl: data.pdfUrl },
+                        teacherId: data.teacherId,
+                        instituteId: data.instituteId,
+                        examId: data.examId,
+                    });
+                    return existing;
+                }
+                else {
+                    const answerId = yield helper_1.default.generateUserId();
+                    const result = yield stander_answer_model_1.default.create({
+                        answerId,
+                        instituteId: data.instituteId,
+                        paperId: data.paperId,
+                        examId: data.examId,
+                        teacherId: data.teacherId,
+                        paperSet: data.paperSet,
+                        answers: { pdfUrl: data.pdfUrl },
+                        status: "DRAFT",
+                    });
+                    return result;
+                }
+            }
+            catch (error) {
+                throw new Error(error.message);
+            }
+        });
+    }
+    // ─────────────────────────────────────────────
     // SUBMIT FOR APPROVAL  (DRAFT → PENDING_APPROVAL)
     // ─────────────────────────────────────────────
     static submitForApproval(answerId, teacherId) {
