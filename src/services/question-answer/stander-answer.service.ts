@@ -44,6 +44,53 @@ class QuestionPaperAnswerService {
   }
 
   // ─────────────────────────────────────────────
+  // SAVE ANSWER SHEET PDF URL
+  // ─────────────────────────────────────────────
+  static async saveAnswerSheetPdfUrl(data: {
+    paperId: string;
+    examId: string;
+    paperSet: "A" | "B" | "C" | "D";
+    instituteId: string;
+    teacherId: string;
+    pdfUrl: string;
+  }) {
+    try {
+      const existing = await QuestionPaperAnswer.findOne({
+        where: {
+          paperId: data.paperId,
+          paperSet: data.paperSet,
+        },
+      });
+
+      if (existing) {
+        await existing.update({
+          answers: { pdfUrl: data.pdfUrl },
+          teacherId: data.teacherId,
+          instituteId: data.instituteId,
+          examId: data.examId,
+        });
+        return existing;
+      } else {
+        const answerId = await RegHelper.generateUserId();
+        const result = await QuestionPaperAnswer.create({
+          answerId,
+          instituteId: data.instituteId,
+          paperId: data.paperId,
+          examId: data.examId,
+          teacherId: data.teacherId,
+          paperSet: data.paperSet,
+          answers: { pdfUrl: data.pdfUrl },
+          status: "DRAFT",
+        });
+        return result;
+      }
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+
+  // ─────────────────────────────────────────────
   // SUBMIT FOR APPROVAL  (DRAFT → PENDING_APPROVAL)
   // ─────────────────────────────────────────────
 
