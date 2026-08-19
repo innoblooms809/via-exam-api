@@ -86,7 +86,7 @@ export const questionPaperUpload = multer({
 ]);
 
 export const answerPaperUpload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024,
@@ -101,3 +101,20 @@ export const answerPaperUpload = multer({
     maxCount: 10,
   },
 ]);
+
+const pdfFileFilter = (req: any, file: any, cb: any) => {
+  const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only JPG, PNG, WEBP, PDF allowed"), false);
+  }
+};
+
+export const answerPdfUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: pdfFileFilter,
+  limits: {
+    fileSize: 20 * 1024 * 1024,
+  },
+}).any();

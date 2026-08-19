@@ -1,17 +1,39 @@
-node_modules/
+# Operating System Files
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-dist/
-build/
-
-logs/
-
-# Environment Variables
+# Environment Variables & Secrets
 .env
 .env.*
 .env.local
+.env.*.local
+
+# Logs and Databases
+*.log
+*.sqlite
+*.db
+logs/
 
 # Uploads & Temporary files
 uploads/
 public/uploads/
 *.txt
+
+# Build & Dependency Directories (Language Specific)
+node_modules/
+dist/
+build/
+bin/
+obj/
+out/
+target/
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
 
