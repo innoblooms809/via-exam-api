@@ -3,6 +3,7 @@ import express from "express";
 import {
   createQuestionPaperAnswer,
   uploadImageController,
+  uploadPdfController,
   getQuestionPaperAnswerBySelection,
   getQuestionPaperAnswerUploads,
   submitAnswerSheet,
@@ -12,7 +13,7 @@ import {
   getPendingAnswerSheets,
   getAllAnswerSheets,
 } from "../../../controllers/question-Answer/stander-Answer.controller";
-import { answerPaperUpload } from "../../../utils/multer";
+import { answerPaperUpload, answerPdfUpload } from "../../../utils/multer";
 import { authenticate, authorize } from "../../../middlewares/auth";
 
 const router = express.Router();
@@ -28,6 +29,13 @@ router.post(
   authenticate,
   answerPaperUpload,
   uploadImageController
+);
+
+router.post(
+  "/upload-pdf",
+  authenticate,
+  answerPdfUpload,
+  uploadPdfController
 );
 
 router.post(

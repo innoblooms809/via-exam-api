@@ -2077,3 +2077,348 @@
 [31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 171.844 ms - message: -
 [31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 189.442 ms - message: -
 [31merror[39m: POST /v1/question-paper-answers/getQuestionPaperAnswerBySet 404 - 185.214 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 401 - 205.955 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 268.232 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 13.638 ms - message: Not found
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 451.220 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 204.390 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 398.353 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 493.073 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 549.341 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 512.960 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 392.652 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 201.338 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 200.320 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 201.062 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 221.404 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 206.631 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 317.409 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 156.321 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 198.387 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 386.706 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 200.753 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 515.178 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 349.424 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 433.846 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1786966219142 401 - 1.521 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1786966219142 401 - 0.754 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1786966219142 401 - 0.959 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1786966219144 401 - 0.772 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1786966219144 401 - 0.842 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1786966219144 401 - 0.994 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 7.050 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 18.111 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 5.589 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 12.985 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 4.315 ms - message: Not found
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1786968260129 401 - 1.407 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1786968260129 401 - 0.832 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1786968260129 401 - 2.153 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1786968260130 401 - 1.136 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1786968260130 401 - 0.637 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1786968260130 401 - 0.920 ms - message: -
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 314.282 ms - message: -
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+    at listenInCluster (node:net:1998:12)
+    at Server.listen (node:net:2103:7)
+    at Function.listen (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Suprit\Via-Exam\via-exam-api\src\index.ts:10:16)
+    at D:\Suprit\Via-Exam\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Suprit\Via-Exam\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+    at listenInCluster (node:net:1998:12)
+    at Server.listen (node:net:2103:7)
+    at Function.listen (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Suprit\Via-Exam\via-exam-api\src\index.ts:10:16)
+    at D:\Suprit\Via-Exam\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Suprit\Via-Exam\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+[31merror[39m: Error: listen EADDRINUSE: address already in use :::5020
+    at Server.setupListenHandle [as _listen2] (node:net:1941:16)
+    at listenInCluster (node:net:1998:12)
+    at Server.listen (node:net:2103:7)
+    at Function.listen (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\application.js:635:24)
+    at bootApp (D:\Suprit\Via-Exam\via-exam-api\src\index.ts:10:16)
+    at D:\Suprit\Via-Exam\via-exam-api\src\db\connect.ts:14:5
+    at Generator.next (<anonymous>)
+    at fulfilled (D:\Suprit\Via-Exam\via-exam-api\src\db\connect.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1784616141638.png 404 - 18.096 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 21.952 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1784119889549.png 404 - 26.637 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1783157609450.png 404 - 31.135 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1782130827305.png 404 - 37.112 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1782127580749.png 404 - 41.847 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.223 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 3.287 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.794 ms - message: Not found
+[31merror[39m: POST /v1/class/createClass 409 - 267.271 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 4.380 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 8.035 ms - message: Not found
+[31merror[39m: POST /v1/student/createStudent 409 - 573.186 ms - message: -
+[31merror[39m: POST /v1/student/createStudent 409 - 228.374 ms - message: -
+[31merror[39m: POST /v1/student/createStudent 409 - 242.581 ms - message: -
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 3.732 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.836 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 3.867 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 4.638 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 14.710 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.151 ms - message: Not found

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.answerPaperUpload = exports.questionPaperUpload = exports.instituteUpload = exports.studentUpload = void 0;
+exports.answerPdfUpload = exports.answerPaperUpload = exports.questionPaperUpload = exports.instituteUpload = exports.studentUpload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -83,7 +83,7 @@ exports.questionPaperUpload = (0, multer_1.default)({
     },
 ]);
 exports.answerPaperUpload = (0, multer_1.default)({
-    storage,
+    storage: multer_1.default.memoryStorage(),
     fileFilter,
     limits: {
         fileSize: 5 * 1024 * 1024,
@@ -98,3 +98,19 @@ exports.answerPaperUpload = (0, multer_1.default)({
         maxCount: 10,
     },
 ]);
+const pdfFileFilter = (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (allowed.includes(file.mimetype)) {
+        cb(null, true);
+    }
+    else {
+        cb(new Error("Only JPG, PNG, WEBP, PDF allowed"), false);
+    }
+};
+exports.answerPdfUpload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    fileFilter: pdfFileFilter,
+    limits: {
+        fileSize: 20 * 1024 * 1024,
+    },
+}).any();

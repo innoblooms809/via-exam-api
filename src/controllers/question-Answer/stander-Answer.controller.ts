@@ -6,6 +6,7 @@ import Subject from "../../modals/Subject.modal";
 import Exam from "../../modals/Exam.modal";
 import QuestionPaperAnswer from "../../modals/question-paper/stander-answer.model";
 import httpStatus from "http-status";
+import cloudinary from "../../utils/cloudinary";
 import fs from "fs";
 import path from "path";
 
@@ -65,6 +66,25 @@ export const createQuestionPaperAnswer = async (
   }
 };
 
+export const uploadFileToCloudinary = (file: Express.Multer.File) =>
+  new Promise<string>((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "answer-sheets",
+        resource_type: "auto",
+        public_id: `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result?.secure_url || "");
+        }
+      }
+    );
+    uploadStream.end(file.buffer);
+  });
+
 export const uploadImageController = async (
   req: Request,
   res: Response
@@ -74,15 +94,21 @@ export const uploadImageController = async (
       [fieldname: string]: Express.Multer.File[];
     };
 
-    const toUploadUrl = (file: Express.Multer.File) =>
-      `/${file.path.replace(/\\/g, "/").replace(/^uploads\//, "uploads/")}`;
-
     const diagramFiles = [
       ...(files?.diagram || []),
       ...(files?.diagramUrls || []),
     ];
 
-    const diagramUrls = diagramFiles.map(toUploadUrl);
+    const diagramUrls: string[] = [];
+
+    for (const file of diagramFiles) {
+      try {
+        const url = await uploadFileToCloudinary(file);
+        if (url) diagramUrls.push(url);
+      } catch (e: any) {
+        console.error(`Cloudinary upload failed for ${file.originalname}:`, e.message);
+      }
+    }
 
     return res.status(200).json({
       error: false,
@@ -91,7 +117,73 @@ export const uploadImageController = async (
         diagramUrls,
       },
     });
+  } catch (e: any) {
+    return res.status(500).json({
+      error: true,
+      message: e.message,
+    });
+  }
+};
 
+export const uploadPdfController = async (
+  req: any,
+  res: Response
+): Promise<any> => {
+  try {
+    const files: Express.Multer.File[] = Array.isArray(req.files)
+      ? (req.files as Express.Multer.File[])
+      : req.file
+        ? [req.file as Express.Multer.File]
+        : [];
+
+    const urls: string[] = [];
+
+    for (const file of files) {
+      try {
+        const url = await uploadFileToCloudinary(file);
+        if (url) urls.push(url);
+      } catch (e: any) {
+        console.error(`Cloudinary upload failed for ${file.originalname}:`, e.message);
+      }
+    }
+
+    if (urls.length === 0) {
+      return res.status(400).json({
+        error: true,
+        message: "No files uploaded successfully.",
+        data: { urls },
+      });
+    }
+
+    const { paperId, examId, paperSet } = req.body;
+    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
+    const teacherId = req.viaExamUser?.userId || req.body.teacherId;
+
+    let dbResult = null;
+    if (paperId && examId && paperSet && instituteId && teacherId) {
+      try {
+        dbResult = await QuestionPaperAnswerService.saveAnswerSheetPdfUrl({
+          paperId,
+          examId,
+          paperSet,
+          instituteId,
+          teacherId,
+          pdfUrl: urls[0],
+        });
+      } catch (dbErr: any) {
+        console.error("Failed to save answer sheet PDF url to database:", dbErr.message);
+      }
+    }
+
+    return res.status(200).json({
+      error: false,
+      message: "Answer sheet uploaded successfully",
+      data: {
+        urls,
+        url: urls[0],
+        questionPaperAnswer: dbResult,
+      },
+    });
   } catch (e: any) {
     return res.status(500).json({
       error: true,

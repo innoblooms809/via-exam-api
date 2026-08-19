@@ -12206,3 +12206,696 @@
 [32minfo[39m: Connected to PostgreSQL Database
 [32minfo[39m: Models synced with PostgreSQL
 [32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 401 - 205.955 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 331.841 ms
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 268.232 ms - message: -
+[32minfo[39m: SIGINT received. Closing server...
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 307.541 ms
+[32minfo[39m: POST /v1/user/login 200 - 555.383 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 57.053 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 13.638 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 92.463 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 204.594 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 100.180 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963558060 200 - 123.058 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963558062 200 - 112.646 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963558061 200 - 128.782 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963558061 200 - 140.261 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963558062 200 - 144.043 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963558062 200 - 148.271 ms
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 451.220 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 204.390 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 398.353 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 493.073 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 549.341 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 512.960 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 392.652 ms - message: -
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963683945 200 - 308.236 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963683943 200 - 321.050 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963683943 200 - 326.289 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963683943 200 - 342.134 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963683945 200 - 346.260 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963683945 200 - 363.669 ms
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 201.338 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 200.320 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 201.062 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 221.404 ms - message: -
+[31merror[39m: POST /v1/question-papers/getExamBySelection 404 - 206.631 ms - message: -
+[32minfo[39m: GET /v1/section/allSections 200 - 273.620 ms
+[32minfo[39m: GET /v1/exam/assigned 200 - 437.248 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 152.448 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 166.478 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963746527 200 - 79.166 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963746527 200 - 91.843 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963746527 200 - 89.764 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963746528 200 - 89.467 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963746528 200 - 111.671 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963746528 200 - 107.179 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963910351 200 - 299.128 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963910350 200 - 298.852 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963910350 200 - 314.890 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963910351 200 - 324.970 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963910350 200 - 327.470 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963910351 200 - 332.131 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963912879 200 - 92.981 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963912879 200 - 83.195 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963912881 200 - 88.526 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963912879 200 - 108.111 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963912880 200 - 112.614 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963912881 200 - 114.560 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 71.027 ms
+[32minfo[39m: GET /v1/section/allSections 304 - 73.243 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 192.991 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 203.845 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963914711 200 - 92.621 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963914711 200 - 86.827 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963914711 200 - 94.386 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963914712 200 - 101.161 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963914712 200 - 99.487 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963914713 200 - 123.599 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963915746 200 - 72.520 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963915745 200 - 82.763 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963915746 200 - 85.734 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963915746 200 - 99.328 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963915746 304 - 99.486 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963915746 304 - 104.048 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963916542 200 - 82.659 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963916541 200 - 98.494 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963916541 200 - 90.644 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963916541 200 - 92.406 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963916542 200 - 94.641 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963916542 200 - 121.909 ms
+[32minfo[39m: PATCH /v1/notifications/notification/IB016079/read 200 - 301.563 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 294.350 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 163.726 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963934718 200 - 69.285 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963934718 200 - 82.800 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786963934719 200 - 85.897 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786963934719 200 - 90.758 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963934718 200 - 104.431 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786963934718 304 - 106.012 ms
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 317.409 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 156.321 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 198.387 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 386.706 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 200.753 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 515.178 ms - message: -
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 349.424 ms - message: -
+[32minfo[39m: GET /v1/exam/assigned 304 - 248.774 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 202.547 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786964020570 200 - 85.780 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786964020570 200 - 84.120 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786964020571 200 - 91.465 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786964020571 200 - 87.291 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786964020570 200 - 101.474 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786964020571 200 - 104.183 ms
+[31merror[39m: POST /v1/question-papers/getQuestionPaperBySet 404 - 433.846 ms - message: -
+[32minfo[39m: GET /v1/exam/assigned 304 - 206.841 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 162.278 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 151.676 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 161.626 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786964045866 200 - 73.049 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786964045866 200 - 77.908 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786964045867 200 - 90.915 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786964045866 200 - 96.092 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786964045868 200 - 86.360 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786964045868 200 - 91.405 ms
+[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 349.710 ms
+[32minfo[39m: POST /v1/question-papers/createQuestionPaper 201 - 379.275 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786964524763 200 - 224.777 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786964524764 200 - 230.632 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786964524763 200 - 234.525 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786964524763 200 - 237.480 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786964524764 200 - 254.080 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786964524764 200 - 259.129 ms
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 433.304 ms
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1786966219142 401 - 1.521 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1786966219142 401 - 0.754 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1786966219142 401 - 0.959 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1786966219144 401 - 0.772 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1786966219144 401 - 0.842 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1786966219144 401 - 0.994 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 352.694 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786966219142 200 - 237.333 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786966219142 200 - 253.901 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786966219144 200 - 253.945 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786966219144 200 - 252.597 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786966219142 200 - 255.494 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786966219144 200 - 278.778 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786966370827 200 - 287.647 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786966370827 200 - 291.944 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786966370827 200 - 297.652 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786966370828 200 - 306.181 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786966370828 200 - 313.598 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786966370828 200 - 313.564 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786966383448 200 - 303.793 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786966383447 200 - 314.580 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786966383447 200 - 308.013 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786966383447 200 - 333.851 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786966383448 200 - 334.897 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786966383448 200 - 336.598 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786966384828 200 - 74.547 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786966384828 200 - 86.517 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786966384828 200 - 100.137 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786966384828 304 - 84.604 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786966384828 304 - 84.937 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786966384828 304 - 89.873 ms
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 435.774 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 7.050 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 660.894 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 18.111 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 5.589 ms - message: Not found
+[32minfo[39m: SIGINT received. Closing server...
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 467.683 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 12.985 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at serveStatic (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:75:16)
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+[31merror[39m: POST /v1/question-paper-answers/upload-pdf 404 - 4.315 ms - message: Not found
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/question-paper-answers/upload-pdf 200 - 3467.849 ms
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1786968260129 401 - 1.407 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1786968260129 401 - 0.832 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1786968260129 401 - 2.153 ms - message: -
+[31merror[39m: GET /v1/sessions/getAllSessions?_t=1786968260130 401 - 1.136 ms - message: -
+[31merror[39m: GET /v1/subject/getAllSubjects?_t=1786968260130 401 - 0.637 ms - message: -
+[31merror[39m: GET /v1/class/getAllClasses?_t=1786968260130 401 - 0.920 ms - message: -
+[32minfo[39m: POST /v1/user/refresh-token 200 - 252.718 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786968260129 200 - 228.752 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786968260129 200 - 220.899 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786968260129 200 - 218.945 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786968260130 200 - 230.672 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786968260130 200 - 237.398 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786968260130 200 - 242.885 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 160.032 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 153.551 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 154.940 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 160.621 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786968268413 200 - 65.680 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786968268414 200 - 70.809 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786968268414 200 - 77.526 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786968268414 200 - 79.271 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786968268414 304 - 72.046 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786968268414 304 - 78.034 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 143.270 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 139.339 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786968276385 200 - 79.995 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786968276385 200 - 89.404 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786968276385 200 - 103.158 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786968276386 200 - 111.370 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786968276386 200 - 112.678 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786968276386 200 - 117.320 ms
+[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 359.190 ms
+[31merror[39m: POST /v1/question-papers/createQuestionPaper 400 - 314.282 ms - message: -
+[32minfo[39m: GET /v1/exam/assigned 304 - 458.994 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 172.319 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 204.275 ms
+[32minfo[39m: GET /v1/exam/assigned 304 - 204.204 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786968691829 200 - 80.912 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786968691829 200 - 95.878 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786968691829 200 - 98.014 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1786968691830 200 - 92.861 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1786968691830 200 - 105.932 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1786968691830 200 - 112.219 ms
+[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 402.169 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 716.325 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1787030306372 200 - 335.464 ms
+[32minfo[39m: GET /v1/institute/getAllInstitutes?_t=1787030306373 200 - 364.428 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1784616141638.png 404 - 18.096 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 21.952 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1784119889549.png 404 - 26.637 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1783157609450.png 404 - 31.135 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1782130827305.png 404 - 37.112 ms - message: Not found
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1782127580749.png 404 - 41.847 ms - message: Not found
+[32minfo[39m: GET /v1/institute/credentials/IB228226?_t=1787030310461 200 - 170.266 ms
+[32minfo[39m: GET /v1/institute/getOneInstitute/IB228226 200 - 170.153 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 313.903 ms
+[32minfo[39m: POST /v1/user/login 200 - 480.363 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 57.200 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 49.390 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.223 ms - message: Not found
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 427.869 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 3.287 ms - message: Not found
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 202.120 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 237.596 ms
+[32minfo[39m: POST /v1/user/login 200 - 401.880 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 38.609 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.794 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 74.260 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 200 - 155.086 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 81.044 ms
+[32minfo[39m: GET /v1/teacher/my-assignments?_t=1787030490123 200 - 377.205 ms
+[32minfo[39m: GET /v1/teacher/my-assignments?_t=1787030490124 200 - 382.647 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030498960 200 - 134.935 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030498960 200 - 142.613 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030498961 200 - 167.891 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787030498960 200 - 171.871 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030498961 200 - 174.036 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787030498961 200 - 208.138 ms
+[32minfo[39m: GET /v1/teacher/my-assignments?_t=1787030549028 200 - 330.064 ms
+[32minfo[39m: GET /v1/teacher/my-assignments?_t=1787030549027 200 - 384.144 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030563179 200 - 290.658 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030563180 200 - 296.867 ms
+[32minfo[39m: POST /v1/sessions/createSession 201 - 651.240 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030614198 200 - 78.251 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030614199 200 - 75.752 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030623713 200 - 82.342 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030623714 200 - 90.808 ms
+[31merror[39m: POST /v1/class/createClass 409 - 267.271 ms - message: -
+[32minfo[39m: POST /v1/class/createClass 201 - 112.920 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030656536 200 - 123.764 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030656534 200 - 150.949 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1787030665257 200 - 87.093 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1787030665258 200 - 86.932 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030667870 200 - 86.815 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030667870 304 - 92.524 ms
+[32minfo[39m: POST /v1/section/createSection 201 - 161.855 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1787030678408 200 - 125.747 ms
+[32minfo[39m: GET /v1/section/allSections?_t=1787030678409 200 - 160.998 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787030686448 200 - 84.551 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787030686449 200 - 110.022 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030701446 200 - 303.585 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030701447 200 - 311.004 ms
+[32minfo[39m: POST /v1/subject/createSubject 201 - 426.316 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787030714112 200 - 142.913 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787030714113 200 - 185.091 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 188.305 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 4.380 ms - message: Not found
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 200.332 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030721523 200 - 87.208 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787030721524 200 - 104.831 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787030721637 200 - 97.100 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787030721671 200 - 85.381 ms
+[32minfo[39m: POST /v1/teacher/createTeacher 201 - 834.498 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 235.349 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 8.035 ms - message: Not found
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 343.305 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 200 - 305.574 ms
+[32minfo[39m: GET /v1/class/getAllClasses 200 - 308.212 ms
+[32minfo[39m: GET /v1/exam/getAllExams 200 - 325.657 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 200 - 321.943 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 85.005 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 104.224 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 86.479 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 101.954 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 439.700 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 199.979 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 286.313 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 294.282 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 301.537 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 77.821 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 78.252 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 82.617 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 432.983 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 220.776 ms
+[32minfo[39m: POST /v1/exam/createExam 201 - 435.837 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 239.489 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 242.116 ms
+[32minfo[39m: GET /v1/exam/getAllExams 200 - 243.834 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 248.665 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions 304 - 79.020 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects 304 - 75.039 ms
+[32minfo[39m: GET /v1/exam/getAllExams 304 - 88.082 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 95.147 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 368.502 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 202.258 ms
+[32minfo[39m: GET /v1/student/getAllStudents 304 - 141.354 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 86.160 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030943835 200 - 79.358 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030943837 200 - 86.149 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 79.956 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 87.089 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030946609 200 - 69.520 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787030946606 200 - 86.563 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 78.243 ms
+[32minfo[39m: GET /v1/section/allSections?classId=IB627463 200 - 80.648 ms
+[31merror[39m: POST /v1/student/createStudent 409 - 573.186 ms - message: -
+[31merror[39m: POST /v1/student/createStudent 409 - 228.374 ms - message: -
+[31merror[39m: POST /v1/student/createStudent 409 - 242.581 ms - message: -
+[32minfo[39m: POST /v1/student/createStudent 201 - 1038.479 ms
+[32minfo[39m: GET /v1/student/getAllStudents 200 - 121.997 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 93.898 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031156932 200 - 106.411 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031156934 200 - 130.141 ms
+[32minfo[39m: GET /v1/class/getAllClasses 304 - 86.328 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 397.960 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 3.732 ms - message: Not found
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 201.751 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 228.709 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 32.170 ms
+[32minfo[39m: POST /v1/user/login 200 - 387.262 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 38.569 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.836 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 70.139 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 200 - 143.088 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 79.376 ms
+[32minfo[39m: GET /v1/teacher/my-assignments?_t=1787031208659 200 - 130.667 ms
+[32minfo[39m: GET /v1/teacher/my-assignments?_t=1787031208660 200 - 156.168 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031225805 200 - 261.399 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031225806 200 - 275.023 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031237096 200 - 297.546 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031237097 200 - 311.403 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031237096 200 - 316.748 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031237097 200 - 320.319 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 472.402 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 304 - 225.426 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 3.867 ms - message: Not found
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031247524&classId=IB627463 200 - 98.865 ms
+[32minfo[39m: PATCH /v1/subject/updateSubject/IB389635 200 - 191.177 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031250300&classId=IB627463 200 - 94.421 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031250413 200 - 154.186 ms
+[32minfo[39m: GET /v1/teacher/getAllTeachers 200 - 347.394 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/1785749310974-316332688.jpeg 404 - 4.638 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 60.955 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 88.235 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 14.710 ms - message: Not found
+[32minfo[39m: GET /v1/teacher/my-assignments?_t=1787031258404 200 - 186.892 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031261557 200 - 120.348 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031261556 200 - 133.471 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031261557 200 - 137.751 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031261558 200 - 143.719 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031261558 200 - 171.800 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031261559 200 - 167.830 ms
+[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 160.061 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 228.680 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 41.297 ms
+[32minfo[39m: POST /v1/user/login 200 - 444.144 ms
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 41.134 ms
+[31merror[39m: Error: Not found
+    at D:\Suprit\Via-Exam\via-exam-api\src\app.ts:112:8
+    at Layer.handle [as handle_request] (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\layer.js:95:5)
+    at trim_prefix (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:328:13)
+    at D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:286:9
+    at Function.process_params (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:346:12)
+    at next (D:\Suprit\Via-Exam\via-exam-api\node_modules\express\lib\router\index.js:280:10)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\serve-static\index.js:121:7)
+    at SendStream.emit (node:events:519:28)
+    at SendStream.emit (node:domain:489:12)
+    at SendStream.error (D:\Suprit\Via-Exam\via-exam-api\node_modules\send\index.js:270:17)
+[31merror[39m: GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.151 ms - message: Not found
+[32minfo[39m: GET /v1/institute/slug/gdmis 304 - 81.337 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 168.551 ms
+[32minfo[39m: GET /v1/notifications/getNotifications 304 - 101.408 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031798121 200 - 83.755 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031798121 200 - 82.750 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031798120 200 - 97.081 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031798121 200 - 89.573 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031798121 304 - 77.200 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031798121 304 - 79.461 ms
+[32minfo[39m: POST /v1/question-papers/getExamBySelection 200 - 396.722 ms
+[32minfo[39m: POST /v1/question-papers/createQuestionPaper 201 - 374.375 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031965882 200 - 276.185 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031965886 200 - 300.880 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031965882 200 - 303.786 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031965886 200 - 306.005 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031965883 200 - 309.865 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031965886 200 - 312.987 ms
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 407.317 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031992229 200 - 132.098 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031992229 200 - 172.050 ms
+[32minfo[39m: GET /v1/sessions/getAllSessions?_t=1787031992230 200 - 168.272 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031992229 200 - 202.860 ms
+[32minfo[39m: GET /v1/class/getAllClasses?_t=1787031992230 200 - 204.593 ms
+[32minfo[39m: GET /v1/subject/getAllSubjects?_t=1787031992230 200 - 210.316 ms
+[32minfo[39m: POST /v1/question-papers/getQuestionPaperBySet 200 - 430.958 ms
+[32minfo[39m: POST /v1/question-paper-answers/upload-pdf 200 - 4988.825 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/question-paper-answers/upload-pdf 200 - 2949.213 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: POST /v1/user/login 200 - 181.683 ms
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
