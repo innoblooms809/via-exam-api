@@ -86,4 +86,18 @@ router.get(
   Controller.getMyAssignments
 );
 
+// GET /v1/teachers/my-question-papers
+router.get(
+  "/my-question-papers",
+  authenticate,
+  Controller.getTeacherQuestionPapers
+);
+
+// GET /v1/teachers/:userId/question-papers
+router.get(
+  "/:userId/question-papers",
+  authenticate,
+  Controller.getTeacherQuestionPapers
+);
+
 export default router;
