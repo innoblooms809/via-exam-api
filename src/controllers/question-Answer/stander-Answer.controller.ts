@@ -74,7 +74,7 @@ export const uploadFileToCloudinary = (file: Express.Multer.File) =>
         resource_type: "auto",
         public_id: `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e6)}`,
       },
-      (error, result) => {
+      (error: any, result: any) => {
         if (error) {
           reject(error);
         } else {

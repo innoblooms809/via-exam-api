@@ -125,6 +125,25 @@ const getMyAssignments = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const getTeacherQuestionPapers = async (req: any, res: Response): Promise<any> => {
+  try {
+    const targetUserId = req.params?.userId;
+    const result = await TeacherService.getTeacherQuestionPapers(
+      req.viaExamUser,
+      req.query,
+      targetUserId
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error: any) {
+    console.error("getTeacherQuestionPapers Controller Error:", error);
+    return res.status(500).json({
+      error: true,
+      statusCode: 500,
+      message: `Internal Server Error: ${error.message}`,
+    });
+  }
+};
+
 export default {
   createTeacher,
   getAllTeachers,
@@ -136,4 +155,5 @@ export default {
   getDeactivatedTeachers,
   reactivateTeacher,
   getMyAssignments,
+  getTeacherQuestionPapers,
 };
