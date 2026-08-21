@@ -6,6 +6,9 @@ import Institute from "../modals/Institute.modal";
 import Class from "../modals/Class.modal";
 import Subject from "../modals/Subject.modal";
 import SubjectTeacher from "../modals/SubjectTeacher.modal";
+import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
+import Exam from "../modals/Exam.modal";
+import Session from "../modals/Session.modal";
 import EncryptPassword from "../utils/encryption";
 import RegHelper from "../utils/helper";
 import exclude from "../utils/exclude";
@@ -734,6 +737,103 @@ const getMyAssignments = async (teacherId: string): Promise<any> => {
   }
 };
 
+const getTeacherQuestionPapers = async (
+  teacherUser: any,
+  query: any,
+  targetUserId?: string
+): Promise<any> => {
+  try {
+    const teacherId = targetUserId || query?.teacherId || teacherUser?.userId;
+    const instituteId = teacherUser?.instituteId;
+
+    if (!teacherId) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "Teacher ID is required.",
+      };
+    }
+
+    const where: any = { teacherId };
+    if (instituteId) {
+      where.instituteId = instituteId;
+    }
+    if (query?.status) {
+      where.status = query.status;
+    }
+    if (query?.paperSet) {
+      where.paperSet = query.paperSet;
+    }
+
+    const papers = await QuestionPaper.findAll({
+      where,
+      order: [["createdAt", "DESC"]],
+    });
+
+    const examIds = Array.from(new Set(papers.map((p) => p.examId).filter(Boolean)));
+    const exams = examIds.length > 0
+      ? await Exam.findAll({ where: { examId: { [Op.in]: examIds } } })
+      : [];
+
+    const examMap = new Map<string, any>(exams.map((e) => [e.examId, e]));
+
+    const classIds = Array.from(new Set(exams.map((e) => e.classId).filter(Boolean))) as string[];
+    const subjectIds = Array.from(new Set(exams.map((e) => e.subjectId).filter(Boolean))) as string[];
+    const sessionIds = Array.from(new Set(exams.map((e) => e.sessionId).filter(Boolean))) as string[];
+
+    const [classesList, subjectsList, sessionsList] = await Promise.all([
+      classIds.length > 0 ? Class.findAll({ where: { classId: { [Op.in]: classIds } } }) : [],
+      subjectIds.length > 0 ? Subject.findAll({ where: { subjectId: { [Op.in]: subjectIds } } }) : [],
+      sessionIds.length > 0 ? Session.findAll({ where: { sessionId: { [Op.in]: sessionIds } } }) : [],
+    ]);
+
+    const classMap = new Map<string, string>(classesList.map((c: any) => [c.classId, c.className]));
+    const subjectMap = new Map<string, string>(subjectsList.map((s: any) => [s.subjectId, s.subjectName]));
+    const sessionMap = new Map<string, string>(sessionsList.map((s: any) => [s.sessionId, s.sessionName]));
+
+    const formattedPapers = papers.map((p) => {
+      const plainPaper: any = p.get({ plain: true });
+      const exam = examMap.get(p.examId);
+      const className = exam?.classId ? classMap.get(exam.classId) || exam.classId : "All Classes";
+      const subjectName = exam?.subjectId ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
+      const sessionName = exam?.sessionId ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
+
+      return {
+        ...plainPaper,
+        examDetails: exam ? {
+          examId: exam.examId,
+          examType: exam.examType,
+          totalMarks: exam.totalMarks,
+          duration: exam.duration,
+          className,
+          subjectName,
+          sessionName,
+        } : null,
+        className,
+        subjectName,
+        examName: exam?.examType || plainPaper.content?.meta?.examName || "Examination",
+      };
+    });
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Teacher question papers fetched successfully.",
+      data: {
+        total: formattedPapers.length,
+        papers: formattedPapers,
+      },
+    };
+  } catch (error: any) {
+    console.error("getTeacherQuestionPapers Service Error:", error);
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Failed to fetch teacher question papers: ${error.message}`,
+    };
+  }
+};
+
 export default {
   createTeacher,
   getAllTeachers,
@@ -745,4 +845,5 @@ export default {
   getDeactivatedTeachers,
   reactivateTeacher,
   getMyAssignments,
+  getTeacherQuestionPapers,
 };
