@@ -1,5 +1,10 @@
 import winston from 'winston';
+import fs from 'fs';
 import config from './config';
+
+if (!fs.existsSync('logs')) {
+  fs.mkdirSync('logs', { recursive: true });
+}
 
 const enumerateErrorFormat = winston.format((info) => {
   if (info instanceof Error) {
