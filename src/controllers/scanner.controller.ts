@@ -11,11 +11,12 @@ const uploadSheets = async (req: any, res: Response): Promise<any> => {
       req.viaExamUser
     );
     return res.status(result.statusCode).send(result);
-  } catch {
+  } catch (err: any) {
+    console.error("uploadSheets Controller Error:", err);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
+      message: err?.message || "Internal Server Error",
     });
   }
 };
@@ -25,11 +26,12 @@ const getAllSheets = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await Scanner.getAllSheets(req.query, req.viaExamUser);
     return res.status(result.statusCode).send(result);
-  } catch {
+  } catch (err: any) {
+    console.error("getAllSheets Controller Error:", err);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
+      message: err?.message || "Internal Server Error",
     });
   }
 };
@@ -50,11 +52,12 @@ const getSheetFile = async (req: any, res: Response): Promise<any> => {
     res.setHeader("Content-Type", mimeType);
     res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
     return res.send(buffer);
-  } catch {
+  } catch (err: any) {
+    console.error("getSheetFile Controller Error:", err);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
+      message: err?.message || "Internal Server Error",
     });
   }
 };
@@ -67,11 +70,12 @@ const getSheetSummary = async (req: any, res: Response): Promise<any> => {
       req.viaExamUser
     );
     return res.status(result.statusCode).send(result);
-  } catch {
+  } catch (err: any) {
+    console.error("getSheetSummary Controller Error:", err);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
+      message: err?.message || "Internal Server Error",
     });
   }
 };
@@ -85,11 +89,12 @@ const updateSheetStatus = async (req: any, res: Response): Promise<any> => {
       req.viaExamUser
     );
     return res.status(result.statusCode).send(result);
-  } catch {
+  } catch (err: any) {
+    console.error("updateSheetStatus Controller Error:", err);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
+      message: err?.message || "Internal Server Error",
     });
   }
 };
@@ -102,11 +107,12 @@ const deleteSheet = async (req: any, res: Response): Promise<any> => {
       req.viaExamUser
     );
     return res.status(result.statusCode).send(result);
-  } catch {
+  } catch (err: any) {
+    console.error("deleteSheet Controller Error:", err);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
+      message: err?.message || "Internal Server Error",
     });
   }
 };
