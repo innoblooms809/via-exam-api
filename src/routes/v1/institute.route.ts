@@ -15,6 +15,13 @@ router.post(
   Controller.registerInstitute
 );
 
+// POST /api/viaexam/institute/addAdmin/:instituteId
+router.post(
+  "/addAdmin/:instituteId",
+  authenticate,
+  Controller.addInstituteAdmin,
+);
+
 // POST /api/viaexam/institute/resendCredentials/:instituteId
 // Protected: only super_admin can trigger resend of admin credentials
 router.post(

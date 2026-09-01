@@ -55,17 +55,20 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       };
     }
 
-    // 3. Check admin email uniqueness
-    const emailExists = await UserModal.findOne({
-      where: { emailId: body.adminEmail },
-    });
-    if (emailExists) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Admin email is already registered.",
-      };
+    // 3. Check admin email uniqueness (only if admin data provided)
+    const hasAdminData = body.adminEmail && body.adminEmail.trim();
+    if (hasAdminData) {
+      const emailExists = await UserModal.findOne({
+        where: { emailId: body.adminEmail },
+      });
+      if (emailExists) {
+        await t.rollback();
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Admin email is already registered.",
+        };
+      }
     }
 
     // 5. Get file paths from multer
@@ -84,7 +87,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         : null;
 
     // 7. Generate institute ID
-    const instituteId = await RegHelper.generateUserId(); // reuse your ID generator
+    const instituteId = await RegHelper.generateUserId();
 
     // 8. Create Institute record
     const institute = await Institute.create(
@@ -116,69 +119,68 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       { transaction: t },
     );
 
-    // 9. Find admin role
-    const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
-    if (!adminRole) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-        message: "Admin role not found. Please seed roles first.",
-      };
-    }
-
-    // 10. Create Admin user tied to this institute
-    const encryptedPassword = await EncryptPassword.encryptPassword(
-      body.adminPassword,
-    );
-    const adminUserId = await RegHelper.generateUserId();
-
-    const adminUser = await UserModal.create(
-      {
-        userId: adminUserId,
-        userName: `${body.adminFirstName} ${body.adminLastName}`,
-        emailId: body.adminEmail,
-        phoneNumber: body.adminPhone,
-        password: encryptedPassword,
-        roleId: adminRole.id,
-        instituteId: institute.instituteId, // link admin → institute
-        status: 1,
-      },
-      { transaction: t },
-    );
-
-    // 10. All good — commit
-    await t.commit();
-
-    const adminResponse = exclude(adminUser.toJSON(), [
-      "password",
-      "refreshToken",
-    ]);
-
-    // 11. Send credentials email to admin
-    // const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3040"}/${
-    //   body.slug
-    // }/auth/signin`;
-
+    let adminResponse = null;
     const loginUrl = `${config.frontendUrl}/${body.slug}/auth/signin`;
 
-    await sendAdminCredentials({
-      adminName: `${body.adminFirstName} ${body.adminLastName}`,
-      adminEmail: body.adminEmail,
-      adminPassword: body.adminPassword, // ← plain password before encryption
-      instituteName: body.instituteName,
-      loginUrl,
-      plan: body.plan,
-    });
+    // 9. Create Admin user ONLY if admin fields are provided
+    if (hasAdminData) {
+      const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
+      if (!adminRole) {
+        await t.rollback();
+        return {
+          error: true,
+          statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+          message: "Admin role not found. Please seed roles first.",
+        };
+      }
+
+      const encryptedPassword = await EncryptPassword.encryptPassword(
+        body.adminPassword,
+      );
+      const adminUserId = await RegHelper.generateUserId();
+
+      const adminUser = await UserModal.create(
+        {
+          userId: adminUserId,
+          userName: `${body.adminFirstName} ${body.adminLastName}`,
+          emailId: body.adminEmail,
+          phoneNumber: body.adminPhone,
+          password: encryptedPassword,
+          roleId: adminRole.id,
+          instituteId: institute.instituteId,
+          status: 1,
+        },
+        { transaction: t },
+      );
+
+      adminResponse = exclude(adminUser.toJSON(), [
+        "password",
+        "refreshToken",
+      ]);
+
+      // Send credentials email to admin
+      await sendAdminCredentials({
+        adminName: `${body.adminFirstName} ${body.adminLastName}`,
+        adminEmail: body.adminEmail,
+        adminPassword: body.adminPassword,
+        instituteName: body.instituteName,
+        loginUrl,
+        plan: body.plan,
+      });
+    }
+
+    // All good — commit
+    await t.commit();
 
     return {
       error: false,
       statusCode: httpStatus.CREATED,
-      message: "Institute registered successfully.",
+      message: hasAdminData
+        ? "Institute registered and admin created successfully."
+        : "Institute registered successfully. Admin can be added later from Add Admin page.",
       data: {
         institute,
         admin: adminResponse,
-        // loginUrl: `${process.env.FRONTEND_URL}/${body.slug}/auth/signin`,
         loginUrl: `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${body.slug
           }/auth/signin`,
         logoUrl,
@@ -315,12 +317,40 @@ const getAllInstitutes = async (query: any): Promise<any> => {
       offset,
     });
 
+    // Fetch admin users for all institutes in this page
+    const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
+    let institutesWithAdmin = rows.map((inst) => inst.toJSON());
+
+    if (adminRole) {
+      const instituteIds = rows.map((inst) => inst.instituteId);
+      const adminUsers = await UserModal.findAll({
+        where: {
+          instituteId: { [Op.in]: instituteIds },
+          roleId: adminRole.id,
+          isDeleted: false,
+        },
+        attributes: { exclude: ["password", "refreshToken"] },
+      });
+
+      // Build a map of instituteId → admin user
+      const adminMap: Record<string, any> = {};
+      for (const admin of adminUsers) {
+        adminMap[admin.instituteId as string] = admin.toJSON();
+      }
+
+      // Attach admin to each institute
+      institutesWithAdmin = institutesWithAdmin.map((inst: any) => ({
+        ...inst,
+        admin: adminMap[inst.instituteId] || null,
+      }));
+    }
+
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Institutes fetched successfully.",
       data: {
-        institutes: rows,
+        institutes: institutesWithAdmin,
         pagination: {
           total: count,
           page: parseInt(page),
@@ -706,6 +736,179 @@ const getInstituteCredentials = async (instituteId: string): Promise<any> => {
   }
 };
 
+const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> => {
+  try {
+    const whereCondition: any = {
+      isDeleted: false,
+      [Op.or]: [
+        { instituteId },
+        ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+      ],
+    };
+    const institute = await Institute.findOne({ where: whereCondition });
+
+    if (!institute) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Institute not found.",
+      };
+    }
+
+    const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
+    if (!adminRole) {
+      return {
+        error: true,
+        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+        message: "Admin role not found in database.",
+      };
+    }
+
+    const { adminFirstName, adminLastName, adminEmail, adminPhone, adminPassword } = body;
+
+    // Find existing admin for this institute
+    let adminUser = await UserModal.findOne({
+      where: { instituteId: institute.instituteId, roleId: adminRole.id, isDeleted: false },
+    });
+
+    const plainPassword = adminPassword || RegHelper.generateTempPassword();
+    const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
+
+    let sendMailNeeded = false;
+
+    if (adminUser) {
+      // Check if email changed and is taken by another user
+      if (adminEmail && adminEmail !== adminUser.emailId) {
+        const emailTaken = await UserModal.findOne({
+          where: { emailId: adminEmail, userId: { [Op.ne]: adminUser.userId } },
+        });
+        if (emailTaken) {
+          return {
+            error: true,
+            statusCode: httpStatus.CONFLICT,
+            message: "Email is already registered by another user.",
+          };
+        }
+      }
+
+      if (adminPhone && adminPhone !== adminUser.phoneNumber) {
+        const phoneTaken = await UserModal.findOne({
+          where: { phoneNumber: adminPhone, userId: { [Op.ne]: adminUser.userId } },
+        });
+        if (phoneTaken) {
+          return {
+            error: true,
+            statusCode: httpStatus.CONFLICT,
+            message: "Phone number is already registered by another user.",
+          };
+        }
+      }
+
+      // If password or email changed, send email
+      if (adminPassword || (adminEmail && adminEmail !== adminUser.emailId)) {
+        sendMailNeeded = true;
+      }
+
+      await adminUser.update({
+        userName: `${adminFirstName ?? ""} ${adminLastName ?? ""}`.trim() || adminUser.userName,
+        emailId: adminEmail ?? adminUser.emailId,
+        phoneNumber: adminPhone ?? adminUser.phoneNumber,
+        ...(adminPassword ? { password: encryptedPassword } : {}),
+      });
+    } else {
+      // Create new admin
+      if (!adminEmail) {
+        return {
+          error: true,
+          statusCode: httpStatus.BAD_REQUEST,
+          message: "Admin email is required.",
+        };
+      }
+
+      const emailTaken = await UserModal.findOne({ where: { emailId: adminEmail } });
+      if (emailTaken) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Email is already registered by another user.",
+        };
+      }
+
+      if (adminPhone) {
+        const phoneTaken = await UserModal.findOne({ where: { phoneNumber: adminPhone } });
+        if (phoneTaken) {
+          return {
+            error: true,
+            statusCode: httpStatus.CONFLICT,
+            message: "Phone number is already registered by another user.",
+          };
+        }
+      }
+
+      const adminUserId = await RegHelper.generateUserId();
+      adminUser = await UserModal.create({
+        userId: adminUserId,
+        userName: `${adminFirstName ?? ""} ${adminLastName ?? ""}`.trim(),
+        emailId: adminEmail,
+        phoneNumber: adminPhone || "",
+        password: encryptedPassword,
+        roleId: adminRole.id,
+        instituteId: institute.instituteId,
+        status: 1,
+      });
+
+      sendMailNeeded = true;
+    }
+
+    const loginUrl = `${config.frontendUrl}/${institute.slug}/auth/signin`;
+
+    if (sendMailNeeded) {
+      try {
+        await sendAdminCredentials({
+          adminName: adminUser.userName,
+          adminEmail: adminUser.emailId,
+          adminPassword: plainPassword,
+          instituteName: institute.instituteName,
+          loginUrl,
+          plan: institute.plan || "basic",
+        });
+      } catch (mailErr) {
+        console.warn("Mail sending warning:", mailErr);
+      }
+    }
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Admin created/updated successfully and credentials emailed.",
+      data: {
+        admin: exclude(adminUser.toJSON(), ["password", "refreshToken"]),
+      },
+    };
+  } catch (e: any) {
+    console.error("Error in addInstituteAdmin:", e);
+
+    if (e.name === "SequelizeUniqueConstraintError") {
+      const field = e.errors?.[0]?.path;
+      let message = "This record already exists.";
+      if (field === "phoneNumber") message = "This phone number is already registered.";
+      if (field === "emailId") message = "This email is already registered.";
+
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message,
+      };
+    }
+
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 export default {
   registerInstitute,
   getAllInstitutes,
@@ -716,4 +919,5 @@ export default {
   resendAdminCredentials,
   getInstituteBySlug,
   getInstituteCredentials,
+  addInstituteAdmin,
 };

@@ -300,12 +300,12 @@ import config from "../config/config";
 
 // ─── Transporter ──────────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  host: config.email.smtp.host,
-  port: Number(config.email.smtp.port), // ← fix: was using host instead of port
-  secure: true, // ← true for port 465
+  host: config.email.smtp.host || "smtp.gmail.com",
+  port: Number(config.email.smtp.port || 465),
+  secure: Number(config.email.smtp.port || 465) === 465,
   auth: {
     user: config.email.smtp.auth.user,
-    pass: config.email.smtp.auth.pass,
+    pass: (config.email.smtp.auth.pass || "").replace(/\s+/g, ""),
   },
   tls: {
     rejectUnauthorized: false,

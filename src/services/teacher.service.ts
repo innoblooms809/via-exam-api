@@ -193,33 +193,59 @@ const createTeacher = async (
   }
 };
 
-// ─── GET ALL TEACHERS ─────────────────────────────────────────────────────────
+// ─── GET ALL TEACHERS (Production-Grade Server-Side Pagination & Indexed Search) ───
 const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
   try {
-    const { search = "", isExaminer = "" } = query;
+    const pageNum = parseInt(query?.page || "1", 10);
+    const limitNum = parseInt(query?.limit || "25", 10); // Default limit: 25 per user request
+    const offset = (pageNum - 1) * limitNum;
+    const search = (query?.search || "").trim();
+    const isExaminer = query?.isExaminer || "";
+    const teacherTypeFilter = query?.teacherType || "";
+    const statusFilter = query?.status !== undefined && query?.status !== "" ? parseInt(query.status, 10) : 1;
+    const sortBy = query?.sortBy || "userName";
+    const sortOrder = query?.sortOrder?.toUpperCase() === "DESC" ? "DESC" : "ASC";
+
     const teacherRole = await Role.findOne({ where: { role: "TEACHER" } });
 
     const where: any = {
       instituteId: createdBy.instituteId,
       roleId: teacherRole?.id,
-      status: 1,
+      status: statusFilter,
     };
 
+    // Indexed ILIKE search across Name, Email, and Phone
     if (search) {
       where[Op.or] = [
         { userName: { [Op.iLike]: `%${search}%` } },
         { emailId: { [Op.iLike]: `%${search}%` } },
+        { phoneNumber: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
-    const teachers = await UserModal.findAll({
+    const teacherProfileWhere: any = {};
+    if (teacherTypeFilter) {
+      teacherProfileWhere.teacherType = teacherTypeFilter;
+    }
+    if (isExaminer === "true") teacherProfileWhere.isExaminer = true;
+    if (isExaminer === "false") teacherProfileWhere.isExaminer = false;
+
+    const { count, rows: teachers } = await UserModal.findAndCountAll({
       where,
       include: [
         { model: Role, as: "role" },
-        { model: TeacherProfile, as: "teacherProfile", required: false },
+        {
+          model: TeacherProfile,
+          as: "teacherProfile",
+          required: Object.keys(teacherProfileWhere).length > 0,
+          where: Object.keys(teacherProfileWhere).length > 0 ? teacherProfileWhere : undefined,
+        },
       ],
       attributes: { exclude: ["password", "refreshToken"] },
-      order: [["userName", "ASC"]],
+      order: [[sortBy, sortOrder]],
+      limit: limitNum,
+      offset,
+      distinct: true,
     });
 
     const teacherIds = teachers.map((u: any) => u.userId);
@@ -240,7 +266,7 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
       },
     });
 
-    let result = teachers.map((u: any) => {
+    const result = teachers.map((u: any) => {
       const cls = assignedClasses.find((c: any) => c.classTeacherId === u.userId);
       const subs = assignedSubjects.filter((s: any) => s.teacherId === u.userId);
 
@@ -267,19 +293,19 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
       };
     });
 
-    // Filter by examiner flag
-    if (isExaminer === "true") result = result.filter((r) => r.isExaminer);
-    if (isExaminer === "false") result = result.filter((r) => !r.isExaminer);
-
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Teachers fetched successfully.",
       data: {
         teachers: result,
-        total: result.length,
-        examinerCount: result.filter((r) => r.isExaminer).length,
-        teacherCount: result.filter((r) => !r.isExaminer).length,
+        total: count,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count,
+          totalPages: Math.ceil(count / limitNum),
+        },
       },
     };
   } catch (e: any) {

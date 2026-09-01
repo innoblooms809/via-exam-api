@@ -10,7 +10,7 @@ import Institute from "../../modals/Institute.modal";
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_DURATION_MINUTES = 30;
+const LOCK_DURATION_SECONDS = 5;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
         message: `This ${conflictFields.join(" & ")} is already registered.`,
       };
     }
-      
+
     // Reuse your existing helpers
     const password = await RegHelper.generatePassword();
     const encryptedPassword = await EncryptPassword.encryptPassword(password);
@@ -175,7 +175,7 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
           {
             loginAttempts: attempts,
             lockedUntil: new Date(
-              Date.now() + LOCK_DURATION_MINUTES * 60000
+              Date.now() + LOCK_DURATION_SECONDS * 1000
             ),
           },
           { where: { userId: user.userId } },
@@ -223,7 +223,7 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       message: e.message,
     };
   }
-};  
+};
 
 /**
  * Logout — store/clear refresh token (mirrors your token invalidation pattern)
