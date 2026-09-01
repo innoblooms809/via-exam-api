@@ -311,27 +311,32 @@ const runBackgroundEvaluationV2 = async (
     // ⚡ 1. PARALLEL EXECUTION THREADS
     // Thread 1: Student Answer Sheet OCR (Port 8000)
     const studentOcrTask = (async (): Promise<string> => {
-      let fileName = sheet.fileName || "sheet.png";
-      if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
-        const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
-        fileName = `${fileName}${ext}`;
+      try {
+        let fileName = sheet.fileName || "sheet.png";
+        if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
+          const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
+          fileName = `${fileName}${ext}`;
+        }
+
+        const ocrFormData = new FormData();
+        ocrFormData.append("file", sheet.fileBuffer, {
+          filename: fileName,
+          contentType: sheet.fileMimeType || "image/png",
+        });
+
+        logger.info(`[V2] [Thread 1] Sending student answer sheet (${fileName}, ${sheet.fileBuffer.length} bytes) to OCR API: ${ocrApiUrl}`);
+        const ocrResponse = await axios.post(ocrApiUrl, ocrFormData, {
+          headers: ocrFormData.getHeaders(),
+          timeout: 3600000,
+        });
+
+        const studentAnsOcr = ocrResponse.data?.combined_markdown || "";
+        logger.info("[V2] [Thread 1] Student answer OCR completed successfully.");
+        return studentAnsOcr;
+      } catch (ocrErr: any) {
+        logger.error(`[V2] [Thread 1] Student Answer Sheet OCR failed (${ocrApiUrl}): ${ocrErr.message}`, ocrErr.response?.data || ocrErr.code);
+        return "";
       }
-
-      const ocrFormData = new FormData();
-      ocrFormData.append("file", sheet.fileBuffer, {
-        filename: fileName,
-        contentType: sheet.fileMimeType || "image/png",
-      });
-
-      logger.info(`[V2] [Thread 1] Sending student answer sheet (${fileName}, ${sheet.fileBuffer.length} bytes) to OCR API: ${ocrApiUrl}`);
-      const ocrResponse = await axios.post(ocrApiUrl, ocrFormData, {
-        headers: ocrFormData.getHeaders(),
-        timeout: 3600000,
-      });
-
-      const studentAnsOcr = ocrResponse.data?.combined_markdown || "";
-      logger.info("[V2] [Thread 1] Student answer OCR completed successfully.");
-      return studentAnsOcr;
     })();
 
     // Thread 2: Answer Key OCR (if needed) & Pre-warming Rubric Cache on Port 8007
