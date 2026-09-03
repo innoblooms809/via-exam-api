@@ -7,6 +7,10 @@ import Service from "../../services/auth/user.service";
 import { sendUserCredentials } from "../../utils/mailHelper"; // reuse your mail helper
 import config from "../../config/config";
 import UserModal from "../../modals/User.modal";
+import UserPresenceSession from "../../modals/UserPresenceSession.modal";
+import logger from "../../config/logger";
+import Role from "../../modals/Role.modal";
+import { resolveRequestAuthRole } from "../../middlewares/auth";
 
 interface IGetUserInfoRequest extends Request {
   session: any; // same interface as your boilerplate
@@ -30,6 +34,26 @@ const getCookieValue = (req: Request, name: string): string | undefined => {
     ?.split("=")
     .slice(1)
     .join("=");
+};
+
+const getRoleCookieNames = (roleStr: string) => {
+  const cleanRole = String(roleStr || "").toUpperCase().replace(/[\s_-]+/g, "");
+  if (cleanRole === "SUPERADMIN") {
+    return { access: "superAdminToken", refresh: "superAdminRefreshToken" };
+  }
+  if (cleanRole === "ADMIN") {
+    return { access: "adminToken", refresh: "adminRefreshToken" };
+  }
+  if (cleanRole === "TEACHER") {
+    return { access: "teacherToken", refresh: "teacherRefreshToken" };
+  }
+  if (cleanRole === "STUDENT") {
+    return { access: "studentToken", refresh: "studentRefreshToken" };
+  }
+  if (cleanRole === "SCANNER") {
+    return { access: "scannerToken", refresh: "scannerRefreshToken" };
+  }
+  return { access: "accessToken", refresh: "refreshToken" };
 };
 
 // ─── GET CAPTCHA ──────────────────────────────────────────────────────────────
@@ -86,8 +110,10 @@ const loginViaExamUser = async (
       { where: { userId: result.data.user.userId } },
     );
 
-    // Set tokens as httpOnly cookies
-    res.cookie("accessToken", token.access.token, {
+    const cookieNames = getRoleCookieNames((result.data.user as any).role?.role || "");
+
+    // Set tokens as httpOnly cookies (role-scoped to avoid session collisions)
+    res.cookie(cookieNames.access, token.access.token, {
       httpOnly: true,
       secure: false,
       // secure: process.env.NODE_ENV === "production",
@@ -95,14 +121,14 @@ const loginViaExamUser = async (
       sameSite: "lax",
     });
 
-    res.cookie("refreshToken", token.refresh.token, {
+    res.cookie(cookieNames.refresh, token.refresh.token, {
       httpOnly: true,
       secure: false,
       maxAge: config.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
       sameSite: "lax",
     });
 
-    // Send basic user data to frontend (exclude sensitive information)
+    // Send user data and access tokens to frontend
     const userData = {
       userName: result.data.user.userName,
       userId: result.data.user.userId,
@@ -112,6 +138,9 @@ const loginViaExamUser = async (
       role: (result.data.user as any).role?.role?.toLowerCase() || null,
       instituteId: result.data.user.instituteId,
       status: result.data.user.status,
+      token: token.access.token,
+      accessToken: token.access.token,
+      refreshToken: token.refresh.token,
     };
 
     return res.status(httpStatus.OK).send({
@@ -121,7 +150,7 @@ const loginViaExamUser = async (
       data: userData,
     });
   } catch (error) {
-    console.error(error);
+    logger.error(`Login error: ${error}`);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -136,9 +165,36 @@ const refreshAccessToken = async (
   res: Response,
 ): Promise<any> => {
   try {
-    const refreshToken = getCookieValue(req, "refreshToken");
+    const superAdminRefresh = getCookieValue(req, "superAdminRefreshToken");
+    const adminRefresh = getCookieValue(req, "adminRefreshToken");
+    const teacherRefresh = getCookieValue(req, "teacherRefreshToken");
+    const studentRefresh = getCookieValue(req, "studentRefreshToken");
+    const scannerRefresh = getCookieValue(req, "scannerRefreshToken");
+    const defaultRefresh = getCookieValue(req, "refreshToken");
+    const bodyRefresh =
+      typeof req.body?.refreshToken === "string" ? req.body.refreshToken : undefined;
+    const authRole = resolveRequestAuthRole(req);
 
-    if (!refreshToken) {
+    const roleRefreshByKey: Record<string, string | undefined> = {
+      superadmin: superAdminRefresh,
+      admin: adminRefresh,
+      teacher: teacherRefresh,
+      student: studentRefresh,
+      scanner: scannerRefresh,
+    };
+
+    const candidates = [
+      bodyRefresh,
+      authRole ? roleRefreshByKey[authRole] : undefined,
+      !authRole ? adminRefresh : undefined,
+      !authRole ? teacherRefresh : undefined,
+      !authRole ? superAdminRefresh : undefined,
+      !authRole ? studentRefresh : undefined,
+      !authRole ? scannerRefresh : undefined,
+      defaultRefresh,
+    ].filter((value, index, list): value is string => !!value && list.indexOf(value) === index);
+
+    if (!candidates.length) {
       return res.status(httpStatus.BAD_REQUEST).json({
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
@@ -146,11 +202,20 @@ const refreshAccessToken = async (
       });
     }
 
+    let refreshToken: string | undefined;
     let decoded: any;
-    try {
-      decoded = jwt.verify(refreshToken, config.jwt.secret);
-    } catch (err: any) {
-      console.error("Invalid refresh token:", err.message);
+    for (const candidate of candidates) {
+      try {
+        decoded = jwt.verify(candidate, config.jwt.secret);
+        refreshToken = candidate;
+        break;
+      } catch {
+        // try next candidate (stale tab token vs rotated cookie)
+      }
+    }
+
+    if (!refreshToken || !decoded) {
+      logger.error("Invalid refresh token: no usable candidate");
       return res.status(httpStatus.FORBIDDEN).json({
         error: true,
         statusCode: httpStatus.FORBIDDEN,
@@ -171,7 +236,10 @@ const refreshAccessToken = async (
       });
     }
 
-    const user = await UserModal.findOne({ where: { userId } });
+    const user = await UserModal.findOne({
+      where: { userId },
+      include: [{ model: Role, as: "role" }],
+    });
 
     if (!user) {
       return res.status(httpStatus.NOT_FOUND).json({
@@ -181,14 +249,16 @@ const refreshAccessToken = async (
       });
     }
 
-    // ── Refresh token verification ──
-    // 1. Confirm JWT signature & expiration (already done by jwt.verify above).
-    // 2. Confirm token belongs to the user and user session is active (not logged out).
+    const matchingStored = candidates.find((candidate) => candidate === user.refreshToken);
+    if (matchingStored) {
+      refreshToken = matchingStored;
+    }
+
     const isSameUser =
       (decoded as any).sub?.userId === user.userId ||
       (decoded as any).sub === user.userId;
 
-    if (!isSameUser || !user.refreshToken) {
+    if (!isSameUser || !user.refreshToken || user.refreshToken !== refreshToken) {
       return res.status(httpStatus.FORBIDDEN).json({
         error: true,
         statusCode: httpStatus.FORBIDDEN,
@@ -203,14 +273,16 @@ const refreshAccessToken = async (
       { where: { userId: user.userId } },
     );
 
-    res.cookie("accessToken", token.access.token, {
+    const cookieNames = getRoleCookieNames((user as any).role?.role || "");
+
+    res.cookie(cookieNames.access, token.access.token, {
       httpOnly: true,
       secure: false,
       maxAge: config.jwt.accessExpirationMinutes * 60 * 1000,
       sameSite: "lax",
     });
 
-    res.cookie("refreshToken", token.refresh.token, {
+    res.cookie(cookieNames.refresh, token.refresh.token, {
       httpOnly: true,
       secure: false,
       maxAge: config.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
@@ -221,9 +293,14 @@ const refreshAccessToken = async (
       error: false,
       statusCode: httpStatus.OK,
       message: "Access token refreshed successfully",
+      data: {
+        token: token.access.token,
+        accessToken: token.access.token,
+        refreshToken: token.refresh.token,
+      },
     });
   } catch (error) {
-    console.error("Refresh token error:", error);
+    logger.error(`Refresh token error: ${error}`);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -257,7 +334,7 @@ const createViaExamUser = async (req: any, res: Response): Promise<any> => {
         role: req.body.role || "User",
         loginUrl,
       }).catch((err) => {
-        console.error("Background user email dispatch failed:", err);
+        logger.error(`Background user email dispatch failed: ${err}`);
       });
     }
 
@@ -279,18 +356,22 @@ const createViaExamUser = async (req: any, res: Response): Promise<any> => {
  */
 const logoutViaExamUser = async (req: any, res: Response): Promise<any> => {
   try {
-    // Clear access token cookie
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
+    // Clear only this user's role cookies so other tabs stay logged in
+    const cookieOpts = { httpOnly: true, secure: false, sameSite: "lax" as const };
+    const cookieNames = getRoleCookieNames(req.viaExamUser?.role?.role || "");
+    res.clearCookie(cookieNames.access, cookieOpts);
+    res.clearCookie(cookieNames.refresh, cookieOpts);
+    if (cookieNames.access !== "accessToken") {
+      res.clearCookie("accessToken", cookieOpts);
+      res.clearCookie("refreshToken", cookieOpts);
+    }
 
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
+    if (req.viaExamUser?.userId) {
+      UserPresenceSession.update(
+        { presenceStatus: "OFFLINE", currentActivity: "Logged Out", lastLogoutAt: new Date() },
+        { where: { userId: req.viaExamUser.userId } }
+      ).catch(() => {});
+    }
 
     const result = await Service.viaExamUserLogout(req.viaExamUser.userId);
     return res.status(result.statusCode).send(result);

@@ -21,6 +21,7 @@ import academicCalendarRoutes from "./academicCalendar.route";
 import authRoutes from "./auth.route";
 import notificationRoutes from "./notification.route";
 import aiEvaluationRoutes from "./aiEvaluation.route";
+import monitoringRoutes from "./monitoring.route";
 
 const router = express.Router();
 
@@ -100,6 +101,10 @@ const defaultRoutes = [
   {
     path: "/ai-evaluation",
     route: aiEvaluationRoutes,
+  },
+  {
+    path: "/monitoring",
+    route: monitoringRoutes,
   },
   
   // {
