@@ -77,10 +77,21 @@ const deleteScanner = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const reactivateScanner = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await ScannerUserService.reactivateScanner(req.params.userId, req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    console.error("reactivateScanner Controller Error:", error);
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
 export default {
   createScanner,
   getAllScanners,
   getScannerById,
   updateScanner,
   deleteScanner,
+  reactivateScanner,
 };

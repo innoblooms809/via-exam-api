@@ -14,6 +14,8 @@ import AcademicCalendar from "./AcademicCalendar.modal";
 import Notification from "./Notification.modal";
 import AIEvaluation from "./AIEvaluation.modal";
 import ScannerProfile from "./ScannerProfile.modal";
+import ActivityLog from "./ActivityLog.modal";
+import UserPresenceSession from "./UserPresenceSession.modal";
 
 export {
   User,
@@ -31,7 +33,9 @@ export {
   AcademicCalendar,
   Notification,
   AIEvaluation,
-  ScannerProfile
+  ScannerProfile,
+  ActivityLog,
+  UserPresenceSession,
 };
 
 // ROLE ↔ ACCESS
