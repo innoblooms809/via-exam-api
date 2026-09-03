@@ -143,13 +143,18 @@ const createScanner = async (
 // ─── GET ALL SCANNERS ─────────────────────────────────────────────────────────
 const getAllScanners = async (createdBy: any, query: any): Promise<any> => {
   try {
-    const { search = "" } = query;
+    const { search = "", status } = query;
     const scannerRole = await Role.findOne({ where: { role: "SCANNER" } });
 
     const where: any = {
       instituteId: createdBy.instituteId,
       roleId: scannerRole?.id,
     };
+
+    // Only add status filter if explicitly provided
+    if (status !== undefined && status !== "") {
+      where.status = parseInt(status, 10);
+    }
 
     if (search) {
       where[Op.or] = [
@@ -329,7 +334,9 @@ const deleteScanner = async (userId: string, createdBy: any): Promise<any> => {
       };
     }
 
+    console.log("Before deactivation - Scanner status:", user.status);
     await user.update({ status: 0 });
+    console.log("After deactivation - Scanner status:", user.status);
 
     return {
       error: false,
@@ -338,6 +345,42 @@ const deleteScanner = async (userId: string, createdBy: any): Promise<any> => {
       data: {},
     };
   } catch (e: any) {
+    console.error("Delete scanner error:", e);
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
+// ─── REACTIVATE SCANNER ──────────────────────────────────────────────────────
+const reactivateScanner = async (userId: string, createdBy: any): Promise<any> => {
+  try {
+    const user = await UserModal.findOne({
+      where: { userId, instituteId: createdBy.instituteId },
+    });
+
+    if (!user) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Scanner not found.",
+      };
+    }
+
+    console.log("Before reactivation - Scanner status:", user.status);
+    await user.update({ status: 1 });
+    console.log("After reactivation - Scanner status:", user.status);
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Scanner reactivated successfully.",
+      data: {},
+    };
+  } catch (e: any) {
+    console.error("Reactivate scanner error:", e);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -352,4 +395,5 @@ export default {
   getScannerById,
   updateScanner,
   deleteScanner,
+  reactivateScanner,
 };

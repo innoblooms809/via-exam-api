@@ -554,29 +554,253 @@ export const sendAdminCredentials = async (data: {
   }
 };
 
+// ─── Role-specific OTP email templates ──────────────────────────────────────────
 export const sendOtpEmail = async ({
   toEmail,
   userName,
   otp,
+  role,
 }: {
   toEmail: string;
   userName: string;
   otp: string;
+  role?: string;
 }) => {
   try {
+    const roleSpecificContent = getRoleSpecificOTPContent(role);
+    
     await transporter.sendMail({
-      from: config.email.from,
+      from: `"ViaExam" <${config.email.smtp.auth.user}>`,
       to: toEmail,
-      subject: "Your Password Reset OTP",
-      html: `
-        <h2>Hello ${userName},</h2>
-        <p>Your OTP for password reset is:</p>
-        <h1 style="letter-spacing: 8px; color: #3b6ef6">${otp}</h1>
-        <p>This OTP is valid for <strong>10 minutes</strong>.</p>
-        <p>If you did not request this, ignore this email.</p>
-      `,
+      subject: roleSpecificContent.subject,
+      html: roleSpecificContent.html(userName, otp),
     });
   } catch (error) {
     console.error("Failed to send OTP email:", error);
   }
 };
+
+// Helper function to get role-specific email content
+function getRoleSpecificOTPContent(role?: string) {
+  const baseStyles = `
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(135deg, #0f0e1a 0%, #1a1535 100%); padding: 32px 40px; text-align: center; }
+    .header h1 { color: #fff; font-size: 22px; margin: 0; }
+    .header p { color: rgba(255,255,255,0.45); font-size: 13px; margin: 6px 0 0; }
+    .body { padding: 32px 40px; }
+    .greeting { font-size: 16px; color: #111827; font-weight: 600; margin-bottom: 10px; }
+    .text { font-size: 14px; color: #6b7280; line-height: 1.7; margin-bottom: 24px; }
+    .otp-box { background: linear-gradient(135deg, #534AB7, #3C3489); color: #fff; border-radius: 10px; padding: 24px; text-align: center; margin: 24px 0; }
+    .otp-code { font-size: 32px; font-weight: 700; letter-spacing: 8px; margin: 0; }
+    .warning { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin-top: 22px; }
+    .warning p { font-size: 13px; color: #92400e; margin: 0; line-height: 1.6; }
+    .footer { background: #f9fafb; padding: 18px 40px; text-align: center; }
+    .footer p { font-size: 12px; color: #9ca3af; margin: 0; }
+  `;
+
+  const roleMessages = {
+    admin: {
+      subject: "🔐 Password Reset OTP - ViaExam Admin Dashboard",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Admin Dashboard</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Admin</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact support immediately.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    },
+    teacher: {
+      subject: "🔐 Password Reset OTP - ViaExam Teacher Portal",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Teacher Portal</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Teacher</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact your institute administrator.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    },
+    student: {
+      subject: "🔐 Password Reset OTP - ViaExam Student Portal",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Student Portal</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Student</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact your teacher or institute administrator.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    },
+    scanner: {
+      subject: "🔐 Password Reset OTP - ViaExam Scanner Portal",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Scanner Portal</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Scanner</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact your institute administrator.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    },
+    super_admin: {
+      subject: "🔐 Password Reset OTP - ViaExam Super Admin Dashboard",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Super Admin Dashboard</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Super Admin</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact platform support immediately.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    }
+  };
+
+  return roleMessages[role as keyof typeof roleMessages] || roleMessages.student;
+}
