@@ -20,6 +20,10 @@ const user_service_1 = __importDefault(require("../../services/auth/user.service
 const mailHelper_1 = require("../../utils/mailHelper"); // reuse your mail helper
 const config_1 = __importDefault(require("../../config/config"));
 const User_modal_1 = __importDefault(require("../../modals/User.modal"));
+const UserPresenceSession_modal_1 = __importDefault(require("../../modals/UserPresenceSession.modal"));
+const logger_1 = __importDefault(require("../../config/logger"));
+const Role_modal_1 = __importDefault(require("../../modals/Role.modal"));
+const auth_1 = require("../../middlewares/auth");
 const getCookieValue = (req, name) => {
     var _a;
     const cookies = req.cookies;
@@ -34,6 +38,25 @@ const getCookieValue = (req, name) => {
         .split(";")
         .map((cookie) => cookie.trim())
         .find((cookie) => cookie.startsWith(`${name}=`))) === null || _a === void 0 ? void 0 : _a.split("=").slice(1).join("=");
+};
+const getRoleCookieNames = (roleStr) => {
+    const cleanRole = String(roleStr || "").toUpperCase().replace(/[\s_-]+/g, "");
+    if (cleanRole === "SUPERADMIN") {
+        return { access: "superAdminToken", refresh: "superAdminRefreshToken" };
+    }
+    if (cleanRole === "ADMIN") {
+        return { access: "adminToken", refresh: "adminRefreshToken" };
+    }
+    if (cleanRole === "TEACHER") {
+        return { access: "teacherToken", refresh: "teacherRefreshToken" };
+    }
+    if (cleanRole === "STUDENT") {
+        return { access: "studentToken", refresh: "studentRefreshToken" };
+    }
+    if (cleanRole === "SCANNER") {
+        return { access: "scannerToken", refresh: "scannerRefreshToken" };
+    }
+    return { access: "accessToken", refresh: "refreshToken" };
 };
 // ─── GET CAPTCHA ──────────────────────────────────────────────────────────────
 /**
@@ -56,7 +79,7 @@ const getCaptcha = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
  * Reuses: your tokenService.generateUserAuthTokens()
  */
 const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c;
     try {
         const { slug, emailId, password } = req.body;
         // CAPTCHA check — identical to your boilerplate
@@ -73,30 +96,34 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
         }
         const token = yield token_service_1.default.generateUserAuthTokens(result.data.user);
         yield User_modal_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: result.data.user.userId } });
-        // Set tokens as httpOnly cookies
-        res.cookie("accessToken", token.access.token, {
+        const cookieNames = getRoleCookieNames(((_a = result.data.user.role) === null || _a === void 0 ? void 0 : _a.role) || "");
+        // Set tokens as httpOnly cookies (role-scoped to avoid session collisions)
+        res.cookie(cookieNames.access, token.access.token, {
             httpOnly: true,
             secure: false,
             // secure: process.env.NODE_ENV === "production",
             maxAge: config_1.default.jwt.accessExpirationMinutes * 60 * 1000,
             sameSite: "lax",
         });
-        res.cookie("refreshToken", token.refresh.token, {
+        res.cookie(cookieNames.refresh, token.refresh.token, {
             httpOnly: true,
             secure: false,
             maxAge: config_1.default.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
             sameSite: "lax",
         });
-        // Send basic user data to frontend (exclude sensitive information)
+        // Send user data and access tokens to frontend
         const userData = {
             userName: result.data.user.userName,
             userId: result.data.user.userId,
             emailId: result.data.user.emailId,
             phoneNumber: result.data.user.phoneNumber,
             roleId: result.data.user.roleId,
-            role: ((_b = (_a = result.data.user.role) === null || _a === void 0 ? void 0 : _a.role) === null || _b === void 0 ? void 0 : _b.toLowerCase()) || null,
+            role: ((_c = (_b = result.data.user.role) === null || _b === void 0 ? void 0 : _b.role) === null || _c === void 0 ? void 0 : _c.toLowerCase()) || null,
             instituteId: result.data.user.instituteId,
             status: result.data.user.status,
+            token: token.access.token,
+            accessToken: token.access.token,
+            refreshToken: token.refresh.token,
         };
         return res.status(http_status_1.default.OK).send({
             error: false,
@@ -106,7 +133,7 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
         });
     }
     catch (error) {
-        console.error(error);
+        logger_1.default.error(`Login error: ${error}`);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -116,22 +143,54 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c, _d, _e;
+    var _d, _e, _f, _g, _h;
     try {
-        const refreshToken = getCookieValue(req, "refreshToken");
-        if (!refreshToken) {
+        const superAdminRefresh = getCookieValue(req, "superAdminRefreshToken");
+        const adminRefresh = getCookieValue(req, "adminRefreshToken");
+        const teacherRefresh = getCookieValue(req, "teacherRefreshToken");
+        const studentRefresh = getCookieValue(req, "studentRefreshToken");
+        const scannerRefresh = getCookieValue(req, "scannerRefreshToken");
+        const defaultRefresh = getCookieValue(req, "refreshToken");
+        const bodyRefresh = typeof ((_d = req.body) === null || _d === void 0 ? void 0 : _d.refreshToken) === "string" ? req.body.refreshToken : undefined;
+        const authRole = (0, auth_1.resolveRequestAuthRole)(req);
+        const roleRefreshByKey = {
+            superadmin: superAdminRefresh,
+            admin: adminRefresh,
+            teacher: teacherRefresh,
+            student: studentRefresh,
+            scanner: scannerRefresh,
+        };
+        const candidates = [
+            bodyRefresh,
+            authRole ? roleRefreshByKey[authRole] : undefined,
+            !authRole ? adminRefresh : undefined,
+            !authRole ? teacherRefresh : undefined,
+            !authRole ? superAdminRefresh : undefined,
+            !authRole ? studentRefresh : undefined,
+            !authRole ? scannerRefresh : undefined,
+            defaultRefresh,
+        ].filter((value, index, list) => !!value && list.indexOf(value) === index);
+        if (!candidates.length) {
             return res.status(http_status_1.default.BAD_REQUEST).json({
                 error: true,
                 statusCode: http_status_1.default.BAD_REQUEST,
                 message: "Refresh token missing",
             });
         }
+        let refreshToken;
         let decoded;
-        try {
-            decoded = jsonwebtoken_1.default.verify(refreshToken, config_1.default.jwt.secret);
+        for (const candidate of candidates) {
+            try {
+                decoded = jsonwebtoken_1.default.verify(candidate, config_1.default.jwt.secret);
+                refreshToken = candidate;
+                break;
+            }
+            catch (_j) {
+                // try next candidate (stale tab token vs rotated cookie)
+            }
         }
-        catch (err) {
-            console.error("Invalid refresh token:", err.message);
+        if (!refreshToken || !decoded) {
+            logger_1.default.error("Invalid refresh token: no usable candidate");
             return res.status(http_status_1.default.FORBIDDEN).json({
                 error: true,
                 statusCode: http_status_1.default.FORBIDDEN,
@@ -139,8 +198,8 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         const userId = typeof decoded.sub === "object"
-            ? (_c = decoded.sub) === null || _c === void 0 ? void 0 : _c.userId
-            : (_d = decoded.sub) !== null && _d !== void 0 ? _d : decoded.userId;
+            ? (_e = decoded.sub) === null || _e === void 0 ? void 0 : _e.userId
+            : (_f = decoded.sub) !== null && _f !== void 0 ? _f : decoded.userId;
         if (!userId) {
             return res.status(http_status_1.default.FORBIDDEN).json({
                 error: true,
@@ -148,7 +207,10 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 message: "Invalid refresh token payload",
             });
         }
-        const user = yield User_modal_1.default.findOne({ where: { userId } });
+        const user = yield User_modal_1.default.findOne({
+            where: { userId },
+            include: [{ model: Role_modal_1.default, as: "role" }],
+        });
         if (!user) {
             return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
@@ -156,12 +218,13 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 message: "User not found",
             });
         }
-        // ── Refresh token verification ──
-        // 1. Confirm JWT signature & expiration (already done by jwt.verify above).
-        // 2. Confirm token belongs to the user and user session is active (not logged out).
-        const isSameUser = ((_e = decoded.sub) === null || _e === void 0 ? void 0 : _e.userId) === user.userId ||
+        const matchingStored = candidates.find((candidate) => candidate === user.refreshToken);
+        if (matchingStored) {
+            refreshToken = matchingStored;
+        }
+        const isSameUser = ((_g = decoded.sub) === null || _g === void 0 ? void 0 : _g.userId) === user.userId ||
             decoded.sub === user.userId;
-        if (!isSameUser || !user.refreshToken) {
+        if (!isSameUser || !user.refreshToken || user.refreshToken !== refreshToken) {
             return res.status(http_status_1.default.FORBIDDEN).json({
                 error: true,
                 statusCode: http_status_1.default.FORBIDDEN,
@@ -170,13 +233,14 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
         }
         const token = yield token_service_1.default.generateUserAuthTokens(user);
         yield User_modal_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: user.userId } });
-        res.cookie("accessToken", token.access.token, {
+        const cookieNames = getRoleCookieNames(((_h = user.role) === null || _h === void 0 ? void 0 : _h.role) || "");
+        res.cookie(cookieNames.access, token.access.token, {
             httpOnly: true,
             secure: false,
             maxAge: config_1.default.jwt.accessExpirationMinutes * 60 * 1000,
             sameSite: "lax",
         });
-        res.cookie("refreshToken", token.refresh.token, {
+        res.cookie(cookieNames.refresh, token.refresh.token, {
             httpOnly: true,
             secure: false,
             maxAge: config_1.default.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
@@ -186,10 +250,15 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Access token refreshed successfully",
+            data: {
+                token: token.access.token,
+                accessToken: token.access.token,
+                refreshToken: token.refresh.token,
+            },
         });
     }
     catch (error) {
-        console.error("Refresh token error:", error);
+        logger_1.default.error(`Refresh token error: ${error}`);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -203,11 +272,11 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
  * Mirrors your createUser() — also sends welcome email
  */
 const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _f, _g;
+    var _k, _l;
     try {
         const result = yield user_service_1.default.viaExamUserCreate(req);
         if (!result.error) {
-            const slug = (_g = (_f = req.viaExamUser) === null || _f === void 0 ? void 0 : _f.institute) === null || _g === void 0 ? void 0 : _g.slug;
+            const slug = (_l = (_k = req.viaExamUser) === null || _k === void 0 ? void 0 : _k.institute) === null || _l === void 0 ? void 0 : _l.slug;
             const loginUrl = slug
                 ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
                 : `${config_1.default.frontendUrl}/auth/signin`;
@@ -220,7 +289,7 @@ const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
                 role: req.body.role || "User",
                 loginUrl,
             }).catch((err) => {
-                console.error("Background user email dispatch failed:", err);
+                logger_1.default.error(`Background user email dispatch failed: ${err}`);
             });
         }
         return res.status(result.statusCode).send(result);
@@ -240,18 +309,20 @@ const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
  * Protected by authenticate middleware — reads userId from req.viaExamUser
  */
 const logoutViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _m, _o, _p;
     try {
-        // Clear access token cookie
-        res.clearCookie("accessToken", {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax",
-        });
-        res.clearCookie("refreshToken", {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax",
-        });
+        // Clear only this user's role cookies so other tabs stay logged in
+        const cookieOpts = { httpOnly: true, secure: false, sameSite: "lax" };
+        const cookieNames = getRoleCookieNames(((_o = (_m = req.viaExamUser) === null || _m === void 0 ? void 0 : _m.role) === null || _o === void 0 ? void 0 : _o.role) || "");
+        res.clearCookie(cookieNames.access, cookieOpts);
+        res.clearCookie(cookieNames.refresh, cookieOpts);
+        if (cookieNames.access !== "accessToken") {
+            res.clearCookie("accessToken", cookieOpts);
+            res.clearCookie("refreshToken", cookieOpts);
+        }
+        if ((_p = req.viaExamUser) === null || _p === void 0 ? void 0 : _p.userId) {
+            UserPresenceSession_modal_1.default.update({ presenceStatus: "OFFLINE", currentActivity: "Logged Out", lastLogoutAt: new Date() }, { where: { userId: req.viaExamUser.userId } }).catch(() => { });
+        }
         const result = yield user_service_1.default.viaExamUserLogout(req.viaExamUser.userId);
         return res.status(result.statusCode).send(result);
     }
