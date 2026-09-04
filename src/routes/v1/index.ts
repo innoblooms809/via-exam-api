@@ -25,6 +25,7 @@ import dashboardRoutes from "./dashboard.route";
 import adminDashboardRoutes from "./Admindashboard.route";
 import teacherDashboardRoutes from "./teacherdashboard.route";
 import studentDashboardRoutes from "./studentdashboard.route";
+import monitoringRoutes from "./monitoring.route";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -119,6 +120,10 @@ const defaultRoutes = [
   {
     path: "/ai-evaluation",
     route: aiEvaluationRoutes,
+  },
+  {
+    path: "/monitoring",
+    route: monitoringRoutes,
   },
   
   // {
