@@ -1,9 +1,13 @@
 import httpStatus from "http-status";
+import { Op } from "sequelize";
 import Scanner from "../modals/Scanner.modal";
 import AIEvaluation from "../modals/AIEvaluation.modal";
 import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
 import QuestionPaperAnswer from "../modals/question-paper/stander-answer.model";
 import Exam from "../modals/Exam.modal";
+import Class from "../modals/Class.modal";
+import Subject from "../modals/Subject.modal";
+import Session from "../modals/Session.modal";
 import RegHelper from "../utils/helper";
 
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
@@ -341,59 +345,77 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
   try {
     const instituteId = requestedBy.instituteId;
 
-    // Find exams where both question paper and answer sheet are approved
-    const questionPapers = await QuestionPaper.findAll({
-      where: { instituteId, status: "APPROVED" },
-      attributes: ["examId", "paperSet", "teacherId"],
-    });
+    // Find question papers and answer sheets that are APPROVED or PUBLISHED
+    const [questionPapers, answerSheets] = await Promise.all([
+      QuestionPaper.findAll({
+        where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED"] } },
+        attributes: ["examId", "paperSet", "teacherId"],
+      }),
+      QuestionPaperAnswer.findAll({
+        where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED"] } },
+        attributes: ["examId", "paperSet", "teacherId"],
+      }),
+    ]);
 
-    const answerSheets = await QuestionPaperAnswer.findAll({
-      where: { instituteId, status: "APPROVED" },
-      attributes: ["examId", "paperSet", "teacherId"],
-    });
+    const qpExamIds = new Set(questionPapers.map((qp) => qp.examId));
+    const ansExamIds = new Set(answerSheets.map((ans) => ans.examId));
 
-    // Find exam IDs that have both approved QP and answer sheet
-    const approvedExamIds = new Set(
-      [...questionPapers, ...answerSheets].map((item) => item.examId)
-    );
+    // Exam must have BOTH Question Paper AND Answer Sheet approved, OR status === 'Live'
+    const fullyApprovedExamIds = Array.from(qpExamIds).filter((examId) => ansExamIds.has(examId));
+
+    const whereExam: any = {
+      instituteId,
+      isDeleted: false,
+      [Op.or]: [
+        { status: "Live" },
+        { examId: { [Op.in]: fullyApprovedExamIds } },
+      ],
+    };
 
     const exams = await Exam.findAll({
-      where: { 
-        examId: Array.from(approvedExamIds),
-        instituteId,
-        isDeleted: false,
-      },
-      attributes: ["examId", "examName", "instituteId", "status"],
+      where: whereExam,
+      order: [["createdAt", "DESC"]],
     });
 
-    // For each exam, get additional details and count uploaded student papers
+    const classIds = Array.from(new Set(exams.map((e) => e.classId).filter(Boolean))) as string[];
+    const subjectIds = Array.from(new Set(exams.map((e) => e.subjectId).filter(Boolean))) as string[];
+    const sessionIds = Array.from(new Set(exams.map((e) => e.sessionId).filter(Boolean))) as string[];
+
+    const [classesList, subjectsList, sessionsList] = await Promise.all([
+      classIds.length > 0 ? Class.findAll({ where: { classId: { [Op.in]: classIds } } }) : [],
+      subjectIds.length > 0 ? Subject.findAll({ where: { subjectId: { [Op.in]: subjectIds } } }) : [],
+      sessionIds.length > 0 ? Session.findAll({ where: { sessionId: { [Op.in]: sessionIds } } }) : [],
+    ]);
+
+    const classMap = new Map<string, string>(classesList.map((c: any) => [c.classId, c.className]));
+    const subjectMap = new Map<string, string>(subjectsList.map((s: any) => [s.subjectId, s.subjectName]));
+    const sessionMap = new Map<string, string>(sessionsList.map((s: any) => [s.sessionId, s.sessionName]));
+
     const enrichedExams = await Promise.all(
       exams.map(async (exam: any) => {
         const examJson = exam.toJSON();
-        
-        // Get question paper and answer sheet details
-        const qp = questionPapers.find((qp) => qp.examId === exam.examId);
-        const as = answerSheets.find((as) => as.examId === exam.examId);
-        
-        // Count uploaded student papers for this exam
+        const qp = questionPapers.find((item) => item.examId === exam.examId);
+        const as = answerSheets.find((item) => item.examId === exam.examId);
+
         const uploadedCount = await Scanner.count({
-          where: { 
+          where: {
             examId: exam.examId,
             instituteId,
             isDeleted: false,
           },
         });
 
-        // Get total students (you might need to adjust this based on your student enrollment logic)
-        const totalStudents = uploadedCount + 10; // Placeholder - adjust based on actual student count
+        const className = exam.classId ? classMap.get(exam.classId) || exam.classId : "All Classes";
+        const subjectName = exam.subjectId ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
+        const sessionName = exam.sessionId ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
 
         return {
           ...examJson,
-          subject: "Subject", // Would need to fetch from subject table
-          className: "Class", // Would need to fetch from class table
+          examName: exam.examType || "Examination",
+          subject: subjectName,
+          className,
+          session: sessionName,
           setLabel: qp?.paperSet || as?.paperSet || "A",
-          session: "Session", // Would need to fetch from session table
-          totalStudents,
           uploadedCount,
         };
       })
