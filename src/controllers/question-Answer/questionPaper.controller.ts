@@ -294,6 +294,46 @@ export const getQuestionPaperUploads = async (req: Request, res: Response) => {
 
 // ─── APPROVAL WORKFLOW CONTROLLERS ─────────────────────────────────────────
 
+export const submitExamForApproval = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { examId } = req.params;
+    const teacherId = req.viaExamUser.userId;
+
+    const result = await QuestionPaperService.submitExamForApproval(examId, teacherId);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Exam question paper and answer sheet submitted for approval successfully.",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
+export const submitExamForApproval = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { examId } = req.params;
+    const teacherId = req.viaExamUser.userId;
+
+    const result = await QuestionPaperService.submitExamForApproval(examId, teacherId);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Exam question paper and answer sheet submitted for approval successfully.",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
 export const submitQuestionPaper = async (req: any, res: Response): Promise<any> => {
   try {
     const { paperId } = req.params;
