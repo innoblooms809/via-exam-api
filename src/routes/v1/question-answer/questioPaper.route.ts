@@ -5,6 +5,7 @@ import {
   uploadImageController,
   getQuestionPaperBySelection,
   submitQuestionPaper,
+  submitExamForApproval,
   approveQuestionPaper,
   rejectQuestionPaper,
   publishQuestionPaper,
@@ -44,6 +45,13 @@ router.post(
 );
 
 // ─── APPROVAL WORKFLOW ROUTES ──────────────────────────────────────────────
+
+// Single-click submit both Question Paper & Answer Sheet by examId
+router.patch(
+  "/submitExamForApproval/:examId/submit",
+  authenticate,
+  submitExamForApproval
+);
 
 // Teacher submits paper for review
 router.patch(
