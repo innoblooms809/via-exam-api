@@ -1,6 +1,9 @@
 import httpStatus from "http-status";
 import Scanner from "../modals/Scanner.modal";
 import AIEvaluation from "../modals/AIEvaluation.modal";
+import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
+import QuestionPaperAnswer from "../modals/question-paper/stander-answer.model";
+import Exam from "../modals/Exam.modal";
 import RegHelper from "../utils/helper";
 
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
@@ -331,6 +334,209 @@ const deleteSheet = async (sheetId: string, requestedBy: any): Promise<any> => {
   }
 };
 
+// ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────────
+
+// Get approved exams for scanner to upload student answer papers
+const getApprovedExams = async (requestedBy: any): Promise<any> => {
+  try {
+    const instituteId = requestedBy.instituteId;
+
+    // Find exams where both question paper and answer sheet are approved
+    const questionPapers = await QuestionPaper.findAll({
+      where: { instituteId, status: "APPROVED" },
+      attributes: ["examId", "paperSet", "teacherId"],
+    });
+
+    const answerSheets = await QuestionPaperAnswer.findAll({
+      where: { instituteId, status: "APPROVED" },
+      attributes: ["examId", "paperSet", "teacherId"],
+    });
+
+    // Find exam IDs that have both approved QP and answer sheet
+    const approvedExamIds = new Set(
+      [...questionPapers, ...answerSheets].map((item) => item.examId)
+    );
+
+    const exams = await Exam.findAll({
+      where: { 
+        examId: Array.from(approvedExamIds),
+        instituteId,
+        isDeleted: false,
+      },
+      attributes: ["examId", "examName", "instituteId", "status"],
+    });
+
+    // For each exam, get additional details and count uploaded student papers
+    const enrichedExams = await Promise.all(
+      exams.map(async (exam: any) => {
+        const examJson = exam.toJSON();
+        
+        // Get question paper and answer sheet details
+        const qp = questionPapers.find((qp) => qp.examId === exam.examId);
+        const as = answerSheets.find((as) => as.examId === exam.examId);
+        
+        // Count uploaded student papers for this exam
+        const uploadedCount = await Scanner.count({
+          where: { 
+            examId: exam.examId,
+            instituteId,
+            isDeleted: false,
+          },
+        });
+
+        // Get total students (you might need to adjust this based on your student enrollment logic)
+        const totalStudents = uploadedCount + 10; // Placeholder - adjust based on actual student count
+
+        return {
+          ...examJson,
+          subject: "Subject", // Would need to fetch from subject table
+          className: "Class", // Would need to fetch from class table
+          setLabel: qp?.paperSet || as?.paperSet || "A",
+          session: "Session", // Would need to fetch from session table
+          totalStudents,
+          uploadedCount,
+        };
+      })
+    );
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Approved exams fetched successfully.",
+      data: { exams: enrichedExams },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
+// Upload single student answer paper for approval workflow
+const uploadStudentAnswerPaper = async (
+  body: {
+    examId: string;
+    studentName: string;
+    rollNumber: string;
+    section: string;
+    classId: string;
+  },
+  file: Express.Multer.File | undefined,
+  uploadedBy: any
+): Promise<any> => {
+  try {
+    const instituteId = uploadedBy.instituteId;
+    
+    if (!file) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "No file provided.",
+      };
+    }
+
+    if (!body.examId || !body.studentName || !body.rollNumber || !body.section || !body.classId) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "examId, studentName, rollNumber, section, and classId are required.",
+      };
+    }
+
+    // Check if exam exists and is approved
+    const exam = await Exam.findOne({
+      where: { examId: body.examId, instituteId, isDeleted: false },
+    });
+
+    if (!exam) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Exam not found.",
+      };
+    }
+
+    // Check duplicate
+    const existing = await Scanner.findOne({
+      where: {
+        instituteId,
+        examId: body.examId,
+        rollNo: body.rollNumber,
+        isDeleted: false,
+      },
+    });
+
+    if (existing) {
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message: "Answer paper already uploaded for this student.",
+      };
+    }
+
+    const sheetId = await RegHelper.generateUserId();
+
+    await Scanner.create({
+      sheetId,
+      instituteId,
+      examId: body.examId,
+      classId: body.classId,
+      section: body.section,
+      subjectId: exam.subjectId,
+      examType: exam.examType,
+      rollNo: body.rollNumber,
+      studentName: body.studentName,
+      fileName: file.originalname,
+      fileBuffer: file.buffer,
+      fileMimeType: file.mimetype,
+      fileSize: file.size,
+      uploadedBy: uploadedBy.userId,
+      status: "UPLOADED",
+    });
+
+    return {
+      error: false,
+      statusCode: httpStatus.CREATED,
+      message: "Student answer paper uploaded successfully.",
+      data: { sheetId },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
+// Get student answer papers for a specific exam
+const getStudentAnswerPapers = async (examId: string, requestedBy: any): Promise<any> => {
+  try {
+    const instituteId = requestedBy.instituteId;
+
+    const papers = await Scanner.findAll({
+      where: { examId, instituteId, isDeleted: false },
+      attributes: { exclude: ["fileBuffer"] },
+      order: [["createdAt", "DESC"]],
+    });
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Student answer papers fetched successfully.",
+      data: { answerPapers: papers },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 export default {
   uploadSheets,
   getAllSheets,
@@ -338,4 +544,7 @@ export default {
   getSheetSummary,
   updateSheetStatus,
   deleteSheet,
+  getApprovedExams,
+  uploadStudentAnswerPaper,
+  getStudentAnswerPapers,
 };
