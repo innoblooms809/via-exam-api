@@ -202,7 +202,7 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
     const search = (query?.search || "").trim();
     const isExaminer = query?.isExaminer || "";
     const teacherTypeFilter = query?.teacherType || "";
-    const statusFilter = query?.status !== undefined && query?.status !== "" ? parseInt(query.status, 10) : 1;
+    const statusFilter = query?.status !== undefined && query?.status !== "" ? parseInt(query.status, 10) : null;
     const sortBy = query?.sortBy || "userName";
     const sortOrder = query?.sortOrder?.toUpperCase() === "DESC" ? "DESC" : "ASC";
 
@@ -211,8 +211,12 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
     const where: any = {
       instituteId: createdBy.instituteId,
       roleId: teacherRole?.id,
-      status: statusFilter,
     };
+
+    // Only add status filter if explicitly provided
+    if (statusFilter !== null) {
+      where.status = statusFilter;
+    }
 
     // Indexed ILIKE search across Name, Email, and Phone
     if (search) {
@@ -508,7 +512,9 @@ const deleteTeacher = async (userId: string, createdBy: any): Promise<any> => {
       };
     }
 
+    console.log("Before deactivation - User status:", user.status);
     await user.update({ status: 0 });
+    console.log("After deactivation - User status:", user.status);
 
     // Unassign teacher from any class they were teaching
     const assignedClass = await Class.findOne({
@@ -525,6 +531,7 @@ const deleteTeacher = async (userId: string, createdBy: any): Promise<any> => {
       data: {},
     };
   } catch (e: any) {
+    console.error("Delete teacher error:", e);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -701,7 +708,9 @@ const reactivateTeacher = async (userId: string, createdBy: any): Promise<any> =
       };
     }
 
+    console.log("Before reactivation - User status:", user.status);
     await user.update({ status: 1 });
+    console.log("After reactivation - User status:", user.status);
 
     return {
       error: false,
@@ -710,6 +719,7 @@ const reactivateTeacher = async (userId: string, createdBy: any): Promise<any> =
       data: {},
     };
   } catch (e: any) {
+    console.error("Reactivate teacher error:", e);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
