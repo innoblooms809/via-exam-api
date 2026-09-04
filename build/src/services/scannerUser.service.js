@@ -135,12 +135,16 @@ const createScanner = (body, files, createdBy) => __awaiter(void 0, void 0, void
 // ─── GET ALL SCANNERS ─────────────────────────────────────────────────────────
 const getAllScanners = (createdBy, query) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { search = "" } = query;
+        const { search = "", status } = query;
         const scannerRole = yield Role_modal_1.default.findOne({ where: { role: "SCANNER" } });
         const where = {
             instituteId: createdBy.instituteId,
             roleId: scannerRole === null || scannerRole === void 0 ? void 0 : scannerRole.id,
         };
+        // Only add status filter if explicitly provided
+        if (status !== undefined && status !== "") {
+            where.status = parseInt(status, 10);
+        }
         if (search) {
             where[sequelize_2.Op.or] = [
                 { userName: { [sequelize_2.Op.iLike]: `%${search}%` } },
@@ -295,7 +299,9 @@ const deleteScanner = (userId, createdBy) => __awaiter(void 0, void 0, void 0, f
                 message: "Scanner not found.",
             };
         }
+        console.log("Before deactivation - Scanner status:", user.status);
         yield user.update({ status: 0 });
+        console.log("After deactivation - Scanner status:", user.status);
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -304,6 +310,39 @@ const deleteScanner = (userId, createdBy) => __awaiter(void 0, void 0, void 0, f
         };
     }
     catch (e) {
+        console.error("Delete scanner error:", e);
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// ─── REACTIVATE SCANNER ──────────────────────────────────────────────────────
+const reactivateScanner = (userId, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield User_modal_1.default.findOne({
+            where: { userId, instituteId: createdBy.instituteId },
+        });
+        if (!user) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Scanner not found.",
+            };
+        }
+        console.log("Before reactivation - Scanner status:", user.status);
+        yield user.update({ status: 1 });
+        console.log("After reactivation - Scanner status:", user.status);
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Scanner reactivated successfully.",
+            data: {},
+        };
+    }
+    catch (e) {
+        console.error("Reactivate scanner error:", e);
         return {
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -317,4 +356,5 @@ exports.default = {
     getScannerById,
     updateScanner,
     deleteScanner,
+    reactivateScanner,
 };
