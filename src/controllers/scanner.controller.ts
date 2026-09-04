@@ -117,6 +117,60 @@ const deleteSheet = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────
+
+// GET /approved-exams
+const getApprovedExams = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await Scanner.getApprovedExams(req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (err: any) {
+    console.error("getApprovedExams Controller Error:", err);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: err?.message || "Internal Server Error",
+    });
+  }
+};
+
+// POST /upload-student-answer
+const uploadStudentAnswerPaper = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await Scanner.uploadStudentAnswerPaper(
+      req.body,
+      req.file,
+      req.viaExamUser
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (err: any) {
+    console.error("uploadStudentAnswerPaper Controller Error:", err);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: err?.message || "Internal Server Error",
+    });
+  }
+};
+
+// GET /student-answers/:examId
+const getStudentAnswerPapers = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await Scanner.getStudentAnswerPapers(
+      req.params.examId,
+      req.viaExamUser
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (err: any) {
+    console.error("getStudentAnswerPapers Controller Error:", err);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: err?.message || "Internal Server Error",
+    });
+  }
+};
+
 export default {
   uploadSheets,
   getAllSheets,
@@ -124,4 +178,7 @@ export default {
   getSheetSummary,
   updateSheetStatus,
   deleteSheet,
+  getApprovedExams,
+  uploadStudentAnswerPaper,
+  getStudentAnswerPapers,
 };

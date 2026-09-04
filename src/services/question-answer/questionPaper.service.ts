@@ -89,9 +89,23 @@ export class QuestionPaperService {
       throw new Error("You can only submit your own question paper");
     }
 
-    if (paper.status !== "DRAFT") {
+    if (paper.status !== "DRAFT" && paper.status !== "REJECTED") {
       throw new Error(
-        `Cannot submit. Current status: ${paper.status}. Only DRAFT papers can be submitted.`
+        `Cannot submit. Current status: ${paper.status}. Only DRAFT or REJECTED papers can be submitted for approval.`
+      );
+    }
+
+    const QuestionPaperAnswer = (await import(
+      "../../modals/question-paper/stander-answer.model"
+    )).default;
+
+    const matchingAnswer = await QuestionPaperAnswer.findOne({
+      where: { examId: paper.examId, paperSet: paper.paperSet },
+    });
+
+    if (!matchingAnswer) {
+      throw new Error(
+        `Cannot submit for approval: Standard Answer Sheet for Set ${paper.paperSet} is missing. Please create the standard answer sheet first.`
       );
     }
 
@@ -99,6 +113,14 @@ export class QuestionPaperService {
       status: "PENDING_APPROVAL",
       submittedAt: new Date(),
     });
+
+    // Also update the matching answer sheet to PENDING_APPROVAL if it's still in DRAFT
+    if (matchingAnswer.status === "DRAFT" || matchingAnswer.status === "REJECTED") {
+      await matchingAnswer.update({
+        status: "PENDING_APPROVAL",
+        submittedAt: new Date(),
+      });
+    }
 
     return paper;
   }

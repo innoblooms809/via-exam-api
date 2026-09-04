@@ -1,6 +1,6 @@
+import config from "./config/config";
 import { Server } from "http";
 import app from "./app";
-import config from "./config/config";
 import logger from "./config/logger";
 import connectDB from "./db/connect"; // Change to sequelize connection
 import initSuperAdmin from "./config/superAdmin";
