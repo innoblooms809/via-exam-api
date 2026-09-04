@@ -10,6 +10,7 @@ const cors_1 = __importDefault(require("cors"));
 const http_status_1 = __importDefault(require("http-status"));
 const config_1 = __importDefault(require("./config/config"));
 const morgan_1 = __importDefault(require("./config/morgan"));
+const logger_1 = __importDefault(require("./config/logger"));
 const xss_1 = __importDefault(require("./middlewares/xss"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const rateLimiter_1 = require("./middlewares/rateLimiter");
@@ -81,7 +82,8 @@ app.use('/v1', v1_1.default);
 app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
-    next(new ApiError_1.default(http_status_1.default.NOT_FOUND, 'Not found'));
+    logger_1.default.warn(`404 Not Found: ${req.method} ${req.originalUrl}`);
+    next(new ApiError_1.default(http_status_1.default.NOT_FOUND, `Route ${req.method} ${req.originalUrl} Not Found`));
 });
 // convert error to ApiError, if needed
 app.use(error_1.errorConverter);

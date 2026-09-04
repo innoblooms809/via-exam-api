@@ -19,6 +19,7 @@ const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
 const Subject_modal_1 = __importDefault(require("../../modals/Subject.modal"));
 const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
 const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
+const Institute_modal_1 = __importDefault(require("../../modals/Institute.modal"));
 const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -105,13 +106,27 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         // ─────────────────────────────────────────────
+        // Fetch Institute Details for auto-fill
+        // ─────────────────────────────────────────────
+        const institute = yield Institute_modal_1.default.findOne({
+            where: {
+                instituteId: exam.instituteId,
+                isDeleted: false,
+            },
+        });
+        // ─────────────────────────────────────────────
         // Success
         // ─────────────────────────────────────────────
         return res.status(http_status_1.default.OK).json({
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Exam fetched successfully.",
-            data: exam,
+            data: Object.assign(Object.assign({}, exam.toJSON()), { institute: institute ? {
+                    instituteId: institute.instituteId,
+                    instituteName: institute.instituteName,
+                    logoUrl: institute.logoUrl,
+                    slug: institute.slug,
+                } : null }),
         });
     }
     catch (e) {

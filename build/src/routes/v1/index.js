@@ -25,6 +25,7 @@ const academicCalendar_route_1 = __importDefault(require("./academicCalendar.rou
 const auth_route_1 = __importDefault(require("./auth.route"));
 const notification_route_1 = __importDefault(require("./notification.route"));
 const aiEvaluation_route_1 = __importDefault(require("./aiEvaluation.route"));
+const monitoring_route_1 = __importDefault(require("./monitoring.route"));
 const router = express_1.default.Router();
 const defaultRoutes = [
     {
@@ -102,6 +103,10 @@ const defaultRoutes = [
     {
         path: "/ai-evaluation",
         route: aiEvaluation_route_1.default,
+    },
+    {
+        path: "/monitoring",
+        route: monitoring_route_1.default,
     },
     // {
     //   path: '/captcha',

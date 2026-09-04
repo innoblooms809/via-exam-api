@@ -20,11 +20,12 @@ const uploadSheets = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const result = yield scanner_service_1.default.uploadSheets(req.body, req.files, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
-    catch (_a) {
+    catch (err) {
+        console.error("uploadSheets Controller Error:", err);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: "Internal Server Error",
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
         });
     }
 });
@@ -34,11 +35,12 @@ const getAllSheets = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const result = yield scanner_service_1.default.getAllSheets(req.query, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
-    catch (_b) {
+    catch (err) {
+        console.error("getAllSheets Controller Error:", err);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: "Internal Server Error",
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
         });
     }
 });
@@ -54,11 +56,12 @@ const getSheetFile = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
         return res.send(buffer);
     }
-    catch (_c) {
+    catch (err) {
+        console.error("getSheetFile Controller Error:", err);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: "Internal Server Error",
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
         });
     }
 });
@@ -68,11 +71,12 @@ const getSheetSummary = (req, res) => __awaiter(void 0, void 0, void 0, function
         const result = yield scanner_service_1.default.getSheetSummary(req.query, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
-    catch (_d) {
+    catch (err) {
+        console.error("getSheetSummary Controller Error:", err);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: "Internal Server Error",
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
         });
     }
 });
@@ -82,11 +86,12 @@ const updateSheetStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const result = yield scanner_service_1.default.updateSheetStatus(req.params.sheetId, req.body.status, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
-    catch (_e) {
+    catch (err) {
+        console.error("updateSheetStatus Controller Error:", err);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: "Internal Server Error",
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
         });
     }
 });
@@ -96,11 +101,12 @@ const deleteSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const result = yield scanner_service_1.default.deleteSheet(req.params.sheetId, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
-    catch (_f) {
+    catch (err) {
+        console.error("deleteSheet Controller Error:", err);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: "Internal Server Error",
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
         });
     }
 });
