@@ -126,6 +126,56 @@ export class QuestionPaperService {
   }
 
   // ─────────────────────────────────────────────
+  // SUBMIT EXAM PAIR FOR APPROVAL (BY EXAM ID)
+  // ─────────────────────────────────────────────
+
+  static async submitExamForApproval(
+    examId: string,
+    teacherId: string
+  ) {
+    const QuestionPaperAnswer = (await import(
+      "../../modals/question-paper/stander-answer.model"
+    )).default;
+
+    const paper = await QuestionPaper.findOne({
+      where: { examId },
+    });
+
+    const answer = await QuestionPaperAnswer.findOne({
+      where: { examId },
+    });
+
+    if (!paper && !answer) {
+      throw new Error("Neither Question Paper nor Standard Answer Sheet has been created for this exam.");
+    }
+
+    if (!paper) {
+      throw new Error("Question Paper is missing! Please create the question paper before submitting for approval.");
+    }
+
+    if (!answer) {
+      throw new Error("Standard Answer Sheet is missing! Please create the standard answer sheet before submitting for approval.");
+    }
+
+    if (paper.status !== "DRAFT" && paper.status !== "REJECTED" && answer.status !== "DRAFT" && answer.status !== "REJECTED") {
+      throw new Error(`Cannot submit. Current status: QP (${paper.status}), Answer (${answer.status}).`);
+    }
+
+    const now = new Date();
+    await paper.update({
+      status: "PENDING_APPROVAL",
+      submittedAt: now,
+    });
+
+    await answer.update({
+      status: "PENDING_APPROVAL",
+      submittedAt: now,
+    });
+
+    return { paper, answer };
+  }
+
+  // ─────────────────────────────────────────────
   // APPROVE  (PENDING_APPROVAL → APPROVED)
   // ─────────────────────────────────────────────
 
