@@ -21,7 +21,10 @@ import academicCalendarRoutes from "./academicCalendar.route";
 import authRoutes from "./auth.route";
 import notificationRoutes from "./notification.route";
 import aiEvaluationRoutes from "./aiEvaluation.route";
-
+import dashboardRoutes from "./dashboard.route";
+import adminDashboardRoutes from "./Admindashboard.route";
+import teacherDashboardRoutes from "./teacherdashboard.route";
+import studentDashboardRoutes from "./studentdashboard.route";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -33,9 +36,25 @@ const defaultRoutes = [
     path: "/access",
     route: accessRoutes,
   },
-  {
+{
     path: "/institute",
     route: instituteRoutes,
+  },
+  {
+    path: "/dashboard",
+    route: dashboardRoutes,
+  },
+  {
+    path: "/admin-dashboard",
+    route: adminDashboardRoutes,
+  },
+  {
+    path: "/teacher-dashboard",
+    route: teacherDashboardRoutes,
+  },
+  {
+    path: "/student-dashboard",
+    route: studentDashboardRoutes,
   },
   {
     path: "/sessions",
