@@ -86,11 +86,11 @@ router.get(
   Controller.getMyAssignments
 );
 
-// GET /v1/teachers/my-question-papers
+// GET /v1/teachers/approval-workflow-exams
 router.get(
-  "/my-question-papers",
+  "/approval-workflow-exams",
   authenticate,
-  Controller.getTeacherQuestionPapers
+  Controller.getTeacherExamsWithApprovalStatus
 );
 
 // GET /v1/teachers/:userId/question-papers
