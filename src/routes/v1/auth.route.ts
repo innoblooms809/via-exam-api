@@ -12,10 +12,22 @@ router.post(
   Controller.forgotPassword
 );
 
-// Reset Password - Step 2 (verify OTP + new password)
+// Verify OTP - Step 2 (verify OTP code)
+router.post(
+  "/verifyOtp",
+  Controller.verifyOtp
+);
+
+// Reset Password - Step 3 (reset password with verified OTP)
 router.post(
   "/resetPassword",
   Controller.resetPassword
+);
+
+// Resend Credentials - Generate new password and send email
+router.post(
+  "/resendCredentials",
+  Controller.resendCredentials
 );
 
 export default router;

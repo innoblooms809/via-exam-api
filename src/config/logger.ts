@@ -13,21 +13,37 @@ const enumerateErrorFormat = winston.format((info) => {
   return info;
 });
 
+const consoleFormat = winston.format.combine(
+  enumerateErrorFormat(),
+  config.env === 'development' ? winston.format.colorize() : winston.format.uncolorize(),
+  winston.format.splat(),
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.printf(({ level, message, timestamp }) => `[${timestamp}] ${level}: ${message}`)
+);
+
+const fileJsonFormat = winston.format.combine(
+  enumerateErrorFormat(),
+  winston.format.timestamp(),
+  winston.format.json()
+);
+
 const logger = winston.createLogger({
   level: config.env === 'development' ? 'debug' : 'info',
-  format: winston.format.combine(
-    enumerateErrorFormat(),
-    config.env === 'development' ? winston.format.colorize() : winston.format.uncolorize(),
-    winston.format.splat(),
-    winston.format.printf(({ level, message }) => `${level}: ${message}`)
-  ),
   transports: [
     new winston.transports.Console({
-      stderrLevels: ['error']
+      stderrLevels: ['error'],
+      format: consoleFormat,
     }),
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
-  ]
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+      format: fileJsonFormat,
+    }),
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+      format: fileJsonFormat,
+    }),
+  ],
 });
 
 export default logger;

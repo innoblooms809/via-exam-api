@@ -44,4 +44,10 @@ router.delete(
   Controller.deleteScanner
 );
 
+router.patch(
+  "/reactivateScanner/:userId",
+  authenticate,
+  Controller.reactivateScanner
+);
+
 export default router;

@@ -6,6 +6,8 @@ import RegHelper from "../../utils/helper"; // reuse your existing utility
 import exclude from "../../utils/exclude"; // reuse your existing utility
 import { Op } from "sequelize";
 import Institute from "../../modals/Institute.modal";
+import UserPresenceSession from "../../modals/UserPresenceSession.modal";
+import { logActivity } from "../../utils/activityLogger";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -204,6 +206,35 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       { where: { userId: user.userId } },
     );
 
+    // Log Activity & Update Presence
+    const now = new Date();
+    let presenceSession = await UserPresenceSession.findOne({ where: { userId: user.userId } });
+    if (presenceSession) {
+      presenceSession.presenceStatus = "ONLINE";
+      presenceSession.lastActivityAt = now;
+      presenceSession.lastLoginAt = now;
+      presenceSession.currentActivity = "Active in Portal";
+      await presenceSession.save();
+    } else {
+      await UserPresenceSession.create({
+        userId: user.userId,
+        role: user.role?.role || "USER",
+        instituteId: user.instituteId || null,
+        presenceStatus: "ONLINE",
+        currentActivity: "Active in Portal",
+        lastActivityAt: now,
+        lastLoginAt: now,
+      });
+    }
+
+    await logActivity({
+      userId: user.userId,
+      role: user.role?.role || "USER",
+      instituteId: user.instituteId || null,
+      eventType: "LOGIN_SUCCESS",
+      currentActivity: "Logged In",
+    });
+
     const userResponse = exclude(
       user.toJSON(),
       ["password", "refreshToken"]
@@ -230,7 +261,33 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
  */
 const viaExamUserLogout = async (userId: string): Promise<any> => {
   try {
+    const user = await UserModal.findOne({
+      include: [{ model: Role, as: "role" }],
+      where: { userId },
+    });
+
     await UserModal.update({ refreshToken: null }, { where: { userId } });
+
+    // Instantly update active presence session to OFFLINE
+    const logoutTime = new Date();
+    const presenceSession = await UserPresenceSession.findOne({ where: { userId } });
+    if (presenceSession) {
+      presenceSession.presenceStatus = "OFFLINE";
+      presenceSession.currentActivity = "Logged Out";
+      presenceSession.lastLogoutAt = logoutTime;
+      await presenceSession.save();
+    }
+
+    if (user) {
+      await logActivity({
+        userId: user.userId,
+        role: (user as any).role?.role || "USER",
+        instituteId: user.instituteId || null,
+        eventType: "LOGOUT",
+        currentActivity: "Logged Out",
+      });
+    }
+
     return {
       error: false,
       statusCode: httpStatus.OK,
