@@ -110,9 +110,19 @@ class QuestionPaperAnswerService {
       throw new Error("You can only submit your own answer sheet");
     }
 
-    if (answer.status !== "DRAFT") {
+    if (answer.status !== "DRAFT" && answer.status !== "REJECTED") {
       throw new Error(
-        `Cannot submit. Current status: ${answer.status}. Only DRAFT answer sheets can be submitted.`
+        `Cannot submit. Current status: ${answer.status}. Only DRAFT or REJECTED answer sheets can be submitted for approval.`
+      );
+    }
+
+    const matchingPaper = await QuestionPaper.findOne({
+      where: { examId: answer.examId, paperSet: answer.paperSet },
+    });
+
+    if (!matchingPaper) {
+      throw new Error(
+        `Cannot submit for approval: Question Paper for Set ${answer.paperSet} is missing. Please create the question paper first.`
       );
     }
 
@@ -120,6 +130,14 @@ class QuestionPaperAnswerService {
       status: "PENDING_APPROVAL",
       submittedAt: new Date(),
     });
+
+    // Also update matching question paper if DRAFT or REJECTED
+    if (matchingPaper.status === "DRAFT" || matchingPaper.status === "REJECTED") {
+      await matchingPaper.update({
+        status: "PENDING_APPROVAL",
+        submittedAt: new Date(),
+      });
+    }
 
     return answer;
   }
