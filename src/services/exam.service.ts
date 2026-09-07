@@ -292,6 +292,7 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
       });
       return {
         id: exam.examId,
+        examId: exam.examId,
         classId: exam.class?.classId || exam.classId,
         className: exam.class?.className || "N/A",
         sectionId: exam.section?.sectionId || exam.sectionId,
@@ -302,8 +303,16 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
         sessionName: exam.session?.sessionName || "N/A",
         examType: exam.examType,
         status: exam.status,
+        totalMarks: exam.totalMarks,
+        passingMarks: exam.passingMarks,
+        duration: exam.duration,
+        instructions: exam.instructions,
+        teacherId: exam.teacherId,
+        examinerId: exam.examinerId,
         totalStudents,
-        uploadedSheets
+        uploadedSheets,
+        createdAt: exam.createdAt,
+        updatedAt: exam.updatedAt
       };
     }));
 
@@ -701,6 +710,7 @@ const getAssignedExamsSummary = async (requestedBy: any): Promise<any> => {
 
         return {
           id: exam.examId,
+          examId: exam.examId,
           classId: exam.class?.classId || exam.classId,
           className: exam.class?.className || "N/A",
           sectionId: exam.section?.sectionId || exam.sectionId || null,
@@ -711,8 +721,16 @@ const getAssignedExamsSummary = async (requestedBy: any): Promise<any> => {
           sessionName: exam.session?.sessionName || "N/A",
           examType: exam.examType,
           status: exam.status,
+          totalMarks: exam.totalMarks,
+          passingMarks: exam.passingMarks,
+          duration: exam.duration,
+          instructions: exam.instructions,
+          teacherId: exam.teacherId,
+          examinerId: exam.examinerId,
           totalStudents,
           uploadedSheets,
+          createdAt: exam.createdAt,
+          updatedAt: exam.updatedAt
         };
       })
     );
