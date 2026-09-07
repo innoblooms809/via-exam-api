@@ -1,8 +1,11 @@
 import QuestionPaperAnswer from "../../modals/question-paper/stander-answer.model";
 import QuestionPaper from "../../modals/question-paper/QuestionPaper.modal";
-import Exam from "../../modals/Exam.modal";
 import Notification from "../../modals/Notification.modal";
 import RegHelper from "../../utils/helper";
+import {
+  markExamPaperCreated,
+  setExamWorkflowStatus,
+} from "../exam.service";
 
 class QuestionPaperAnswerService {
   // ─────────────────────────────────────────────
@@ -36,6 +39,10 @@ class QuestionPaperAnswerService {
         answers: data.answers,
         status: data.status || "DRAFT",
       });
+
+      if (data.examId) {
+        await markExamPaperCreated(data.examId);
+      }
 
       return result;
     } catch (error: any) {
@@ -82,6 +89,7 @@ class QuestionPaperAnswerService {
           answers: { pdfUrl: data.pdfUrl },
           status: "DRAFT",
         });
+        await markExamPaperCreated(data.examId);
         return result;
       }
     } catch (error: any) {
@@ -138,6 +146,8 @@ class QuestionPaperAnswerService {
         submittedAt: new Date(),
       });
     }
+
+    await setExamWorkflowStatus(answer.examId, "Pending Approval");
 
     return answer;
   }
@@ -224,6 +234,8 @@ class QuestionPaperAnswerService {
       rejectedAt: new Date(),
       rejectionNote: rejectionNote.trim(),
     });
+
+    await setExamWorkflowStatus(answer.examId, "Rejected");
 
     // Notify the teacher
     const notificationId = await RegHelper.generateUserId();
@@ -337,10 +349,7 @@ class QuestionPaperAnswerService {
       ]);
 
       if (qp && ans) {
-        await Exam.update(
-          { status: "Live" },
-          { where: { examId } }
-        );
+        await setExamWorkflowStatus(examId, "Approved");
       }
     } catch (_) {
       // non-blocking
