@@ -2,6 +2,11 @@ import QuestionPaper from "../../modals/question-paper/QuestionPaper.modal";
 import Exam from "../../modals/Exam.modal";
 import Notification from "../../modals/Notification.modal";
 import RegHelper from "../../utils/helper";
+import { Op } from "sequelize";
+import {
+  markExamPaperCreated,
+  setExamWorkflowStatus,
+} from "../exam.service";
 
 interface CreateQuestionPaperDTO {
   paperId?: string;
@@ -66,6 +71,8 @@ export class QuestionPaperService {
       status: "DRAFT",
     });
 
+    await markExamPaperCreated(examId);
+
     return paper;
   }
 
@@ -122,6 +129,8 @@ export class QuestionPaperService {
       });
     }
 
+    await setExamWorkflowStatus(paper.examId, "Pending Approval");
+
     return paper;
   }
 
@@ -141,8 +150,12 @@ export class QuestionPaperService {
       where: { examId },
     });
 
+    const answerWhere: any = paper
+      ? { [Op.or]: [{ examId }, { paperId: paper.paperId }] }
+      : { examId };
+
     const answer = await QuestionPaperAnswer.findOne({
-      where: { examId },
+      where: answerWhere,
     });
 
     if (!paper && !answer) {
@@ -157,20 +170,23 @@ export class QuestionPaperService {
       throw new Error("Standard Answer Sheet is missing! Please create the standard answer sheet before submitting for approval.");
     }
 
-    if (paper.status !== "DRAFT" && paper.status !== "REJECTED" && answer.status !== "DRAFT" && answer.status !== "REJECTED") {
-      throw new Error(`Cannot submit. Current status: QP (${paper.status}), Answer (${answer.status}).`);
+    const now = new Date();
+
+    if (paper.status === "DRAFT" || paper.status === "REJECTED") {
+      await paper.update({
+        status: "PENDING_APPROVAL",
+        submittedAt: now,
+      });
     }
 
-    const now = new Date();
-    await paper.update({
-      status: "PENDING_APPROVAL",
-      submittedAt: now,
-    });
+    if (answer.status === "DRAFT" || answer.status === "REJECTED") {
+      await answer.update({
+        status: "PENDING_APPROVAL",
+        submittedAt: now,
+      });
+    }
 
-    await answer.update({
-      status: "PENDING_APPROVAL",
-      submittedAt: now,
-    });
+    await setExamWorkflowStatus(examId, "Pending Approval");
 
     return { paper, answer };
   }
@@ -219,7 +235,7 @@ export class QuestionPaperService {
       // non-blocking
     }
 
-    // Check if both QP and Answer are approved → set exam to Live
+    // Check if both QP and Answer are approved → set exam to Approved
     await QuestionPaperService.checkAndSetExamLive(paper.examId);
 
     return paper;
@@ -257,6 +273,8 @@ export class QuestionPaperService {
       rejectedAt: new Date(),
       rejectionNote: rejectionNote.trim(),
     });
+
+    await setExamWorkflowStatus(paper.examId, "Rejected");
 
     // Notify the teacher
     const notificationId = await RegHelper.generateUserId();
@@ -359,6 +377,97 @@ export class QuestionPaperService {
   }
 
   // ─────────────────────────────────────────────
+  // APPROVE EXAM PAIR (QP + ANSWER SHEET)
+  // ─────────────────────────────────────────────
+
+  static async approveExamPair(examId: string, reviewerId: string) {
+    const QuestionPaperAnswer = (await import(
+      "../../modals/question-paper/stander-answer.model"
+    )).default;
+
+    const paper = await QuestionPaper.findOne({ where: { examId } });
+    const answer = await QuestionPaperAnswer.findOne({
+      where: paper
+        ? { [Op.or]: [{ examId }, { paperId: paper.paperId }] }
+        : { examId },
+    });
+
+    if (!paper && !answer) {
+      throw new Error("No question paper or answer sheet found for this exam.");
+    }
+
+    const now = new Date();
+    if (paper) {
+      await paper.update({
+        status: "APPROVED",
+        approvedAt: now,
+        rejectionNote: null,
+      });
+    }
+
+    if (answer) {
+      await answer.update({
+        status: "APPROVED",
+        approvedAt: now,
+        rejectionNote: null,
+        examId,
+      });
+    }
+
+    await setExamWorkflowStatus(examId, "Approved");
+
+    return { paper, answer };
+  }
+
+  // ─────────────────────────────────────────────
+  // REJECT EXAM PAIR (QP + ANSWER SHEET)
+  // ─────────────────────────────────────────────
+
+  static async rejectExamPair(examId: string, reviewerId: string, rejectionNote: string) {
+    if (!rejectionNote || !rejectionNote.trim()) {
+      throw new Error("Rejection note is required.");
+    }
+
+    const QuestionPaperAnswer = (await import(
+      "../../modals/question-paper/stander-answer.model"
+    )).default;
+
+    const paper = await QuestionPaper.findOne({ where: { examId } });
+    const answer = await QuestionPaperAnswer.findOne({
+      where: paper
+        ? { [Op.or]: [{ examId }, { paperId: paper.paperId }] }
+        : { examId },
+    });
+
+    if (!paper && !answer) {
+      throw new Error("No question paper or answer sheet found for this exam.");
+    }
+
+    const now = new Date();
+    const note = rejectionNote.trim();
+
+    if (paper) {
+      await paper.update({
+        status: "REJECTED",
+        rejectedAt: now,
+        rejectionNote: note,
+      });
+    }
+
+    if (answer) {
+      await answer.update({
+        status: "REJECTED",
+        rejectedAt: now,
+        rejectionNote: note,
+      });
+    }
+
+    await setExamWorkflowStatus(examId, "Rejected");
+
+    return { paper, answer };
+  }
+
+  // ─────────────────────────────────────────────
   // CHECK AND SET EXAM LIVE
   // ─────────────────────────────────────────────
 
@@ -374,13 +483,156 @@ export class QuestionPaperService {
       ]);
 
       if (qp && ans) {
-        await Exam.update(
-          { status: "Live" },
-          { where: { examId } }
-        );
+        await setExamWorkflowStatus(examId, "Approved");
       }
     } catch (_) {
       // non-blocking — exam status update is best-effort
     }
   }
+
+  // ─────────────────────────────────────────────
+  // GET EXAM REMARKS (CHAT HISTORY)
+  // ─────────────────────────────────────────────
+
+  static async getExamRemarks(examId: string) {
+    const QuestionPaperAnswer = (await import(
+      "../../modals/question-paper/stander-answer.model"
+    )).default;
+
+    const paper = await QuestionPaper.findOne({ where: { examId } });
+    const answer = await QuestionPaperAnswer.findOne({
+      where: paper
+        ? { [Op.or]: [{ examId }, { paperId: paper.paperId }] }
+        : { examId },
+    });
+
+    // Pick whichever has a rejectionNote
+    const noteSource = paper?.rejectionNote
+      ? paper.rejectionNote
+      : answer?.rejectionNote || null;
+
+    let remarks: any[] = [];
+    if (noteSource) {
+      try {
+        const parsed = JSON.parse(noteSource);
+        if (Array.isArray(parsed)) {
+          remarks = parsed;
+        } else {
+          remarks = [
+            {
+              sender: "Admin Reviewer",
+              role: "ADMIN",
+              text: noteSource,
+              time: (paper as any)?.rejectedAt || (answer as any)?.rejectedAt || new Date().toISOString(),
+            },
+          ];
+        }
+      } catch {
+        remarks = [
+          {
+            sender: "Admin Reviewer",
+            role: "ADMIN",
+            text: noteSource,
+            time: (paper as any)?.rejectedAt || (answer as any)?.rejectedAt || new Date().toISOString(),
+          },
+        ];
+      }
+    }
+
+    return { remarks };
+  }
+
+  // ─────────────────────────────────────────────
+  // ADD EXAM REMARK (CHAT MESSAGE)
+  // ─────────────────────────────────────────────
+
+  static async addExamRemark(
+    examId: string,
+    remark: string,
+    senderRole: string = "ADMIN",
+    senderName: string = "Admin Reviewer"
+  ) {
+    if (!remark || !remark.trim()) {
+      throw new Error("Remark text is required.");
+    }
+
+    const QuestionPaperAnswer = (await import(
+      "../../modals/question-paper/stander-answer.model"
+    )).default;
+
+    let paper = await QuestionPaper.findOne({ where: { examId } });
+    let answer = await QuestionPaperAnswer.findOne({
+      where: paper
+        ? { [Op.or]: [{ examId }, { paperId: paper.paperId }] }
+        : { examId },
+    });
+
+    if (!paper && !answer) {
+      const exam = await Exam.findOne({ where: { examId } });
+      const paperId = await RegHelper.generateUserId();
+      paper = await QuestionPaper.create({
+        paperId,
+        instituteId: exam?.instituteId || "INST001",
+        examId,
+        teacherId: exam?.teacherId || "TECH001",
+        paperSet: "A",
+        content: {},
+        status: "REJECTED",
+      });
+    }
+
+    // Parse existing remarks from whichever source has them
+    const noteSource = paper?.rejectionNote
+      ? paper.rejectionNote
+      : answer?.rejectionNote || null;
+
+    let remarks: any[] = [];
+    if (noteSource) {
+      try {
+        const parsed = JSON.parse(noteSource);
+        if (Array.isArray(parsed)) {
+          remarks = parsed;
+        } else {
+          remarks = [
+            {
+              sender: "Admin Reviewer",
+              role: "ADMIN",
+              text: noteSource,
+              time: (paper as any)?.rejectedAt || (answer as any)?.rejectedAt || new Date().toISOString(),
+            },
+          ];
+        }
+      } catch {
+        remarks = [
+          {
+            sender: "Admin Reviewer",
+            role: "ADMIN",
+            text: noteSource,
+            time: (paper as any)?.rejectedAt || (answer as any)?.rejectedAt || new Date().toISOString(),
+          },
+        ];
+      }
+    }
+
+    // Append new remark
+    remarks.push({
+      sender: senderName,
+      role: senderRole,
+      text: remark.trim(),
+      time: new Date().toISOString(),
+    });
+
+    const serialized = JSON.stringify(remarks);
+
+    // Persist on both models if they exist
+    if (paper) {
+      await paper.update({ rejectionNote: serialized });
+    }
+    if (answer) {
+      await answer.update({ rejectionNote: serialized });
+    }
+
+    return { remarks };
+  }
 }
+

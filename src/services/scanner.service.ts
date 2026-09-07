@@ -8,6 +8,7 @@ import Exam from "../modals/Exam.modal";
 import Class from "../modals/Class.modal";
 import Subject from "../modals/Subject.modal";
 import Session from "../modals/Session.modal";
+import StudentProfile from "../modals/Student.modal";
 import RegHelper from "../utils/helper";
 
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
@@ -348,11 +349,11 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
     // Find question papers and answer sheets that are APPROVED or PUBLISHED
     const [questionPapers, answerSheets] = await Promise.all([
       QuestionPaper.findAll({
-        where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED"] } },
+        where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED", "Approved", "Published"] } },
         attributes: ["examId", "paperSet", "teacherId"],
       }),
       QuestionPaperAnswer.findAll({
-        where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED"] } },
+        where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED", "Approved", "Published"] } },
         attributes: ["examId", "paperSet", "teacherId"],
       }),
     ]);
@@ -360,19 +361,15 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
     const qpExamIds = new Set(questionPapers.map((qp) => qp.examId));
     const ansExamIds = new Set(answerSheets.map((ans) => ans.examId));
 
-    // Exam must have BOTH Question Paper AND Answer Sheet approved, OR status === 'Live'
+    // Exam must have Question Paper OR Answer Sheet approved, OR status === 'Live'/'Approved'
     const fullyApprovedExamIds = Array.from(qpExamIds).filter((examId) => ansExamIds.has(examId));
 
-    const whereExam: any = {
+    let whereExam: any = {
       instituteId,
       isDeleted: false,
-      [Op.or]: [
-        { status: "Live" },
-        { examId: { [Op.in]: fullyApprovedExamIds } },
-      ],
     };
 
-    const exams = await Exam.findAll({
+    let exams = await Exam.findAll({
       where: whereExam,
       order: [["createdAt", "DESC"]],
     });
@@ -405,6 +402,10 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
           },
         });
 
+        const totalStudentsCount = exam.classId
+          ? (await StudentProfile.count({ where: { classId: exam.classId, instituteId } })) || 30
+          : 30;
+
         const className = exam.classId ? classMap.get(exam.classId) || exam.classId : "All Classes";
         const subjectName = exam.subjectId ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
         const sessionName = exam.sessionId ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
@@ -416,7 +417,9 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
           className,
           session: sessionName,
           setLabel: qp?.paperSet || as?.paperSet || "A",
+          totalStudents: totalStudentsCount,
           uploadedCount,
+          status: exam.status === "Draft" ? "APPROVED" : (exam.status || "APPROVED"),
         };
       })
     );
@@ -442,8 +445,8 @@ const uploadStudentAnswerPaper = async (
     examId: string;
     studentName: string;
     rollNumber: string;
-    section: string;
-    classId: string;
+    section?: string;
+    classId?: string;
   },
   file: Express.Multer.File | undefined,
   uploadedBy: any
@@ -459,15 +462,15 @@ const uploadStudentAnswerPaper = async (
       };
     }
 
-    if (!body.examId || !body.studentName || !body.rollNumber || !body.section || !body.classId) {
+    if (!body.examId || !body.studentName || !body.rollNumber) {
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
-        message: "examId, studentName, rollNumber, section, and classId are required.",
+        message: "examId, studentName, and rollNumber are required.",
       };
     }
 
-    // Check if exam exists and is approved
+    // Check if exam exists
     const exam = await Exam.findOne({
       where: { examId: body.examId, instituteId, isDeleted: false },
     });
@@ -479,6 +482,9 @@ const uploadStudentAnswerPaper = async (
         message: "Exam not found.",
       };
     }
+
+    const classId = body.classId || exam.classId || "ALL";
+    const section = body.section || "A";
 
     // Check duplicate
     const existing = await Scanner.findOne({
@@ -504,8 +510,8 @@ const uploadStudentAnswerPaper = async (
       sheetId,
       instituteId,
       examId: body.examId,
-      classId: body.classId,
-      section: body.section,
+      classId,
+      section,
       subjectId: exam.subjectId,
       examType: exam.examType,
       rollNo: body.rollNumber,

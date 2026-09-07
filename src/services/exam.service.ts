@@ -10,8 +10,91 @@ import Notification from "../modals/Notification.modal";
 import StudentProfile from "../modals/Student.modal";
 import Scanner from "../modals/Scanner.modal";
 import RegHelper from "../utils/helper";
-import { Op } from "sequelize";
 import StudentService from "./student.service";
+import { Op } from "sequelize";
+
+/** Single exam-table status that drives Manage Exams + approval. */
+export const EXAM_WORKFLOW_STATUSES = [
+  "Draft",
+  "Paper Created",
+  "Pending Approval",
+  "Approved",
+  "Rejected",
+  "Live",
+  "Completed",
+] as const;
+
+type PaperStatusType = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PUBLISHED";
+
+function examStatusToPaperStatus(examStatus: string): PaperStatusType | null {
+  switch (examStatus) {
+    case "Draft":
+    case "Paper Created":
+      return "DRAFT";
+    case "Pending Approval":
+      return "PENDING_APPROVAL";
+    case "Approved":
+    case "Live":
+      return "APPROVED";
+    case "Rejected":
+      return "REJECTED";
+    default:
+      return null;
+  }
+}
+
+export async function syncExamPackageStatus(
+  examId: string,
+  examStatus: string
+): Promise<void> {
+  const paperStatus = examStatusToPaperStatus(examStatus);
+  if (!paperStatus) return;
+
+  const QuestionPaper = (await import("../modals/question-paper/QuestionPaper.modal")).default;
+  const QuestionPaperAnswer = (await import("../modals/question-paper/stander-answer.model")).default;
+
+  const papers = await QuestionPaper.findAll({ where: { examId } });
+  const paperIds = papers.map((p) => p.paperId).filter(Boolean);
+  const now = new Date();
+  const extra: Record<string, unknown> = {};
+  if (paperStatus === "PENDING_APPROVAL") extra.submittedAt = now;
+  if (paperStatus === "APPROVED") {
+    extra.approvedAt = now;
+    extra.rejectionNote = null;
+  }
+  if (paperStatus === "REJECTED") extra.rejectedAt = now;
+
+  await QuestionPaper.update(
+    { status: paperStatus as PaperStatusType, ...extra },
+    { where: { examId } }
+  );
+
+  const answerWhere =
+    paperIds.length > 0
+      ? { [Op.or]: [{ examId }, { paperId: paperIds }] }
+      : { examId };
+
+  await QuestionPaperAnswer.update(
+    { status: paperStatus as PaperStatusType, ...extra },
+    { where: answerWhere }
+  );
+}
+
+export async function markExamPaperCreated(examId: string): Promise<void> {
+  const exam = await Exam.findOne({ where: { examId, isDeleted: false } });
+  if (!exam) return;
+  if (exam.status === "Draft") {
+    await exam.update({ status: "Paper Created" });
+  }
+}
+
+export async function setExamWorkflowStatus(
+  examId: string,
+  status: string
+): Promise<void> {
+  await Exam.update({ status }, { where: { examId, isDeleted: false } });
+  await syncExamPackageStatus(examId, status);
+}
 
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
 const createExam = async (body: any, createdBy: any): Promise<any> => {
@@ -137,9 +220,18 @@ const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
         { model: Class, as: "class", where: { isDeleted: false }, required: true },
         { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
         { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
       ],
       order: [["createdAt", "DESC"]],
     });
+
+    await Promise.all(
+      exams
+        .filter((exam) =>
+          ["Pending Approval", "Approved", "Rejected"].includes(exam.status)
+        )
+        .map((exam) => syncExamPackageStatus(exam.examId, exam.status))
+    );
 
     return {
       error: false,
@@ -176,6 +268,14 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
       ],
       order: [["createdAt", "DESC"]],
     });
+
+    await Promise.all(
+      exams
+        .filter((exam: any) =>
+          ["Pending Approval", "Approved", "Rejected"].includes(exam.status)
+        )
+        .map((exam: any) => syncExamPackageStatus(exam.examId, exam.status))
+    );
 
     const formattedExams = await Promise.all(exams.map(async (exam: any) => {
       const totalStudents = await StudentProfile.count({
@@ -273,8 +373,8 @@ const updateExamStatus = async (
   requestedBy: any,
 ): Promise<any> => {
   try {
-    const allowed = ["Draft", "Live", "Completed"];
-    if (!allowed.includes(status)) {
+    const allowed = [...EXAM_WORKFLOW_STATUSES];
+    if (!allowed.includes(status as any)) {
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
@@ -355,13 +455,13 @@ const updateExam = async (
     // Status Validation
     if (body.status) {
 
-      const allowedStatus = ["Draft", "Live", "Completed"];
+      const allowedStatus = [...EXAM_WORKFLOW_STATUSES];
 
       if (!allowedStatus.includes(body.status)) {
         return {
           error: true,
           statusCode: 400,
-          message: "Status must be one of: Draft, Live, Completed",
+          message: `Status must be one of: ${allowedStatus.join(", ")}`,
         };
       }
     }
