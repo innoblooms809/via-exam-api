@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import QuestionPaperAnswerService from "../../services/question-answer/stander-answer.service";
 import Session from "../../modals/Session.modal";
 import Class from "../../modals/Class.modal";
@@ -203,6 +204,7 @@ export const getQuestionPaperAnswerBySelection = async (
       examType,
       session,
       paperSet,
+      examId,
     } = req.body;
 
     const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
@@ -213,8 +215,30 @@ export const getQuestionPaperAnswerBySelection = async (
       examType,
       session,
       paperSet,
+      examId,
       instituteId,
     });
+
+    // 1. Direct lookup by examId if provided
+    if (examId) {
+      const qpaWhere: any = { examId };
+      if (paperSet) qpaWhere.paperSet = paperSet;
+      const directQpa = await QuestionPaperAnswer.findOne({ where: qpaWhere });
+      if (directQpa) {
+        const examObj = await Exam.findOne({ where: { examId } });
+        return res.status(httpStatus.OK).json({
+          error: false,
+          message: "Question paper answer fetched successfully.",
+          data: {
+            exam: examObj || { examId, examType, subjectName: subject, className: classVal },
+            questionPaperAnswer: directQpa,
+          },
+        });
+      }
+    }
+
+    // 2. Lookup by session, class, subject, examType
+    const cleanClass = (classVal || "").replace(/^class\s*/i, "").trim();
 
     const [sessionData, classData] = await Promise.all([
       Session.findOne({
@@ -227,19 +251,19 @@ export const getQuestionPaperAnswerBySelection = async (
 
       Class.findOne({
         where: {
-          className: classVal,
+          [Op.or]: [
+            { className: classVal },
+            { className: `Class ${cleanClass}` },
+            { className: cleanClass },
+          ],
           instituteId,
           isDeleted: false,
         },
       }),
     ]);
 
-    if (!sessionData) {
+    if (!sessionData && session) {
       console.warn(`[getQuestionPaperAnswerBySelection] 404: Session '${session}' not found for institute '${instituteId}'`);
-      return res.status(httpStatus.NOT_FOUND).json({
-        error: true,
-        message: "Session not found.",
-      });
     }
 
     if (!classData) {
@@ -267,16 +291,16 @@ export const getQuestionPaperAnswerBySelection = async (
       });
     }
 
-    const exam = await Exam.findOne({
-      where: {
-        sessionId: sessionData.sessionId,
-        classId: classData.classId,
-        subjectId: subjectData.subjectId,
-        examType,
-        instituteId,
-        isDeleted: false,
-      },
-    });
+    const examWhere: any = {
+      classId: classData.classId,
+      subjectId: subjectData.subjectId,
+      examType,
+      instituteId,
+      isDeleted: false,
+    };
+    if (sessionData) examWhere.sessionId = sessionData.sessionId;
+
+    const exam = await Exam.findOne({ where: examWhere });
 
     if (!exam) {
       console.warn(`[getQuestionPaperAnswerBySelection] 404: Exam not found for session '${session}', class '${classVal}', subject '${subject}', examType '${examType}'`);
@@ -286,12 +310,10 @@ export const getQuestionPaperAnswerBySelection = async (
       });
     }
 
-    const questionPaperAnswer = await QuestionPaperAnswer.findOne({
-      where: {
-        examId: exam.examId,
-        paperSet,
-      },
-    });
+    const qpaWhere: any = { examId: exam.examId };
+    if (paperSet) qpaWhere.paperSet = paperSet;
+
+    const questionPaperAnswer = await QuestionPaperAnswer.findOne({ where: qpaWhere });
 
     if (!questionPaperAnswer) {
       console.warn(`[getQuestionPaperAnswerBySelection] 404: Question paper answer not found for examId '${exam.examId}', paperSet '${paperSet}'`);
