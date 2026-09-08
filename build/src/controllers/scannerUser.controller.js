@@ -77,10 +77,21 @@ const deleteScanner = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
     }
 });
+const reactivateScanner = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield scannerUser_service_1.default.reactivateScanner(req.params.userId, req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        console.error("reactivateScanner Controller Error:", error);
+        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    }
+});
 exports.default = {
     createScanner,
     getAllScanners,
     getScannerById,
     updateScanner,
     deleteScanner,
+    reactivateScanner,
 };

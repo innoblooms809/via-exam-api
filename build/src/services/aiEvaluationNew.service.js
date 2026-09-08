@@ -22,6 +22,7 @@ const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
+const form_data_1 = __importDefault(require("form-data"));
 // ─── Helper: Format question paper content into plain text ────────────────────
 const formatQuestionPaper = (content, ansDoc) => {
     var _a, _b;
@@ -261,51 +262,114 @@ const triggerEvaluationV2 = (sheetId, force = false) => __awaiter(void 0, void 0
         };
     }
 });
-// ─── Background: OCR + Pipeline Evaluation ──────────────────────────────────
+// ─── Background: Parallel OCR + Pipeline Evaluation (TESTING & PRODUCTION CONFIG) ─────────
+// // TESTING & PRODUCTION CONFIGURATION:
+// // Executes Student Sheet OCR (Port 8000) and Answer Key OCR / Rubric Pre-warming (Port 8007)
+// // in parallel using Promise.all for maximum speed on high-spec servers.
 const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, questionText, standardAnsText) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // 1. Call OCR API to extract student answer text
         const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
-        const ocrFormData = new FormData();
-        const fileBlob = new Blob([sheet.fileBuffer], {
-            type: sheet.fileMimeType,
-        });
-        ocrFormData.append("file", fileBlob, sheet.fileName);
-        logger_1.default.info(`[V2] Sending student answer sheet to OCR API: ${ocrApiUrl}`);
-        const ocrResponse = yield axios_1.default.post(ocrApiUrl, ocrFormData, {
-            timeout: 3600000, // 1 hour
-        });
-        const ocrResult = ocrResponse.data;
-        const studentAnsOcr = ocrResult.combined_markdown || "";
-        logger_1.default.info("[V2] Student answer OCR completed successfully.");
-        // 1b. Perform OCR on Answer Key if standardAnsText is a File URL or Image/PDF path
-        let finalAnswerKeyText = standardAnsText;
-        if (standardAnsText &&
-            (standardAnsText.startsWith("http://") ||
-                standardAnsText.startsWith("https://") ||
-                /\.(pdf|png|jpg|jpeg|webp)$/i.test(standardAnsText.trim()))) {
+        // ⚡ 1. PARALLEL EXECUTION THREADS
+        // Thread 1: Student Answer Sheet OCR (Port 8000)
+        const studentOcrTask = (() => __awaiter(void 0, void 0, void 0, function* () {
+            var _a, _b;
             try {
-                logger_1.default.info(`[V2] Answer key is a file URL/path. Running OCR on answer key: ${standardAnsText}`);
-                const ansKeyFileRes = yield axios_1.default.get(standardAnsText.trim(), {
-                    responseType: "arraybuffer",
+                let fileName = sheet.fileName || "sheet.png";
+                if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
+                    const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
+                    fileName = `${fileName}${ext}`;
+                }
+                const ocrFormData = new form_data_1.default();
+                ocrFormData.append("file", sheet.fileBuffer, {
+                    filename: fileName,
+                    contentType: sheet.fileMimeType || "image/png",
                 });
-                const ansKeyBlob = new Blob([ansKeyFileRes.data]);
-                const ansKeyFormData = new FormData();
-                ansKeyFormData.append("file", ansKeyBlob, "answer_key" + (standardAnsText.slice(standardAnsText.lastIndexOf(".")) || ".pdf"));
-                const ansKeyOcrRes = yield axios_1.default.post(ocrApiUrl, ansKeyFormData, {
+                logger_1.default.info(`[V2] [Thread 1] Sending student answer sheet (${fileName}, ${sheet.fileBuffer.length} bytes) to OCR API: ${ocrApiUrl}`);
+                const ocrResponse = yield axios_1.default.post(ocrApiUrl, ocrFormData, {
+                    headers: ocrFormData.getHeaders(),
                     timeout: 3600000,
                 });
-                if (ansKeyOcrRes.data && ansKeyOcrRes.data.combined_markdown) {
-                    finalAnswerKeyText = ansKeyOcrRes.data.combined_markdown;
-                    logger_1.default.info("[V2] Answer Key OCR completed successfully.");
+                const studentAnsOcr = ((_a = ocrResponse.data) === null || _a === void 0 ? void 0 : _a.combined_markdown) || "";
+                logger_1.default.info("[V2] [Thread 1] Student answer OCR completed successfully.");
+                return studentAnsOcr;
+            }
+            catch (ocrErr) {
+                logger_1.default.error(`[V2] [Thread 1] Student Answer Sheet OCR failed (${ocrApiUrl}): ${ocrErr.message}`, ((_b = ocrErr.response) === null || _b === void 0 ? void 0 : _b.data) || ocrErr.code);
+                return "";
+            }
+        }))();
+        // Thread 2: Answer Key OCR (if needed) & Pre-warming Rubric Cache on Port 8007
+        const answerKeyAndRubricTask = (() => __awaiter(void 0, void 0, void 0, function* () {
+            var _c;
+            let finalAnswerKeyText = standardAnsText;
+            if (standardAnsText &&
+                (standardAnsText.startsWith("http://") ||
+                    standardAnsText.startsWith("https://") ||
+                    /\.(pdf|png|jpg|jpeg|webp)$/i.test(standardAnsText.trim()))) {
+                try {
+                    logger_1.default.info(`[V2] [Thread 2] Answer key is a file URL/path. Running OCR: ${standardAnsText}`);
+                    const ansKeyFileRes = yield axios_1.default.get(standardAnsText.trim(), { responseType: "arraybuffer" });
+                    const ansKeyBlob = new Blob([ansKeyFileRes.data]);
+                    const ansKeyFormData = new form_data_1.default();
+                    ansKeyFormData.append("file", ansKeyBlob, "answer_key" + (standardAnsText.slice(standardAnsText.lastIndexOf(".")) || ".pdf"));
+                    const ansKeyOcrRes = yield axios_1.default.post(ocrApiUrl, ansKeyFormData, { timeout: 3600000 });
+                    if ((_c = ansKeyOcrRes.data) === null || _c === void 0 ? void 0 : _c.combined_markdown) {
+                        finalAnswerKeyText = ansKeyOcrRes.data.combined_markdown;
+                        logger_1.default.info("[V2] [Thread 2] Answer Key OCR completed successfully.");
+                    }
+                }
+                catch (ansKeyOcrErr) {
+                    logger_1.default.error("[V2] [Thread 2] Answer Key OCR failed, using original string:", ansKeyOcrErr.message);
                 }
             }
-            catch (ansKeyOcrErr) {
-                logger_1.default.error("[V2] Answer Key OCR failed, falling back to original string:", ansKeyOcrErr.message);
+            // Pre-warm Rubric Cache on Pipeline (Port 8006) in parallel
+            if (questionText && finalAnswerKeyText) {
+                try {
+                    const preprocessUrl = process.env.PIPELINE6_PREPROCESS_URL || "http://localhost:8006/preprocess-exam";
+                    logger_1.default.info(`[V2] [Thread 2] Pre-warming rubric cache on Pipeline: ${preprocessUrl}`);
+                    yield axios_1.default.post(preprocessUrl, {
+                        exam_id: examId,
+                        question_paper_text: questionText,
+                        answer_key_text: finalAnswerKeyText,
+                        max_marks: maxMarks,
+                    }, { timeout: 30000 });
+                    logger_1.default.info("[V2] [Thread 2] Rubric cache pre-warmed successfully.");
+                }
+                catch (err) {
+                    logger_1.default.warn(`[V2] [Thread 2] Rubric pre-warming notification warning (will infer on demand): ${err.message}`);
+                }
             }
-        }
-        // 2. Call NEW evaluation pipeline on port 8002 (/evaluate-text)
+            return finalAnswerKeyText;
+        }))();
+        // Thread 3: Parallel Visual Pre-Evaluation Task (Port 8006 — Runs parallel to Chandra OCR!)
+        const visualPreEvalTask = (() => __awaiter(void 0, void 0, void 0, function* () {
+            try {
+                const visualPreEvalUrl = process.env.PIPELINE6_VISUAL_PREEVAL_URL || "http://localhost:8006/visual-pre-eval";
+                logger_1.default.info(`[V2] [Thread 3] Launching Parallel Visual Pre-Evaluation on Pipeline: ${visualPreEvalUrl}`);
+                const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
+                yield axios_1.default.post(visualPreEvalUrl, {
+                    student_id: studentId,
+                    exam_id: examId,
+                    question_paper_text: questionText,
+                    answer_key_text: standardAnsText,
+                    student_pdf_base64: pdfBase64,
+                    max_marks: maxMarks,
+                }, { timeout: 120000 });
+                logger_1.default.info("[V2] [Thread 3] Parallel Visual Pre-Evaluation completed/cached successfully.");
+            }
+            catch (err) {
+                logger_1.default.warn(`[V2] [Thread 3] Visual pre-evaluation notification warning (will infer on demand): ${err.message}`);
+            }
+        }))();
+        // 🚀 AWAIT ALL THREADS IN PARALLEL
+        const [studentAnsOcr, finalAnswerKeyText] = yield Promise.all([
+            studentOcrTask,
+            answerKeyAndRubricTask,
+            visualPreEvalTask,
+        ]);
+        // 2. Call evaluation pipeline on port 8006 (/evaluate-text)
         const pipelineUrl = process.env.OCR_PIPELINE_URL || "http://localhost:8006/evaluate-text";
+        const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
         const pipelinePayload = {
             student_id: studentId,
             exam_id: examId,
@@ -313,14 +377,15 @@ const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, q
             answer_key_text: finalAnswerKeyText,
             student_answer_text: studentAnsOcr,
             max_marks: maxMarks,
+            student_pdf_base64: pdfBase64,
         };
-        logger_1.default.info(`[V2] Sending extracted text to OCR Pipeline: ${pipelineUrl}`);
+        logger_1.default.info(`[V2] Sending extracted text to Pipeline on port 8006: ${pipelineUrl}`);
         const evalResponse = yield axios_1.default.post(pipelineUrl, pipelinePayload, {
             headers: { "Content-Type": "application/json" },
             timeout: 3600000, // 1 hour
         });
         const evalResult = evalResponse.data;
-        logger_1.default.info("[V2] Pipeline evaluation completed successfully.");
+        logger_1.default.info("[V2] Pipeline v6.3 evaluation completed successfully.");
         console.log("==================== AI PIPELINE RESPONSE ====================");
         console.log(JSON.stringify(evalResult, null, 2));
         console.log("==============================================================");

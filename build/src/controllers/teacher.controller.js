@@ -125,6 +125,22 @@ const getMyAssignments = (req, res) => __awaiter(void 0, void 0, void 0, functio
         return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
     }
 });
+const getTeacherQuestionPapers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _c;
+    try {
+        const targetUserId = (_c = req.params) === null || _c === void 0 ? void 0 : _c.userId;
+        const result = yield teacher_service_1.default.getTeacherQuestionPapers(req.viaExamUser, req.query, targetUserId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        console.error("getTeacherQuestionPapers Controller Error:", error);
+        return res.status(500).json({
+            error: true,
+            statusCode: 500,
+            message: `Internal Server Error: ${error.message}`,
+        });
+    }
+});
 exports.default = {
     createTeacher,
     getAllTeachers,
@@ -136,4 +152,5 @@ exports.default = {
     getDeactivatedTeachers,
     reactivateTeacher,
     getMyAssignments,
+    getTeacherQuestionPapers,
 };

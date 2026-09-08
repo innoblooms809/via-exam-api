@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ScannerProfile = exports.AIEvaluation = exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
+exports.UserPresenceSession = exports.ActivityLog = exports.ScannerProfile = exports.AIEvaluation = exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
 const User_modal_1 = __importDefault(require("./User.modal"));
 exports.User = User_modal_1.default;
 const Role_modal_1 = __importDefault(require("./Role.modal"));
@@ -36,6 +36,10 @@ const AIEvaluation_modal_1 = __importDefault(require("./AIEvaluation.modal"));
 exports.AIEvaluation = AIEvaluation_modal_1.default;
 const ScannerProfile_modal_1 = __importDefault(require("./ScannerProfile.modal"));
 exports.ScannerProfile = ScannerProfile_modal_1.default;
+const ActivityLog_modal_1 = __importDefault(require("./ActivityLog.modal"));
+exports.ActivityLog = ActivityLog_modal_1.default;
+const UserPresenceSession_modal_1 = __importDefault(require("./UserPresenceSession.modal"));
+exports.UserPresenceSession = UserPresenceSession_modal_1.default;
 // ROLE ↔ ACCESS
 // ═══════════════════════════════════════════════════════════════
 // ROLE ↔ ACCESS
