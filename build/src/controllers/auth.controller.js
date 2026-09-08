@@ -27,10 +27,10 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
     }
 });
-const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const verifyOtp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { email, otp, newPassword } = req.body;
-        const result = yield auth_service_1.default.resetPassword(email, otp, newPassword);
+        const { email, otp } = req.body;
+        const result = yield auth_service_1.default.verifyOtp(email, otp);
         return res.status(result.statusCode).send(result);
     }
     catch (_b) {
@@ -41,4 +41,31 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         });
     }
 });
-exports.default = { forgotPassword, resetPassword };
+const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email, otp, newPassword } = req.body;
+        const result = yield auth_service_1.default.resetPassword(email, otp, newPassword);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (_c) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const resendCredentials = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield auth_service_1.default.resendCredentials(req.body.email);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (_d) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+exports.default = { forgotPassword, verifyOtp, resetPassword, resendCredentials };

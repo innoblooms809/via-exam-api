@@ -31,9 +31,11 @@ const helper_1 = __importDefault(require("../../utils/helper")); // reuse your e
 const exclude_1 = __importDefault(require("../../utils/exclude")); // reuse your existing utility
 const sequelize_1 = require("sequelize");
 const Institute_modal_1 = __importDefault(require("../../modals/Institute.modal"));
+const UserPresenceSession_modal_1 = __importDefault(require("../../modals/UserPresenceSession.modal"));
+const activityLogger_1 = require("../../utils/activityLogger");
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_DURATION_MINUTES = 30;
+const LOCK_DURATION_SECONDS = 5;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 /**
  * Fetch ViaExam user by emailId — mirrors your getUserByEmail() pattern
@@ -128,6 +130,7 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
  * Adds: account lockout, status checks
  */
 const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b, _c;
     try {
         console.log("EMAIL RECEIVED:", emailId);
         let instituteId = null;
@@ -181,7 +184,7 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             if (attempts >= MAX_LOGIN_ATTEMPTS) {
                 yield User_modal_1.default.update({
                     loginAttempts: attempts,
-                    lockedUntil: new Date(Date.now() + LOCK_DURATION_MINUTES * 60000),
+                    lockedUntil: new Date(Date.now() + LOCK_DURATION_SECONDS * 1000),
                 }, { where: { userId: user.userId } });
             }
             else {
@@ -199,6 +202,34 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             lockedUntil: null,
             lastLoginAt: new Date(),
         }, { where: { userId: user.userId } });
+        // Log Activity & Update Presence
+        const now = new Date();
+        let presenceSession = yield UserPresenceSession_modal_1.default.findOne({ where: { userId: user.userId } });
+        if (presenceSession) {
+            presenceSession.presenceStatus = "ONLINE";
+            presenceSession.lastActivityAt = now;
+            presenceSession.lastLoginAt = now;
+            presenceSession.currentActivity = "Active in Portal";
+            yield presenceSession.save();
+        }
+        else {
+            yield UserPresenceSession_modal_1.default.create({
+                userId: user.userId,
+                role: ((_b = user.role) === null || _b === void 0 ? void 0 : _b.role) || "USER",
+                instituteId: user.instituteId || null,
+                presenceStatus: "ONLINE",
+                currentActivity: "Active in Portal",
+                lastActivityAt: now,
+                lastLoginAt: now,
+            });
+        }
+        yield (0, activityLogger_1.logActivity)({
+            userId: user.userId,
+            role: ((_c = user.role) === null || _c === void 0 ? void 0 : _c.role) || "USER",
+            instituteId: user.instituteId || null,
+            eventType: "LOGIN_SUCCESS",
+            currentActivity: "Logged In",
+        });
         const userResponse = (0, exclude_1.default)(user.toJSON(), ["password", "refreshToken"]);
         return {
             error: false,
@@ -220,8 +251,31 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
  * Logout — store/clear refresh token (mirrors your token invalidation pattern)
  */
 const viaExamUserLogout = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    var _d;
     try {
+        const user = yield User_modal_1.default.findOne({
+            include: [{ model: Role_modal_1.default, as: "role" }],
+            where: { userId },
+        });
         yield User_modal_1.default.update({ refreshToken: null }, { where: { userId } });
+        // Instantly update active presence session to OFFLINE
+        const logoutTime = new Date();
+        const presenceSession = yield UserPresenceSession_modal_1.default.findOne({ where: { userId } });
+        if (presenceSession) {
+            presenceSession.presenceStatus = "OFFLINE";
+            presenceSession.currentActivity = "Logged Out";
+            presenceSession.lastLogoutAt = logoutTime;
+            yield presenceSession.save();
+        }
+        if (user) {
+            yield (0, activityLogger_1.logActivity)({
+                userId: user.userId,
+                role: ((_d = user.role) === null || _d === void 0 ? void 0 : _d.role) || "USER",
+                instituteId: user.instituteId || null,
+                eventType: "LOGOUT",
+                currentActivity: "Logged Out",
+            });
+        }
         return {
             error: false,
             statusCode: http_status_1.default.OK,

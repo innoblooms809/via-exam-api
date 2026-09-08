@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
 const class_service_1 = __importDefault(require("../services/class.service"));
+const logger_1 = __importDefault(require("../config/logger"));
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
 const createClass = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -21,7 +22,7 @@ const createClass = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
-        console.error("POST /v1/class/createClass 500 - error:", error);
+        logger_1.default.error(`POST /v1/class/createClass 500 - error: ${error}`);
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -33,7 +34,7 @@ const createClass = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 const getAllClasses = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        console.log("GET /v1/class/getAllClasses - user:", (_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.id);
+        logger_1.default.info(`GET /v1/class/getAllClasses - user: ${(_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.id}`);
         const result = yield class_service_1.default.getAllClasses(req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
