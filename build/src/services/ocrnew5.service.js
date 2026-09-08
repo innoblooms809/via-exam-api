@@ -24,6 +24,7 @@ const ApiError_1 = __importDefault(require("../utils/ApiError"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
+const form_data_1 = __importDefault(require("form-data"));
 // Helper to format question paper content into text
 const formatQuestionPaper = (content, ansDoc) => {
     var _a, _b;
@@ -119,11 +120,16 @@ const evaluateSheetOCRNew5 = (sheetId) => __awaiter(void 0, void 0, void 0, func
                 const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
                 fileName = `${fileName}${ext}`;
             }
-            const ocrFormData = new FormData();
-            const fileBlob = new Blob([sheet.fileBuffer], { type: sheet.fileMimeType || "image/png" });
-            ocrFormData.append("file", fileBlob, fileName);
+            const ocrFormData = new form_data_1.default();
+            ocrFormData.append("file", sheet.fileBuffer, {
+                filename: fileName,
+                contentType: sheet.fileMimeType || "image/png",
+            });
             logger_1.default.info(`[OCRNew5 Service] Performing OCR on sheet image (${fileName})...`);
-            const ocrRes = yield axios_1.default.post(ocrApiUrl, ocrFormData, { timeout: 3600000 });
+            const ocrRes = yield axios_1.default.post(ocrApiUrl, ocrFormData, {
+                headers: ocrFormData.getHeaders(),
+                timeout: 3600000,
+            });
             if (ocrRes.data && ocrRes.data.combined_markdown) {
                 studentAnsText = ocrRes.data.combined_markdown;
                 logger_1.default.info(`[OCRNew5 Service] OCR successful (${studentAnsText.length} characters extracted).`);

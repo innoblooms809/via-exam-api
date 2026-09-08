@@ -15,4 +15,5 @@ router.get("/getAllScanners", auth_1.authenticate, scannerUser_controller_1.defa
 router.get("/getScanner/:userId", auth_1.authenticate, scannerUser_controller_1.default.getScannerById);
 router.put("/updateScanner/:userId", auth_1.authenticate, upload.fields([{ name: "profilePhoto", maxCount: 1 }]), scannerUser_controller_1.default.updateScanner);
 router.delete("/deleteScanner/:userId", auth_1.authenticate, scannerUser_controller_1.default.deleteScanner);
+router.patch("/reactivateScanner/:userId", auth_1.authenticate, scannerUser_controller_1.default.reactivateScanner);
 exports.default = router;

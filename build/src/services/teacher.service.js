@@ -19,6 +19,9 @@ const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
 const Institute_modal_1 = __importDefault(require("../modals/Institute.modal"));
 const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
+const QuestionPaper_modal_1 = __importDefault(require("../modals/question-paper/QuestionPaper.modal"));
+const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
+const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
 const encryption_1 = __importDefault(require("../utils/encryption"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const sequelize_1 = require("../config/sequelize");
@@ -171,30 +174,60 @@ const createTeacher = (body, files, createdBy) => __awaiter(void 0, void 0, void
         };
     }
 });
-// ─── GET ALL TEACHERS ─────────────────────────────────────────────────────────
+// ─── GET ALL TEACHERS (Production-Grade Server-Side Pagination & Indexed Search) ───
 const getAllTeachers = (createdBy, query) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b;
     try {
-        const { search = "", isExaminer = "" } = query;
+        const pageNum = parseInt((query === null || query === void 0 ? void 0 : query.page) || "1", 10);
+        const limitNum = parseInt((query === null || query === void 0 ? void 0 : query.limit) || "25", 10); // Default limit: 25 per user request
+        const offset = (pageNum - 1) * limitNum;
+        const search = ((query === null || query === void 0 ? void 0 : query.search) || "").trim();
+        const isExaminer = (query === null || query === void 0 ? void 0 : query.isExaminer) || "";
+        const teacherTypeFilter = (query === null || query === void 0 ? void 0 : query.teacherType) || "";
+        const statusFilter = (query === null || query === void 0 ? void 0 : query.status) !== undefined && (query === null || query === void 0 ? void 0 : query.status) !== "" ? parseInt(query.status, 10) : null;
+        const sortBy = (query === null || query === void 0 ? void 0 : query.sortBy) || "userName";
+        const sortOrder = ((_b = query === null || query === void 0 ? void 0 : query.sortOrder) === null || _b === void 0 ? void 0 : _b.toUpperCase()) === "DESC" ? "DESC" : "ASC";
         const teacherRole = yield Role_modal_1.default.findOne({ where: { role: "TEACHER" } });
         const where = {
             instituteId: createdBy.instituteId,
             roleId: teacherRole === null || teacherRole === void 0 ? void 0 : teacherRole.id,
-            status: 1,
         };
+        // Only add status filter if explicitly provided
+        if (statusFilter !== null) {
+            where.status = statusFilter;
+        }
+        // Indexed ILIKE search across Name, Email, and Phone
         if (search) {
             where[sequelize_2.Op.or] = [
                 { userName: { [sequelize_2.Op.iLike]: `%${search}%` } },
                 { emailId: { [sequelize_2.Op.iLike]: `%${search}%` } },
+                { phoneNumber: { [sequelize_2.Op.iLike]: `%${search}%` } },
             ];
         }
-        const teachers = yield User_modal_1.default.findAll({
+        const teacherProfileWhere = {};
+        if (teacherTypeFilter) {
+            teacherProfileWhere.teacherType = teacherTypeFilter;
+        }
+        if (isExaminer === "true")
+            teacherProfileWhere.isExaminer = true;
+        if (isExaminer === "false")
+            teacherProfileWhere.isExaminer = false;
+        const { count, rows: teachers } = yield User_modal_1.default.findAndCountAll({
             where,
             include: [
                 { model: Role_modal_1.default, as: "role" },
-                { model: TeacherProfile_modal_1.default, as: "teacherProfile", required: false },
+                {
+                    model: TeacherProfile_modal_1.default,
+                    as: "teacherProfile",
+                    required: Object.keys(teacherProfileWhere).length > 0,
+                    where: Object.keys(teacherProfileWhere).length > 0 ? teacherProfileWhere : undefined,
+                },
             ],
             attributes: { exclude: ["password", "refreshToken"] },
-            order: [["userName", "ASC"]],
+            order: [[sortBy, sortOrder]],
+            limit: limitNum,
+            offset,
+            distinct: true,
         });
         const teacherIds = teachers.map((u) => u.userId);
         const assignedClasses = yield Class_modal_1.default.findAll({
@@ -211,7 +244,7 @@ const getAllTeachers = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
                 isDeleted: false,
             },
         });
-        let result = teachers.map((u) => {
+        const result = teachers.map((u) => {
             var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
             const cls = assignedClasses.find((c) => c.classTeacherId === u.userId);
             const subs = assignedSubjects.filter((s) => s.teacherId === u.userId);
@@ -236,20 +269,19 @@ const getAllTeachers = (createdBy, query) => __awaiter(void 0, void 0, void 0, f
                 assignedSubjects: subs.map((s) => ({ subjectId: s.subjectId, subjectName: s.subjectName })),
             };
         });
-        // Filter by examiner flag
-        if (isExaminer === "true")
-            result = result.filter((r) => r.isExaminer);
-        if (isExaminer === "false")
-            result = result.filter((r) => !r.isExaminer);
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Teachers fetched successfully.",
             data: {
                 teachers: result,
-                total: result.length,
-                examinerCount: result.filter((r) => r.isExaminer).length,
-                teacherCount: result.filter((r) => !r.isExaminer).length,
+                total: count,
+                pagination: {
+                    page: pageNum,
+                    limit: limitNum,
+                    total: count,
+                    totalPages: Math.ceil(count / limitNum),
+                },
             },
         };
     }
@@ -313,7 +345,7 @@ const getTeacherById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
 });
 // ─── UPDATE TEACHER ───────────────────────────────────────────────────────────
 const updateTeacher = (userId, body, files, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b, _c, _d, _e, _f, _g, _h, _j;
+    var _c, _d, _e, _f, _g, _h, _j, _k;
     const t = yield sequelize_1.sequelize.transaction();
     try {
         const user = yield User_modal_1.default.findOne({
@@ -333,24 +365,24 @@ const updateTeacher = (userId, body, files, createdBy) => __awaiter(void 0, void
             userName: body.firstName && body.lastName
                 ? `${body.firstName} ${body.lastName}`
                 : user.userName,
-            phoneNumber: (_b = body.phoneNumber) !== null && _b !== void 0 ? _b : user.phoneNumber,
+            phoneNumber: (_c = body.phoneNumber) !== null && _c !== void 0 ? _c : user.phoneNumber,
         }, { transaction: t });
         // Update profile
         if (profile) {
-            const profileUrl = ((_c = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _c === void 0 ? void 0 : _c[0])
+            const profileUrl = ((_d = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _d === void 0 ? void 0 : _d[0])
                 ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
                 : profile.profileUrl;
             yield profile.update({
-                teacherType: (_d = body.teacherType) !== null && _d !== void 0 ? _d : profile.teacherType,
-                qualification: (_e = body.qualification) !== null && _e !== void 0 ? _e : profile.qualification,
-                specialization: (_f = body.specialization) !== null && _f !== void 0 ? _f : profile.specialization,
-                experience: (_g = body.experience) !== null && _g !== void 0 ? _g : profile.experience,
-                address: (_h = body.address) !== null && _h !== void 0 ? _h : profile.address,
+                teacherType: (_e = body.teacherType) !== null && _e !== void 0 ? _e : profile.teacherType,
+                qualification: (_f = body.qualification) !== null && _f !== void 0 ? _f : profile.qualification,
+                specialization: (_g = body.specialization) !== null && _g !== void 0 ? _g : profile.specialization,
+                experience: (_h = body.experience) !== null && _h !== void 0 ? _h : profile.experience,
+                address: (_j = body.address) !== null && _j !== void 0 ? _j : profile.address,
                 profileUrl,
             }, { transaction: t });
             // If teacherType is updated to something other than "Class Teacher",
             // remove them as class teacher from any class they were assigned to.
-            const newTeacherType = (_j = body.teacherType) !== null && _j !== void 0 ? _j : profile.teacherType;
+            const newTeacherType = (_k = body.teacherType) !== null && _k !== void 0 ? _k : profile.teacherType;
             if (newTeacherType !== "Class Teacher") {
                 const cls = yield Class_modal_1.default.findOne({
                     where: { classTeacherId: userId, instituteId: createdBy.instituteId },
@@ -422,7 +454,9 @@ const deleteTeacher = (userId, createdBy) => __awaiter(void 0, void 0, void 0, f
                 message: "Teacher not found.",
             };
         }
+        console.log("Before deactivation - User status:", user.status);
         yield user.update({ status: 0 });
+        console.log("After deactivation - User status:", user.status);
         // Unassign teacher from any class they were teaching
         const assignedClass = yield Class_modal_1.default.findOne({
             where: { classTeacherId: userId, instituteId: createdBy.instituteId },
@@ -438,6 +472,7 @@ const deleteTeacher = (userId, createdBy) => __awaiter(void 0, void 0, void 0, f
         };
     }
     catch (e) {
+        console.error("Delete teacher error:", e);
         return {
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -600,7 +635,9 @@ const reactivateTeacher = (userId, createdBy) => __awaiter(void 0, void 0, void 
                 message: "Teacher not found.",
             };
         }
+        console.log("Before reactivation - User status:", user.status);
         yield user.update({ status: 1 });
+        console.log("After reactivation - User status:", user.status);
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -609,6 +646,7 @@ const reactivateTeacher = (userId, createdBy) => __awaiter(void 0, void 0, void 
         };
     }
     catch (e) {
+        console.error("Reactivate teacher error:", e);
         return {
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -659,6 +697,84 @@ const getMyAssignments = (teacherId) => __awaiter(void 0, void 0, void 0, functi
         };
     }
 });
+const getTeacherQuestionPapers = (teacherUser, query, targetUserId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = targetUserId || (query === null || query === void 0 ? void 0 : query.teacherId) || (teacherUser === null || teacherUser === void 0 ? void 0 : teacherUser.userId);
+        const instituteId = teacherUser === null || teacherUser === void 0 ? void 0 : teacherUser.instituteId;
+        if (!teacherId) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "Teacher ID is required.",
+            };
+        }
+        const where = { teacherId };
+        if (instituteId) {
+            where.instituteId = instituteId;
+        }
+        if (query === null || query === void 0 ? void 0 : query.status) {
+            where.status = query.status;
+        }
+        if (query === null || query === void 0 ? void 0 : query.paperSet) {
+            where.paperSet = query.paperSet;
+        }
+        const papers = yield QuestionPaper_modal_1.default.findAll({
+            where,
+            order: [["createdAt", "DESC"]],
+        });
+        const examIds = Array.from(new Set(papers.map((p) => p.examId).filter(Boolean)));
+        const exams = examIds.length > 0
+            ? yield Exam_modal_1.default.findAll({ where: { examId: { [sequelize_2.Op.in]: examIds } } })
+            : [];
+        const examMap = new Map(exams.map((e) => [e.examId, e]));
+        const classIds = Array.from(new Set(exams.map((e) => e.classId).filter(Boolean)));
+        const subjectIds = Array.from(new Set(exams.map((e) => e.subjectId).filter(Boolean)));
+        const sessionIds = Array.from(new Set(exams.map((e) => e.sessionId).filter(Boolean)));
+        const [classesList, subjectsList, sessionsList] = yield Promise.all([
+            classIds.length > 0 ? Class_modal_1.default.findAll({ where: { classId: { [sequelize_2.Op.in]: classIds } } }) : [],
+            subjectIds.length > 0 ? Subject_modal_1.default.findAll({ where: { subjectId: { [sequelize_2.Op.in]: subjectIds } } }) : [],
+            sessionIds.length > 0 ? Session_modal_1.default.findAll({ where: { sessionId: { [sequelize_2.Op.in]: sessionIds } } }) : [],
+        ]);
+        const classMap = new Map(classesList.map((c) => [c.classId, c.className]));
+        const subjectMap = new Map(subjectsList.map((s) => [s.subjectId, s.subjectName]));
+        const sessionMap = new Map(sessionsList.map((s) => [s.sessionId, s.sessionName]));
+        const formattedPapers = papers.map((p) => {
+            var _a, _b;
+            const plainPaper = p.get({ plain: true });
+            const exam = examMap.get(p.examId);
+            const className = (exam === null || exam === void 0 ? void 0 : exam.classId) ? classMap.get(exam.classId) || exam.classId : "All Classes";
+            const subjectName = (exam === null || exam === void 0 ? void 0 : exam.subjectId) ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
+            const sessionName = (exam === null || exam === void 0 ? void 0 : exam.sessionId) ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
+            return Object.assign(Object.assign({}, plainPaper), { examDetails: exam ? {
+                    examId: exam.examId,
+                    examType: exam.examType,
+                    totalMarks: exam.totalMarks,
+                    duration: exam.duration,
+                    className,
+                    subjectName,
+                    sessionName,
+                } : null, className,
+                subjectName, examName: (exam === null || exam === void 0 ? void 0 : exam.examType) || ((_b = (_a = plainPaper.content) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.examName) || "Examination" });
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Teacher question papers fetched successfully.",
+            data: {
+                total: formattedPapers.length,
+                papers: formattedPapers,
+            },
+        };
+    }
+    catch (error) {
+        console.error("getTeacherQuestionPapers Service Error:", error);
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Failed to fetch teacher question papers: ${error.message}`,
+        };
+    }
+});
 exports.default = {
     createTeacher,
     getAllTeachers,
@@ -670,4 +786,5 @@ exports.default = {
     getDeactivatedTeachers,
     reactivateTeacher,
     getMyAssignments,
+    getTeacherQuestionPapers,
 };
