@@ -1,0 +1,45 @@
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[31merror[39m: Error connecting to PostgreSQL / syncing models
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020
+[32minfo[39m: OPTIONS /v1/user/login 204 - 17.396 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.430 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 5.967 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.523 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.276 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.508 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.267 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.775 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.534 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 1.107 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.809 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.326 ms
+[32minfo[39m: OPTIONS /v1/user/login 204 - 0.353 ms
+[32minfo[39m: SIGTERM received
+[32minfo[39m: Connected to PostgreSQL Database
+[32minfo[39m: Models synced with PostgreSQL
+[32minfo[39m: Listening on port 5020

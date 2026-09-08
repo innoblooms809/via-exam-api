@@ -25,6 +25,10 @@ const academicCalendar_route_1 = __importDefault(require("./academicCalendar.rou
 const auth_route_1 = __importDefault(require("./auth.route"));
 const notification_route_1 = __importDefault(require("./notification.route"));
 const aiEvaluation_route_1 = __importDefault(require("./aiEvaluation.route"));
+const dashboard_route_1 = __importDefault(require("./dashboard.route"));
+const Admindashboard_route_1 = __importDefault(require("./Admindashboard.route"));
+const teacherdashboard_route_1 = __importDefault(require("./teacherdashboard.route"));
+const studentdashboard_route_1 = __importDefault(require("./studentdashboard.route"));
 const monitoring_route_1 = __importDefault(require("./monitoring.route"));
 const router = express_1.default.Router();
 const defaultRoutes = [
@@ -39,6 +43,22 @@ const defaultRoutes = [
     {
         path: "/institute",
         route: institute_route_1.default,
+    },
+    {
+        path: "/dashboard",
+        route: dashboard_route_1.default,
+    },
+    {
+        path: "/admin-dashboard",
+        route: Admindashboard_route_1.default,
+    },
+    {
+        path: "/teacher-dashboard",
+        route: teacherdashboard_route_1.default,
+    },
+    {
+        path: "/student-dashboard",
+        route: studentdashboard_route_1.default,
     },
     {
         path: "/sessions",

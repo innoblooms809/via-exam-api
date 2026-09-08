@@ -4,12 +4,12 @@ Thumbs.db
 Desktop.ini
 
 # Environment Variables & Secrets
-# .env
+.env
 !.env
 .env.*
 .env.local
 .env.*.local
-
+.
 # Logs and Databases
 *.log
 *.sqlite
@@ -24,17 +24,4 @@ public/uploads/
 # Build & Dependency Directories (Language Specific)
 node_modules/
 dist/
-build/
-bin/
-obj/
-out/
-target/
-
-# IDE & Editor Files
-.vscode/
-.idea/
-*.swp
-*.swo
-*.sublime-workspace
-*.sublime-project
 
