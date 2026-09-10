@@ -110,6 +110,52 @@ const deleteSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         });
     }
 });
+// ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────
+// GET /approved-exams
+const getApprovedExams = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield scanner_service_1.default.getApprovedExams(req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (err) {
+        console.error("getApprovedExams Controller Error:", err);
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
+        });
+    }
+});
+// POST /upload-student-answer
+const uploadStudentAnswerPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield scanner_service_1.default.uploadStudentAnswerPaper(req.body, req.file, req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (err) {
+        console.error("uploadStudentAnswerPaper Controller Error:", err);
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
+        });
+    }
+});
+// GET /student-answers/:examId
+const getStudentAnswerPapers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield scanner_service_1.default.getStudentAnswerPapers(req.params.examId, req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (err) {
+        console.error("getStudentAnswerPapers Controller Error:", err);
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
+        });
+    }
+});
 exports.default = {
     uploadSheets,
     getAllSheets,
@@ -117,4 +163,7 @@ exports.default = {
     getSheetSummary,
     updateSheetStatus,
     deleteSheet,
+    getApprovedExams,
+    uploadStudentAnswerPaper,
+    getStudentAnswerPapers,
 };

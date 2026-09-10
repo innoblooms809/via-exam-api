@@ -10,6 +10,7 @@ import RegHelper from "../utils/helper";
 import logger from "../config/logger";
 import axios from "axios";
 import FormData from "form-data";
+import { pythonServices } from "../config/pythonServices";
 
 // Helper to format question paper content into text
 const formatQuestionPaper = (content: any, ansDoc?: any): { questions: string; answers: string } => {
@@ -106,7 +107,7 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   let studentAnsText = sheet.ocrText || sheet.answerText || "";
   if (!studentAnsText && sheet.fileBuffer && sheet.fileBuffer.length > 0) {
     try {
-      const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+      const ocrApiUrl = pythonServices.ocrUrl();
       let fileName = sheet.fileName || "sheet.png";
       if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
         const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
@@ -175,7 +176,7 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   }
 
   // 4. Send Payload to OCRNew5 multi-agent pipeline on port 8006
-  const pipelineUrl = process.env.OCRNEW5_PIPELINE_URL || "http://localhost:8006/evaluate-text";
+  const pipelineUrl = pythonServices.ocrNew5PipelineUrl();
   const pipelinePayload = {
     student_id: studentId,
     exam_id: examId,

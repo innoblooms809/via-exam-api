@@ -44,8 +44,10 @@ router.patch("/updateTeacherToRemoveExaminer/:userId/remove-examiner", auth_1.au
 teacher_controller_1.default.removeExaminer);
 // GET /v1/teachers/my-assignments
 router.get("/my-assignments", auth_1.authenticate, teacher_controller_1.default.getMyAssignments);
-// GET /v1/teachers/my-question-papers
+// GET /v1/teacher/approval-workflow-exams
+router.get("/approval-workflow-exams", auth_1.authenticate, teacher_controller_1.default.getTeacherExamsWithApprovalStatus);
+// GET /v1/teacher/my-question-papers
 router.get("/my-question-papers", auth_1.authenticate, teacher_controller_1.default.getTeacherQuestionPapers);
-// GET /v1/teachers/:userId/question-papers
+// GET /v1/teacher/:userId/question-papers
 router.get("/:userId/question-papers", auth_1.authenticate, teacher_controller_1.default.getTeacherQuestionPapers);
 exports.default = router;

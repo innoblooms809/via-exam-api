@@ -4,11 +4,14 @@ import app from "./app";
 import logger from "./config/logger";
 import connectDB from "./db/connect"; // Change to sequelize connection
 import initSuperAdmin from "./config/superAdmin";
+import { describePythonServices, checkPythonServices } from "./config/pythonServices";
 let server: Server;
 
 const bootApp = () => {
   server = app.listen(config.port, async () => {
     logger.info(`Listening on port ${config.port}`);
+    logger.info(describePythonServices());
+    void checkPythonServices(); // logs reachability only; never blocks startup
     await initSuperAdmin();
   });
   // Set server timeouts to 1 hour to support slow CPU model processing

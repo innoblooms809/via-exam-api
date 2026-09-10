@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllAnswerSheets = exports.getPendingAnswerSheets = exports.publishAnswerSheet = exports.rejectAnswerSheet = exports.approveAnswerSheet = exports.submitAnswerSheet = exports.getQuestionPaperAnswerUploads = exports.getQuestionPaperAnswerBySelection = exports.uploadPdfController = exports.uploadImageController = exports.uploadFileToCloudinary = exports.createQuestionPaperAnswer = void 0;
+const sequelize_1 = require("sequelize");
 const stander_answer_service_1 = __importDefault(require("../../services/question-answer/stander-answer.service"));
 const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
 const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
@@ -178,7 +179,7 @@ exports.uploadPdfController = uploadPdfController;
 const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _d;
     try {
-        const { classVal, subject, examType, session, paperSet, } = req.body;
+        const { classVal, subject, examType, session, paperSet, examId, } = req.body;
         const instituteId = ((_d = req.viaExamUser) === null || _d === void 0 ? void 0 : _d.instituteId) || req.body.instituteId;
         console.log("[getQuestionPaperAnswerBySelection] Request parameters:", {
             classVal,
@@ -186,8 +187,29 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
             examType,
             session,
             paperSet,
+            examId,
             instituteId,
         });
+        // 1. Direct lookup by examId if provided
+        if (examId) {
+            const qpaWhere = { examId };
+            if (paperSet)
+                qpaWhere.paperSet = paperSet;
+            const directQpa = yield stander_answer_model_1.default.findOne({ where: qpaWhere });
+            if (directQpa) {
+                const examObj = yield Exam_modal_1.default.findOne({ where: { examId } });
+                return res.status(http_status_1.default.OK).json({
+                    error: false,
+                    message: "Question paper answer fetched successfully.",
+                    data: {
+                        exam: examObj || { examId, examType, subjectName: subject, className: classVal },
+                        questionPaperAnswer: directQpa,
+                    },
+                });
+            }
+        }
+        // 2. Lookup by session, class, subject, examType
+        const cleanClass = (classVal || "").replace(/^class\s*/i, "").trim();
         const [sessionData, classData] = yield Promise.all([
             Session_modal_1.default.findOne({
                 where: {
@@ -198,18 +220,18 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
             }),
             Class_modal_1.default.findOne({
                 where: {
-                    className: classVal,
+                    [sequelize_1.Op.or]: [
+                        { className: classVal },
+                        { className: `Class ${cleanClass}` },
+                        { className: cleanClass },
+                    ],
                     instituteId,
                     isDeleted: false,
                 },
             }),
         ]);
-        if (!sessionData) {
+        if (!sessionData && session) {
             console.warn(`[getQuestionPaperAnswerBySelection] 404: Session '${session}' not found for institute '${instituteId}'`);
-            return res.status(http_status_1.default.NOT_FOUND).json({
-                error: true,
-                message: "Session not found.",
-            });
         }
         if (!classData) {
             console.warn(`[getQuestionPaperAnswerBySelection] 404: Class '${classVal}' not found for institute '${instituteId}'`);
@@ -233,16 +255,16 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
                 message: "Subject not found.",
             });
         }
-        const exam = yield Exam_modal_1.default.findOne({
-            where: {
-                sessionId: sessionData.sessionId,
-                classId: classData.classId,
-                subjectId: subjectData.subjectId,
-                examType,
-                instituteId,
-                isDeleted: false,
-            },
-        });
+        const examWhere = {
+            classId: classData.classId,
+            subjectId: subjectData.subjectId,
+            examType,
+            instituteId,
+            isDeleted: false,
+        };
+        if (sessionData)
+            examWhere.sessionId = sessionData.sessionId;
+        const exam = yield Exam_modal_1.default.findOne({ where: examWhere });
         if (!exam) {
             console.warn(`[getQuestionPaperAnswerBySelection] 404: Exam not found for session '${session}', class '${classVal}', subject '${subject}', examType '${examType}'`);
             return res.status(http_status_1.default.NOT_FOUND).json({
@@ -250,12 +272,10 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
                 message: "Exam not found.",
             });
         }
-        const questionPaperAnswer = yield stander_answer_model_1.default.findOne({
-            where: {
-                examId: exam.examId,
-                paperSet,
-            },
-        });
+        const qpaWhere = { examId: exam.examId };
+        if (paperSet)
+            qpaWhere.paperSet = paperSet;
+        const questionPaperAnswer = yield stander_answer_model_1.default.findOne({ where: qpaWhere });
         if (!questionPaperAnswer) {
             console.warn(`[getQuestionPaperAnswerBySelection] 404: Question paper answer not found for examId '${exam.examId}', paperSet '${paperSet}'`);
             return res.status(http_status_1.default.NOT_FOUND).json({

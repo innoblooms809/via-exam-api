@@ -9,7 +9,12 @@ import Class from "../modals/Class.modal";
 import Subject from "../modals/Subject.modal";
 import Session from "../modals/Session.modal";
 import StudentProfile from "../modals/Student.modal";
+import UserModal from "../modals/User.modal";
 import RegHelper from "../utils/helper";
+
+// Exam-table statuses reached only after the QP + answer key pair is approved.
+const APPROVED_EXAM_STATUSES = ["Approved", "Live", "Completed"];
+const APPROVED_PAPER_STATUSES: ("APPROVED" | "PUBLISHED")[] = ["APPROVED", "PUBLISHED"];
 
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
 
@@ -346,83 +351,138 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
   try {
     const instituteId = requestedBy.instituteId;
 
-    // Find question papers and answer sheets that are APPROVED or PUBLISHED
-    const [questionPapers, answerSheets] = await Promise.all([
-      QuestionPaper.findAll({
-        where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED", "Approved", "Published"] } },
-        attributes: ["examId", "paperSet", "teacherId"],
-      }),
-      QuestionPaperAnswer.findAll({
-        where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED", "Approved", "Published"] } },
-        attributes: ["examId", "paperSet", "teacherId"],
-      }),
-    ]);
+    if (!instituteId) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "Institute ID not found for user.",
+        data: { exams: [] },
+      };
+    }
 
-    const qpExamIds = new Set(questionPapers.map((qp) => qp.examId));
-    const ansExamIds = new Set(answerSheets.map((ans) => ans.examId));
-
-    // Exam must have Question Paper OR Answer Sheet approved, OR status === 'Live'/'Approved'
-    const fullyApprovedExamIds = Array.from(qpExamIds).filter((examId) => ansExamIds.has(examId));
-
-    let whereExam: any = {
-      instituteId,
-      isDeleted: false,
-    };
-
-    let exams = await Exam.findAll({
-      where: whereExam,
+    // Only this institute's exams are candidates — everything below is scoped through these IDs.
+    const instituteExams = await Exam.findAll({
+      where: { instituteId, isDeleted: false },
       order: [["createdAt", "DESC"]],
     });
 
-    const classIds = Array.from(new Set(exams.map((e) => e.classId).filter(Boolean))) as string[];
-    const subjectIds = Array.from(new Set(exams.map((e) => e.subjectId).filter(Boolean))) as string[];
-    const sessionIds = Array.from(new Set(exams.map((e) => e.sessionId).filter(Boolean))) as string[];
+    const empty = {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "No approved exams found.",
+      data: { exams: [] },
+    };
+    if (instituteExams.length === 0) return empty;
 
-    const [classesList, subjectsList, sessionsList] = await Promise.all([
-      classIds.length > 0 ? Class.findAll({ where: { classId: { [Op.in]: classIds } } }) : [],
-      subjectIds.length > 0 ? Subject.findAll({ where: { subjectId: { [Op.in]: subjectIds } } }) : [],
-      sessionIds.length > 0 ? Session.findAll({ where: { sessionId: { [Op.in]: sessionIds } } }) : [],
-    ]);
+    const instituteExamIds = instituteExams.map((e) => e.examId);
+
+    const questionPapers = await QuestionPaper.findAll({
+      where: { examId: { [Op.in]: instituteExamIds }, status: { [Op.in]: APPROVED_PAPER_STATUSES } },
+      attributes: ["paperId", "examId", "paperSet", "status", "approvedAt"],
+    });
+    const approvedPaperIds = questionPapers.map((qp) => qp.paperId);
+
+    // Answer keys are linked to the exam either directly or through their question paper.
+    const answerKeys = await QuestionPaperAnswer.findAll({
+      where: {
+        status: { [Op.in]: APPROVED_PAPER_STATUSES },
+        [Op.or]: [
+          { examId: { [Op.in]: instituteExamIds } },
+          ...(approvedPaperIds.length > 0 ? [{ paperId: { [Op.in]: approvedPaperIds } }] : []),
+        ],
+      },
+      attributes: ["paperId", "examId", "paperSet", "status", "approvedAt"],
+    });
+
+    // Same rule as the approval workflow: the exam is approved once both its
+    // question paper and answer key are approved (or the exam itself says so).
+    const approved = instituteExams
+      .map((exam) => {
+        const qp = questionPapers.find((p) => p.examId === exam.examId);
+        const ans = answerKeys.find(
+          (a) => a.examId === exam.examId || (qp && a.paperId === qp.paperId)
+        );
+        const isApproved =
+          APPROVED_EXAM_STATUSES.includes(exam.status) ||
+          (exam.status !== "Rejected" && Boolean(qp && ans));
+        return isApproved ? { exam, qp, ans } : null;
+      })
+      .filter(Boolean) as { exam: Exam; qp?: QuestionPaper; ans?: QuestionPaperAnswer }[];
+
+    if (approved.length === 0) return empty;
+
+    const exams = approved.map((a) => a.exam);
+    const unique = (ids: (string | null | undefined)[]) =>
+      Array.from(new Set(ids.filter(Boolean))) as string[];
+    const approvedExamIds = exams.map((e) => e.examId);
+    const classIds = unique(exams.map((e) => e.classId));
+    const subjectIds = unique(exams.map((e) => e.subjectId));
+    const sessionIds = unique(exams.map((e) => e.sessionId));
+    const userIds = unique(exams.flatMap((e) => [e.teacherId, e.examinerId]));
+
+    const [classesList, subjectsList, sessionsList, usersList, uploadCounts, studentCounts] =
+      await Promise.all([
+        classIds.length ? Class.findAll({ where: { classId: { [Op.in]: classIds } } }) : [],
+        subjectIds.length ? Subject.findAll({ where: { subjectId: { [Op.in]: subjectIds } } }) : [],
+        sessionIds.length ? Session.findAll({ where: { sessionId: { [Op.in]: sessionIds } } }) : [],
+        userIds.length
+          ? UserModal.findAll({
+              where: { userId: { [Op.in]: userIds }, instituteId },
+              attributes: ["userId", "userName"],
+            })
+          : [],
+        Scanner.count({
+          where: { instituteId, examId: { [Op.in]: approvedExamIds }, isDeleted: false },
+          group: ["examId"],
+        }),
+        classIds.length
+          ? StudentProfile.count({
+              where: { instituteId, classId: { [Op.in]: classIds } },
+              group: ["classId"],
+            })
+          : [],
+      ]);
 
     const classMap = new Map<string, string>(classesList.map((c: any) => [c.classId, c.className]));
-    const subjectMap = new Map<string, string>(subjectsList.map((s: any) => [s.subjectId, s.subjectName]));
+    const subjectMap = new Map<string, any>(subjectsList.map((s: any) => [s.subjectId, s]));
     const sessionMap = new Map<string, string>(sessionsList.map((s: any) => [s.sessionId, s.sessionName]));
-
-    const enrichedExams = await Promise.all(
-      exams.map(async (exam: any) => {
-        const examJson = exam.toJSON();
-        const qp = questionPapers.find((item) => item.examId === exam.examId);
-        const as = answerSheets.find((item) => item.examId === exam.examId);
-
-        const uploadedCount = await Scanner.count({
-          where: {
-            examId: exam.examId,
-            instituteId,
-            isDeleted: false,
-          },
-        });
-
-        const totalStudentsCount = exam.classId
-          ? (await StudentProfile.count({ where: { classId: exam.classId, instituteId } })) || 30
-          : 30;
-
-        const className = exam.classId ? classMap.get(exam.classId) || exam.classId : "All Classes";
-        const subjectName = exam.subjectId ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
-        const sessionName = exam.sessionId ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
-
-        return {
-          ...examJson,
-          examName: exam.examType || "Examination",
-          subject: subjectName,
-          className,
-          session: sessionName,
-          setLabel: qp?.paperSet || as?.paperSet || "A",
-          totalStudents: totalStudentsCount,
-          uploadedCount,
-          status: exam.status === "Draft" ? "APPROVED" : (exam.status || "APPROVED"),
-        };
-      })
+    const userMap = new Map<string, string>(usersList.map((u: any) => [u.userId, u.userName]));
+    const uploadMap = new Map<string, number>(
+      (uploadCounts as any[]).map((r) => [r.examId, Number(r.count)])
     );
+    const studentMap = new Map<string, number>(
+      (studentCounts as any[]).map((r) => [r.classId, Number(r.count)])
+    );
+
+    const enrichedExams = approved.map(({ exam, qp, ans }) => {
+      const subject = subjectMap.get(exam.subjectId);
+      return {
+        examId: exam.examId,
+        examName: exam.examType,
+        examType: exam.examType,
+        classId: exam.classId,
+        className: exam.classId ? classMap.get(exam.classId) || exam.classId : "All Classes",
+        subjectId: exam.subjectId,
+        subject: subject?.subjectName || exam.subjectId,
+        subjectCode: subject?.subjectCode || "",
+        sessionId: exam.sessionId,
+        session: sessionMap.get(exam.sessionId) || exam.sessionId,
+        teacherName: userMap.get(exam.teacherId) || "",
+        examinerName: exam.examinerId ? userMap.get(exam.examinerId) || "" : "",
+        setLabel: qp?.paperSet || ans?.paperSet || "",
+        totalMarks: exam.totalMarks,
+        passingMarks: exam.passingMarks,
+        duration: exam.duration,
+        instructions: exam.instructions,
+        totalStudents: exam.classId ? studentMap.get(exam.classId) || 0 : 0,
+        uploadedCount: uploadMap.get(exam.examId) || 0,
+        status: exam.status,
+        questionPaperStatus: qp?.status || null,
+        answerKeyStatus: ans?.status || null,
+        approvedAt: qp?.approvedAt || ans?.approvedAt || exam.updatedAt,
+        createdAt: exam.createdAt,
+      };
+    });
 
     return {
       error: false,
@@ -431,10 +491,12 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
       data: { exams: enrichedExams },
     };
   } catch (e: any) {
+    console.error("getApprovedExams Error:", e);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       message: `Something went wrong: ${e.message}`,
+      data: { exams: [] },
     };
   }
 };
