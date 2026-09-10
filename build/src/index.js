@@ -12,15 +12,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const app_1 = __importDefault(require("./app"));
 const config_1 = __importDefault(require("./config/config"));
+const app_1 = __importDefault(require("./app"));
 const logger_1 = __importDefault(require("./config/logger"));
 const connect_1 = __importDefault(require("./db/connect")); // Change to sequelize connection
 const superAdmin_1 = __importDefault(require("./config/superAdmin"));
+const pythonServices_1 = require("./config/pythonServices");
 let server;
 const bootApp = () => {
     server = app_1.default.listen(config_1.default.port, () => __awaiter(void 0, void 0, void 0, function* () {
         logger_1.default.info(`Listening on port ${config_1.default.port}`);
+        logger_1.default.info((0, pythonServices_1.describePythonServices)());
+        void (0, pythonServices_1.checkPythonServices)(); // logs reachability only; never blocks startup
         yield (0, superAdmin_1.default)();
     }));
     // Set server timeouts to 1 hour to support slow CPU model processing

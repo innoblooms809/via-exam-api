@@ -12,6 +12,12 @@ router.post("/image", multer_1.questionPaperUpload, questionPaper_controller_1.u
 router.get("/uploads", questionPaper_controller_1.getQuestionPaperUploads);
 router.post("/getQuestionPaperBySet", auth_1.authenticate, questionPaper_controller_1.getQuestionPaperBySelection);
 // ─── APPROVAL WORKFLOW ROUTES ──────────────────────────────────────────────
+// Single-click submit both Question Paper & Answer Sheet by examId
+router.patch("/submitExamForApproval/:examId/submit", auth_1.authenticate, questionPaper_controller_1.submitExamForApproval);
+// Admin approve both Question Paper & Answer Sheet by examId
+router.patch("/approveExamPair/:examId/approve", auth_1.authenticate, questionPaper_controller_1.approveExamPair);
+// Admin reject both Question Paper & Answer Sheet by examId
+router.patch("/rejectExamPair/:examId/reject", auth_1.authenticate, questionPaper_controller_1.rejectExamPair);
 // Teacher submits paper for review
 router.patch("/submitQuestionPaper/:paperId/submit", auth_1.authenticate, questionPaper_controller_1.submitQuestionPaper);
 // Admin/Examiner approve
@@ -32,4 +38,9 @@ router.get("/pending", auth_1.authenticate,
 questionPaper_controller_1.getPendingQuestionPapers);
 // Get all papers with optional filters (status, examId, teacherId)
 router.get("/getAllQuestionPapers", auth_1.authenticate, questionPaper_controller_1.getAllQuestionPapers);
+// ─── REMARKS / CHAT ROUTES ─────────────────────────────────────────────────
+// Get remarks/chat history for an exam
+router.get("/remarks/:examId", auth_1.authenticate, questionPaper_controller_1.getExamRemarksController);
+// Add a remark/chat message to an exam
+router.post("/remarks/:examId", auth_1.authenticate, questionPaper_controller_1.addExamRemarkController);
 exports.default = router;

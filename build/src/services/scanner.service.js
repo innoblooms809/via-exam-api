@@ -13,9 +13,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
+const sequelize_1 = require("sequelize");
 const Scanner_modal_1 = __importDefault(require("../modals/Scanner.modal"));
 const AIEvaluation_modal_1 = __importDefault(require("../modals/AIEvaluation.modal"));
+const QuestionPaper_modal_1 = __importDefault(require("../modals/question-paper/QuestionPaper.modal"));
+const stander_answer_model_1 = __importDefault(require("../modals/question-paper/stander-answer.model"));
+const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
+const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
+const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
+const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
+const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
+const User_modal_1 = __importDefault(require("../modals/User.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
+// Exam-table statuses reached only after the QP + answer key pair is approved.
+const APPROVED_EXAM_STATUSES = ["Approved", "Live", "Completed"];
+const APPROVED_PAPER_STATUSES = ["APPROVED", "PUBLISHED"];
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
 const uploadSheets = (body, files, uploadedBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -299,6 +311,246 @@ const deleteSheet = (sheetId, requestedBy) => __awaiter(void 0, void 0, void 0, 
         };
     }
 });
+// ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────────
+// Get approved exams for scanner to upload student answer papers
+const getApprovedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = requestedBy.instituteId;
+        if (!instituteId) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "Institute ID not found for user.",
+                data: { exams: [] },
+            };
+        }
+        // Only this institute's exams are candidates — everything below is scoped through these IDs.
+        const instituteExams = yield Exam_modal_1.default.findAll({
+            where: { instituteId, isDeleted: false },
+            order: [["createdAt", "DESC"]],
+        });
+        const empty = {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "No approved exams found.",
+            data: { exams: [] },
+        };
+        if (instituteExams.length === 0)
+            return empty;
+        const instituteExamIds = instituteExams.map((e) => e.examId);
+        const questionPapers = yield QuestionPaper_modal_1.default.findAll({
+            where: { examId: { [sequelize_1.Op.in]: instituteExamIds }, status: { [sequelize_1.Op.in]: APPROVED_PAPER_STATUSES } },
+            attributes: ["paperId", "examId", "paperSet", "status", "approvedAt"],
+        });
+        const approvedPaperIds = questionPapers.map((qp) => qp.paperId);
+        // Answer keys are linked to the exam either directly or through their question paper.
+        const answerKeys = yield stander_answer_model_1.default.findAll({
+            where: {
+                status: { [sequelize_1.Op.in]: APPROVED_PAPER_STATUSES },
+                [sequelize_1.Op.or]: [
+                    { examId: { [sequelize_1.Op.in]: instituteExamIds } },
+                    ...(approvedPaperIds.length > 0 ? [{ paperId: { [sequelize_1.Op.in]: approvedPaperIds } }] : []),
+                ],
+            },
+            attributes: ["paperId", "examId", "paperSet", "status", "approvedAt"],
+        });
+        // Same rule as the approval workflow: the exam is approved once both its
+        // question paper and answer key are approved (or the exam itself says so).
+        const approved = instituteExams
+            .map((exam) => {
+            const qp = questionPapers.find((p) => p.examId === exam.examId);
+            const ans = answerKeys.find((a) => a.examId === exam.examId || (qp && a.paperId === qp.paperId));
+            const isApproved = APPROVED_EXAM_STATUSES.includes(exam.status) ||
+                (exam.status !== "Rejected" && Boolean(qp && ans));
+            return isApproved ? { exam, qp, ans } : null;
+        })
+            .filter(Boolean);
+        if (approved.length === 0)
+            return empty;
+        const exams = approved.map((a) => a.exam);
+        const unique = (ids) => Array.from(new Set(ids.filter(Boolean)));
+        const approvedExamIds = exams.map((e) => e.examId);
+        const classIds = unique(exams.map((e) => e.classId));
+        const subjectIds = unique(exams.map((e) => e.subjectId));
+        const sessionIds = unique(exams.map((e) => e.sessionId));
+        const userIds = unique(exams.flatMap((e) => [e.teacherId, e.examinerId]));
+        const [classesList, subjectsList, sessionsList, usersList, uploadCounts, studentCounts] = yield Promise.all([
+            classIds.length ? Class_modal_1.default.findAll({ where: { classId: { [sequelize_1.Op.in]: classIds } } }) : [],
+            subjectIds.length ? Subject_modal_1.default.findAll({ where: { subjectId: { [sequelize_1.Op.in]: subjectIds } } }) : [],
+            sessionIds.length ? Session_modal_1.default.findAll({ where: { sessionId: { [sequelize_1.Op.in]: sessionIds } } }) : [],
+            userIds.length
+                ? User_modal_1.default.findAll({
+                    where: { userId: { [sequelize_1.Op.in]: userIds }, instituteId },
+                    attributes: ["userId", "userName"],
+                })
+                : [],
+            Scanner_modal_1.default.count({
+                where: { instituteId, examId: { [sequelize_1.Op.in]: approvedExamIds }, isDeleted: false },
+                group: ["examId"],
+            }),
+            classIds.length
+                ? Student_modal_1.default.count({
+                    where: { instituteId, classId: { [sequelize_1.Op.in]: classIds } },
+                    group: ["classId"],
+                })
+                : [],
+        ]);
+        const classMap = new Map(classesList.map((c) => [c.classId, c.className]));
+        const subjectMap = new Map(subjectsList.map((s) => [s.subjectId, s]));
+        const sessionMap = new Map(sessionsList.map((s) => [s.sessionId, s.sessionName]));
+        const userMap = new Map(usersList.map((u) => [u.userId, u.userName]));
+        const uploadMap = new Map(uploadCounts.map((r) => [r.examId, Number(r.count)]));
+        const studentMap = new Map(studentCounts.map((r) => [r.classId, Number(r.count)]));
+        const enrichedExams = approved.map(({ exam, qp, ans }) => {
+            const subject = subjectMap.get(exam.subjectId);
+            return {
+                examId: exam.examId,
+                examName: exam.examType,
+                examType: exam.examType,
+                classId: exam.classId,
+                className: exam.classId ? classMap.get(exam.classId) || exam.classId : "All Classes",
+                subjectId: exam.subjectId,
+                subject: (subject === null || subject === void 0 ? void 0 : subject.subjectName) || exam.subjectId,
+                subjectCode: (subject === null || subject === void 0 ? void 0 : subject.subjectCode) || "",
+                sessionId: exam.sessionId,
+                session: sessionMap.get(exam.sessionId) || exam.sessionId,
+                teacherName: userMap.get(exam.teacherId) || "",
+                examinerName: exam.examinerId ? userMap.get(exam.examinerId) || "" : "",
+                setLabel: (qp === null || qp === void 0 ? void 0 : qp.paperSet) || (ans === null || ans === void 0 ? void 0 : ans.paperSet) || "",
+                totalMarks: exam.totalMarks,
+                passingMarks: exam.passingMarks,
+                duration: exam.duration,
+                instructions: exam.instructions,
+                totalStudents: exam.classId ? studentMap.get(exam.classId) || 0 : 0,
+                uploadedCount: uploadMap.get(exam.examId) || 0,
+                status: exam.status,
+                questionPaperStatus: (qp === null || qp === void 0 ? void 0 : qp.status) || null,
+                answerKeyStatus: (ans === null || ans === void 0 ? void 0 : ans.status) || null,
+                approvedAt: (qp === null || qp === void 0 ? void 0 : qp.approvedAt) || (ans === null || ans === void 0 ? void 0 : ans.approvedAt) || exam.updatedAt,
+                createdAt: exam.createdAt,
+            };
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Approved exams fetched successfully.",
+            data: { exams: enrichedExams },
+        };
+    }
+    catch (e) {
+        console.error("getApprovedExams Error:", e);
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+            data: { exams: [] },
+        };
+    }
+});
+// Upload single student answer paper for approval workflow
+const uploadStudentAnswerPaper = (body, file, uploadedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = uploadedBy.instituteId;
+        if (!file) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "No file provided.",
+            };
+        }
+        if (!body.examId || !body.studentName || !body.rollNumber) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "examId, studentName, and rollNumber are required.",
+            };
+        }
+        // Check if exam exists
+        const exam = yield Exam_modal_1.default.findOne({
+            where: { examId: body.examId, instituteId, isDeleted: false },
+        });
+        if (!exam) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Exam not found.",
+            };
+        }
+        const classId = body.classId || exam.classId || "ALL";
+        const section = body.section || "A";
+        // Check duplicate
+        const existing = yield Scanner_modal_1.default.findOne({
+            where: {
+                instituteId,
+                examId: body.examId,
+                rollNo: body.rollNumber,
+                isDeleted: false,
+            },
+        });
+        if (existing) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.CONFLICT,
+                message: "Answer paper already uploaded for this student.",
+            };
+        }
+        const sheetId = yield helper_1.default.generateUserId();
+        yield Scanner_modal_1.default.create({
+            sheetId,
+            instituteId,
+            examId: body.examId,
+            classId,
+            section,
+            subjectId: exam.subjectId,
+            examType: exam.examType,
+            rollNo: body.rollNumber,
+            studentName: body.studentName,
+            fileName: file.originalname,
+            fileBuffer: file.buffer,
+            fileMimeType: file.mimetype,
+            fileSize: file.size,
+            uploadedBy: uploadedBy.userId,
+            status: "UPLOADED",
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.CREATED,
+            message: "Student answer paper uploaded successfully.",
+            data: { sheetId },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// Get student answer papers for a specific exam
+const getStudentAnswerPapers = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = requestedBy.instituteId;
+        const papers = yield Scanner_modal_1.default.findAll({
+            where: { examId, instituteId, isDeleted: false },
+            attributes: { exclude: ["fileBuffer"] },
+            order: [["createdAt", "DESC"]],
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Student answer papers fetched successfully.",
+            data: { answerPapers: papers },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 exports.default = {
     uploadSheets,
     getAllSheets,
@@ -306,4 +558,7 @@ exports.default = {
     getSheetSummary,
     updateSheetStatus,
     deleteSheet,
+    getApprovedExams,
+    uploadStudentAnswerPaper,
+    getStudentAnswerPapers,
 };

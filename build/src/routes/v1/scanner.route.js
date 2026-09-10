@@ -26,4 +26,11 @@ router.get("/summary", auth_1.authenticate, scanner_controller_1.default.getShee
 router.patch("/updateStatus/:sheetId", auth_1.authenticate, scanner_controller_1.default.updateSheetStatus);
 // Soft delete
 router.delete("/deleteSheet/:sheetId", auth_1.authenticate, scanner_controller_1.default.deleteSheet);
+// ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────
+// Get approved exams for scanner to upload student answer papers
+router.get("/approved-exams", auth_1.authenticate, scanner_controller_1.default.getApprovedExams);
+// Upload single student answer paper for approval workflow
+router.post("/upload-student-answer", auth_1.authenticate, upload.single("answerPaperFile"), scanner_controller_1.default.uploadStudentAnswerPaper);
+// Get student answer papers for a specific exam
+router.get("/student-answers/:examId", auth_1.authenticate, scanner_controller_1.default.getStudentAnswerPapers);
 exports.default = router;

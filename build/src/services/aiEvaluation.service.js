@@ -24,6 +24,7 @@ const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
+const pythonServices_1 = require("../config/pythonServices");
 // Helper to format question paper content into text
 const formatQuestionPaper = (content, ansDoc) => {
     var _a, _b;
@@ -276,7 +277,7 @@ const runBackgroundEvaluation = (sheet, aiEval, studentId, examId, maxMarks, que
             fileName = `${fileName}${ext}`;
         }
         // Call OCR API
-        const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+        const ocrApiUrl = pythonServices_1.pythonServices.ocrUrl();
         const ocrFormData = new FormData();
         const fileBlob = new Blob([sheet.fileBuffer], { type: sheet.fileMimeType || "image/png" });
         ocrFormData.append("file", fileBlob, fileName);
@@ -288,7 +289,7 @@ const runBackgroundEvaluation = (sheet, aiEval, studentId, examId, maxMarks, que
         const studentAnsOcr = ocrResult.combined_markdown || "";
         logger_1.default.info("OCR completed successfully (background).");
         // 2. Call Evaluation API
-        const evaluationApiUrl = process.env.EVALUATION_API_URL || "http://localhost:8002/evaluation";
+        const evaluationApiUrl = pythonServices_1.pythonServices.evaluationUrl();
         const evalFormData = new FormData();
         evalFormData.append("student_id", studentId);
         evalFormData.append("exam_id", examId);
