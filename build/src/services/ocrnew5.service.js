@@ -25,6 +25,7 @@ const helper_1 = __importDefault(require("../utils/helper"));
 const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
+const pythonServices_1 = require("../config/pythonServices");
 // Helper to format question paper content into text
 const formatQuestionPaper = (content, ansDoc) => {
     var _a, _b;
@@ -114,7 +115,7 @@ const evaluateSheetOCRNew5 = (sheetId) => __awaiter(void 0, void 0, void 0, func
     let studentAnsText = sheet.ocrText || sheet.answerText || "";
     if (!studentAnsText && sheet.fileBuffer && sheet.fileBuffer.length > 0) {
         try {
-            const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+            const ocrApiUrl = pythonServices_1.pythonServices.ocrUrl();
             let fileName = sheet.fileName || "sheet.png";
             if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
                 const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
@@ -177,7 +178,7 @@ const evaluateSheetOCRNew5 = (sheetId) => __awaiter(void 0, void 0, void 0, func
         }
     }
     // 4. Send Payload to OCRNew5 multi-agent pipeline on port 8006
-    const pipelineUrl = process.env.OCRNEW5_PIPELINE_URL || "http://localhost:8006/evaluate-text";
+    const pipelineUrl = pythonServices_1.pythonServices.ocrNew5PipelineUrl();
     const pipelinePayload = {
         student_id: studentId,
         exam_id: examId,

@@ -40,6 +40,8 @@ const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-pap
 const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
 const Notification_modal_1 = __importDefault(require("../../modals/Notification.modal"));
 const helper_1 = __importDefault(require("../../utils/helper"));
+const sequelize_1 = require("sequelize");
+const exam_service_1 = require("../exam.service");
 class QuestionPaperService {
     // ─────────────────────────────────────────────
     // CREATE QUESTION PAPER
@@ -73,6 +75,7 @@ class QuestionPaperService {
                 content,
                 status: "DRAFT",
             });
+            yield (0, exam_service_1.markExamPaperCreated)(examId);
             return paper;
         });
     }
@@ -90,14 +93,70 @@ class QuestionPaperService {
             if (paper.teacherId !== teacherId) {
                 throw new Error("You can only submit your own question paper");
             }
-            if (paper.status !== "DRAFT") {
-                throw new Error(`Cannot submit. Current status: ${paper.status}. Only DRAFT papers can be submitted.`);
+            if (paper.status !== "DRAFT" && paper.status !== "REJECTED") {
+                throw new Error(`Cannot submit. Current status: ${paper.status}. Only DRAFT or REJECTED papers can be submitted for approval.`);
+            }
+            const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../../modals/question-paper/stander-answer.model")))).default;
+            const matchingAnswer = yield QuestionPaperAnswer.findOne({
+                where: { examId: paper.examId, paperSet: paper.paperSet },
+            });
+            if (!matchingAnswer) {
+                throw new Error(`Cannot submit for approval: Standard Answer Sheet for Set ${paper.paperSet} is missing. Please create the standard answer sheet first.`);
             }
             yield paper.update({
                 status: "PENDING_APPROVAL",
                 submittedAt: new Date(),
             });
+            // Also update the matching answer sheet to PENDING_APPROVAL if it's still in DRAFT
+            if (matchingAnswer.status === "DRAFT" || matchingAnswer.status === "REJECTED") {
+                yield matchingAnswer.update({
+                    status: "PENDING_APPROVAL",
+                    submittedAt: new Date(),
+                });
+            }
+            yield (0, exam_service_1.setExamWorkflowStatus)(paper.examId, "Pending Approval");
             return paper;
+        });
+    }
+    // ─────────────────────────────────────────────
+    // SUBMIT EXAM PAIR FOR APPROVAL (BY EXAM ID)
+    // ─────────────────────────────────────────────
+    static submitExamForApproval(examId, teacherId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../../modals/question-paper/stander-answer.model")))).default;
+            const paper = yield QuestionPaper_modal_1.default.findOne({
+                where: { examId },
+            });
+            const answerWhere = paper
+                ? { [sequelize_1.Op.or]: [{ examId }, { paperId: paper.paperId }] }
+                : { examId };
+            const answer = yield QuestionPaperAnswer.findOne({
+                where: answerWhere,
+            });
+            if (!paper && !answer) {
+                throw new Error("Neither Question Paper nor Standard Answer Sheet has been created for this exam.");
+            }
+            if (!paper) {
+                throw new Error("Question Paper is missing! Please create the question paper before submitting for approval.");
+            }
+            if (!answer) {
+                throw new Error("Standard Answer Sheet is missing! Please create the standard answer sheet before submitting for approval.");
+            }
+            const now = new Date();
+            if (paper.status === "DRAFT" || paper.status === "REJECTED") {
+                yield paper.update({
+                    status: "PENDING_APPROVAL",
+                    submittedAt: now,
+                });
+            }
+            if (answer.status === "DRAFT" || answer.status === "REJECTED") {
+                yield answer.update({
+                    status: "PENDING_APPROVAL",
+                    submittedAt: now,
+                });
+            }
+            yield (0, exam_service_1.setExamWorkflowStatus)(examId, "Pending Approval");
+            return { paper, answer };
         });
     }
     // ─────────────────────────────────────────────
@@ -135,7 +194,7 @@ class QuestionPaperService {
             catch (_) {
                 // non-blocking
             }
-            // Check if both QP and Answer are approved → set exam to Live
+            // Check if both QP and Answer are approved → set exam to Approved
             yield QuestionPaperService.checkAndSetExamLive(paper.examId);
             return paper;
         });
@@ -162,6 +221,7 @@ class QuestionPaperService {
                 rejectedAt: new Date(),
                 rejectionNote: rejectionNote.trim(),
             });
+            yield (0, exam_service_1.setExamWorkflowStatus)(paper.examId, "Rejected");
             // Notify the teacher
             const notificationId = yield helper_1.default.generateUserId();
             try {
@@ -253,6 +313,79 @@ class QuestionPaperService {
         });
     }
     // ─────────────────────────────────────────────
+    // APPROVE EXAM PAIR (QP + ANSWER SHEET)
+    // ─────────────────────────────────────────────
+    static approveExamPair(examId, reviewerId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../../modals/question-paper/stander-answer.model")))).default;
+            const paper = yield QuestionPaper_modal_1.default.findOne({ where: { examId } });
+            const answer = yield QuestionPaperAnswer.findOne({
+                where: paper
+                    ? { [sequelize_1.Op.or]: [{ examId }, { paperId: paper.paperId }] }
+                    : { examId },
+            });
+            if (!paper && !answer) {
+                throw new Error("No question paper or answer sheet found for this exam.");
+            }
+            const now = new Date();
+            if (paper) {
+                yield paper.update({
+                    status: "APPROVED",
+                    approvedAt: now,
+                    rejectionNote: null,
+                });
+            }
+            if (answer) {
+                yield answer.update({
+                    status: "APPROVED",
+                    approvedAt: now,
+                    rejectionNote: null,
+                    examId,
+                });
+            }
+            yield (0, exam_service_1.setExamWorkflowStatus)(examId, "Approved");
+            return { paper, answer };
+        });
+    }
+    // ─────────────────────────────────────────────
+    // REJECT EXAM PAIR (QP + ANSWER SHEET)
+    // ─────────────────────────────────────────────
+    static rejectExamPair(examId, reviewerId, rejectionNote) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!rejectionNote || !rejectionNote.trim()) {
+                throw new Error("Rejection note is required.");
+            }
+            const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../../modals/question-paper/stander-answer.model")))).default;
+            const paper = yield QuestionPaper_modal_1.default.findOne({ where: { examId } });
+            const answer = yield QuestionPaperAnswer.findOne({
+                where: paper
+                    ? { [sequelize_1.Op.or]: [{ examId }, { paperId: paper.paperId }] }
+                    : { examId },
+            });
+            if (!paper && !answer) {
+                throw new Error("No question paper or answer sheet found for this exam.");
+            }
+            const now = new Date();
+            const note = rejectionNote.trim();
+            if (paper) {
+                yield paper.update({
+                    status: "REJECTED",
+                    rejectedAt: now,
+                    rejectionNote: note,
+                });
+            }
+            if (answer) {
+                yield answer.update({
+                    status: "REJECTED",
+                    rejectedAt: now,
+                    rejectionNote: note,
+                });
+            }
+            yield (0, exam_service_1.setExamWorkflowStatus)(examId, "Rejected");
+            return { paper, answer };
+        });
+    }
+    // ─────────────────────────────────────────────
     // CHECK AND SET EXAM LIVE
     // ─────────────────────────────────────────────
     static checkAndSetExamLive(examId) {
@@ -264,12 +397,139 @@ class QuestionPaperService {
                     QuestionPaperAnswer.findOne({ where: { examId, status: "APPROVED" } }),
                 ]);
                 if (qp && ans) {
-                    yield Exam_modal_1.default.update({ status: "Live" }, { where: { examId } });
+                    yield (0, exam_service_1.setExamWorkflowStatus)(examId, "Approved");
                 }
             }
             catch (_) {
                 // non-blocking — exam status update is best-effort
             }
+        });
+    }
+    // ─────────────────────────────────────────────
+    // GET EXAM REMARKS (CHAT HISTORY)
+    // ─────────────────────────────────────────────
+    static getExamRemarks(examId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../../modals/question-paper/stander-answer.model")))).default;
+            const paper = yield QuestionPaper_modal_1.default.findOne({ where: { examId } });
+            const answer = yield QuestionPaperAnswer.findOne({
+                where: paper
+                    ? { [sequelize_1.Op.or]: [{ examId }, { paperId: paper.paperId }] }
+                    : { examId },
+            });
+            // Pick whichever has a rejectionNote
+            const noteSource = (paper === null || paper === void 0 ? void 0 : paper.rejectionNote)
+                ? paper.rejectionNote
+                : (answer === null || answer === void 0 ? void 0 : answer.rejectionNote) || null;
+            let remarks = [];
+            if (noteSource) {
+                try {
+                    const parsed = JSON.parse(noteSource);
+                    if (Array.isArray(parsed)) {
+                        remarks = parsed;
+                    }
+                    else {
+                        remarks = [
+                            {
+                                sender: "Admin Reviewer",
+                                role: "ADMIN",
+                                text: noteSource,
+                                time: (paper === null || paper === void 0 ? void 0 : paper.rejectedAt) || (answer === null || answer === void 0 ? void 0 : answer.rejectedAt) || new Date().toISOString(),
+                            },
+                        ];
+                    }
+                }
+                catch (_a) {
+                    remarks = [
+                        {
+                            sender: "Admin Reviewer",
+                            role: "ADMIN",
+                            text: noteSource,
+                            time: (paper === null || paper === void 0 ? void 0 : paper.rejectedAt) || (answer === null || answer === void 0 ? void 0 : answer.rejectedAt) || new Date().toISOString(),
+                        },
+                    ];
+                }
+            }
+            return { remarks };
+        });
+    }
+    // ─────────────────────────────────────────────
+    // ADD EXAM REMARK (CHAT MESSAGE)
+    // ─────────────────────────────────────────────
+    static addExamRemark(examId, remark, senderRole = "ADMIN", senderName = "Admin Reviewer") {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!remark || !remark.trim()) {
+                throw new Error("Remark text is required.");
+            }
+            const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../../modals/question-paper/stander-answer.model")))).default;
+            let paper = yield QuestionPaper_modal_1.default.findOne({ where: { examId } });
+            let answer = yield QuestionPaperAnswer.findOne({
+                where: paper
+                    ? { [sequelize_1.Op.or]: [{ examId }, { paperId: paper.paperId }] }
+                    : { examId },
+            });
+            if (!paper && !answer) {
+                const exam = yield Exam_modal_1.default.findOne({ where: { examId } });
+                const paperId = yield helper_1.default.generateUserId();
+                paper = yield QuestionPaper_modal_1.default.create({
+                    paperId,
+                    instituteId: (exam === null || exam === void 0 ? void 0 : exam.instituteId) || "INST001",
+                    examId,
+                    teacherId: (exam === null || exam === void 0 ? void 0 : exam.teacherId) || "TECH001",
+                    paperSet: "A",
+                    content: {},
+                    status: "REJECTED",
+                });
+            }
+            // Parse existing remarks from whichever source has them
+            const noteSource = (paper === null || paper === void 0 ? void 0 : paper.rejectionNote)
+                ? paper.rejectionNote
+                : (answer === null || answer === void 0 ? void 0 : answer.rejectionNote) || null;
+            let remarks = [];
+            if (noteSource) {
+                try {
+                    const parsed = JSON.parse(noteSource);
+                    if (Array.isArray(parsed)) {
+                        remarks = parsed;
+                    }
+                    else {
+                        remarks = [
+                            {
+                                sender: "Admin Reviewer",
+                                role: "ADMIN",
+                                text: noteSource,
+                                time: (paper === null || paper === void 0 ? void 0 : paper.rejectedAt) || (answer === null || answer === void 0 ? void 0 : answer.rejectedAt) || new Date().toISOString(),
+                            },
+                        ];
+                    }
+                }
+                catch (_a) {
+                    remarks = [
+                        {
+                            sender: "Admin Reviewer",
+                            role: "ADMIN",
+                            text: noteSource,
+                            time: (paper === null || paper === void 0 ? void 0 : paper.rejectedAt) || (answer === null || answer === void 0 ? void 0 : answer.rejectedAt) || new Date().toISOString(),
+                        },
+                    ];
+                }
+            }
+            // Append new remark
+            remarks.push({
+                sender: senderName,
+                role: senderRole,
+                text: remark.trim(),
+                time: new Date().toISOString(),
+            });
+            const serialized = JSON.stringify(remarks);
+            // Persist on both models if they exist
+            if (paper) {
+                yield paper.update({ rejectionNote: serialized });
+            }
+            if (answer) {
+                yield answer.update({ rejectionNote: serialized });
+            }
+            return { remarks };
         });
     }
 }

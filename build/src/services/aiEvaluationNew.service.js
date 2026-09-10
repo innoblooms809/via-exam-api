@@ -23,6 +23,7 @@ const helper_1 = __importDefault(require("../utils/helper"));
 const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
+const pythonServices_1 = require("../config/pythonServices");
 // ─── Helper: Format question paper content into plain text ────────────────────
 const formatQuestionPaper = (content, ansDoc) => {
     var _a, _b;
@@ -268,7 +269,7 @@ const triggerEvaluationV2 = (sheetId, force = false) => __awaiter(void 0, void 0
 // // in parallel using Promise.all for maximum speed on high-spec servers.
 const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, questionText, standardAnsText) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+        const ocrApiUrl = pythonServices_1.pythonServices.ocrUrl();
         // ⚡ 1. PARALLEL EXECUTION THREADS
         // Thread 1: Student Answer Sheet OCR (Port 8000)
         const studentOcrTask = (() => __awaiter(void 0, void 0, void 0, function* () {
@@ -325,7 +326,7 @@ const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, q
             // Pre-warm Rubric Cache on Pipeline (Port 8006) in parallel
             if (questionText && finalAnswerKeyText) {
                 try {
-                    const preprocessUrl = process.env.PIPELINE6_PREPROCESS_URL || "http://localhost:8006/preprocess-exam";
+                    const preprocessUrl = pythonServices_1.pythonServices.pipeline6PreprocessUrl();
                     logger_1.default.info(`[V2] [Thread 2] Pre-warming rubric cache on Pipeline: ${preprocessUrl}`);
                     yield axios_1.default.post(preprocessUrl, {
                         exam_id: examId,
@@ -344,7 +345,7 @@ const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, q
         // Thread 3: Parallel Visual Pre-Evaluation Task (Port 8006 — Runs parallel to Chandra OCR!)
         const visualPreEvalTask = (() => __awaiter(void 0, void 0, void 0, function* () {
             try {
-                const visualPreEvalUrl = process.env.PIPELINE6_VISUAL_PREEVAL_URL || "http://localhost:8006/visual-pre-eval";
+                const visualPreEvalUrl = pythonServices_1.pythonServices.pipeline6VisualPreEvalUrl();
                 logger_1.default.info(`[V2] [Thread 3] Launching Parallel Visual Pre-Evaluation on Pipeline: ${visualPreEvalUrl}`);
                 const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
                 yield axios_1.default.post(visualPreEvalUrl, {
@@ -368,7 +369,7 @@ const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, q
             visualPreEvalTask,
         ]);
         // 2. Call evaluation pipeline on port 8006 (/evaluate-text)
-        const pipelineUrl = process.env.OCR_PIPELINE_URL || "http://localhost:8006/evaluate-text";
+        const pipelineUrl = pythonServices_1.pythonServices.pipelineUrl();
         const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
         const pipelinePayload = {
             student_id: studentId,

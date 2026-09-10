@@ -14,9 +14,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const stander_answer_model_1 = __importDefault(require("../../modals/question-paper/stander-answer.model"));
 const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-paper/QuestionPaper.modal"));
-const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
 const Notification_modal_1 = __importDefault(require("../../modals/Notification.modal"));
 const helper_1 = __importDefault(require("../../utils/helper"));
+const exam_service_1 = require("../exam.service");
 class QuestionPaperAnswerService {
     // ─────────────────────────────────────────────
     // CREATE ANSWER KEY
@@ -44,6 +44,9 @@ class QuestionPaperAnswerService {
                     answers: data.answers,
                     status: data.status || "DRAFT",
                 });
+                if (data.examId) {
+                    yield (0, exam_service_1.markExamPaperCreated)(data.examId);
+                }
                 return result;
             }
             catch (error) {
@@ -84,6 +87,7 @@ class QuestionPaperAnswerService {
                         answers: { pdfUrl: data.pdfUrl },
                         status: "DRAFT",
                     });
+                    yield (0, exam_service_1.markExamPaperCreated)(data.examId);
                     return result;
                 }
             }
@@ -106,13 +110,27 @@ class QuestionPaperAnswerService {
             if (answer.teacherId !== teacherId) {
                 throw new Error("You can only submit your own answer sheet");
             }
-            if (answer.status !== "DRAFT") {
-                throw new Error(`Cannot submit. Current status: ${answer.status}. Only DRAFT answer sheets can be submitted.`);
+            if (answer.status !== "DRAFT" && answer.status !== "REJECTED") {
+                throw new Error(`Cannot submit. Current status: ${answer.status}. Only DRAFT or REJECTED answer sheets can be submitted for approval.`);
+            }
+            const matchingPaper = yield QuestionPaper_modal_1.default.findOne({
+                where: { examId: answer.examId, paperSet: answer.paperSet },
+            });
+            if (!matchingPaper) {
+                throw new Error(`Cannot submit for approval: Question Paper for Set ${answer.paperSet} is missing. Please create the question paper first.`);
             }
             yield answer.update({
                 status: "PENDING_APPROVAL",
                 submittedAt: new Date(),
             });
+            // Also update matching question paper if DRAFT or REJECTED
+            if (matchingPaper.status === "DRAFT" || matchingPaper.status === "REJECTED") {
+                yield matchingPaper.update({
+                    status: "PENDING_APPROVAL",
+                    submittedAt: new Date(),
+                });
+            }
+            yield (0, exam_service_1.setExamWorkflowStatus)(answer.examId, "Pending Approval");
             return answer;
         });
     }
@@ -178,6 +196,7 @@ class QuestionPaperAnswerService {
                 rejectedAt: new Date(),
                 rejectionNote: rejectionNote.trim(),
             });
+            yield (0, exam_service_1.setExamWorkflowStatus)(answer.examId, "Rejected");
             // Notify the teacher
             const notificationId = yield helper_1.default.generateUserId();
             try {
@@ -279,7 +298,7 @@ class QuestionPaperAnswerService {
                     stander_answer_model_1.default.findOne({ where: { examId, status: "APPROVED" } }),
                 ]);
                 if (qp && ans) {
-                    yield Exam_modal_1.default.update({ status: "Live" }, { where: { examId } });
+                    yield (0, exam_service_1.setExamWorkflowStatus)(examId, "Approved");
                 }
             }
             catch (_) {
