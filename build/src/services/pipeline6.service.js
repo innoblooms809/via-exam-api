@@ -23,6 +23,7 @@ const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
 const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
+const pythonServices_1 = require("../config/pythonServices");
 // Helper to format question paper content into text
 const formatQuestionPaper = (content, ansDoc) => {
     let questions = "";
@@ -237,9 +238,9 @@ exports.triggerPipeline6Evaluation = triggerPipeline6Evaluation;
 // ─── Background Execution: Parallel Student OCR + Rubric Pre-warming + Pipeline 6 ────────
 const runBackgroundPipeline6Evaluation = (sheet, aiEval, studentId, examId, maxMarks, questionText, standardAnsText) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
-        const pipeline6Url = process.env.OCR6_PIPELINE_URL || process.env.PIPELINE6_API_URL || process.env.OCR_PIPELINE_URL || "http://localhost:8007/evaluate-text";
-        const preprocessUrl = process.env.PIPELINE6_PREPROCESS_URL || "http://localhost:8007/preprocess-exam";
+        const ocrApiUrl = pythonServices_1.pythonServices.ocrUrl();
+        const pipeline6Url = pythonServices_1.pythonServices.pipeline6Url();
+        const preprocessUrl = pythonServices_1.pythonServices.pipeline6PreprocessUrl();
         // ⚡ 1. PARALLEL THREADS
         // Thread 1: Student Answer Sheet OCR (Port 8000)
         const studentOcrTask = (() => __awaiter(void 0, void 0, void 0, function* () {

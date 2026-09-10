@@ -9,6 +9,7 @@ import RegHelper from "../utils/helper";
 import logger from "../config/logger";
 import axios from "axios";
 import FormData from "form-data";
+import { pythonServices } from "../config/pythonServices";
 
 // ─── Helper: Format question paper content into plain text ────────────────────
 const formatQuestionPaper = (
@@ -306,7 +307,7 @@ const runBackgroundEvaluationV2 = async (
   standardAnsText: string
 ): Promise<void> => {
   try {
-    const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+    const ocrApiUrl = pythonServices.ocrUrl();
 
     // ⚡ 1. PARALLEL EXECUTION THREADS
     // Thread 1: Student Answer Sheet OCR (Port 8000)
@@ -372,7 +373,7 @@ const runBackgroundEvaluationV2 = async (
       // Pre-warm Rubric Cache on Pipeline (Port 8006) in parallel
       if (questionText && finalAnswerKeyText) {
         try {
-          const preprocessUrl = process.env.PIPELINE6_PREPROCESS_URL || "http://localhost:8006/preprocess-exam";
+          const preprocessUrl = pythonServices.pipeline6PreprocessUrl();
           logger.info(`[V2] [Thread 2] Pre-warming rubric cache on Pipeline: ${preprocessUrl}`);
           await axios.post(preprocessUrl, {
             exam_id: examId,
@@ -392,7 +393,7 @@ const runBackgroundEvaluationV2 = async (
     // Thread 3: Parallel Visual Pre-Evaluation Task (Port 8006 — Runs parallel to Chandra OCR!)
     const visualPreEvalTask = (async (): Promise<void> => {
       try {
-        const visualPreEvalUrl = process.env.PIPELINE6_VISUAL_PREEVAL_URL || "http://localhost:8006/visual-pre-eval";
+        const visualPreEvalUrl = pythonServices.pipeline6VisualPreEvalUrl();
         logger.info(`[V2] [Thread 3] Launching Parallel Visual Pre-Evaluation on Pipeline: ${visualPreEvalUrl}`);
         const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
         await axios.post(
@@ -421,7 +422,7 @@ const runBackgroundEvaluationV2 = async (
     ]);
 
     // 2. Call evaluation pipeline on port 8006 (/evaluate-text)
-    const pipelineUrl = process.env.OCR_PIPELINE_URL || "http://localhost:8006/evaluate-text";
+    const pipelineUrl = pythonServices.pipelineUrl();
     const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
     const pipelinePayload = {
       student_id: studentId,

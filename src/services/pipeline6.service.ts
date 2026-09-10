@@ -9,6 +9,7 @@ import ApiError from "../utils/ApiError";
 import logger from "../config/logger";
 import axios from "axios";
 import FormData from "form-data";
+import { pythonServices } from "../config/pythonServices";
 
 // Helper to format question paper content into text
 const formatQuestionPaper = (content: any, ansDoc?: any): { questions: string; answers: string; calculatedTotalMarks: number } => {
@@ -259,9 +260,9 @@ const runBackgroundPipeline6Evaluation = async (
   standardAnsText: string
 ): Promise<void> => {
   try {
-    const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
-    const pipeline6Url = process.env.OCR6_PIPELINE_URL || process.env.PIPELINE6_API_URL || process.env.OCR_PIPELINE_URL || "http://localhost:8007/evaluate-text";
-    const preprocessUrl = process.env.PIPELINE6_PREPROCESS_URL || "http://localhost:8007/preprocess-exam";
+    const ocrApiUrl = pythonServices.ocrUrl();
+    const pipeline6Url = pythonServices.pipeline6Url();
+    const preprocessUrl = pythonServices.pipeline6PreprocessUrl();
 
     // ⚡ 1. PARALLEL THREADS
     // Thread 1: Student Answer Sheet OCR (Port 8000)

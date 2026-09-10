@@ -186,13 +186,20 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             const attempts = (user.loginAttempts || 0) + 1;
       
             if (attempts >= MAX_LOGIN_ATTEMPTS) {
-                yield User_modal_1.default.update({
-                    loginAttempts: attempts,
-                    lockedUntil: new Date(Date.now() + LOCK_DURATION_SECONDS * 1000),
-                }, { where: { userId: user.userId } });
-            }
-            else {
-                yield User_modal_1.default.update({ loginAttempts: attempts }, { where: { userId: user.userId } });
+              await UserModal.update(
+                {
+                  loginAttempts: attempts,
+                  lockedUntil: new Date(
+                    Date.now() + LOCK_DURATION_SECONDS * 1000
+                  ),
+                },
+                { where: { userId: user.userId } },
+              );
+            } else {
+              await UserModal.update(
+                { loginAttempts: attempts },
+                { where: { userId: user.userId } },
+              );
             }
             */
             return {

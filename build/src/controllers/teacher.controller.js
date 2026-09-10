@@ -141,6 +141,22 @@ const getTeacherQuestionPapers = (req, res) => __awaiter(void 0, void 0, void 0,
         });
     }
 });
+const getTeacherExamsWithApprovalStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _d;
+    try {
+        const targetUserId = (_d = req.params) === null || _d === void 0 ? void 0 : _d.userId;
+        const result = yield teacher_service_1.default.getTeacherExamsWithApprovalStatus(req.viaExamUser, req.query, targetUserId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        console.error("getTeacherExamsWithApprovalStatus Controller Error:", error);
+        return res.status(500).json({
+            error: true,
+            statusCode: 500,
+            message: `Internal Server Error: ${error.message}`,
+        });
+    }
+});
 exports.default = {
     createTeacher,
     getAllTeachers,
@@ -153,4 +169,5 @@ exports.default = {
     reactivateTeacher,
     getMyAssignments,
     getTeacherQuestionPapers,
+    getTeacherExamsWithApprovalStatus,
 };

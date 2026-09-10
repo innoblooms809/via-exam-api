@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -12,6 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.setExamWorkflowStatus = exports.markExamPaperCreated = exports.syncExamPackageStatus = exports.EXAM_WORKFLOW_STATUSES = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
 const User_modal_1 = __importDefault(require("../modals/User.modal"));
@@ -24,8 +48,79 @@ const Notification_modal_1 = __importDefault(require("../modals/Notification.mod
 const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
 const Scanner_modal_1 = __importDefault(require("../modals/Scanner.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
-const sequelize_1 = require("sequelize");
 const student_service_1 = __importDefault(require("./student.service"));
+const sequelize_1 = require("sequelize");
+/** Single exam-table status that drives Manage Exams + approval. */
+exports.EXAM_WORKFLOW_STATUSES = [
+    "Draft",
+    "Paper Created",
+    "Pending Approval",
+    "Approved",
+    "Rejected",
+    "Live",
+    "Completed",
+];
+function examStatusToPaperStatus(examStatus) {
+    switch (examStatus) {
+        case "Draft":
+        case "Paper Created":
+            return "DRAFT";
+        case "Pending Approval":
+            return "PENDING_APPROVAL";
+        case "Approved":
+        case "Live":
+            return "APPROVED";
+        case "Rejected":
+            return "REJECTED";
+        default:
+            return null;
+    }
+}
+function syncExamPackageStatus(examId, examStatus) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const paperStatus = examStatusToPaperStatus(examStatus);
+        if (!paperStatus)
+            return;
+        const QuestionPaper = (yield Promise.resolve().then(() => __importStar(require("../modals/question-paper/QuestionPaper.modal")))).default;
+        const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../modals/question-paper/stander-answer.model")))).default;
+        const papers = yield QuestionPaper.findAll({ where: { examId } });
+        const paperIds = papers.map((p) => p.paperId).filter(Boolean);
+        const now = new Date();
+        const extra = {};
+        if (paperStatus === "PENDING_APPROVAL")
+            extra.submittedAt = now;
+        if (paperStatus === "APPROVED") {
+            extra.approvedAt = now;
+            extra.rejectionNote = null;
+        }
+        if (paperStatus === "REJECTED")
+            extra.rejectedAt = now;
+        yield QuestionPaper.update(Object.assign({ status: paperStatus }, extra), { where: { examId } });
+        const answerWhere = paperIds.length > 0
+            ? { [sequelize_1.Op.or]: [{ examId }, { paperId: paperIds }] }
+            : { examId };
+        yield QuestionPaperAnswer.update(Object.assign({ status: paperStatus }, extra), { where: answerWhere });
+    });
+}
+exports.syncExamPackageStatus = syncExamPackageStatus;
+function markExamPaperCreated(examId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const exam = yield Exam_modal_1.default.findOne({ where: { examId, isDeleted: false } });
+        if (!exam)
+            return;
+        if (exam.status === "Draft") {
+            yield exam.update({ status: "Paper Created" });
+        }
+    });
+}
+exports.markExamPaperCreated = markExamPaperCreated;
+function setExamWorkflowStatus(examId, status) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield Exam_modal_1.default.update({ status }, { where: { examId, isDeleted: false } });
+        yield syncExamPackageStatus(examId, status);
+    });
+}
+exports.setExamWorkflowStatus = setExamWorkflowStatus;
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
 const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -140,9 +235,13 @@ const getAllExams = (query, requestedBy) => __awaiter(void 0, void 0, void 0, fu
                 { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: true },
                 { model: Subject_modal_1.default, as: "subject", where: { isDeleted: false }, required: true },
                 { model: User_modal_1.default, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionId", "sessionName"], required: false },
             ],
             order: [["createdAt", "DESC"]],
         });
+        yield Promise.all(exams
+            .filter((exam) => ["Pending Approval", "Approved", "Rejected"].includes(exam.status))
+            .map((exam) => syncExamPackageStatus(exam.examId, exam.status)));
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -177,6 +276,9 @@ const getAssignedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
             ],
             order: [["createdAt", "DESC"]],
         });
+        yield Promise.all(exams
+            .filter((exam) => ["Pending Approval", "Approved", "Rejected"].includes(exam.status))
+            .map((exam) => syncExamPackageStatus(exam.examId, exam.status)));
         const formattedExams = yield Promise.all(exams.map((exam) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b, _c, _d, _e, _f, _g, _h;
             const totalStudents = yield Student_modal_1.default.count({
@@ -193,6 +295,7 @@ const getAssignedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
             });
             return {
                 id: exam.examId,
+                examId: exam.examId,
                 classId: ((_a = exam.class) === null || _a === void 0 ? void 0 : _a.classId) || exam.classId,
                 className: ((_b = exam.class) === null || _b === void 0 ? void 0 : _b.className) || "N/A",
                 sectionId: ((_c = exam.section) === null || _c === void 0 ? void 0 : _c.sectionId) || exam.sectionId,
@@ -203,8 +306,16 @@ const getAssignedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
                 sessionName: ((_h = exam.session) === null || _h === void 0 ? void 0 : _h.sessionName) || "N/A",
                 examType: exam.examType,
                 status: exam.status,
+                totalMarks: exam.totalMarks,
+                passingMarks: exam.passingMarks,
+                duration: exam.duration,
+                instructions: exam.instructions,
+                teacherId: exam.teacherId,
+                examinerId: exam.examinerId,
                 totalStudents,
-                uploadedSheets
+                uploadedSheets,
+                createdAt: exam.createdAt,
+                updatedAt: exam.updatedAt
             };
         })));
         return {
@@ -266,7 +377,7 @@ const getExamById = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, f
 // ─── UPDATE EXAM STATUS ───────────────────────────────────────────────────────
 const updateExamStatus = (examId, status, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const allowed = ["Draft", "Live", "Completed"];
+        const allowed = [...exports.EXAM_WORKFLOW_STATUSES];
         if (!allowed.includes(status)) {
             return {
                 error: true,
@@ -333,12 +444,12 @@ const updateExam = (examId, body, requestedBy) => __awaiter(void 0, void 0, void
         }
         // Status Validation
         if (body.status) {
-            const allowedStatus = ["Draft", "Live", "Completed"];
+            const allowedStatus = [...exports.EXAM_WORKFLOW_STATUSES];
             if (!allowedStatus.includes(body.status)) {
                 return {
                     error: true,
                     statusCode: 400,
-                    message: "Status must be one of: Draft, Live, Completed",
+                    message: `Status must be one of: ${allowedStatus.join(", ")}`,
                 };
             }
         }
@@ -538,6 +649,7 @@ const getAssignedExamsSummary = (requestedBy) => __awaiter(void 0, void 0, void 
             const uploadedSheets = sheets.length;
             return {
                 id: exam.examId,
+                examId: exam.examId,
                 classId: ((_t = exam.class) === null || _t === void 0 ? void 0 : _t.classId) || exam.classId,
                 className: ((_u = exam.class) === null || _u === void 0 ? void 0 : _u.className) || "N/A",
                 sectionId: ((_v = exam.section) === null || _v === void 0 ? void 0 : _v.sectionId) || exam.sectionId || null,
@@ -548,8 +660,16 @@ const getAssignedExamsSummary = (requestedBy) => __awaiter(void 0, void 0, void 
                 sessionName: ((_0 = exam.session) === null || _0 === void 0 ? void 0 : _0.sessionName) || "N/A",
                 examType: exam.examType,
                 status: exam.status,
+                totalMarks: exam.totalMarks,
+                passingMarks: exam.passingMarks,
+                duration: exam.duration,
+                instructions: exam.instructions,
+                teacherId: exam.teacherId,
+                examinerId: exam.examinerId,
                 totalStudents,
                 uploadedSheets,
+                createdAt: exam.createdAt,
+                updatedAt: exam.updatedAt
             };
         })));
         return {
