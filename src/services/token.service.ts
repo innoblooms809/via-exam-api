@@ -46,8 +46,13 @@ const generateUserToken = (
   type: string,
   secret = config.jwt.secret
 ): string => {
+  const subject =
+    typeof user === "object" && user?.userId
+      ? { userId: user.userId }
+      : user;
+
   const payload = {
-    sub: getUserTokenSubject(user),
+    sub: subject,
     iat: moment().unix(),
     exp: expires.unix(),
     type,

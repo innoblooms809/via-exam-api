@@ -6,11 +6,12 @@ interface TeacherProfileAttributes {
   id: number;
   userId: string; // FK → User
   instituteId: string; // FK → Institute
-  employeeID: string;
+
   teacherType: string;
   qualification: string;
   specialization: string | null;
   experience: string | null;
+  address: string | null;
   joiningDate: Date;
   dob: Date;
   profileUrl: string | null;
@@ -21,7 +22,7 @@ interface TeacherProfileAttributes {
 interface TeacherProfileCreationAttributes
   extends Optional<
     TeacherProfileAttributes,
-    "id" | "specialization" | "experience" | "profileUrl"
+    "id" | "specialization" | "experience" | "profileUrl" | "address"
   > {}
 
 class TeacherProfile extends Model<
@@ -31,11 +32,12 @@ class TeacherProfile extends Model<
   public id!: number;
   public userId!: string;
   public instituteId!: string;
-  public employeeID!: string;
+
   public teacherType!: string;
   public qualification!: string;
   public specialization!: string | null;
   public experience!: string | null;
+  public address!: string | null;
   public joiningDate!: Date;
   public dob!: Date;
   public profileUrl!: string | null;
@@ -48,7 +50,7 @@ TeacherProfile.init(
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     userId: { type: DataTypes.STRING, allowNull: false, unique: true },
     instituteId: { type: DataTypes.STRING, allowNull: false },
-    employeeID: { type: DataTypes.STRING, allowNull: false },
+
     teacherType: { type: DataTypes.STRING, allowNull: false },
     qualification: { type: DataTypes.STRING, allowNull: false },
     specialization: {
@@ -57,6 +59,7 @@ TeacherProfile.init(
       defaultValue: null,
     },
     experience: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
+    address: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
     joiningDate: { type: DataTypes.DATE, allowNull: false },
     dob: { type: DataTypes.DATE, allowNull: false },
     profileUrl: { type: DataTypes.STRING, allowNull: true, defaultValue: null },

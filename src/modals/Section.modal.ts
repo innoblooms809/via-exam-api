@@ -1,14 +1,11 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
-import Class from "./Class.modal";
-import User from "./User.modal";
 
 interface SectionAttributes {
   id: number;
   sectionId: string;
   classId: string; // FK → Class
   instituteId: string; // FK → Institute
-  sessionId: string; // FK → Session
   sectionName: string; // A, B, C, D
   classTeacherId: string | null; // FK → User (teacher)
   isActive: boolean;
@@ -31,7 +28,6 @@ class Section
   public sectionId!: string;
   public classId!: string;
   public instituteId!: string;
-  public sessionId!: string;
   public sectionName!: string;
   public classTeacherId!: string | null;
   public isActive!: boolean;
@@ -46,7 +42,6 @@ Section.init(
     sectionId: { type: DataTypes.STRING, allowNull: false, unique: true },
     classId: { type: DataTypes.STRING, allowNull: false },
     instituteId: { type: DataTypes.STRING, allowNull: false },
-    sessionId: { type: DataTypes.STRING, allowNull: false },
     sectionName: { type: DataTypes.STRING, allowNull: false },
     classTeacherId: {
       type: DataTypes.STRING,
@@ -75,27 +70,26 @@ Section.init(
   },
 );
 
+// Section.belongsTo(Institute, {
+//   foreignKey: "instituteId",
+//   targetKey: "instituteId",
+//   as: "institute",
+// });
+
 // Section.belongsTo(Class, {
 //   foreignKey: "classId",
 //   targetKey: "classId",
 //   as: "class",
 // });
 
-// Class.hasMany(Section, {
-//   foreignKey: "classId",
-//   sourceKey: "classId",
-//   as: "sections",
+
+// // Section belongs to class teacher
+// Section.belongsTo(User, {
+//   foreignKey: "classTeacherId",
+//   targetKey: "userId",
+//   as: "classTeacher",
 // });
 
-
-// Section belongs to Class
-// Section.belongsTo(Class, {
-//   foreignKey: "classId",
-//   targetKey: "classId",
-//   as: "class",
-// });
-
-// Section belongs to class teacher
 // Section.belongsTo(User, {
 //   foreignKey: "classTeacherId",
 //   targetKey: "userId",

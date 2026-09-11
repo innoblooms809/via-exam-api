@@ -1,5 +1,8 @@
-import { name, version, repository } from '../../package.json';
 import config from '../config/config';
+
+const name = 'via-exam-api';
+const version = '1.0.0';
+const repository = 'https://github.com/innoblooms809/via-exam-api.git';
 
 const swaggerDef = {
   openapi: '3.0.0',

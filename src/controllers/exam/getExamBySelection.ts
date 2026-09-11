@@ -4,9 +4,14 @@ import { Request, Response } from "express";
 import httpStatus from "http-status";
 
 import Exam from "../../modals/Exam.modal"
+import Subject from "../../modals/Subject.modal"
+import Class from "../../modals/Class.modal"
+import Session from "../../modals/Session.modal"
+import Institute from "../../modals/Institute.modal"
 
-export const getExamBySelection = async (
-  req: Request,
+
+  export const getExamBySelection = async (
+  req: any,
   res: Response
 ): Promise<any> => {
   try {
@@ -14,30 +19,96 @@ export const getExamBySelection = async (
       classVal,
       subject,
       examType,
-      teacherId
+      session,
     } = req.body;
 
+    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
 
     // ─────────────────────────────────────────────
-    // Validation
+    // Find Session + Class Together
     // ─────────────────────────────────────────────
 
-    if (
-      !classVal ||
-      !subject ||
-      !examType ||
-      !teacherId
-    ) {
+    const [sessionData, classData] =
+      await Promise.all([
+
+        Session.findOne({
+          where: {
+            sessionName: session,
+            instituteId,
+            isDeleted: false,
+          },
+        }),
+
+        Class.findOne({
+          where: {
+            className: classVal,
+            instituteId,
+            isDeleted: false,
+          },
+        }),
+      ]);
+
+    // ─────────────────────────────────────────────
+    // Session Check
+    // ─────────────────────────────────────────────
+
+    if (!sessionData) {
       return res.status(
-        httpStatus.BAD_REQUEST
+        httpStatus.NOT_FOUND
       ).json({
         error: true,
 
         statusCode:
-          httpStatus.BAD_REQUEST,
+          httpStatus.NOT_FOUND,
 
         message:
-          "classVal, subject, examType and teacherId are required",
+          "Session not found.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // Class Check
+    // ─────────────────────────────────────────────
+
+    if (!classData) {
+      return res.status(
+        httpStatus.NOT_FOUND
+      ).json({
+        error: true,
+
+        statusCode:
+          httpStatus.NOT_FOUND,
+
+        message:
+          "Class not found.",
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // Find Subject
+    // ─────────────────────────────────────────────
+
+    const subjectData =
+      await Subject.findOne({
+        where: {
+          subjectName: subject,
+          classId: classData.classId,
+          instituteId,
+          isDeleted: false,
+        },
+      });
+
+    if (!subjectData) {
+      return res.status(
+        httpStatus.NOT_FOUND
+      ).json({
+        error: true,
+
+        statusCode:
+          httpStatus.NOT_FOUND,
+
+        message:
+          "Subject not found.",
       });
     }
 
@@ -47,20 +118,23 @@ export const getExamBySelection = async (
 
     const exam = await Exam.findOne({
       where: {
-        classVal,
-        subject,
+        sessionId:
+          sessionData.sessionId,
+
+        classId:
+          classData.classId,
+
+        subjectId:
+          subjectData.subjectId,
+
         examType,
-        teacherId,
+
+      
+
+        instituteId,
+
         isDeleted: false,
       },
-
-      attributes: [
-        "examId",
-        "classVal",
-        "subject",
-        "examType",
-        "session",
-      ],
     });
 
     // ─────────────────────────────────────────────
@@ -82,6 +156,17 @@ export const getExamBySelection = async (
     }
 
     // ─────────────────────────────────────────────
+    // Fetch Institute Details for auto-fill
+    // ─────────────────────────────────────────────
+    
+    const institute = await Institute.findOne({
+      where: {
+        instituteId: exam.instituteId,
+        isDeleted: false,
+      },
+    });
+
+    // ─────────────────────────────────────────────
     // Success
     // ─────────────────────────────────────────────
 
@@ -96,10 +181,19 @@ export const getExamBySelection = async (
       message:
         "Exam fetched successfully.",
 
-      data: exam,
+      data: {
+        ...exam.toJSON(),
+        institute: institute ? {
+          instituteId: institute.instituteId,
+          instituteName: institute.instituteName,
+          logoUrl: institute.logoUrl,
+          slug: institute.slug,
+        } : null,
+      },
     });
 
   } catch (e: any) {
+
     console.error(
       "getExamBySelection Error:",
       e

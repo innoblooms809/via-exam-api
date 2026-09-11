@@ -3,19 +3,14 @@ import Class from "../modals/Class.modal";
 import RegHelper from "../utils/helper";
 import Section from "../modals/Section.modal";
 import Subject from "../modals/Subject.modal";
+import User from "../modals/User.modal";
 
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
 const createClass = async (body: any, createdBy: any): Promise<any> => {
   try {
-    if (!body.sessionId) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "sessionId is required.",
-      };
-    }
 
-    if (!body.className) {
+    const className = body.className?.trim();
+    if (!className) {
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
@@ -24,21 +19,34 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
     }
     const instituteId = createdBy.instituteId;
 
-    const exists = await Class.findOne({
+    const exists: any = await Class.findOne({
       where: {
         instituteId,
-        sessionId: body.sessionId,
-        className: body.className,
-        isDeleted: false,
+        className,
       },
     });
 
     if (exists) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Class already exists for this session.",
-      };
+      if (!exists.isDeleted) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Class already exists",
+        };
+      } else {
+        // Restore the soft-deleted class
+        await exists.update({
+          isDeleted: false,
+          isActive: true,
+        });
+
+        return {
+          error: false,
+          statusCode: httpStatus.OK, // or CREATED, returning OK as it was restored
+          message: "Class restored successfully.",
+          data: exists,
+        };
+      }
     }
 
     const classId = await RegHelper.generateUserId();
@@ -46,8 +54,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
     const newClass = await Class.create({
       classId,
       instituteId,
-      sessionId: body.sessionId,
-      className: body.className,
+      className,
     });
 
     return {
@@ -57,6 +64,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
       data: newClass,
     };
   } catch (e: any) {
+    console.error("POST /v1/class/createClass 500 - Error in service:", e);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -66,7 +74,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
 };
 
 // ─── GET ALL CLASSES ──────────────────────────────────────────────────────────
-const getAllClasses = async (query: any, createdBy: any): Promise<any> => {
+const getAllClasses = async (createdBy: any): Promise<any> => {
   try {
     const where: any = {
       instituteId: createdBy.instituteId,
@@ -74,20 +82,26 @@ const getAllClasses = async (query: any, createdBy: any): Promise<any> => {
       isDeleted: false,
     };
 
-    if (query.sessionId) {
-      where.sessionId = query.sessionId;
-    }
-
     const classes = await Class.findAll({
       where,
       include: [
         {
           model: Section,
           as: "sections",
+          where: { isDeleted: false },
+          required: false,
         },
         {
           model: Subject,
           as: "subjects",
+          where: { isDeleted: false },
+          required: false,
+        },
+        {
+          model: User,
+          as: "classTeacher",
+          attributes: ["userId", "userName", "emailId"],
+          required: false,
         },
       ],
       order: [["className", "ASC"]],
@@ -118,15 +132,26 @@ const getClassById = async (classId: string, createdBy: any): Promise<any> => {
       where: {
         classId,
         instituteId: createdBy.instituteId,
+        isDeleted: false,
       },
       include: [
         {
           model: Section,
           as: "sections",
+          where: { isDeleted: false },
+          required: false,
         },
         {
           model: Subject,
           as: "subjects",
+          where: { isDeleted: false },
+          required: false,
+        },
+        {
+          model: User,
+          as: "classTeacher",
+          attributes: ["userId", "userName", "emailId"],
+          required: false,
         },
       ],
     });
@@ -177,9 +202,28 @@ const updateClass = async (
       };
     }
 
+    const className = body.className?.trim();
+    if (className) {
+      const exists: any = await Class.findOne({
+        where: {
+          instituteId: createdBy.instituteId,
+          className,
+        },
+      });
+
+      if (exists && exists.classId !== classId) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: exists.isDeleted
+            ? "A deleted class with this name already exists. Please restore it or use a different name."
+            : "Class name already exists.",
+        };
+      }
+    }
+
     await classData.update({
-      className: body.className ?? classData.className,
-      sessionId: body.sessionId ?? classData.sessionId,
+      className: className ?? classData.className,
     });
 
     return {
@@ -201,7 +245,7 @@ const updateClass = async (
 const deleteClass = async (classId: string, createdBy: any): Promise<any> => {
   try {
     const classData = await Class.findOne({
-      where: { classId, instituteId: createdBy.instituteId },
+      where: { classId, instituteId: createdBy.instituteId, isDeleted: false },
     });
 
     if (!classData) {

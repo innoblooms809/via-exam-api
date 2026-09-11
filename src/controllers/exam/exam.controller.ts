@@ -1,35 +1,59 @@
-import httpStatus from "http-status";
 import { Response } from "express";
-import ExamService from "../../services/exam.service";
+import httpStatus from "http-status";
+import ExamService from "../../services/exam.service"
 
 const createExam = async (req: any, res: Response): Promise<any> => {
   try {
-     console.log(req.user);
-     console.log("USER =", req.user);
-    console.log("VIA USER =", req.viaExamUser);
-    const result = await ExamService.createExam(req.body,req.viaExamUser);
+    const result = await ExamService.createExam(req.body, req.viaExamUser);
     return res.status(result.statusCode).send(result);
   } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
   }
 };
 
 const getAllExams = async (req: any, res: Response): Promise<any> => {
   try {
-    console.log("USER =", req.viaExamUser);
     const result = await ExamService.getAllExams(req.query, req.viaExamUser);
     return res.status(result.statusCode).send(result);
   } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const getAssignedExams = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await ExamService.getAssignedExams(req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
   }
 };
 
 const getExamById = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await ExamService.getExamById(req.params.examId, req.viaExamUser);
+    const result = await ExamService.getExamById(
+      req.params.examId,
+      req.viaExamUser,
+    );
     return res.status(result.statusCode).send(result);
   } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
   }
 };
 
@@ -38,29 +62,30 @@ const updateExamStatus = async (req: any, res: Response): Promise<any> => {
     const result = await ExamService.updateExamStatus(
       req.params.examId,
       req.body.status,
-      req.viaExamUser
+      req.viaExamUser,
     );
     return res.status(result.statusCode).send(result);
   } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
   }
 };
 
 const updateExam = async (req: any, res: Response): Promise<any> => {
   try {
-
     const result = await ExamService.updateExam(
       req.params.examId,
       req.body,
-      req.viaExamUser
+      req.viaExamUser,
     );
-
     return res.status(result.statusCode).send(result);
-
   } catch (error) {
-    return res.status(500).json({
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
-      statusCode: 500,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       message: "Internal Server Error",
     });
   }
@@ -68,11 +93,52 @@ const updateExam = async (req: any, res: Response): Promise<any> => {
 
 const deleteExam = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await ExamService.deleteExam(req.params.examId, req.viaExamUser);
+    const result = await ExamService.deleteExam(
+      req.params.examId,
+      req.viaExamUser,
+    );
     return res.status(result.statusCode).send(result);
   } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
   }
 };
 
-export default { createExam, getAllExams, getExamById, updateExamStatus,updateExam, deleteExam };
+
+const getExamProgress = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await ExamService.getExamProgress(req.params.examId, req.viaExamUser);
+    return res.status(result.statusCode).json(result);
+  } catch (e: any) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      message: `Something went wrong: ${e.message}`,
+    });
+  }
+};
+const getAssignedExamsSummary = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await ExamService.getAssignedExamsSummary(req.viaExamUser);
+    return res.status(result.statusCode).json(result);
+  } catch (e: any) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      message: `Something went wrong: ${e.message}`,
+    });
+  }
+};
+
+export default {
+  getExamProgress,
+  createExam,
+  getAllExams,
+  getExamById,
+  updateExamStatus,
+  updateExam,
+  deleteExam,
+  getAssignedExams,
+  getAssignedExamsSummary,
+};

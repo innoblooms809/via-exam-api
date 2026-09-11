@@ -12,39 +12,51 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const app_1 = __importDefault(require("./app"));
 const config_1 = __importDefault(require("./config/config"));
+const app_1 = __importDefault(require("./app"));
 const logger_1 = __importDefault(require("./config/logger"));
 const connect_1 = __importDefault(require("./db/connect")); // Change to sequelize connection
 const superAdmin_1 = __importDefault(require("./config/superAdmin"));
+const pythonServices_1 = require("./config/pythonServices");
 let server;
 const bootApp = () => {
     server = app_1.default.listen(config_1.default.port, () => __awaiter(void 0, void 0, void 0, function* () {
         logger_1.default.info(`Listening on port ${config_1.default.port}`);
+        logger_1.default.info((0, pythonServices_1.describePythonServices)());
+        void (0, pythonServices_1.checkPythonServices)(); // logs reachability only; never blocks startup
         yield (0, superAdmin_1.default)();
     }));
+    // Set server timeouts to 1 hour to support slow CPU model processing
+    server.timeout = 3600000;
+    server.keepAliveTimeout = 3600000;
+    server.headersTimeout = 3605000;
 };
 (0, connect_1.default)(bootApp);
-const exitHandler = () => {
+const shutdown = (signal) => {
+    logger_1.default.info(`${signal} received. Closing server...`);
     if (server) {
+        if (typeof server.closeAllConnections === "function") {
+            server.closeAllConnections();
+        }
         server.close(() => {
-            logger_1.default.info("Server closed");
-            process.exit(1);
+            logger_1.default.info("Server closed successfully.");
+            process.exit(0);
         });
+        // Fallback: force exit after 1s if connections hang
+        setTimeout(() => {
+            process.exit(0);
+        }, 1000);
     }
     else {
-        process.exit(1);
+        process.exit(0);
     }
 };
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGUSR2", () => shutdown("SIGUSR2"));
 const unexpectedErrorHandler = (error) => {
     logger_1.default.error(error);
-    exitHandler();
+    shutdown("UNCAUGHT_ERROR");
 };
 process.on("uncaughtException", unexpectedErrorHandler);
 process.on("unhandledRejection", unexpectedErrorHandler);
-process.on("SIGTERM", () => {
-    logger_1.default.info("SIGTERM received");
-    if (server) {
-        server.close();
-    }
-});

@@ -36,11 +36,11 @@ StudentProfile.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
-    division: {
+    sectionId: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
-    academicYear: {
+    session: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },

@@ -42,8 +42,4 @@ Access.init({
     tableName: 'access',
     timestamps: false,
 });
-// Define the association
-Access.belongsTo(Role_modal_1.default, { foreignKey: 'roleId', as: 'role' });
-// Define the association
-Role_modal_1.default.hasMany(Access, { foreignKey: 'roleId', as: 'access' });
 exports.default = Access;

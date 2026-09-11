@@ -1,12 +1,11 @@
 import httpStatus from "http-status";
 import { Response } from "express";
 import TeacherService from "../services/teacher.service";
-import { sendEmailToNewUser } from "../utils/mailHelper";
+import config from "../config/config";
+import { sendUserCredentials } from "../utils/mailHelper";
 
 const createTeacher = async (req: any, res: Response): Promise<any> => {
   try {
-    console.log(req.user);
-console.log(req.body);
     const result = await TeacherService.createTeacher(
       req.body,
       req.files,
@@ -14,11 +13,20 @@ console.log(req.body);
     );
 
     if (!result.error) {
-      await sendEmailToNewUser({
-        emailId:     req.body.emailId,
-        phoneNumber: req.body.phoneNumber,
-        userName:    `${req.body.firstName} ${req.body.lastName}`,
-        password:    result.data.plainPassword,
+      const slug = req.viaExamUser?.institute?.slug;
+      const loginUrl = slug
+        ? `${config.frontendUrl}/${slug}/auth/signin`
+        : `${config.frontendUrl}/auth/signin`;
+
+      sendUserCredentials({
+        userName: `${req.body.firstName} ${req.body.lastName}`,
+        email:    req.body.emailId,
+        phone:    req.body.phoneNumber,
+        password: result.data.plainPassword,
+        role:     "Teacher",
+        loginUrl,
+      }).catch((err) => {
+        console.error("Background teacher email dispatch failed:", err);
       });
     }
 
@@ -33,6 +41,7 @@ const getAllTeachers = async (req: any, res: Response): Promise<any> => {
     const result = await TeacherService.getAllTeachers(req.viaExamUser, req.query);
     return res.status(result.statusCode).send(result);
   } catch (error) {
+    console.error("getAllTeachers Controller Error:", error);
     return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
   }
 };
@@ -87,6 +96,73 @@ const removeExaminer = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const getDeactivatedTeachers = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await TeacherService.getDeactivatedTeachers(req.viaExamUser, req.query);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    console.error("getDeactivatedTeachers Controller Error:", error);
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
+const reactivateTeacher = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await TeacherService.reactivateTeacher(req.params.userId, req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    console.error("reactivateTeacher Controller Error:", error);
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
+const getMyAssignments = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await TeacherService.getMyAssignments(req.viaExamUser.userId);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
+const getTeacherQuestionPapers = async (req: any, res: Response): Promise<any> => {
+  try {
+    const targetUserId = req.params?.userId;
+    const result = await TeacherService.getTeacherQuestionPapers(
+      req.viaExamUser,
+      req.query,
+      targetUserId
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error: any) {
+    console.error("getTeacherQuestionPapers Controller Error:", error);
+    return res.status(500).json({
+      error: true,
+      statusCode: 500,
+      message: `Internal Server Error: ${error.message}`,
+    });
+  }
+};
+
+const getTeacherExamsWithApprovalStatus = async (req: any, res: Response): Promise<any> => {
+  try {
+    const targetUserId = req.params?.userId;
+    const result = await TeacherService.getTeacherExamsWithApprovalStatus(
+      req.viaExamUser,
+      req.query,
+      targetUserId
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error: any) {
+    console.error("getTeacherExamsWithApprovalStatus Controller Error:", error);
+    return res.status(500).json({
+      error: true,
+      statusCode: 500,
+      message: `Internal Server Error: ${error.message}`,
+    });
+  }
+};
+
 export default {
   createTeacher,
   getAllTeachers,
@@ -95,4 +171,9 @@ export default {
   deleteTeacher,
   assignExaminer,
   removeExaminer,
+  getDeactivatedTeachers,
+  reactivateTeacher,
+  getMyAssignments,
+  getTeacherQuestionPapers,
+  getTeacherExamsWithApprovalStatus,
 };

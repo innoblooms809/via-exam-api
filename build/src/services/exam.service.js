@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -12,12 +35,92 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.setExamWorkflowStatus = exports.markExamPaperCreated = exports.syncExamPackageStatus = exports.EXAM_WORKFLOW_STATUSES = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
 const User_modal_1 = __importDefault(require("../modals/User.modal"));
 const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
+const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
+const Section_modal_1 = __importDefault(require("../modals/Section.modal"));
+const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
+const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
+const Notification_modal_1 = __importDefault(require("../modals/Notification.modal"));
+const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
+const Scanner_modal_1 = __importDefault(require("../modals/Scanner.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
+const student_service_1 = __importDefault(require("./student.service"));
 const sequelize_1 = require("sequelize");
+/** Single exam-table status that drives Manage Exams + approval. */
+exports.EXAM_WORKFLOW_STATUSES = [
+    "Draft",
+    "Paper Created",
+    "Pending Approval",
+    "Approved",
+    "Rejected",
+    "Live",
+    "Completed",
+];
+function examStatusToPaperStatus(examStatus) {
+    switch (examStatus) {
+        case "Draft":
+        case "Paper Created":
+            return "DRAFT";
+        case "Pending Approval":
+            return "PENDING_APPROVAL";
+        case "Approved":
+        case "Live":
+            return "APPROVED";
+        case "Rejected":
+            return "REJECTED";
+        default:
+            return null;
+    }
+}
+function syncExamPackageStatus(examId, examStatus) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const paperStatus = examStatusToPaperStatus(examStatus);
+        if (!paperStatus)
+            return;
+        const QuestionPaper = (yield Promise.resolve().then(() => __importStar(require("../modals/question-paper/QuestionPaper.modal")))).default;
+        const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../modals/question-paper/stander-answer.model")))).default;
+        const papers = yield QuestionPaper.findAll({ where: { examId } });
+        const paperIds = papers.map((p) => p.paperId).filter(Boolean);
+        const now = new Date();
+        const extra = {};
+        if (paperStatus === "PENDING_APPROVAL")
+            extra.submittedAt = now;
+        if (paperStatus === "APPROVED") {
+            extra.approvedAt = now;
+            extra.rejectionNote = null;
+        }
+        if (paperStatus === "REJECTED")
+            extra.rejectedAt = now;
+        yield QuestionPaper.update(Object.assign({ status: paperStatus }, extra), { where: { examId } });
+        const answerWhere = paperIds.length > 0
+            ? { [sequelize_1.Op.or]: [{ examId }, { paperId: paperIds }] }
+            : { examId };
+        yield QuestionPaperAnswer.update(Object.assign({ status: paperStatus }, extra), { where: answerWhere });
+    });
+}
+exports.syncExamPackageStatus = syncExamPackageStatus;
+function markExamPaperCreated(examId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const exam = yield Exam_modal_1.default.findOne({ where: { examId, isDeleted: false } });
+        if (!exam)
+            return;
+        if (exam.status === "Draft") {
+            yield exam.update({ status: "Paper Created" });
+        }
+    });
+}
+exports.markExamPaperCreated = markExamPaperCreated;
+function setExamWorkflowStatus(examId, status) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield Exam_modal_1.default.update({ status }, { where: { examId, isDeleted: false } });
+        yield syncExamPackageStatus(examId, status);
+    });
+}
+exports.setExamWorkflowStatus = setExamWorkflowStatus;
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
 const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -40,10 +143,6 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
                 status: 1,
             },
         });
-        console.log("Teacher Role =", teacherRole === null || teacherRole === void 0 ? void 0 : teacherRole.id);
-        console.log("Institute =", instituteId);
-        console.log("Teacher Name =", body.teacher);
-        console.log("Teacher =", teacher);
         if (!teacher) {
             return {
                 error: true,
@@ -55,10 +154,9 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
         const duplicate = yield Exam_modal_1.default.findOne({
             where: {
                 instituteId,
-                session: body.session,
+                sessionId: body.sessionId,
                 examType: body.examType,
-                classVal: body.classVal,
-                subject: body.subject,
+                subjectId: body.subjectId,
                 isDeleted: false,
             },
         });
@@ -75,18 +173,28 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
         const exam = yield Exam_modal_1.default.create({
             examId,
             instituteId,
-            session: body.session,
-            year: body.year,
+            sessionId: body.sessionId,
             examType: body.examType,
-            examDate: new Date(body.examDate),
-            classVal: body.classVal,
-            subject: body.subject,
+            classId: body.classId,
+            subjectId: body.subjectId,
             teacherId: teacher.userId,
+            examinerId: createdBy.userId,
             totalMarks: Number(body.totalMarks),
             passingMarks: Number(body.passingMarks),
             duration: body.duration ? Number(body.duration) : null,
             instructions: body.instructions || null,
             status: "Draft",
+        });
+        // 6. Send notification to assigned teacher
+        const notificationId = yield helper_1.default.generateUserId();
+        yield Notification_modal_1.default.create({
+            notificationId,
+            instituteId,
+            userId: teacher.userId,
+            type: "EXAM_ASSIGNED",
+            title: "New Exam Assigned",
+            message: `A ${body.examType} exam has been assigned to you.`,
+            referenceId: examId,
         });
         return {
             error: false,
@@ -123,8 +231,17 @@ const getAllExams = (query, requestedBy) => __awaiter(void 0, void 0, void 0, fu
         }
         const exams = yield Exam_modal_1.default.findAll({
             where,
+            include: [
+                { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: true },
+                { model: Subject_modal_1.default, as: "subject", where: { isDeleted: false }, required: true },
+                { model: User_modal_1.default, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionId", "sessionName"], required: false },
+            ],
             order: [["createdAt", "DESC"]],
         });
+        yield Promise.all(exams
+            .filter((exam) => ["Pending Approval", "Approved", "Rejected"].includes(exam.status))
+            .map((exam) => syncExamPackageStatus(exam.examId, exam.status)));
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -140,11 +257,92 @@ const getAllExams = (query, requestedBy) => __awaiter(void 0, void 0, void 0, fu
         };
     }
 });
+// ─── GET ASSIGNED EXAMS (FOR TEACHER) ─────────────────────────────────────────
+const getAssignedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = requestedBy.instituteId;
+        const teacherId = requestedBy.userId;
+        const exams = yield Exam_modal_1.default.findAll({
+            where: {
+                instituteId,
+                isDeleted: false,
+                teacherId
+            },
+            include: [
+                { model: Class_modal_1.default, as: "class", attributes: ["className"], where: { isDeleted: false }, required: true },
+                { model: Section_modal_1.default, as: "section", attributes: ["sectionName"], required: false },
+                { model: Subject_modal_1.default, as: "subject", attributes: ["subjectName"], where: { isDeleted: false }, required: true },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionName"] },
+            ],
+            order: [["createdAt", "DESC"]],
+        });
+        yield Promise.all(exams
+            .filter((exam) => ["Pending Approval", "Approved", "Rejected"].includes(exam.status))
+            .map((exam) => syncExamPackageStatus(exam.examId, exam.status)));
+        const formattedExams = yield Promise.all(exams.map((exam) => __awaiter(void 0, void 0, void 0, function* () {
+            var _a, _b, _c, _d, _e, _f, _g, _h;
+            const totalStudents = yield Student_modal_1.default.count({
+                where: { instituteId, classId: exam.classId, isActive: true }
+            });
+            const uploadedSheets = yield Scanner_modal_1.default.count({
+                where: {
+                    instituteId,
+                    classId: exam.classId,
+                    subjectId: exam.subjectId,
+                    examType: exam.examType,
+                    isDeleted: false
+                }
+            });
+            return {
+                id: exam.examId,
+                examId: exam.examId,
+                classId: ((_a = exam.class) === null || _a === void 0 ? void 0 : _a.classId) || exam.classId,
+                className: ((_b = exam.class) === null || _b === void 0 ? void 0 : _b.className) || "N/A",
+                sectionId: ((_c = exam.section) === null || _c === void 0 ? void 0 : _c.sectionId) || exam.sectionId,
+                sectionName: ((_d = exam.section) === null || _d === void 0 ? void 0 : _d.sectionName) || "N/A",
+                subjectId: ((_e = exam.subject) === null || _e === void 0 ? void 0 : _e.subjectId) || exam.subjectId,
+                subjectName: ((_f = exam.subject) === null || _f === void 0 ? void 0 : _f.subjectName) || "N/A",
+                sessionId: ((_g = exam.session) === null || _g === void 0 ? void 0 : _g.sessionId) || exam.sessionId,
+                sessionName: ((_h = exam.session) === null || _h === void 0 ? void 0 : _h.sessionName) || "N/A",
+                examType: exam.examType,
+                status: exam.status,
+                totalMarks: exam.totalMarks,
+                passingMarks: exam.passingMarks,
+                duration: exam.duration,
+                instructions: exam.instructions,
+                teacherId: exam.teacherId,
+                examinerId: exam.examinerId,
+                totalStudents,
+                uploadedSheets,
+                createdAt: exam.createdAt,
+                updatedAt: exam.updatedAt
+            };
+        })));
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Assigned exams fetched successfully.",
+            data: { exams: formattedExams },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 // ─── GET ONE EXAM ─────────────────────────────────────────────────────────────
 const getExamById = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const exam = yield Exam_modal_1.default.findOne({
             where: { examId, isDeleted: false },
+            include: [
+                { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: true },
+                { model: Subject_modal_1.default, as: "subject", where: { isDeleted: false }, required: true },
+                { model: User_modal_1.default, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+            ],
         });
         if (!exam) {
             return {
@@ -179,7 +377,7 @@ const getExamById = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, f
 // ─── UPDATE EXAM STATUS ───────────────────────────────────────────────────────
 const updateExamStatus = (examId, status, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const allowed = ["Draft", "Live", "Completed"];
+        const allowed = [...exports.EXAM_WORKFLOW_STATUSES];
         if (!allowed.includes(status)) {
             return {
                 error: true,
@@ -246,22 +444,19 @@ const updateExam = (examId, body, requestedBy) => __awaiter(void 0, void 0, void
         }
         // Status Validation
         if (body.status) {
-            const allowedStatus = ["Draft", "Live", "Completed"];
+            const allowedStatus = [...exports.EXAM_WORKFLOW_STATUSES];
             if (!allowedStatus.includes(body.status)) {
                 return {
                     error: true,
                     statusCode: 400,
-                    message: "Status must be one of: Draft, Live, Completed",
+                    message: `Status must be one of: ${allowedStatus.join(", ")}`,
                 };
             }
         }
         yield exam.update({
-            session: body.session || exam.session,
-            year: body.year || exam.year,
+            sessionId: body.session || exam.sessionId,
             examType: body.examType || exam.examType,
-            examDate: body.examDate || exam.examDate,
-            classVal: body.classVal || exam.classVal,
-            subject: body.subject || exam.subject,
+            subjectId: body.subject || exam.subjectId,
             totalMarks: body.totalMarks || exam.totalMarks,
             passingMarks: body.passingMarks || exam.passingMarks,
             duration: body.duration || exam.duration,
@@ -317,11 +512,189 @@ const deleteExam = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, fu
         };
     }
 });
+// ─── GET EXAM PROGRESS ────────────────────────────────────────────────────────
+const getExamProgress = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    var _j, _k;
+    try {
+        const instituteId = requestedBy.instituteId;
+        const exam = yield Exam_modal_1.default.findOne({
+            where: { examId, instituteId, isDeleted: false },
+            include: [
+                { model: Class_modal_1.default, as: "class", attributes: ["classId", "className"], required: true },
+                { model: Subject_modal_1.default, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionId", "sessionName"] },
+            ],
+        });
+        if (!exam) {
+            return { error: true, statusCode: http_status_1.default.NOT_FOUND, message: "Exam not found." };
+        }
+        const sections = yield Section_modal_1.default.findAll({
+            where: { classId: exam.classId, isDeleted: false },
+        });
+        const className = ((_j = exam.class) === null || _j === void 0 ? void 0 : _j.className) || exam.classId;
+        const sessionName = ((_k = exam.session) === null || _k === void 0 ? void 0 : _k.sessionName) || exam.sessionId || "";
+        const progressData = yield Promise.all(sections.map((sec) => __awaiter(void 0, void 0, void 0, function* () {
+            var _l;
+            let studentsList = [];
+            try {
+                const studentRes = yield student_service_1.default.getAllStudents(requestedBy, {
+                    className,
+                    sectionId: sec.sectionName || sec.sectionId,
+                    session: sessionName,
+                });
+                if (studentRes && !studentRes.error && Array.isArray((_l = studentRes === null || studentRes === void 0 ? void 0 : studentRes.data) === null || _l === void 0 ? void 0 : _l.students)) {
+                    studentsList = studentRes.data.students;
+                }
+            }
+            catch (err) {
+                console.error("Error fetching section progress students:", err);
+            }
+            const studentRolls = new Set(studentsList.map((s) => String(s.rollNumber)).filter(Boolean));
+            const sheets = yield Scanner_modal_1.default.findAll({
+                where: {
+                    instituteId,
+                    classId: exam.classId,
+                    section: { [sequelize_1.Op.in]: [sec.sectionId, sec.sectionName] },
+                    subjectId: exam.subjectId,
+                    examType: exam.examType,
+                    isDeleted: false,
+                },
+                attributes: ["sheetId", "rollNo"],
+            });
+            const orphanSheets = sheets.filter((sh) => !studentRolls.has(String(sh.rollNo)));
+            const totalStudents = studentsList.length + orphanSheets.length;
+            const uploadedSheets = sheets.length;
+            return {
+                sectionId: sec.sectionId,
+                sectionName: sec.sectionName,
+                totalStudents,
+                uploadedSheets,
+            };
+        })));
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Progress fetched successfully.",
+            data: { progress: progressData },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// ─── GET ASSIGNED EXAMS SUMMARY (section-aware counts) ────────────────────────
+// New endpoint for the answersheetevaluation page.
+// Unlike getAssignedExams, this filters totalStudents and uploadedSheets
+// by the exam's sectionId so counts match the uploaded-sheets detail page.
+const getAssignedExamsSummary = (requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const instituteId = requestedBy.instituteId;
+        const teacherId = requestedBy.userId;
+        const exams = yield Exam_modal_1.default.findAll({
+            where: { instituteId, isDeleted: false, teacherId },
+            include: [
+                { model: Class_modal_1.default, as: "class", attributes: ["classId", "className"], where: { isDeleted: false }, required: true },
+                { model: Section_modal_1.default, as: "section", attributes: ["sectionId", "sectionName"], required: false },
+                { model: Subject_modal_1.default, as: "subject", attributes: ["subjectId", "subjectName"], where: { isDeleted: false }, required: true },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionId", "sessionName"] },
+            ],
+            order: [["createdAt", "DESC"]],
+        });
+        const formattedExams = yield Promise.all(exams.map((exam) => __awaiter(void 0, void 0, void 0, function* () {
+            var _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
+            const className = ((_m = exam.class) === null || _m === void 0 ? void 0 : _m.className) || exam.classId;
+            const sectionName = ((_o = exam.section) === null || _o === void 0 ? void 0 : _o.sectionName) || exam.sectionId || "";
+            const sessionName = ((_p = exam.session) === null || _p === void 0 ? void 0 : _p.sessionName) || exam.sessionId || "";
+            // 1. Get students matching exact same query as uploaded-sheets detail page
+            let studentsList = [];
+            try {
+                const studentRes = yield student_service_1.default.getAllStudents(requestedBy, {
+                    className,
+                    sectionId: sectionName,
+                    session: sessionName,
+                });
+                if (studentRes && !studentRes.error && Array.isArray((_q = studentRes === null || studentRes === void 0 ? void 0 : studentRes.data) === null || _q === void 0 ? void 0 : _q.students)) {
+                    studentsList = studentRes.data.students;
+                }
+            }
+            catch (err) {
+                console.error("Error fetching students for exam summary:", err);
+            }
+            const studentRolls = new Set(studentsList.map((s) => String(s.rollNumber)).filter(Boolean));
+            // 2. Get uploaded sheets matching the exam parameters
+            const sectionVals = Array.from(new Set([exam.sectionId, (_r = exam.section) === null || _r === void 0 ? void 0 : _r.sectionName].filter(Boolean)));
+            const classVals = Array.from(new Set([exam.classId, (_s = exam.class) === null || _s === void 0 ? void 0 : _s.className].filter(Boolean)));
+            const sheetWhere = {
+                instituteId,
+                subjectId: exam.subjectId,
+                examType: exam.examType,
+                isDeleted: false,
+            };
+            if (classVals.length > 0) {
+                sheetWhere.classId = { [sequelize_1.Op.in]: classVals };
+            }
+            if (sectionVals.length > 0) {
+                sheetWhere.section = { [sequelize_1.Op.in]: sectionVals };
+            }
+            const sheets = yield Scanner_modal_1.default.findAll({
+                where: sheetWhere,
+                attributes: ["sheetId", "rollNo"],
+            });
+            const orphanSheets = sheets.filter((sh) => !studentRolls.has(String(sh.rollNo)));
+            const totalStudents = studentsList.length + orphanSheets.length;
+            const uploadedSheets = sheets.length;
+            return {
+                id: exam.examId,
+                examId: exam.examId,
+                classId: ((_t = exam.class) === null || _t === void 0 ? void 0 : _t.classId) || exam.classId,
+                className: ((_u = exam.class) === null || _u === void 0 ? void 0 : _u.className) || "N/A",
+                sectionId: ((_v = exam.section) === null || _v === void 0 ? void 0 : _v.sectionId) || exam.sectionId || null,
+                sectionName: ((_w = exam.section) === null || _w === void 0 ? void 0 : _w.sectionName) || "N/A",
+                subjectId: ((_x = exam.subject) === null || _x === void 0 ? void 0 : _x.subjectId) || exam.subjectId,
+                subjectName: ((_y = exam.subject) === null || _y === void 0 ? void 0 : _y.subjectName) || "N/A",
+                sessionId: ((_z = exam.session) === null || _z === void 0 ? void 0 : _z.sessionId) || exam.sessionId,
+                sessionName: ((_0 = exam.session) === null || _0 === void 0 ? void 0 : _0.sessionName) || "N/A",
+                examType: exam.examType,
+                status: exam.status,
+                totalMarks: exam.totalMarks,
+                passingMarks: exam.passingMarks,
+                duration: exam.duration,
+                instructions: exam.instructions,
+                teacherId: exam.teacherId,
+                examinerId: exam.examinerId,
+                totalStudents,
+                uploadedSheets,
+                createdAt: exam.createdAt,
+                updatedAt: exam.updatedAt
+            };
+        })));
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Assigned exams summary fetched successfully.",
+            data: { exams: formattedExams },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 exports.default = {
+    getExamProgress,
     createExam,
     getAllExams,
     getExamById,
     updateExamStatus,
     updateExam,
     deleteExam,
+    getAssignedExams,
+    getAssignedExamsSummary,
 };

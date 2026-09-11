@@ -7,7 +7,7 @@ const router = express.Router();
 router.post(
   "/createSection",
   authenticate,
-//   authorize(["ADMIN"]),
+  // authorize(["ADMIN"]),
   SectionController.createSection
 );
 

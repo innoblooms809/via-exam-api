@@ -5,12 +5,8 @@ import User from "../modals/User.modal";
 import RegHelper from "../utils/helper";
 
 // ─── CREATE SECTION ───────────────────────────────────────────────────────────
-const createSection = async (
-  body: any,
-  createdBy: any
-): Promise<any> => {
+const createSection = async (body: any, createdBy: any): Promise<any> => {
   try {
-
     if (!body.classId) {
       return {
         error: true,
@@ -46,26 +42,60 @@ const createSection = async (
     const exists = await Section.findOne({
       where: {
         classId: body.classId,
+        instituteId: createdBy.instituteId,
         sectionName: body.sectionName,
-        isDeleted: false,
       },
     });
 
     if (exists) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Section already exists.",
-      };
+      if (!exists.isDeleted) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Section already exists.",
+        };
+      } else {
+        // Reactivate soft-deleted section
+        await exists.update({
+          isDeleted: false,
+          isActive: true,
+          classTeacherId: body.classTeacherId || null,
+        });
+
+        return {
+          error: false,
+          statusCode: httpStatus.OK,
+          message: "Section restored successfully.",
+          data: exists,
+        };
+      }
     }
 
+    let teacher = null;
+
+    if (body.classTeacherId) {
+      teacher = await User.findOne({
+        where: {
+          userId: body.classTeacherId,
+          instituteId: createdBy.instituteId,
+          isDeleted: false,
+        },
+      });
+
+      if (!teacher) {
+        return {
+          error: true,
+          statusCode: httpStatus.NOT_FOUND,
+          message: "Teacher not found.",
+        };
+      }
+    }
     const sectionId = await RegHelper.generateUserId();
 
     const newSection = await Section.create({
       sectionId,
       classId: body.classId,
       instituteId: createdBy.instituteId,
-      sessionId: classData.sessionId,
       sectionName: body.sectionName,
       classTeacherId: body.classTeacherId || null,
     });
@@ -76,7 +106,6 @@ const createSection = async (
       message: "Section created successfully.",
       data: newSection,
     };
-
   } catch (e: any) {
     return {
       error: true,
@@ -87,12 +116,8 @@ const createSection = async (
 };
 
 // ─── GET ALL SECTIONS ─────────────────────────────────────────────────────────
-const getAllSections = async (
-  query: any,
-  createdBy: any
-): Promise<any> => {
+const getAllSections = async (query: any, createdBy: any): Promise<any> => {
   try {
-
     const where: any = {
       instituteId: createdBy.instituteId,
       isDeleted: false,
@@ -106,6 +131,13 @@ const getAllSections = async (
     const sections = await Section.findAll({
       where,
       include: [
+        {
+          model: Class,
+          as: "class",
+          attributes: ["classId", "className"],
+          where: { isDeleted: false },
+          required: true,
+        },
         {
           model: User,
           as: "classTeacher",
@@ -125,7 +157,6 @@ const getAllSections = async (
         total: sections.length,
       },
     };
-
   } catch (e: any) {
     return {
       error: true,
@@ -138,10 +169,9 @@ const getAllSections = async (
 // ─── GET SECTION BY ID ────────────────────────────────────────────────────────
 const getSectionById = async (
   sectionId: string,
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
   try {
-
     const section = await Section.findOne({
       where: {
         sectionId,
@@ -149,6 +179,13 @@ const getSectionById = async (
         isDeleted: false,
       },
       include: [
+        {
+          model: Class,
+          as: "class",
+          attributes: ["classId", "className"],
+          where: { isDeleted: false },
+          required: true,
+        },
         {
           model: User,
           as: "classTeacher",
@@ -172,7 +209,6 @@ const getSectionById = async (
       message: "Section fetched successfully.",
       data: section,
     };
-
   } catch (e: any) {
     return {
       error: true,
@@ -186,9 +222,15 @@ const getSectionById = async (
 const updateSection = async (
   sectionId: string,
   body: any,
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
   try {
+    const hasSectionName = Object.prototype.hasOwnProperty.call(
+      body,
+      "sectionName",
+    );
+    const normalizedSectionName =
+      typeof body.sectionName === "string" ? body.sectionName.trim() : undefined;
 
     const section = await Section.findOne({
       where: {
@@ -206,10 +248,72 @@ const updateSection = async (
       };
     }
 
+    if (hasSectionName && !normalizedSectionName) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "sectionName cannot be empty.",
+      };
+    }
+
+    if (normalizedSectionName) {
+      const exists = await Section.findOne({
+        where: {
+          classId: section.classId,
+          instituteId: createdBy.instituteId,
+          sectionName: normalizedSectionName,
+          isDeleted: false,
+        },
+      });
+
+      if (exists && exists.sectionId !== sectionId) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Section name already exists in this class.",
+        };
+      }
+    }
+
+    if (body.classTeacherId) {
+      const teacher = await User.findOne({
+        where: {
+          userId: body.classTeacherId,
+          instituteId: createdBy.instituteId,
+          isDeleted: false,
+        },
+      });
+
+      if (!teacher) {
+        return {
+          error: true,
+          statusCode: httpStatus.NOT_FOUND,
+          message: "Teacher not found.",
+        };
+      }
+    }
+
     await section.update({
-      sectionName: body.sectionName ?? section.sectionName,
+      sectionName:
+        normalizedSectionName !== undefined
+          ? normalizedSectionName
+          : section.sectionName,
+
       classTeacherId:
-        body.classTeacherId ?? section.classTeacherId,
+        body.classTeacherId !== undefined
+          ? body.classTeacherId
+          : section.classTeacherId,
+    });
+
+    await section.reload({
+      include: [
+        {
+          model: User,
+          as: "classTeacher",
+          attributes: ["userId", "userName", "emailId"],
+          required: false,
+        },
+      ],
     });
 
     return {
@@ -218,7 +322,6 @@ const updateSection = async (
       message: "Section updated successfully.",
       data: section,
     };
-
   } catch (e: any) {
     return {
       error: true,
@@ -231,10 +334,9 @@ const updateSection = async (
 // ─── DELETE SECTION ───────────────────────────────────────────────────────────
 const deleteSection = async (
   sectionId: string,
-  createdBy: any
+  createdBy: any,
 ): Promise<any> => {
   try {
-
     const section = await Section.findOne({
       where: {
         sectionId,
@@ -262,7 +364,6 @@ const deleteSection = async (
       message: "Section deleted successfully.",
       data: {},
     };
-
   } catch (e: any) {
     return {
       error: true,

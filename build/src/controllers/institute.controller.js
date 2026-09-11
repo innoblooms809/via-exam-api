@@ -28,6 +28,21 @@ const registerInstitute = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 });
+// RESEND ADMIN CREDENTIALS
+const resendAdminCredentials = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { password } = req.body;
+        const result = yield institute_service_1.default.resendAdminCredentials(req.params.instituteId, password);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
 // ─── Get All ──────────────────────────────────────────────────────────────────
 const getAllInstitutes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -106,6 +121,48 @@ const toggleInstituteStatus = (req, res) => __awaiter(void 0, void 0, void 0, fu
         });
     }
 });
+// ─── GET CREDENTIALS ──────────────────────────────────────────────────────────
+const getInstituteCredentials = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield institute_service_1.default.getInstituteCredentials(req.params.instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+// ─── Get By Slug ──────────────────────────────────────────────────────────────
+const getInstituteBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield institute_service_1.default.getInstituteBySlug(req.params.slug);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+// ─── ADD / UPDATE ADMIN ──────────────────────────────────────────────────────
+const addInstituteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield institute_service_1.default.addInstituteAdmin(req.params.instituteId, req.body);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
 exports.default = {
     registerInstitute,
     getAllInstitutes,
@@ -113,4 +170,8 @@ exports.default = {
     updateInstitute,
     softDeleteInstitute,
     toggleInstituteStatus,
+    resendAdminCredentials,
+    getInstituteCredentials,
+    getInstituteBySlug,
+    addInstituteAdmin,
 };

@@ -1,4 +1,26 @@
-node_modules/
+# Operating System Files
+.DS_Store
+Thumbs.db
+Desktop.ini
 
+# Environment Variables & Secrets
+.env
+.env.*
+.env.local
+.env.*.local
+.
+# Logs and Databases
+*.log
+*.sqlite
+*.db
+logs/
+
+# Uploads & Temporary files
+uploads/
+public/uploads/
+*.txt
+
+# Build & Dependency Directories (Language Specific)
+node_modules/
 dist/
 

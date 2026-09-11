@@ -37,7 +37,7 @@ const seedRoles = () => __awaiter(void 0, void 0, void 0, function* () {
                 roleDescription: 'Moderator with content management access',
             },
             {
-                role: 'INSTRUCTOR',
+                role: 'TEACHER',
                 roleDescription: 'Instructor role for teaching and exam creation',
             },
             {

@@ -11,13 +11,25 @@ const docs_route_1 = __importDefault(require("./docs.route"));
 const institute_route_1 = __importDefault(require("./institute.route"));
 const teacher_route_1 = __importDefault(require("./teacher.route"));
 const exam_route_1 = __importDefault(require("./exam.route"));
-const questioPaper_route_1 = __importDefault(require("./questioPaper.route"));
+const questioPaper_route_1 = __importDefault(require("./question-answer/questioPaper.route"));
 const session_route_1 = __importDefault(require("./session.route"));
 const class_route_1 = __importDefault(require("./class.route"));
 const section_route_1 = __importDefault(require("./section.route"));
 const subject_route_1 = __importDefault(require("./subject.route"));
-// import studentRoutes from './student.route'
-// import captchaRoutes from './captcha.route'
+const scanner_route_1 = __importDefault(require("./scanner.route"));
+const scannerUser_route_1 = __importDefault(require("./scannerUser.route"));
+const student_route_1 = __importDefault(require("./student.route"));
+const stander_answer_routes_1 = __importDefault(require("./question-answer/stander-answer.routes"));
+const health_route_1 = __importDefault(require("./health.route"));
+const academicCalendar_route_1 = __importDefault(require("./academicCalendar.route"));
+const auth_route_1 = __importDefault(require("./auth.route"));
+const notification_route_1 = __importDefault(require("./notification.route"));
+const aiEvaluation_route_1 = __importDefault(require("./aiEvaluation.route"));
+const dashboard_route_1 = __importDefault(require("./dashboard.route"));
+const Admindashboard_route_1 = __importDefault(require("./Admindashboard.route"));
+const teacherdashboard_route_1 = __importDefault(require("./teacherdashboard.route"));
+const studentdashboard_route_1 = __importDefault(require("./studentdashboard.route"));
+const monitoring_route_1 = __importDefault(require("./monitoring.route"));
 const router = express_1.default.Router();
 const defaultRoutes = [
     {
@@ -31,6 +43,22 @@ const defaultRoutes = [
     {
         path: "/institute",
         route: institute_route_1.default,
+    },
+    {
+        path: "/dashboard",
+        route: dashboard_route_1.default,
+    },
+    {
+        path: "/admin-dashboard",
+        route: Admindashboard_route_1.default,
+    },
+    {
+        path: "/teacher-dashboard",
+        route: teacherdashboard_route_1.default,
+    },
+    {
+        path: "/student-dashboard",
+        route: studentdashboard_route_1.default,
     },
     {
         path: "/sessions",
@@ -60,10 +88,50 @@ const defaultRoutes = [
         path: "/question-papers",
         route: questioPaper_route_1.default,
     },
+    {
+        path: "/question-paper-answers",
+        route: stander_answer_routes_1.default,
+    },
+    {
+        path: "/health",
+        route: health_route_1.default,
+    },
+    {
+        path: "/scanner",
+        route: scanner_route_1.default,
+    },
+    {
+        path: "/scanner-user",
+        route: scannerUser_route_1.default,
+    },
+    {
+        path: "/student",
+        route: student_route_1.default,
+    },
+    {
+        path: "/academic-calendar",
+        route: academicCalendar_route_1.default,
+    },
+    {
+        path: "/auth",
+        route: auth_route_1.default,
+    },
+    {
+        path: "/notifications",
+        route: notification_route_1.default,
+    },
+    {
+        path: "/ai-evaluation",
+        route: aiEvaluation_route_1.default,
+    },
+    {
+        path: "/monitoring",
+        route: monitoring_route_1.default,
+    },
     // {
     //   path: '/captcha',
     //   route: captchaRoutes
-    // }
+    // }  
 ];
 const devRoutes = [
     // routes available only in development mode

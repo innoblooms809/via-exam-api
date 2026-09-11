@@ -11,8 +11,8 @@ const router = Router();
 router.post(
   "/createTeacher",
   authenticate,
-//   authorize(["ADMIN"]),
-  handleUploadFile.single("profilePhoto"),
+  // authorize(["ADMIN"]),
+  handleUploadFile.fields([{ name: "profilePhoto", maxCount: 1 }]),
   Controller.createTeacher
 );
 
@@ -23,6 +23,12 @@ router.get(
   authenticate,
 //   authorize(["ADMIN"]),
   Controller.getAllTeachers
+);
+
+router.get(
+  "/getDeactivatedTeachers",
+  authenticate,
+  Controller.getDeactivatedTeachers
 );
 
 // GET    /v1/teachers/:userId
@@ -38,7 +44,7 @@ router.put(
   "/updateTeacher/:userId",
   authenticate,
 //   authorize(["ADMIN"]),
-  handleUploadFile.single("profilePicture"),
+  handleUploadFile.fields([{ name: "profilePhoto", maxCount: 1 }]),
   Controller.updateTeacher
 );
 
@@ -48,6 +54,13 @@ router.delete(
   authenticate,
 //   authorize(["ADMIN"]),
   Controller.deleteTeacher
+);
+
+// PATCH  /v1/teachers/reactivateTeacher/:userId
+router.patch(
+  "/reactivateTeacher/:userId",
+  authenticate,
+  Controller.reactivateTeacher
 );
 
 // PATCH  /v1/teachers/:userId/assign-examiner
@@ -64,6 +77,34 @@ router.patch(
   authenticate,
 //   authorize(["ADMIN"]),
   Controller.removeExaminer
+);
+
+// GET /v1/teachers/my-assignments
+router.get(
+  "/my-assignments",
+  authenticate,
+  Controller.getMyAssignments
+);
+
+// GET /v1/teacher/approval-workflow-exams
+router.get(
+  "/approval-workflow-exams",
+  authenticate,
+  Controller.getTeacherExamsWithApprovalStatus
+);
+
+// GET /v1/teacher/my-question-papers
+router.get(
+  "/my-question-papers",
+  authenticate,
+  Controller.getTeacherQuestionPapers
+);
+
+// GET /v1/teacher/:userId/question-papers
+router.get(
+  "/:userId/question-papers",
+  authenticate,
+  Controller.getTeacherQuestionPapers
 );
 
 export default router;

@@ -2,7 +2,6 @@ import httpStatus from "http-status";
 import Session from "../modals/Session.modal";
 import Institute from "../modals/Institute.modal";
 import RegHelper from "../utils/helper";
-import { Op } from "sequelize";
 import { sequelize } from "../config/sequelize";
 
 // ─── CREATE SESSION ───────────────────────────────────────────────────────────
@@ -16,7 +15,7 @@ const createSession = async (body: any, createdBy: any): Promise<any> => {
       where: { instituteId, status: 1 },
     });
     if (!institute) {
-      await t.rollback();
+      // await t.rollback();
       return {
         error: true,
         statusCode: httpStatus.NOT_FOUND,

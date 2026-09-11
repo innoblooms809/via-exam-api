@@ -8,7 +8,7 @@ const section_controller_1 = __importDefault(require("../../controllers/section.
 const auth_1 = require("../../middlewares/auth");
 const router = express_1.default.Router();
 router.post("/createSection", auth_1.authenticate, 
-//   authorize(["ADMIN"]),
+// authorize(["ADMIN"]),
 section_controller_1.default.createSection);
 router.get("/allSections", auth_1.authenticate, 
 //   authorize(["ADMIN"]),
