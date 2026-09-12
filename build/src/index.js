@@ -18,6 +18,7 @@ const logger_1 = __importDefault(require("./config/logger"));
 const connect_1 = __importDefault(require("./db/connect")); // Change to sequelize connection
 const superAdmin_1 = __importDefault(require("./config/superAdmin"));
 const pythonServices_1 = require("./config/pythonServices");
+const pipeline6_service_1 = require("./services/pipeline6.service");
 let server;
 const bootApp = () => {
     server = app_1.default.listen(config_1.default.port, () => __awaiter(void 0, void 0, void 0, function* () {
@@ -25,6 +26,8 @@ const bootApp = () => {
         logger_1.default.info((0, pythonServices_1.describePythonServices)());
         void (0, pythonServices_1.checkPythonServices)(); // logs reachability only; never blocks startup
         yield (0, superAdmin_1.default)();
+        // The AI evaluation queue is in memory: put evaluations left "Pending" by a restart back in line.
+        void (0, pipeline6_service_1.recoverPipeline6Queue)();
     }));
     // Set server timeouts to 1 hour to support slow CPU model processing
     server.timeout = 3600000;

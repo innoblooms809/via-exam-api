@@ -8,6 +8,9 @@ const getExamBySelection_1 = require("../../../controllers/exam/getExamBySelecti
 const router = (0, express_1.Router)();
 router.post("/getExamBySelection", auth_1.authenticate, getExamBySelection_1.getExamBySelection);
 router.post("/createQuestionPaper", auth_1.authenticate, questionPaper_controller_1.createQuestionPaper);
+// Edit / delete an existing paper (only while DRAFT or REJECTED)
+router.put("/updateQuestionPaper/:paperId", auth_1.authenticate, questionPaper_controller_1.updateQuestionPaper);
+router.delete("/deleteQuestionPaper/:paperId", auth_1.authenticate, questionPaper_controller_1.deleteQuestionPaper);
 router.post("/image", multer_1.questionPaperUpload, questionPaper_controller_1.uploadImageController);
 router.get("/uploads", questionPaper_controller_1.getQuestionPaperUploads);
 router.post("/getQuestionPaperBySet", auth_1.authenticate, questionPaper_controller_1.getQuestionPaperBySelection);

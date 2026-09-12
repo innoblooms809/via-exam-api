@@ -24,60 +24,42 @@ export const EXAM_WORKFLOW_STATUSES = [
   "Completed",
 ] as const;
 
-type PaperStatusType = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PUBLISHED";
+// Approval works per SET (question paper + answer sheet of one exam set). Every set
+// keeps its own status; the exam status is only a summary derived from its sets —
+// it is never copied back onto the sets (that used to mark never-submitted sets
+// as approved when a different set of the same exam was approved).
 
-function examStatusToPaperStatus(examStatus: string): PaperStatusType | null {
-  switch (examStatus) {
-    case "Draft":
-    case "Paper Created":
-      return "DRAFT";
-    case "Pending Approval":
-      return "PENDING_APPROVAL";
-    case "Approved":
-    case "Live":
-      return "APPROVED";
-    case "Rejected":
-      return "REJECTED";
-    default:
-      return null;
-  }
+/** Summary exam status from the status of each set. */
+export function deriveExamStatus(setStatuses: string[], hasAnyPackage: boolean): string {
+  if (!hasAnyPackage) return "Draft";
+  if (setStatuses.includes("PENDING_APPROVAL")) return "Pending Approval";
+  if (setStatuses.includes("REJECTED")) return "Rejected";
+  if (setStatuses.some((s) => s === "APPROVED" || s === "PUBLISHED")) return "Approved";
+  return "Paper Created";
 }
 
-export async function syncExamPackageStatus(
-  examId: string,
-  examStatus: string
-): Promise<void> {
-  const paperStatus = examStatusToPaperStatus(examStatus);
-  if (!paperStatus) return;
+/** Recomputes the exam status from its sets (Live / Completed exams are left alone). */
+export async function refreshExamStatus(examId: string): Promise<string | null> {
+  const exam = await Exam.findOne({ where: { examId, isDeleted: false } });
+  if (!exam) return null;
+  if (exam.status === "Live" || exam.status === "Completed") return exam.status;
 
   const QuestionPaper = (await import("../modals/question-paper/QuestionPaper.modal")).default;
   const QuestionPaperAnswer = (await import("../modals/question-paper/stander-answer.model")).default;
 
-  const papers = await QuestionPaper.findAll({ where: { examId } });
-  const paperIds = papers.map((p) => p.paperId).filter(Boolean);
-  const now = new Date();
-  const extra: Record<string, unknown> = {};
-  if (paperStatus === "PENDING_APPROVAL") extra.submittedAt = now;
-  if (paperStatus === "APPROVED") {
-    extra.approvedAt = now;
-    extra.rejectionNote = null;
+  const [papers, answerCount] = await Promise.all([
+    QuestionPaper.findAll({ where: { examId }, attributes: ["status"] }),
+    QuestionPaperAnswer.count({ where: { examId } }),
+  ]);
+
+  const next = deriveExamStatus(
+    papers.map((p) => p.status),
+    papers.length > 0 || answerCount > 0
+  );
+  if (next !== exam.status) {
+    await exam.update({ status: next });
   }
-  if (paperStatus === "REJECTED") extra.rejectedAt = now;
-
-  await QuestionPaper.update(
-    { status: paperStatus as PaperStatusType, ...extra },
-    { where: { examId } }
-  );
-
-  const answerWhere =
-    paperIds.length > 0
-      ? { [Op.or]: [{ examId }, { paperId: paperIds }] }
-      : { examId };
-
-  await QuestionPaperAnswer.update(
-    { status: paperStatus as PaperStatusType, ...extra },
-    { where: answerWhere }
-  );
+  return next;
 }
 
 export async function markExamPaperCreated(examId: string): Promise<void> {
@@ -86,14 +68,6 @@ export async function markExamPaperCreated(examId: string): Promise<void> {
   if (exam.status === "Draft") {
     await exam.update({ status: "Paper Created" });
   }
-}
-
-export async function setExamWorkflowStatus(
-  examId: string,
-  status: string
-): Promise<void> {
-  await Exam.update({ status }, { where: { examId, isDeleted: false } });
-  await syncExamPackageStatus(examId, status);
 }
 
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
@@ -225,14 +199,6 @@ const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
       order: [["createdAt", "DESC"]],
     });
 
-    await Promise.all(
-      exams
-        .filter((exam) =>
-          ["Pending Approval", "Approved", "Rejected"].includes(exam.status)
-        )
-        .map((exam) => syncExamPackageStatus(exam.examId, exam.status))
-    );
-
     return {
       error: false,
       statusCode: httpStatus.OK,
@@ -268,14 +234,6 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
       ],
       order: [["createdAt", "DESC"]],
     });
-
-    await Promise.all(
-      exams
-        .filter((exam: any) =>
-          ["Pending Approval", "Approved", "Rejected"].includes(exam.status)
-        )
-        .map((exam: any) => syncExamPackageStatus(exam.examId, exam.status))
-    );
 
     const formattedExams = await Promise.all(exams.map(async (exam: any) => {
       const totalStudents = await StudentProfile.count({

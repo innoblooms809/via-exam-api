@@ -41,6 +41,13 @@ router.post(
   Pipeline6Controller.evaluateSheetPipeline6
 );
 
+// Pipeline 6 queue: sheets waiting for / running OCR and AI evaluation
+router.get(
+  "/queue",
+  authenticate,
+  Pipeline6Controller.getQueueStatus
+);
+
 
 // Get evaluation result by sheet ID
 router.get(

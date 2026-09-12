@@ -5,6 +5,7 @@ import logger from "./config/logger";
 import connectDB from "./db/connect"; // Change to sequelize connection
 import initSuperAdmin from "./config/superAdmin";
 import { describePythonServices, checkPythonServices } from "./config/pythonServices";
+import { recoverPipeline6Queue } from "./services/pipeline6.service";
 let server: Server;
 
 const bootApp = () => {
@@ -13,6 +14,8 @@ const bootApp = () => {
     logger.info(describePythonServices());
     void checkPythonServices(); // logs reachability only; never blocks startup
     await initSuperAdmin();
+    // The AI evaluation queue is in memory: put evaluations left "Pending" by a restart back in line.
+    void recoverPipeline6Queue();
   });
   // Set server timeouts to 1 hour to support slow CPU model processing
   server.timeout = 3600000;
