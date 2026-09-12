@@ -9,6 +9,9 @@ const multer_1 = require("../../../utils/multer");
 const auth_1 = require("../../../middlewares/auth");
 const router = express_1.default.Router();
 router.post("/create", auth_1.authenticate, stander_Answer_controller_1.createQuestionPaperAnswer);
+// Edit / delete an existing answer sheet (only while DRAFT or REJECTED)
+router.put("/update/:answerId", auth_1.authenticate, stander_Answer_controller_1.updateQuestionPaperAnswer);
+router.delete("/delete/:answerId", auth_1.authenticate, stander_Answer_controller_1.deleteQuestionPaperAnswer);
 router.post("/image", auth_1.authenticate, multer_1.answerPaperUpload, stander_Answer_controller_1.uploadImageController);
 router.post("/upload-pdf", auth_1.authenticate, multer_1.answerPdfUpload, stander_Answer_controller_1.uploadPdfController);
 router.post("/getQuestionPaperAnswerBySet", auth_1.authenticate, stander_Answer_controller_1.getQuestionPaperAnswerBySelection);

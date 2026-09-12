@@ -45,6 +45,19 @@ const getQuestionPaperErrorMessage = (error: any) => {
   return error.message || "Something went wrong";
 };
 
+/** Tells the teacher what happened to the set's saved answers when the paper changed. */
+const answerSheetNote = (summary: { relinked: number; unlinked: number } | null) => {
+  if (!summary) return "";
+  const parts: string[] = [];
+  if (summary.relinked) parts.push(`${summary.relinked} saved answer(s) were linked to the matching questions`);
+  if (summary.unlinked) {
+    parts.push(
+      `${summary.unlinked} saved answer(s) no longer match any question — open the answer sheet to link or discard them`
+    );
+  }
+  return parts.length ? ` ${parts.join("; ")}.` : "";
+};
+
 export const createQuestionPaper = async (
   req: any,
   res: Response
@@ -76,7 +89,7 @@ export const createQuestionPaper = async (
       });
     }
 
-    await QuestionPaperService.createQuestionPaper({
+    const { paper, answerSheet } = await QuestionPaperService.createQuestionPaper({
       instituteId,
       examId,
       teacherId,
@@ -85,11 +98,68 @@ export const createQuestionPaper = async (
     });
 
     return res.status(201).json({
-      message: "Question paper created successfully",
+      message: `Question paper created successfully.${answerSheetNote(answerSheet)}`,
+      data: {
+        paperId: paper.paperId,
+        examId: paper.examId,
+        paperSet: paper.paperSet,
+        status: paper.status,
+        answerSheet,
+      },
     });
 
   } catch (error: any) {
     return res.status(400).json({
+      message: getQuestionPaperErrorMessage(error),
+    });
+  }
+};
+
+export const updateQuestionPaper = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { paperId } = req.params;
+    const { content, paperSet } = req.body;
+
+    const { paper, answerSheet } = await QuestionPaperService.updateQuestionPaper(paperId, req.viaExamUser, {
+      content,
+      paperSet,
+    });
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: `Question paper updated successfully.${answerSheetNote(answerSheet)}`,
+      data: {
+        paperId: paper.paperId,
+        examId: paper.examId,
+        paperSet: paper.paperSet,
+        status: paper.status,
+        answerSheet,
+      },
+    });
+  } catch (error: any) {
+    return res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: getQuestionPaperErrorMessage(error),
+    });
+  }
+};
+
+export const deleteQuestionPaper = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { paperId } = req.params;
+    const result = await QuestionPaperService.deleteQuestionPaper(paperId, req.viaExamUser);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message:
+        result.deletedAnswerSheets > 0
+          ? `Question paper and answer sheet for Set ${result.paperSet} deleted.`
+          : `Question paper for Set ${result.paperSet} deleted.`,
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
+      error: true,
       message: getQuestionPaperErrorMessage(error),
     });
   }
@@ -317,91 +387,83 @@ export const getQuestionPaperUploads = async (req: Request, res: Response) => {
 
 // ─── APPROVAL WORKFLOW CONTROLLERS ─────────────────────────────────────────
 
+const sendWorkflowError = (res: Response, error: any) =>
+  res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
+    error: true,
+    message: error.message,
+  });
+
+/** Optional set (A–D) for the exam-level approval endpoints: body `paperSet` or `?paperSet=`. */
+const requestedSet = (req: any): string | undefined =>
+  req.body?.paperSet || req.query?.paperSet || undefined;
+
 export const submitExamForApproval = async (req: any, res: Response): Promise<any> => {
   try {
     const { examId } = req.params;
-    const teacherId = req.viaExamUser.userId;
+    const result = await QuestionPaperService.submitExamForApproval(examId, req.viaExamUser, requestedSet(req));
 
-    const result = await QuestionPaperService.submitExamForApproval(examId, teacherId);
-
+    const sets = result.submitted.map((s) => `Set ${s}`).join(", ");
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Exam question paper and answer sheet submitted for approval successfully.",
+      message: `${sets} submitted for approval.${
+        result.skipped.length ? ` Skipped Set ${result.skipped.join(", ")} (answer sheet missing).` : ""
+      }`,
       data: result,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendWorkflowError(res, error);
   }
 };
 
 export const submitQuestionPaper = async (req: any, res: Response): Promise<any> => {
   try {
     const { paperId } = req.params;
-    const teacherId = req.viaExamUser.userId;
-
-    const paper = await QuestionPaperService.submitForApproval(paperId, teacherId);
+    const paper = await QuestionPaperService.submitForApproval(paperId, req.viaExamUser);
 
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Question paper submitted for approval.",
+      message: `Set ${paper.paperSet} submitted for approval.`,
       data: paper,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendWorkflowError(res, error);
   }
 };
 
 export const approveQuestionPaper = async (req: any, res: Response): Promise<any> => {
   try {
     const { paperId } = req.params;
-    const reviewerId = req.viaExamUser.userId;
-
-    const paper = await QuestionPaperService.approvePaper(paperId, reviewerId);
+    const paper = await QuestionPaperService.approvePaper(paperId, req.viaExamUser);
 
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Question paper approved.",
+      message: `Set ${paper.paperSet} approved.`,
       data: paper,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendWorkflowError(res, error);
   }
 };
 
 export const rejectQuestionPaper = async (req: any, res: Response): Promise<any> => {
   try {
     const { paperId } = req.params;
-    const reviewerId = req.viaExamUser.userId;
     const { rejectionNote } = req.body;
-
-    const paper = await QuestionPaperService.rejectPaper(paperId, reviewerId, rejectionNote);
+    const paper = await QuestionPaperService.rejectPaper(paperId, req.viaExamUser, rejectionNote);
 
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Question paper rejected.",
+      message: `Set ${paper.paperSet} rejected.`,
       data: paper,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendWorkflowError(res, error);
   }
 };
 
 export const publishQuestionPaper = async (req: any, res: Response): Promise<any> => {
   try {
     const { paperId } = req.params;
-
     const paper = await QuestionPaperService.publishPaper(paperId);
 
     return res.status(httpStatus.OK).json({
@@ -410,10 +472,7 @@ export const publishQuestionPaper = async (req: any, res: Response): Promise<any
       data: paper,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendWorkflowError(res, error);
   }
 };
 
@@ -463,41 +522,31 @@ export const getAllQuestionPapers = async (req: any, res: Response): Promise<any
 export const approveExamPair = async (req: any, res: Response): Promise<any> => {
   try {
     const { examId } = req.params;
-    const reviewerId = req.viaExamUser.userId;
-
-    const result = await QuestionPaperService.approveExamPair(examId, reviewerId);
+    const result = await QuestionPaperService.approveExamPair(examId, req.viaExamUser, requestedSet(req));
 
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Exam question paper and answer sheet approved successfully.",
+      message: `Set ${result.approved.join(", ")} approved (question paper and answer sheet).`,
       data: result,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendWorkflowError(res, error);
   }
 };
 
 export const rejectExamPair = async (req: any, res: Response): Promise<any> => {
   try {
     const { examId } = req.params;
-    const reviewerId = req.viaExamUser.userId;
     const { rejectionNote } = req.body;
-
-    const result = await QuestionPaperService.rejectExamPair(examId, reviewerId, rejectionNote);
+    const result = await QuestionPaperService.rejectExamPair(examId, req.viaExamUser, rejectionNote, requestedSet(req));
 
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Exam question paper and answer sheet rejected.",
+      message: `Set ${result.rejected.join(", ")} rejected.`,
       data: result,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendWorkflowError(res, error);
   }
 };
 

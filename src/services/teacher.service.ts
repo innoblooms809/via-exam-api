@@ -7,6 +7,7 @@ import Class from "../modals/Class.modal";
 import Subject from "../modals/Subject.modal";
 import SubjectTeacher from "../modals/SubjectTeacher.modal";
 import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
+import QuestionPaperAnswer from "../modals/question-paper/stander-answer.model";
 import Exam from "../modals/Exam.modal";
 import Session from "../modals/Session.modal";
 import EncryptPassword from "../utils/encryption";
@@ -813,6 +814,18 @@ const getTeacherQuestionPapers = async (
 
     const examMap = new Map<string, any>(exams.map((e) => [e.examId, e]));
 
+    // Answer sheet of each paper's set (typed answers or an uploaded PDF).
+    const answerSheets = examIds.length > 0
+      ? await QuestionPaperAnswer.findAll({ where: { examId: { [Op.in]: examIds } } })
+      : [];
+    const answerByPaperId = new Map<string, any>();
+    const answerByExamSet = new Map<string, any>();
+    answerSheets.forEach((a) => {
+      const plain = a.get({ plain: true });
+      answerByPaperId.set(plain.paperId, plain);
+      answerByExamSet.set(`${plain.examId}:${plain.paperSet}`, plain);
+    });
+
     const classIds = Array.from(new Set(exams.map((e) => e.classId).filter(Boolean))) as string[];
     const subjectIds = Array.from(new Set(exams.map((e) => e.subjectId).filter(Boolean))) as string[];
     const sessionIds = Array.from(new Set(exams.map((e) => e.sessionId).filter(Boolean))) as string[];
@@ -833,9 +846,23 @@ const getTeacherQuestionPapers = async (
       const className = exam?.classId ? classMap.get(exam.classId) || exam.classId : "All Classes";
       const subjectName = exam?.subjectId ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
       const sessionName = exam?.sessionId ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
+      const answerSheet =
+        answerByPaperId.get(plainPaper.paperId) ||
+        answerByExamSet.get(`${plainPaper.examId}:${plainPaper.paperSet}`) ||
+        null;
 
       return {
         ...plainPaper,
+        answerSheet: answerSheet
+          ? {
+              answerId: answerSheet.answerId,
+              paperSet: answerSheet.paperSet,
+              status: answerSheet.status,
+              answers: answerSheet.answers,
+              kind: answerSheet.answers?.pdfUrl ? "file" : "manual",
+              updatedAt: answerSheet.updatedAt,
+            }
+          : null,
         examDetails: exam ? {
           examId: exam.examId,
           examType: exam.examType,
