@@ -16,7 +16,7 @@ interface ExamAttributes {
   passingMarks: number;
   duration: number | null;
   instructions: string | null;
-  status: string; // Draft, Live, Completed
+  status: string; // Draft → Paper Created → Pending Approval → Approved | Rejected
   isDeleted: boolean;
   createdAt?: Date;
   updatedAt?: Date;

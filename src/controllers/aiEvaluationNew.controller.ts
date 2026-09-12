@@ -1,8 +1,10 @@
 import { Response } from "express";
 import httpStatus from "http-status";
-import AIEvaluationNewService from "../services/aiEvaluationNew.service";
+import Pipeline6Service from "../services/pipeline6.service";
 
 // POST /v1/ai-evaluation/evaluate2
+// Kept for existing callers — it now uses Pipeline 6 (the main evaluation) so every
+// request goes through the same queue instead of hitting the Python servers directly.
 const evaluateSheet2 = async (req: any, res: Response): Promise<any> => {
   try {
     const { sheetId, force } = req.body;
@@ -14,10 +16,7 @@ const evaluateSheet2 = async (req: any, res: Response): Promise<any> => {
       });
     }
 
-    const result = await AIEvaluationNewService.triggerEvaluationV2(
-      sheetId,
-      force
-    );
+    const result = await Pipeline6Service.triggerPipeline6Evaluation(sheetId, force);
     return res.status(result.statusCode).send(result);
   } catch (error: any) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

@@ -7,6 +7,7 @@ import Class from "../modals/Class.modal";
 import Subject from "../modals/Subject.modal";
 import SubjectTeacher from "../modals/SubjectTeacher.modal";
 import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
+import QuestionPaperAnswer from "../modals/question-paper/stander-answer.model";
 import Exam from "../modals/Exam.modal";
 import Session from "../modals/Session.modal";
 import EncryptPassword from "../utils/encryption";
@@ -813,6 +814,18 @@ const getTeacherQuestionPapers = async (
 
     const examMap = new Map<string, any>(exams.map((e) => [e.examId, e]));
 
+    // Answer sheet of each paper's set (typed answers or an uploaded PDF).
+    const answerSheets = examIds.length > 0
+      ? await QuestionPaperAnswer.findAll({ where: { examId: { [Op.in]: examIds } } })
+      : [];
+    const answerByPaperId = new Map<string, any>();
+    const answerByExamSet = new Map<string, any>();
+    answerSheets.forEach((a) => {
+      const plain = a.get({ plain: true });
+      answerByPaperId.set(plain.paperId, plain);
+      answerByExamSet.set(`${plain.examId}:${plain.paperSet}`, plain);
+    });
+
     const classIds = Array.from(new Set(exams.map((e) => e.classId).filter(Boolean))) as string[];
     const subjectIds = Array.from(new Set(exams.map((e) => e.subjectId).filter(Boolean))) as string[];
     const sessionIds = Array.from(new Set(exams.map((e) => e.sessionId).filter(Boolean))) as string[];
@@ -833,9 +846,23 @@ const getTeacherQuestionPapers = async (
       const className = exam?.classId ? classMap.get(exam.classId) || exam.classId : "All Classes";
       const subjectName = exam?.subjectId ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
       const sessionName = exam?.sessionId ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
+      const answerSheet =
+        answerByPaperId.get(plainPaper.paperId) ||
+        answerByExamSet.get(`${plainPaper.examId}:${plainPaper.paperSet}`) ||
+        null;
 
       return {
         ...plainPaper,
+        answerSheet: answerSheet
+          ? {
+              answerId: answerSheet.answerId,
+              paperSet: answerSheet.paperSet,
+              status: answerSheet.status,
+              answers: answerSheet.answers,
+              kind: answerSheet.answers?.pdfUrl ? "file" : "manual",
+              updatedAt: answerSheet.updatedAt,
+            }
+          : null,
         examDetails: exam ? {
           examId: exam.examId,
           examType: exam.examType,
@@ -882,4 +909,127 @@ export default {
   reactivateTeacher,
   getMyAssignments,
   getTeacherQuestionPapers,
+  getTeacherExamsWithApprovalStatus: async (
+    teacherUser: any,
+    query: any,
+    targetUserId?: string
+  ): Promise<any> => {
+    try {
+      const QuestionPaperAnswer = (await import(
+        "../modals/question-paper/stander-answer.model"
+      )).default;
+
+      const teacherId = targetUserId || query?.teacherId || teacherUser?.userId;
+      const instituteId = teacherUser?.instituteId;
+
+      if (!teacherId) {
+        return {
+          error: true,
+          statusCode: httpStatus.BAD_REQUEST,
+          message: "Teacher ID is required.",
+        };
+      }
+
+      const whereExam: any = { teacherId };
+      if (instituteId) {
+        whereExam.instituteId = instituteId;
+      }
+
+      const exams = await Exam.findAll({
+        where: whereExam,
+        order: [["createdAt", "DESC"]],
+      });
+
+      const examIds = exams.map((e) => e.examId);
+
+      const [papers, answers, classesList, subjectsList, sessionsList] = await Promise.all([
+        examIds.length > 0 ? QuestionPaper.findAll({ where: { examId: { [Op.in]: examIds } } }) : [],
+        examIds.length > 0 ? QuestionPaperAnswer.findAll({ where: { examId: { [Op.in]: examIds } } }) : [],
+        Class.findAll({ where: { instituteId, isDeleted: false } }),
+        Subject.findAll({ where: { instituteId, isDeleted: false } }),
+        Session.findAll({ where: { instituteId } }),
+      ]);
+
+      const classMap = new Map<string, string>(classesList.map((c: any) => [c.classId, c.className]));
+      const subjectMap = new Map<string, string>(subjectsList.map((s: any) => [s.subjectId, s.subjectName]));
+      const sessionMap = new Map<string, string>(sessionsList.map((s: any) => [s.sessionId, s.sessionName]));
+
+      const paperMap = new Map<string, any[]>();
+      papers.forEach((p) => {
+        const list = paperMap.get(p.examId) || [];
+        list.push(p.get({ plain: true }));
+        paperMap.set(p.examId, list);
+      });
+
+      const answerMap = new Map<string, any[]>();
+      answers.forEach((a) => {
+        const list = answerMap.get(a.examId) || [];
+        list.push(a.get({ plain: true }));
+        answerMap.set(a.examId, list);
+      });
+
+      const result = exams.map((exam) => {
+        const qpList = paperMap.get(exam.examId) || [];
+        const ansList = answerMap.get(exam.examId) || [];
+
+        const qp = qpList[0] || null;
+        const ans = ansList[0] || null;
+
+        let workflowStatus = "DRAFT";
+        if (!qp && !ans) {
+          workflowStatus = "BOTH_MISSING";
+        } else if (!qp) {
+          workflowStatus = "QP_MISSING";
+        } else if (!ans) {
+          workflowStatus = "ANSWER_MISSING";
+        } else if (qp.status === "REJECTED" || ans.status === "REJECTED") {
+          workflowStatus = "REJECTED";
+        } else if (qp.status === "PENDING_APPROVAL" || ans.status === "PENDING_APPROVAL") {
+          workflowStatus = "PENDING_APPROVAL";
+        } else if (
+          (qp.status === "APPROVED" || qp.status === "PUBLISHED") &&
+          (ans.status === "APPROVED" || ans.status === "PUBLISHED")
+        ) {
+          workflowStatus = "APPROVED";
+        }
+
+        const className = exam.classId ? classMap.get(exam.classId) || exam.classId : "All Classes";
+        const subjectName = exam.subjectId ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
+        const sessionName = exam.sessionId ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
+
+        return {
+          examId: exam.examId,
+          examType: exam.examType,
+          totalMarks: exam.totalMarks,
+          passingMarks: exam.passingMarks,
+          duration: exam.duration,
+          status: exam.status,
+          className,
+          subjectName,
+          sessionName,
+          workflowStatus,
+          rejectionNote: qp?.rejectionNote || ans?.rejectionNote || null,
+          questionPaper: qp,
+          answerSheet: ans,
+        };
+      });
+
+      return {
+        error: false,
+        statusCode: httpStatus.OK,
+        message: "Teacher approval workflow exams fetched successfully.",
+        data: {
+          total: result.length,
+          exams: result,
+        },
+      };
+    } catch (error: any) {
+      console.error("getTeacherExamsWithApprovalStatus Error:", error);
+      return {
+        error: true,
+        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+        message: `Failed to fetch approval workflow exams: ${error.message}`,
+      };
+    }
+  },
 };
