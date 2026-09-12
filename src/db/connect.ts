@@ -14,7 +14,7 @@ const connectDB = async (fn: any) => {
     fn();
   } catch (err: any) {
     logger.error("Error connecting to PostgreSQL / syncing models");
-    logger.error(err);
+    logger.error(err?.stack || err?.message || String(err));
     // Exit process with failure
     process.exit(1);
   }
