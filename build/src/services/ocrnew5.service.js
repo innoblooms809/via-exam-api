@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.evaluateSheetOCRNew5 = void 0;
 const http_status_1 = __importDefault(require("http-status"));
+const sequelize_1 = require("sequelize");
 const Scanner_modal_1 = __importDefault(require("../modals/Scanner.modal"));
 const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
 const QuestionPaper_modal_1 = __importDefault(require("../modals/question-paper/QuestionPaper.modal"));
@@ -26,84 +27,7 @@ const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
 const pythonServices_1 = require("../config/pythonServices");
-// Helper to format question paper content into text
-const formatQuestionPaper = (content, ansDoc) => {
-    var _a, _b;
-    let questions = "";
-    let answers = "";
-    if (!content)
-        return { questions, answers };
-    const answerMap = {};
-    if (ansDoc) {
-        let ansData = ansDoc;
-        if (typeof ansData === "string") {
-            try {
-                ansData = JSON.parse(ansData);
-            }
-            catch (_c) { }
-        }
-        if (Array.isArray(ansData)) {
-            ansData.forEach((a) => {
-                const id = a.questionId || a.id || a.key;
-                if (id)
-                    answerMap[id] = a;
-            });
-        }
-        else if (ansData && typeof ansData === "object") {
-            Object.keys(ansData).forEach((key) => {
-                const a = ansData[key];
-                const id = a.questionId || a.id || a.key || key;
-                answerMap[id] = a;
-            });
-        }
-    }
-    if (content.title) {
-        questions += `Title: ${content.title}\n`;
-    }
-    let foundQuestions = false;
-    if (Array.isArray(content.sections) && content.sections.length > 0) {
-        for (const section of content.sections) {
-            const secName = section.name || section.title || "";
-            if (!secName && (!section.questions || section.questions.length === 0))
-                continue;
-            questions += `\n--- Section: ${secName} ---\n`;
-            if (section.instructions) {
-                questions += `Instructions: ${section.instructions}\n`;
-            }
-            if (Array.isArray(section.questions)) {
-                for (const q of section.questions) {
-                    foundQuestions = true;
-                    const qId = q.questionId || q.id || q.key || "";
-                    const qText = q.text || q.question || "";
-                    const qMarks = q.marks !== undefined ? q.marks : "";
-                    questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-                    const expectedAns = ((_a = answerMap[qId]) === null || _a === void 0 ? void 0 : _a.answer) || q.answer;
-                    if (expectedAns) {
-                        answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-                    }
-                }
-            }
-        }
-    }
-    if (Array.isArray(content.questions) && content.questions.length > 0) {
-        questions += `\n--- Questions ---\n`;
-        for (const q of content.questions) {
-            foundQuestions = true;
-            const qId = q.questionId || q.id || q.key || "";
-            const qText = q.text || q.question || "";
-            const qMarks = q.marks !== undefined ? q.marks : "";
-            questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-            const expectedAns = ((_b = answerMap[qId]) === null || _b === void 0 ? void 0 : _b.answer) || q.answer;
-            if (expectedAns) {
-                answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-            }
-        }
-    }
-    if (!foundQuestions && typeof content === "object") {
-        questions = JSON.stringify(content, null, 2);
-    }
-    return { questions, answers };
-};
+const questionPaperText_1 = require("../utils/questionPaperText");
 const evaluateSheetOCRNew5 = (sheetId) => __awaiter(void 0, void 0, void 0, function* () {
     logger_1.default.info(`[OCRNew5 Service] Initiating AI evaluation for sheet: ${sheetId}`);
     // 1. Fetch Scanner Sheet
@@ -161,6 +85,10 @@ const evaluateSheetOCRNew5 = (sheetId) => __awaiter(void 0, void 0, void 0, func
             where: { examId: exam.examId, instituteId: sheet.instituteId, paperSet: targetPaperSet },
             order: [["createdAt", "DESC"]],
         })) || (yield QuestionPaper_modal_1.default.findOne({
+            // Set not found: prefer an approved set of the exam over a draft one.
+            where: { examId: exam.examId, instituteId: sheet.instituteId, status: { [sequelize_1.Op.in]: ["APPROVED", "PUBLISHED"] } },
+            order: [["paperSet", "ASC"]],
+        })) || (yield QuestionPaper_modal_1.default.findOne({
             where: { examId: exam.examId, instituteId: sheet.instituteId },
             order: [["createdAt", "DESC"]],
         }));
@@ -170,7 +98,7 @@ const evaluateSheetOCRNew5 = (sheetId) => __awaiter(void 0, void 0, void 0, func
             })) || (yield stander_answer_model_1.default.findOne({
                 where: { paperId: questionPaper.paperId },
             }));
-            const { questions, answers } = formatQuestionPaper(questionPaper.content, qpAnswer ? qpAnswer.answers : null);
+            const { questions, answers } = (0, questionPaperText_1.formatQuestionPaper)(questionPaper.content, qpAnswer ? qpAnswer.answers : null);
             if (questions)
                 questionText = questions;
             if (answers)

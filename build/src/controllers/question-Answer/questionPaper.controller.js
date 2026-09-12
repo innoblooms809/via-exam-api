@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addExamRemarkController = exports.getExamRemarksController = exports.rejectExamPair = exports.approveExamPair = exports.getAllQuestionPapers = exports.getPendingQuestionPapers = exports.publishQuestionPaper = exports.rejectQuestionPaper = exports.approveQuestionPaper = exports.submitQuestionPaper = exports.submitExamForApproval = exports.getQuestionPaperUploads = exports.getQuestionPaperBySelection = exports.uploadImageController = exports.createQuestionPaper = void 0;
+exports.addExamRemarkController = exports.getExamRemarksController = exports.rejectExamPair = exports.approveExamPair = exports.getAllQuestionPapers = exports.getPendingQuestionPapers = exports.publishQuestionPaper = exports.rejectQuestionPaper = exports.approveQuestionPaper = exports.submitQuestionPaper = exports.submitExamForApproval = exports.getQuestionPaperUploads = exports.getQuestionPaperBySelection = exports.uploadImageController = exports.deleteQuestionPaper = exports.updateQuestionPaper = exports.createQuestionPaper = void 0;
 const sequelize_1 = require("sequelize");
 const questionPaper_service_1 = require("../../services/question-answer/questionPaper.service");
 const QuestionPaper_modal_1 = __importDefault(require("../../modals/question-paper/QuestionPaper.modal"));
@@ -44,6 +44,18 @@ const getQuestionPaperErrorMessage = (error) => {
     }
     return error.message || "Something went wrong";
 };
+/** Tells the teacher what happened to the set's saved answers when the paper changed. */
+const answerSheetNote = (summary) => {
+    if (!summary)
+        return "";
+    const parts = [];
+    if (summary.relinked)
+        parts.push(`${summary.relinked} saved answer(s) were linked to the matching questions`);
+    if (summary.unlinked) {
+        parts.push(`${summary.unlinked} saved answer(s) no longer match any question — open the answer sheet to link or discard them`);
+    }
+    return parts.length ? ` ${parts.join("; ")}.` : "";
+};
 const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -62,7 +74,7 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
                 message: "teacherId must be a string",
             });
         }
-        yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
+        const { paper, answerSheet } = yield questionPaper_service_1.QuestionPaperService.createQuestionPaper({
             instituteId,
             examId,
             teacherId,
@@ -70,7 +82,14 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
             content,
         });
         return res.status(201).json({
-            message: "Question paper created successfully",
+            message: `Question paper created successfully.${answerSheetNote(answerSheet)}`,
+            data: {
+                paperId: paper.paperId,
+                examId: paper.examId,
+                paperSet: paper.paperSet,
+                status: paper.status,
+                answerSheet,
+            },
         });
     }
     catch (error) {
@@ -80,6 +99,54 @@ const createQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, func
     }
 });
 exports.createQuestionPaper = createQuestionPaper;
+const updateQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { paperId } = req.params;
+        const { content, paperSet } = req.body;
+        const { paper, answerSheet } = yield questionPaper_service_1.QuestionPaperService.updateQuestionPaper(paperId, req.viaExamUser, {
+            content,
+            paperSet,
+        });
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: `Question paper updated successfully.${answerSheetNote(answerSheet)}`,
+            data: {
+                paperId: paper.paperId,
+                examId: paper.examId,
+                paperSet: paper.paperSet,
+                status: paper.status,
+                answerSheet,
+            },
+        });
+    }
+    catch (error) {
+        return res.status((error === null || error === void 0 ? void 0 : error.statusCode) || http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: getQuestionPaperErrorMessage(error),
+        });
+    }
+});
+exports.updateQuestionPaper = updateQuestionPaper;
+const deleteQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { paperId } = req.params;
+        const result = yield questionPaper_service_1.QuestionPaperService.deleteQuestionPaper(paperId, req.viaExamUser);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: result.deletedAnswerSheets > 0
+                ? `Question paper and answer sheet for Set ${result.paperSet} deleted.`
+                : `Question paper for Set ${result.paperSet} deleted.`,
+            data: result,
+        });
+    }
+    catch (error) {
+        return res.status((error === null || error === void 0 ? void 0 : error.statusCode) || http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: getQuestionPaperErrorMessage(error),
+        });
+    }
+});
+exports.deleteQuestionPaper = deleteQuestionPaper;
 const uploadImageController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _b;
     try {
@@ -264,80 +331,71 @@ const getQuestionPaperUploads = (req, res) => __awaiter(void 0, void 0, void 0, 
 });
 exports.getQuestionPaperUploads = getQuestionPaperUploads;
 // ─── APPROVAL WORKFLOW CONTROLLERS ─────────────────────────────────────────
+const sendWorkflowError = (res, error) => res.status((error === null || error === void 0 ? void 0 : error.statusCode) || http_status_1.default.BAD_REQUEST).json({
+    error: true,
+    message: error.message,
+});
+/** Optional set (A–D) for the exam-level approval endpoints: body `paperSet` or `?paperSet=`. */
+const requestedSet = (req) => { var _a, _b; return ((_a = req.body) === null || _a === void 0 ? void 0 : _a.paperSet) || ((_b = req.query) === null || _b === void 0 ? void 0 : _b.paperSet) || undefined; };
 const submitExamForApproval = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { examId } = req.params;
-        const teacherId = req.viaExamUser.userId;
-        const result = yield questionPaper_service_1.QuestionPaperService.submitExamForApproval(examId, teacherId);
+        const result = yield questionPaper_service_1.QuestionPaperService.submitExamForApproval(examId, req.viaExamUser, requestedSet(req));
+        const sets = result.submitted.map((s) => `Set ${s}`).join(", ");
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Exam question paper and answer sheet submitted for approval successfully.",
+            message: `${sets} submitted for approval.${result.skipped.length ? ` Skipped Set ${result.skipped.join(", ")} (answer sheet missing).` : ""}`,
             data: result,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
-            error: true,
-            message: error.message,
-        });
+        return sendWorkflowError(res, error);
     }
 });
 exports.submitExamForApproval = submitExamForApproval;
 const submitQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { paperId } = req.params;
-        const teacherId = req.viaExamUser.userId;
-        const paper = yield questionPaper_service_1.QuestionPaperService.submitForApproval(paperId, teacherId);
+        const paper = yield questionPaper_service_1.QuestionPaperService.submitForApproval(paperId, req.viaExamUser);
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Question paper submitted for approval.",
+            message: `Set ${paper.paperSet} submitted for approval.`,
             data: paper,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
-            error: true,
-            message: error.message,
-        });
+        return sendWorkflowError(res, error);
     }
 });
 exports.submitQuestionPaper = submitQuestionPaper;
 const approveQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { paperId } = req.params;
-        const reviewerId = req.viaExamUser.userId;
-        const paper = yield questionPaper_service_1.QuestionPaperService.approvePaper(paperId, reviewerId);
+        const paper = yield questionPaper_service_1.QuestionPaperService.approvePaper(paperId, req.viaExamUser);
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Question paper approved.",
+            message: `Set ${paper.paperSet} approved.`,
             data: paper,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
-            error: true,
-            message: error.message,
-        });
+        return sendWorkflowError(res, error);
     }
 });
 exports.approveQuestionPaper = approveQuestionPaper;
 const rejectQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { paperId } = req.params;
-        const reviewerId = req.viaExamUser.userId;
         const { rejectionNote } = req.body;
-        const paper = yield questionPaper_service_1.QuestionPaperService.rejectPaper(paperId, reviewerId, rejectionNote);
+        const paper = yield questionPaper_service_1.QuestionPaperService.rejectPaper(paperId, req.viaExamUser, rejectionNote);
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Question paper rejected.",
+            message: `Set ${paper.paperSet} rejected.`,
             data: paper,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
-            error: true,
-            message: error.message,
-        });
+        return sendWorkflowError(res, error);
     }
 });
 exports.rejectQuestionPaper = rejectQuestionPaper;
@@ -352,10 +410,7 @@ const publishQuestionPaper = (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
-            error: true,
-            message: error.message,
-        });
+        return sendWorkflowError(res, error);
     }
 });
 exports.publishQuestionPaper = publishQuestionPaper;
@@ -403,39 +458,31 @@ exports.getAllQuestionPapers = getAllQuestionPapers;
 const approveExamPair = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { examId } = req.params;
-        const reviewerId = req.viaExamUser.userId;
-        const result = yield questionPaper_service_1.QuestionPaperService.approveExamPair(examId, reviewerId);
+        const result = yield questionPaper_service_1.QuestionPaperService.approveExamPair(examId, req.viaExamUser, requestedSet(req));
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Exam question paper and answer sheet approved successfully.",
+            message: `Set ${result.approved.join(", ")} approved (question paper and answer sheet).`,
             data: result,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
-            error: true,
-            message: error.message,
-        });
+        return sendWorkflowError(res, error);
     }
 });
 exports.approveExamPair = approveExamPair;
 const rejectExamPair = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { examId } = req.params;
-        const reviewerId = req.viaExamUser.userId;
         const { rejectionNote } = req.body;
-        const result = yield questionPaper_service_1.QuestionPaperService.rejectExamPair(examId, reviewerId, rejectionNote);
+        const result = yield questionPaper_service_1.QuestionPaperService.rejectExamPair(examId, req.viaExamUser, rejectionNote, requestedSet(req));
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Exam question paper and answer sheet rejected.",
+            message: `Set ${result.rejected.join(", ")} rejected.`,
             data: result,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
-            error: true,
-            message: error.message,
-        });
+        return sendWorkflowError(res, error);
     }
 });
 exports.rejectExamPair = rejectExamPair;
