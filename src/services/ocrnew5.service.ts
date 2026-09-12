@@ -1,4 +1,5 @@
 import httpStatus from "http-status";
+import { Op } from "sequelize";
 import Scanner from "../modals/Scanner.modal";
 import Exam from "../modals/Exam.modal";
 import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
@@ -10,88 +11,8 @@ import RegHelper from "../utils/helper";
 import logger from "../config/logger";
 import axios from "axios";
 import FormData from "form-data";
-
-// Helper to format question paper content into text
-const formatQuestionPaper = (content: any, ansDoc?: any): { questions: string; answers: string } => {
-  let questions = "";
-  let answers = "";
-
-  if (!content) return { questions, answers };
-
-  const answerMap: Record<string, any> = {};
-  if (ansDoc) {
-    let ansData = ansDoc;
-    if (typeof ansData === "string") {
-      try { ansData = JSON.parse(ansData); } catch { }
-    }
-    if (Array.isArray(ansData)) {
-      ansData.forEach((a: any) => {
-        const id = a.questionId || a.id || a.key;
-        if (id) answerMap[id] = a;
-      });
-    } else if (ansData && typeof ansData === "object") {
-      Object.keys(ansData).forEach((key) => {
-        const a = ansData[key];
-        const id = a.questionId || a.id || a.key || key;
-        answerMap[id] = a;
-      });
-    }
-  }
-
-  if (content.title) {
-    questions += `Title: ${content.title}\n`;
-  }
-
-  let foundQuestions = false;
-
-  if (Array.isArray(content.sections) && content.sections.length > 0) {
-    for (const section of content.sections) {
-      const secName = section.name || section.title || "";
-      if (!secName && (!section.questions || section.questions.length === 0)) continue;
-
-      questions += `\n--- Section: ${secName} ---\n`;
-      if (section.instructions) {
-        questions += `Instructions: ${section.instructions}\n`;
-      }
-      if (Array.isArray(section.questions)) {
-        for (const q of section.questions) {
-          foundQuestions = true;
-          const qId = q.questionId || q.id || q.key || "";
-          const qText = q.text || q.question || "";
-          const qMarks = q.marks !== undefined ? q.marks : "";
-          questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-
-          const expectedAns = answerMap[qId]?.answer || q.answer;
-          if (expectedAns) {
-            answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-          }
-        }
-      }
-    }
-  }
-
-  if (Array.isArray(content.questions) && content.questions.length > 0) {
-    questions += `\n--- Questions ---\n`;
-    for (const q of content.questions) {
-      foundQuestions = true;
-      const qId = q.questionId || q.id || q.key || "";
-      const qText = q.text || q.question || "";
-      const qMarks = q.marks !== undefined ? q.marks : "";
-      questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-
-      const expectedAns = answerMap[qId]?.answer || q.answer;
-      if (expectedAns) {
-        answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-      }
-    }
-  }
-
-  if (!foundQuestions && typeof content === "object") {
-    questions = JSON.stringify(content, null, 2);
-  }
-
-  return { questions, answers };
-};
+import { pythonServices } from "../config/pythonServices";
+import { formatQuestionPaper } from "../utils/questionPaperText";
 
 export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   logger.info(`[OCRNew5 Service] Initiating AI evaluation for sheet: ${sheetId}`);
@@ -106,7 +27,7 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   let studentAnsText = sheet.ocrText || sheet.answerText || "";
   if (!studentAnsText && sheet.fileBuffer && sheet.fileBuffer.length > 0) {
     try {
-      const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+      const ocrApiUrl = pythonServices.ocrUrl();
       let fileName = sheet.fileName || "sheet.png";
       if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
         const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
@@ -157,6 +78,10 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
       where: { examId: exam.examId, instituteId: sheet.instituteId, paperSet: targetPaperSet },
       order: [["createdAt", "DESC"]],
     }) || await QuestionPaper.findOne({
+      // Set not found: prefer an approved set of the exam over a draft one.
+      where: { examId: exam.examId, instituteId: sheet.instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED"] } },
+      order: [["paperSet", "ASC"]],
+    }) || await QuestionPaper.findOne({
       where: { examId: exam.examId, instituteId: sheet.instituteId },
       order: [["createdAt", "DESC"]],
     });
@@ -175,7 +100,7 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   }
 
   // 4. Send Payload to OCRNew5 multi-agent pipeline on port 8006
-  const pipelineUrl = process.env.OCRNEW5_PIPELINE_URL || "http://localhost:8006/evaluate-text";
+  const pipelineUrl = pythonServices.ocrNew5PipelineUrl();
   const pipelinePayload = {
     student_id: studentId,
     exam_id: examId,

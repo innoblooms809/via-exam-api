@@ -170,26 +170,38 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
                 message: "Account suspended.",
             };
         }
-        // Lock check
+        // Lock check (DISABLED)
+        /*
         if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-            return {
-                error: true,
-                statusCode: http_status_1.default.TOO_MANY_REQUESTS,
-                message: "Account is locked.",
-            };
+          return {
+            error: true,
+            statusCode: httpStatus.TOO_MANY_REQUESTS,
+            message: "Account is locked.",
+          };
         }
+        */
         const isMatch = yield encryption_1.default.isPasswordMatch(password, user.password);
         if (!isMatch) {
+            /* Login attempts lock logic disabled
             const attempts = (user.loginAttempts || 0) + 1;
+      
             if (attempts >= MAX_LOGIN_ATTEMPTS) {
-                yield User_modal_1.default.update({
-                    loginAttempts: attempts,
-                    lockedUntil: new Date(Date.now() + LOCK_DURATION_SECONDS * 1000),
-                }, { where: { userId: user.userId } });
+              await UserModal.update(
+                {
+                  loginAttempts: attempts,
+                  lockedUntil: new Date(
+                    Date.now() + LOCK_DURATION_SECONDS * 1000
+                  ),
+                },
+                { where: { userId: user.userId } },
+              );
+            } else {
+              await UserModal.update(
+                { loginAttempts: attempts },
+                { where: { userId: user.userId } },
+              );
             }
-            else {
-                yield User_modal_1.default.update({ loginAttempts: attempts }, { where: { userId: user.userId } });
-            }
+            */
             return {
                 error: true,
                 statusCode: http_status_1.default.BAD_REQUEST,

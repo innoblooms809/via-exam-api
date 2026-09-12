@@ -19,6 +19,8 @@ router.post("/evaluate-ocrnew5", auth_1.authenticate, ocrnew5_controller_1.defau
 // Trigger evaluation Pipeline 6.3 (uses 9-agent pipeline with rubric pre-warming on port 8007)
 router.post("/evaluate-pipeline6", auth_1.authenticate, pipeline6_controller_1.default.evaluateSheetPipeline6);
 router.post("/evaluate6", auth_1.authenticate, pipeline6_controller_1.default.evaluateSheetPipeline6);
+// Pipeline 6 queue: sheets waiting for / running OCR and AI evaluation
+router.get("/queue", auth_1.authenticate, pipeline6_controller_1.default.getQueueStatus);
 // Get evaluation result by sheet ID
 router.get("/sheet/:sheetId", auth_1.authenticate, aiEvaluation_controller_1.default.getEvaluation);
 // Update evaluation details/marks by sheet ID

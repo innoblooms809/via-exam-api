@@ -1,15 +1,22 @@
 import { Router } from "express";
 import {
   createQuestionPaper,
+  updateQuestionPaper,
+  deleteQuestionPaper,
   getQuestionPaperUploads,
   uploadImageController,
   getQuestionPaperBySelection,
   submitQuestionPaper,
+  submitExamForApproval,
   approveQuestionPaper,
   rejectQuestionPaper,
   publishQuestionPaper,
   getPendingQuestionPapers,
   getAllQuestionPapers,
+  approveExamPair,
+  rejectExamPair,
+  getExamRemarksController,
+  addExamRemarkController,
 } from "../../../controllers/question-Answer/questionPaper.controller";
 import { authenticate, authorize } from "../../../middlewares/auth";
 import { questionPaperUpload } from "../../../utils/multer";
@@ -29,6 +36,19 @@ router.post(
   createQuestionPaper
 );
 
+// Edit / delete an existing paper (only while DRAFT or REJECTED)
+router.put(
+  "/updateQuestionPaper/:paperId",
+  authenticate,
+  updateQuestionPaper
+);
+
+router.delete(
+  "/deleteQuestionPaper/:paperId",
+  authenticate,
+  deleteQuestionPaper
+);
+
 router.post(
   "/image",
   questionPaperUpload,
@@ -44,6 +64,27 @@ router.post(
 );
 
 // ─── APPROVAL WORKFLOW ROUTES ──────────────────────────────────────────────
+
+// Single-click submit both Question Paper & Answer Sheet by examId
+router.patch(
+  "/submitExamForApproval/:examId/submit",
+  authenticate,
+  submitExamForApproval
+);
+
+// Admin approve both Question Paper & Answer Sheet by examId
+router.patch(
+  "/approveExamPair/:examId/approve",
+  authenticate,
+  approveExamPair
+);
+
+// Admin reject both Question Paper & Answer Sheet by examId
+router.patch(
+  "/rejectExamPair/:examId/reject",
+  authenticate,
+  rejectExamPair
+);
 
 // Teacher submits paper for review
 router.patch(
@@ -89,6 +130,22 @@ router.get(
   "/getAllQuestionPapers",
   authenticate,
   getAllQuestionPapers
+);
+
+// ─── REMARKS / CHAT ROUTES ─────────────────────────────────────────────────
+
+// Get remarks/chat history for an exam
+router.get(
+  "/remarks/:examId",
+  authenticate,
+  getExamRemarksController
+);
+
+// Add a remark/chat message to an exam
+router.post(
+  "/remarks/:examId",
+  authenticate,
+  addExamRemarkController
 );
 
 export default router;

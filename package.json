@@ -1,7 +1,7 @@
 {
-  "name": "backend-boilerplate",
+  "name": "Via-exam",
   "version": "1.0.0",
-  "description": "backend-portal REST  api Express and Prisma",
+  "description": "backend-portal REST  api Express ",
   "main": "src/index.ts",
   "repository": "",
   "scripts": {

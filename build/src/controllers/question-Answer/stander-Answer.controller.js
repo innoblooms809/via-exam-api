@@ -12,7 +12,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllAnswerSheets = exports.getPendingAnswerSheets = exports.publishAnswerSheet = exports.rejectAnswerSheet = exports.approveAnswerSheet = exports.submitAnswerSheet = exports.getQuestionPaperAnswerUploads = exports.getQuestionPaperAnswerBySelection = exports.uploadPdfController = exports.uploadImageController = exports.uploadFileToCloudinary = exports.createQuestionPaperAnswer = void 0;
+exports.getAllAnswerSheets = exports.getPendingAnswerSheets = exports.publishAnswerSheet = exports.rejectAnswerSheet = exports.approveAnswerSheet = exports.submitAnswerSheet = exports.getQuestionPaperAnswerUploads = exports.getQuestionPaperAnswerBySelection = exports.deleteQuestionPaperAnswer = exports.updateQuestionPaperAnswer = exports.uploadPdfController = exports.uploadImageController = exports.uploadFileToCloudinary = exports.createQuestionPaperAnswer = void 0;
+const sequelize_1 = require("sequelize");
 const stander_answer_service_1 = __importDefault(require("../../services/question-answer/stander-answer.service"));
 const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
 const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
@@ -21,6 +22,7 @@ const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
 const stander_answer_model_1 = __importDefault(require("../../modals/question-paper/stander-answer.model"));
 const http_status_1 = __importDefault(require("http-status"));
 const cloudinary_1 = __importDefault(require("../../utils/cloudinary"));
+const answerKeyOcr_service_1 = require("../../services/answerKeyOcr.service");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const createQuestionPaperAnswer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -120,6 +122,14 @@ const uploadPdfController = (req, res) => __awaiter(void 0, void 0, void 0, func
             : req.file
                 ? [req.file]
                 : [];
+        const { paperId, examId, paperSet } = req.body;
+        const instituteId = ((_b = req.viaExamUser) === null || _b === void 0 ? void 0 : _b.instituteId) || req.body.instituteId;
+        const teacherId = ((_c = req.viaExamUser) === null || _c === void 0 ? void 0 : _c.userId) || req.body.teacherId;
+        const linkToPaper = Boolean(paperId && examId && paperSet && instituteId && teacherId);
+        // Refuse before uploading if this set's answer sheet is already under review/approved.
+        if (linkToPaper) {
+            yield stander_answer_service_1.default.assertReplaceable(paperId, paperSet, examId);
+        }
         const urls = [];
         for (const file of files) {
             try {
@@ -138,11 +148,8 @@ const uploadPdfController = (req, res) => __awaiter(void 0, void 0, void 0, func
                 data: { urls },
             });
         }
-        const { paperId, examId, paperSet } = req.body;
-        const instituteId = ((_b = req.viaExamUser) === null || _b === void 0 ? void 0 : _b.instituteId) || req.body.instituteId;
-        const teacherId = ((_c = req.viaExamUser) === null || _c === void 0 ? void 0 : _c.userId) || req.body.teacherId;
         let dbResult = null;
-        if (paperId && examId && paperSet && instituteId && teacherId) {
+        if (linkToPaper) {
             try {
                 dbResult = yield stander_answer_service_1.default.saveAnswerSheetPdfUrl({
                     paperId,
@@ -152,9 +159,18 @@ const uploadPdfController = (req, res) => __awaiter(void 0, void 0, void 0, func
                     teacherId,
                     pdfUrl: urls[0],
                 });
+                // Read the uploaded model answer by OCR once, in the background, and save the
+                // text — AI evaluation then reuses it for every student instead of re-reading it.
+                if (dbResult === null || dbResult === void 0 ? void 0 : dbResult.answerId)
+                    (0, answerKeyOcr_service_1.warmAnswerKeyOcr)(dbResult.answerId);
             }
             catch (dbErr) {
                 console.error("Failed to save answer sheet PDF url to database:", dbErr.message);
+                // The file reached storage but is not linked to the paper — report it as a failure.
+                return res.status((dbErr === null || dbErr === void 0 ? void 0 : dbErr.statusCode) || http_status_1.default.BAD_REQUEST).json({
+                    error: true,
+                    message: dbErr.message || "Answer sheet uploaded but could not be saved. Please try again.",
+                });
             }
         }
         return res.status(200).json({
@@ -168,26 +184,84 @@ const uploadPdfController = (req, res) => __awaiter(void 0, void 0, void 0, func
         });
     }
     catch (e) {
-        return res.status(500).json({
+        return res.status((e === null || e === void 0 ? void 0 : e.statusCode) || 500).json({
             error: true,
             message: e.message,
         });
     }
 });
 exports.uploadPdfController = uploadPdfController;
-const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateQuestionPaperAnswer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _d;
     try {
-        const { classVal, subject, examType, session, paperSet, } = req.body;
-        const instituteId = ((_d = req.viaExamUser) === null || _d === void 0 ? void 0 : _d.instituteId) || req.body.instituteId;
+        const { answerId } = req.params;
+        const answer = yield stander_answer_service_1.default.updateQuestionPaperAnswer(answerId, req.viaExamUser, (_d = req.body) === null || _d === void 0 ? void 0 : _d.answers);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Answer sheet updated successfully",
+            data: answer,
+        });
+    }
+    catch (error) {
+        return res.status((error === null || error === void 0 ? void 0 : error.statusCode) || http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.updateQuestionPaperAnswer = updateQuestionPaperAnswer;
+const deleteQuestionPaperAnswer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { answerId } = req.params;
+        const result = yield stander_answer_service_1.default.deleteQuestionPaperAnswer(answerId, req.viaExamUser);
+        return res.status(http_status_1.default.OK).json({
+            error: false,
+            message: "Answer sheet deleted successfully",
+            data: result,
+        });
+    }
+    catch (error) {
+        return res.status((error === null || error === void 0 ? void 0 : error.statusCode) || http_status_1.default.BAD_REQUEST).json({
+            error: true,
+            message: error.message,
+        });
+    }
+});
+exports.deleteQuestionPaperAnswer = deleteQuestionPaperAnswer;
+const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _e;
+    try {
+        const { classVal, subject, examType, session, paperSet, examId, } = req.body;
+        const instituteId = ((_e = req.viaExamUser) === null || _e === void 0 ? void 0 : _e.instituteId) || req.body.instituteId;
         console.log("[getQuestionPaperAnswerBySelection] Request parameters:", {
             classVal,
             subject,
             examType,
             session,
             paperSet,
+            examId,
             instituteId,
         });
+        // 1. Direct lookup by examId if provided
+        if (examId) {
+            const qpaWhere = { examId };
+            if (paperSet)
+                qpaWhere.paperSet = paperSet;
+            const directQpa = yield stander_answer_model_1.default.findOne({ where: qpaWhere });
+            if (directQpa) {
+                const examObj = yield Exam_modal_1.default.findOne({ where: { examId } });
+                return res.status(http_status_1.default.OK).json({
+                    error: false,
+                    message: "Question paper answer fetched successfully.",
+                    data: {
+                        exam: examObj || { examId, examType, subjectName: subject, className: classVal },
+                        questionPaperAnswer: directQpa,
+                    },
+                });
+            }
+        }
+        // 2. Lookup by session, class, subject, examType
+        const cleanClass = (classVal || "").replace(/^class\s*/i, "").trim();
         const [sessionData, classData] = yield Promise.all([
             Session_modal_1.default.findOne({
                 where: {
@@ -198,18 +272,18 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
             }),
             Class_modal_1.default.findOne({
                 where: {
-                    className: classVal,
+                    [sequelize_1.Op.or]: [
+                        { className: classVal },
+                        { className: `Class ${cleanClass}` },
+                        { className: cleanClass },
+                    ],
                     instituteId,
                     isDeleted: false,
                 },
             }),
         ]);
-        if (!sessionData) {
+        if (!sessionData && session) {
             console.warn(`[getQuestionPaperAnswerBySelection] 404: Session '${session}' not found for institute '${instituteId}'`);
-            return res.status(http_status_1.default.NOT_FOUND).json({
-                error: true,
-                message: "Session not found.",
-            });
         }
         if (!classData) {
             console.warn(`[getQuestionPaperAnswerBySelection] 404: Class '${classVal}' not found for institute '${instituteId}'`);
@@ -233,16 +307,16 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
                 message: "Subject not found.",
             });
         }
-        const exam = yield Exam_modal_1.default.findOne({
-            where: {
-                sessionId: sessionData.sessionId,
-                classId: classData.classId,
-                subjectId: subjectData.subjectId,
-                examType,
-                instituteId,
-                isDeleted: false,
-            },
-        });
+        const examWhere = {
+            classId: classData.classId,
+            subjectId: subjectData.subjectId,
+            examType,
+            instituteId,
+            isDeleted: false,
+        };
+        if (sessionData)
+            examWhere.sessionId = sessionData.sessionId;
+        const exam = yield Exam_modal_1.default.findOne({ where: examWhere });
         if (!exam) {
             console.warn(`[getQuestionPaperAnswerBySelection] 404: Exam not found for session '${session}', class '${classVal}', subject '${subject}', examType '${examType}'`);
             return res.status(http_status_1.default.NOT_FOUND).json({
@@ -250,12 +324,10 @@ const getQuestionPaperAnswerBySelection = (req, res) => __awaiter(void 0, void 0
                 message: "Exam not found.",
             });
         }
-        const questionPaperAnswer = yield stander_answer_model_1.default.findOne({
-            where: {
-                examId: exam.examId,
-                paperSet,
-            },
-        });
+        const qpaWhere = { examId: exam.examId };
+        if (paperSet)
+            qpaWhere.paperSet = paperSet;
+        const questionPaperAnswer = yield stander_answer_model_1.default.findOne({ where: qpaWhere });
         if (!questionPaperAnswer) {
             console.warn(`[getQuestionPaperAnswerBySelection] 404: Question paper answer not found for examId '${exam.examId}', paperSet '${paperSet}'`);
             return res.status(http_status_1.default.NOT_FOUND).json({
@@ -311,16 +383,15 @@ exports.getQuestionPaperAnswerUploads = getQuestionPaperAnswerUploads;
 const submitAnswerSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { answerId } = req.params;
-        const teacherId = req.viaExamUser.userId;
-        const answer = yield stander_answer_service_1.default.submitForApproval(answerId, teacherId);
+        const answer = yield stander_answer_service_1.default.submitForApproval(answerId, req.viaExamUser);
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Answer sheet submitted for approval.",
+            message: `Set ${answer.paperSet} submitted for approval.`,
             data: answer,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
+        return res.status((error === null || error === void 0 ? void 0 : error.statusCode) || http_status_1.default.BAD_REQUEST).json({
             error: true,
             message: error.message,
         });
@@ -330,16 +401,15 @@ exports.submitAnswerSheet = submitAnswerSheet;
 const approveAnswerSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { answerId } = req.params;
-        const reviewerId = req.viaExamUser.userId;
-        const answer = yield stander_answer_service_1.default.approveAnswer(answerId, reviewerId);
+        const answer = yield stander_answer_service_1.default.approveAnswer(answerId, req.viaExamUser);
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Answer sheet approved.",
+            message: `Set ${answer.paperSet} approved.`,
             data: answer,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
+        return res.status((error === null || error === void 0 ? void 0 : error.statusCode) || http_status_1.default.BAD_REQUEST).json({
             error: true,
             message: error.message,
         });
@@ -349,17 +419,16 @@ exports.approveAnswerSheet = approveAnswerSheet;
 const rejectAnswerSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { answerId } = req.params;
-        const reviewerId = req.viaExamUser.userId;
         const { rejectionNote } = req.body;
-        const answer = yield stander_answer_service_1.default.rejectAnswer(answerId, reviewerId, rejectionNote);
+        const answer = yield stander_answer_service_1.default.rejectAnswer(answerId, req.viaExamUser, rejectionNote);
         return res.status(http_status_1.default.OK).json({
             error: false,
-            message: "Answer sheet rejected.",
+            message: `Set ${answer.paperSet} rejected.`,
             data: answer,
         });
     }
     catch (error) {
-        return res.status(http_status_1.default.BAD_REQUEST).json({
+        return res.status((error === null || error === void 0 ? void 0 : error.statusCode) || http_status_1.default.BAD_REQUEST).json({
             error: true,
             message: error.message,
         });

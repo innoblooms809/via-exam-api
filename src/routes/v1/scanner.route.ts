@@ -54,4 +54,28 @@ router.delete(
   Controller.deleteSheet
 );
 
+// ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────
+
+// Get approved exams for scanner to upload student answer papers
+router.get(
+  "/approved-exams",
+  authenticate,
+  Controller.getApprovedExams
+);
+
+// Upload single student answer paper for approval workflow
+router.post(
+  "/upload-student-answer",
+  authenticate,
+  upload.single("answerPaperFile"),
+  Controller.uploadStudentAnswerPaper
+);
+
+// Get student answer papers for a specific exam
+router.get(
+  "/student-answers/:examId",
+  authenticate,
+  Controller.getStudentAnswerPapers
+);
+
 export default router;

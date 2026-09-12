@@ -158,7 +158,8 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       };
     }
 
-    // Lock check
+    // Lock check (DISABLED)
+    /*
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
       return {
         error: true,
@@ -166,10 +167,12 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
         message: "Account is locked.",
       };
     }
+    */
 
     const isMatch = await EncryptPassword.isPasswordMatch(password, user.password);
 
     if (!isMatch) {
+      /* Login attempts lock logic disabled
       const attempts = (user.loginAttempts || 0) + 1;
 
       if (attempts >= MAX_LOGIN_ATTEMPTS) {
@@ -188,6 +191,7 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
           { where: { userId: user.userId } },
         );
       }
+      */
 
       return {
         error: true,

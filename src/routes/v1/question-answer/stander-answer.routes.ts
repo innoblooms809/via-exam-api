@@ -2,6 +2,8 @@ import express from "express";
 
 import {
   createQuestionPaperAnswer,
+  updateQuestionPaperAnswer,
+  deleteQuestionPaperAnswer,
   uploadImageController,
   uploadPdfController,
   getQuestionPaperAnswerBySelection,
@@ -22,6 +24,19 @@ router.post(
   "/create",
   authenticate,
   createQuestionPaperAnswer
+);
+
+// Edit / delete an existing answer sheet (only while DRAFT or REJECTED)
+router.put(
+  "/update/:answerId",
+  authenticate,
+  updateQuestionPaperAnswer
+);
+
+router.delete(
+  "/delete/:answerId",
+  authenticate,
+  deleteQuestionPaperAnswer
 );
 
 router.post(

@@ -13,8 +13,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
-const aiEvaluationNew_service_1 = __importDefault(require("../services/aiEvaluationNew.service"));
+const pipeline6_service_1 = __importDefault(require("../services/pipeline6.service"));
 // POST /v1/ai-evaluation/evaluate2
+// Kept for existing callers — it now uses Pipeline 6 (the main evaluation) so every
+// request goes through the same queue instead of hitting the Python servers directly.
 const evaluateSheet2 = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { sheetId, force } = req.body;
@@ -25,7 +27,7 @@ const evaluateSheet2 = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 message: "sheetId is required.",
             });
         }
-        const result = yield aiEvaluationNew_service_1.default.triggerEvaluationV2(sheetId, force);
+        const result = yield pipeline6_service_1.default.triggerPipeline6Evaluation(sheetId, force);
         return res.status(result.statusCode).send(result);
     }
     catch (error) {

@@ -23,89 +23,8 @@ const helper_1 = __importDefault(require("../utils/helper"));
 const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
-// ─── Helper: Format question paper content into plain text ────────────────────
-const formatQuestionPaper = (content, ansDoc) => {
-    var _a, _b;
-    let questions = "";
-    let answers = "";
-    if (!content) {
-        return { questions, answers };
-    }
-    // Parse ansDoc map
-    const answerMap = {};
-    if (ansDoc) {
-        let ansData = ansDoc;
-        if (typeof ansData === "string") {
-            try {
-                ansData = JSON.parse(ansData);
-            }
-            catch (_c) { }
-        }
-        if (Array.isArray(ansData)) {
-            ansData.forEach((a) => {
-                const id = a.questionId || a.id || a.key;
-                if (id) {
-                    answerMap[id] = a;
-                }
-            });
-        }
-        else if (ansData && typeof ansData === "object") {
-            Object.keys(ansData).forEach((key) => {
-                const a = ansData[key];
-                const id = a.questionId || a.id || a.key || key;
-                answerMap[id] = a;
-            });
-        }
-    }
-    // Handle case where title is available
-    if (content.title) {
-        questions += `Title: ${content.title}\n`;
-    }
-    let foundQuestions = false;
-    if (Array.isArray(content.sections) && content.sections.length > 0) {
-        for (const section of content.sections) {
-            const secName = section.name || section.title || "";
-            if (!secName && (!section.questions || section.questions.length === 0))
-                continue;
-            questions += `\n--- Section: ${secName} ---\n`;
-            if (section.instructions) {
-                questions += `Instructions: ${section.instructions}\n`;
-            }
-            if (Array.isArray(section.questions)) {
-                for (const q of section.questions) {
-                    foundQuestions = true;
-                    const qId = q.questionId || q.id || q.key || "";
-                    const qText = q.text || q.question || "";
-                    const qMarks = q.marks !== undefined ? q.marks : "";
-                    questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-                    const expectedAns = ((_a = answerMap[qId]) === null || _a === void 0 ? void 0 : _a.answer) || q.answer;
-                    if (expectedAns) {
-                        answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-                    }
-                }
-            }
-        }
-    }
-    if (Array.isArray(content.questions) && content.questions.length > 0) {
-        questions += `\n--- Questions ---\n`;
-        for (const q of content.questions) {
-            foundQuestions = true;
-            const qId = q.questionId || q.id || q.key || "";
-            const qText = q.text || q.question || "";
-            const qMarks = q.marks !== undefined ? q.marks : "";
-            questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-            const expectedAns = ((_b = answerMap[qId]) === null || _b === void 0 ? void 0 : _b.answer) || q.answer;
-            if (expectedAns) {
-                answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-            }
-        }
-    }
-    if (!foundQuestions && typeof content === "object") {
-        // Fallback simple stringify for non-standard JSON schemas
-        questions = JSON.stringify(content, null, 2);
-    }
-    return { questions, answers };
-};
+const pythonServices_1 = require("../config/pythonServices");
+const questionPaperText_1 = require("../utils/questionPaperText");
 // ─── TRIGGER EVALUATION V2 (OCR Pipeline on port 8002) ──────────────────────
 const triggerEvaluationV2 = (sheetId, force = false) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -235,7 +154,7 @@ const triggerEvaluationV2 = (sheetId, force = false) => __awaiter(void 0, void 0
                     });
                 }
                 const ansDoc = qpAnswer ? qpAnswer.answers : null;
-                const { questions, answers } = formatQuestionPaper(questionPaper.content, ansDoc);
+                const { questions, answers } = (0, questionPaperText_1.formatQuestionPaper)(questionPaper.content, ansDoc);
                 if (questions)
                     questionText = questions;
                 if (answers)
@@ -268,7 +187,7 @@ const triggerEvaluationV2 = (sheetId, force = false) => __awaiter(void 0, void 0
 // // in parallel using Promise.all for maximum speed on high-spec servers.
 const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, questionText, standardAnsText) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+        const ocrApiUrl = pythonServices_1.pythonServices.ocrUrl();
         // ⚡ 1. PARALLEL EXECUTION THREADS
         // Thread 1: Student Answer Sheet OCR (Port 8000)
         const studentOcrTask = (() => __awaiter(void 0, void 0, void 0, function* () {
@@ -325,7 +244,7 @@ const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, q
             // Pre-warm Rubric Cache on Pipeline (Port 8006) in parallel
             if (questionText && finalAnswerKeyText) {
                 try {
-                    const preprocessUrl = process.env.PIPELINE6_PREPROCESS_URL || "http://localhost:8006/preprocess-exam";
+                    const preprocessUrl = pythonServices_1.pythonServices.pipeline6PreprocessUrl();
                     logger_1.default.info(`[V2] [Thread 2] Pre-warming rubric cache on Pipeline: ${preprocessUrl}`);
                     yield axios_1.default.post(preprocessUrl, {
                         exam_id: examId,
@@ -344,7 +263,7 @@ const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, q
         // Thread 3: Parallel Visual Pre-Evaluation Task (Port 8006 — Runs parallel to Chandra OCR!)
         const visualPreEvalTask = (() => __awaiter(void 0, void 0, void 0, function* () {
             try {
-                const visualPreEvalUrl = process.env.PIPELINE6_VISUAL_PREEVAL_URL || "http://localhost:8006/visual-pre-eval";
+                const visualPreEvalUrl = pythonServices_1.pythonServices.pipeline6VisualPreEvalUrl();
                 logger_1.default.info(`[V2] [Thread 3] Launching Parallel Visual Pre-Evaluation on Pipeline: ${visualPreEvalUrl}`);
                 const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
                 yield axios_1.default.post(visualPreEvalUrl, {
@@ -368,7 +287,7 @@ const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, q
             visualPreEvalTask,
         ]);
         // 2. Call evaluation pipeline on port 8006 (/evaluate-text)
-        const pipelineUrl = process.env.OCR_PIPELINE_URL || "http://localhost:8006/evaluate-text";
+        const pipelineUrl = pythonServices_1.pythonServices.pipelineUrl();
         const pdfBase64 = sheet.fileBuffer ? sheet.fileBuffer.toString("base64") : undefined;
         const pipelinePayload = {
             student_id: studentId,

@@ -25,6 +25,17 @@ const evaluateSheetPipeline6 = async (req: any, res: Response): Promise<any> => 
   }
 };
 
+// GET /v1/ai-evaluation/queue — how many sheets are in OCR / AI evaluation right now.
+const getQueueStatus = async (_req: any, res: Response): Promise<any> => {
+  return res.status(httpStatus.OK).json({
+    error: false,
+    statusCode: httpStatus.OK,
+    message: "Evaluation queue status.",
+    data: Pipeline6Service.getQueueSnapshot(),
+  });
+};
+
 export default {
   evaluateSheetPipeline6,
+  getQueueStatus,
 };

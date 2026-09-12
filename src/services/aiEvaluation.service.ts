@@ -10,95 +10,9 @@ import Class from "../modals/Class.modal";
 import RegHelper from "../utils/helper";
 import logger from "../config/logger";
 import axios from "axios";
-
-// Helper to format question paper content into text
-const formatQuestionPaper = (content: any, ansDoc?: any): { questions: string; answers: string } => {
-  let questions = "";
-  let answers = "";
-
-  if (!content) {
-    return { questions, answers };
-  }
-
-  // Parse ansDoc map
-  const answerMap: Record<string, any> = {};
-  if (ansDoc) {
-    let ansData = ansDoc;
-    if (typeof ansData === "string") {
-      try { ansData = JSON.parse(ansData); } catch { }
-    }
-    if (Array.isArray(ansData)) {
-      ansData.forEach((a: any) => {
-        const id = a.questionId || a.id || a.key;
-        if (id) {
-          answerMap[id] = a;
-        }
-      });
-    } else if (ansData && typeof ansData === "object") {
-      Object.keys(ansData).forEach((key) => {
-        const a = ansData[key];
-        const id = a.questionId || a.id || a.key || key;
-        answerMap[id] = a;
-      });
-    }
-  }
-
-  // Handle case where title is available
-  if (content.title) {
-    questions += `Title: ${content.title}\n`;
-  }
-
-  let foundQuestions = false;
-
-  if (Array.isArray(content.sections) && content.sections.length > 0) {
-    for (const section of content.sections) {
-      const secName = section.name || section.title || "";
-      if (!secName && (!section.questions || section.questions.length === 0)) continue;
-
-      questions += `\n--- Section: ${secName} ---\n`;
-      if (section.instructions) {
-        questions += `Instructions: ${section.instructions}\n`;
-      }
-      if (Array.isArray(section.questions)) {
-        for (const q of section.questions) {
-          foundQuestions = true;
-          const qId = q.questionId || q.id || q.key || "";
-          const qText = q.text || q.question || "";
-          const qMarks = q.marks !== undefined ? q.marks : "";
-          questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-
-          const expectedAns = answerMap[qId]?.answer || q.answer;
-          if (expectedAns) {
-            answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-          }
-        }
-      }
-    }
-  }
-
-  if (Array.isArray(content.questions) && content.questions.length > 0) {
-    questions += `\n--- Questions ---\n`;
-    for (const q of content.questions) {
-      foundQuestions = true;
-      const qId = q.questionId || q.id || q.key || "";
-      const qText = q.text || q.question || "";
-      const qMarks = q.marks !== undefined ? q.marks : "";
-      questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-
-      const expectedAns = answerMap[qId]?.answer || q.answer;
-      if (expectedAns) {
-        answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-      }
-    }
-  }
-
-  if (!foundQuestions && typeof content === "object") {
-    // Fallback simple stringify for non-standard JSON schemas
-    questions = JSON.stringify(content, null, 2);
-  }
-
-  return { questions, answers };
-};
+import { pythonServices } from "../config/pythonServices";
+import { formatQuestionPaper } from "../utils/questionPaperText";
+import { getSheetQueueInfo } from "./pipeline6.service";
 
 // ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
 const triggerEvaluation = async (sheetId: string, force: boolean = false): Promise<any> => {
@@ -300,7 +214,7 @@ const runBackgroundEvaluation = async (
     }
 
     // Call OCR API
-    const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+    const ocrApiUrl = pythonServices.ocrUrl();
     const ocrFormData = new FormData();
     const fileBlob = new Blob([sheet.fileBuffer], { type: sheet.fileMimeType || "image/png" });
     ocrFormData.append("file", fileBlob, fileName);
@@ -315,7 +229,7 @@ const runBackgroundEvaluation = async (
     logger.info("OCR completed successfully (background).");
 
     // 2. Call Evaluation API
-    const evaluationApiUrl = process.env.EVALUATION_API_URL || "http://localhost:8002/evaluation";
+    const evaluationApiUrl = pythonServices.evaluationUrl();
     const evalFormData = new FormData();
     evalFormData.append("student_id", studentId);
     evalFormData.append("exam_id", examId);
@@ -405,6 +319,8 @@ const getEvaluationBySheetId = async (sheetId: string): Promise<any> => {
     const evalDataJson = aiEval.toJSON() as any;
     evalDataJson.studentName = studentName;
     evalDataJson.className = className;
+    // While Pending: where the sheet is in the Pipeline 6 queue (stage + place in line).
+    evalDataJson.queue = getSheetQueueInfo(sheetId);
 
     return {
       error: false,

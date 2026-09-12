@@ -7,6 +7,7 @@ import Exam from "../../modals/Exam.modal"
 import Subject from "../../modals/Subject.modal"
 import Class from "../../modals/Class.modal"
 import Session from "../../modals/Session.modal"
+import Institute from "../../modals/Institute.modal"
 
 
   export const getExamBySelection = async (
@@ -155,6 +156,17 @@ import Session from "../../modals/Session.modal"
     }
 
     // ─────────────────────────────────────────────
+    // Fetch Institute Details for auto-fill
+    // ─────────────────────────────────────────────
+    
+    const institute = await Institute.findOne({
+      where: {
+        instituteId: exam.instituteId,
+        isDeleted: false,
+      },
+    });
+
+    // ─────────────────────────────────────────────
     // Success
     // ─────────────────────────────────────────────
 
@@ -169,7 +181,15 @@ import Session from "../../modals/Session.modal"
       message:
         "Exam fetched successfully.",
 
-      data: exam,
+      data: {
+        ...exam.toJSON(),
+        institute: institute ? {
+          instituteId: institute.instituteId,
+          instituteName: institute.instituteName,
+          logoUrl: institute.logoUrl,
+          slug: institute.slug,
+        } : null,
+      },
     });
 
   } catch (e: any) {
