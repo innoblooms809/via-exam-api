@@ -43,6 +43,7 @@ const Institute_modal_1 = __importDefault(require("../modals/Institute.modal"));
 const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
 const QuestionPaper_modal_1 = __importDefault(require("../modals/question-paper/QuestionPaper.modal"));
+const stander_answer_model_1 = __importDefault(require("../modals/question-paper/stander-answer.model"));
 const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
 const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
 const encryption_1 = __importDefault(require("../utils/encryption"));
@@ -750,6 +751,17 @@ const getTeacherQuestionPapers = (teacherUser, query, targetUserId) => __awaiter
             ? yield Exam_modal_1.default.findAll({ where: { examId: { [sequelize_2.Op.in]: examIds } } })
             : [];
         const examMap = new Map(exams.map((e) => [e.examId, e]));
+        // Answer sheet of each paper's set (typed answers or an uploaded PDF).
+        const answerSheets = examIds.length > 0
+            ? yield stander_answer_model_1.default.findAll({ where: { examId: { [sequelize_2.Op.in]: examIds } } })
+            : [];
+        const answerByPaperId = new Map();
+        const answerByExamSet = new Map();
+        answerSheets.forEach((a) => {
+            const plain = a.get({ plain: true });
+            answerByPaperId.set(plain.paperId, plain);
+            answerByExamSet.set(`${plain.examId}:${plain.paperSet}`, plain);
+        });
         const classIds = Array.from(new Set(exams.map((e) => e.classId).filter(Boolean)));
         const subjectIds = Array.from(new Set(exams.map((e) => e.subjectId).filter(Boolean)));
         const sessionIds = Array.from(new Set(exams.map((e) => e.sessionId).filter(Boolean)));
@@ -762,13 +774,25 @@ const getTeacherQuestionPapers = (teacherUser, query, targetUserId) => __awaiter
         const subjectMap = new Map(subjectsList.map((s) => [s.subjectId, s.subjectName]));
         const sessionMap = new Map(sessionsList.map((s) => [s.sessionId, s.sessionName]));
         const formattedPapers = papers.map((p) => {
-            var _a, _b;
+            var _a, _b, _c;
             const plainPaper = p.get({ plain: true });
             const exam = examMap.get(p.examId);
             const className = (exam === null || exam === void 0 ? void 0 : exam.classId) ? classMap.get(exam.classId) || exam.classId : "All Classes";
             const subjectName = (exam === null || exam === void 0 ? void 0 : exam.subjectId) ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
             const sessionName = (exam === null || exam === void 0 ? void 0 : exam.sessionId) ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
-            return Object.assign(Object.assign({}, plainPaper), { examDetails: exam ? {
+            const answerSheet = answerByPaperId.get(plainPaper.paperId) ||
+                answerByExamSet.get(`${plainPaper.examId}:${plainPaper.paperSet}`) ||
+                null;
+            return Object.assign(Object.assign({}, plainPaper), { answerSheet: answerSheet
+                    ? {
+                        answerId: answerSheet.answerId,
+                        paperSet: answerSheet.paperSet,
+                        status: answerSheet.status,
+                        answers: answerSheet.answers,
+                        kind: ((_a = answerSheet.answers) === null || _a === void 0 ? void 0 : _a.pdfUrl) ? "file" : "manual",
+                        updatedAt: answerSheet.updatedAt,
+                    }
+                    : null, examDetails: exam ? {
                     examId: exam.examId,
                     examType: exam.examType,
                     totalMarks: exam.totalMarks,
@@ -777,7 +801,7 @@ const getTeacherQuestionPapers = (teacherUser, query, targetUserId) => __awaiter
                     subjectName,
                     sessionName,
                 } : null, className,
-                subjectName, examName: (exam === null || exam === void 0 ? void 0 : exam.examType) || ((_b = (_a = plainPaper.content) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.examName) || "Examination" });
+                subjectName, examName: (exam === null || exam === void 0 ? void 0 : exam.examType) || ((_c = (_b = plainPaper.content) === null || _b === void 0 ? void 0 : _b.meta) === null || _c === void 0 ? void 0 : _c.examName) || "Examination" });
         });
         return {
             error: false,

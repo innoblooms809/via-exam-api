@@ -35,7 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setExamWorkflowStatus = exports.markExamPaperCreated = exports.syncExamPackageStatus = exports.EXAM_WORKFLOW_STATUSES = void 0;
+exports.markExamPaperCreated = exports.refreshExamStatus = exports.deriveExamStatus = exports.EXAM_WORKFLOW_STATUSES = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
 const User_modal_1 = __importDefault(require("../modals/User.modal"));
@@ -60,49 +60,45 @@ exports.EXAM_WORKFLOW_STATUSES = [
     "Live",
     "Completed",
 ];
-function examStatusToPaperStatus(examStatus) {
-    switch (examStatus) {
-        case "Draft":
-        case "Paper Created":
-            return "DRAFT";
-        case "Pending Approval":
-            return "PENDING_APPROVAL";
-        case "Approved":
-        case "Live":
-            return "APPROVED";
-        case "Rejected":
-            return "REJECTED";
-        default:
-            return null;
-    }
+// Approval works per SET (question paper + answer sheet of one exam set). Every set
+// keeps its own status; the exam status is only a summary derived from its sets —
+// it is never copied back onto the sets (that used to mark never-submitted sets
+// as approved when a different set of the same exam was approved).
+/** Summary exam status from the status of each set. */
+function deriveExamStatus(setStatuses, hasAnyPackage) {
+    if (!hasAnyPackage)
+        return "Draft";
+    if (setStatuses.includes("PENDING_APPROVAL"))
+        return "Pending Approval";
+    if (setStatuses.includes("REJECTED"))
+        return "Rejected";
+    if (setStatuses.some((s) => s === "APPROVED" || s === "PUBLISHED"))
+        return "Approved";
+    return "Paper Created";
 }
-function syncExamPackageStatus(examId, examStatus) {
+exports.deriveExamStatus = deriveExamStatus;
+/** Recomputes the exam status from its sets (Live / Completed exams are left alone). */
+function refreshExamStatus(examId) {
     return __awaiter(this, void 0, void 0, function* () {
-        const paperStatus = examStatusToPaperStatus(examStatus);
-        if (!paperStatus)
-            return;
+        const exam = yield Exam_modal_1.default.findOne({ where: { examId, isDeleted: false } });
+        if (!exam)
+            return null;
+        if (exam.status === "Live" || exam.status === "Completed")
+            return exam.status;
         const QuestionPaper = (yield Promise.resolve().then(() => __importStar(require("../modals/question-paper/QuestionPaper.modal")))).default;
         const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../modals/question-paper/stander-answer.model")))).default;
-        const papers = yield QuestionPaper.findAll({ where: { examId } });
-        const paperIds = papers.map((p) => p.paperId).filter(Boolean);
-        const now = new Date();
-        const extra = {};
-        if (paperStatus === "PENDING_APPROVAL")
-            extra.submittedAt = now;
-        if (paperStatus === "APPROVED") {
-            extra.approvedAt = now;
-            extra.rejectionNote = null;
+        const [papers, answerCount] = yield Promise.all([
+            QuestionPaper.findAll({ where: { examId }, attributes: ["status"] }),
+            QuestionPaperAnswer.count({ where: { examId } }),
+        ]);
+        const next = deriveExamStatus(papers.map((p) => p.status), papers.length > 0 || answerCount > 0);
+        if (next !== exam.status) {
+            yield exam.update({ status: next });
         }
-        if (paperStatus === "REJECTED")
-            extra.rejectedAt = now;
-        yield QuestionPaper.update(Object.assign({ status: paperStatus }, extra), { where: { examId } });
-        const answerWhere = paperIds.length > 0
-            ? { [sequelize_1.Op.or]: [{ examId }, { paperId: paperIds }] }
-            : { examId };
-        yield QuestionPaperAnswer.update(Object.assign({ status: paperStatus }, extra), { where: answerWhere });
+        return next;
     });
 }
-exports.syncExamPackageStatus = syncExamPackageStatus;
+exports.refreshExamStatus = refreshExamStatus;
 function markExamPaperCreated(examId) {
     return __awaiter(this, void 0, void 0, function* () {
         const exam = yield Exam_modal_1.default.findOne({ where: { examId, isDeleted: false } });
@@ -114,13 +110,6 @@ function markExamPaperCreated(examId) {
     });
 }
 exports.markExamPaperCreated = markExamPaperCreated;
-function setExamWorkflowStatus(examId, status) {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield Exam_modal_1.default.update({ status }, { where: { examId, isDeleted: false } });
-        yield syncExamPackageStatus(examId, status);
-    });
-}
-exports.setExamWorkflowStatus = setExamWorkflowStatus;
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
 const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -239,9 +228,6 @@ const getAllExams = (query, requestedBy) => __awaiter(void 0, void 0, void 0, fu
             ],
             order: [["createdAt", "DESC"]],
         });
-        yield Promise.all(exams
-            .filter((exam) => ["Pending Approval", "Approved", "Rejected"].includes(exam.status))
-            .map((exam) => syncExamPackageStatus(exam.examId, exam.status)));
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -276,9 +262,6 @@ const getAssignedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
             ],
             order: [["createdAt", "DESC"]],
         });
-        yield Promise.all(exams
-            .filter((exam) => ["Pending Approval", "Approved", "Rejected"].includes(exam.status))
-            .map((exam) => syncExamPackageStatus(exam.examId, exam.status)));
         const formattedExams = yield Promise.all(exams.map((exam) => __awaiter(void 0, void 0, void 0, function* () {
             var _a, _b, _c, _d, _e, _f, _g, _h;
             const totalStudents = yield Student_modal_1.default.count({

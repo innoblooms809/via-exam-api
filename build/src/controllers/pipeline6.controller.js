@@ -36,6 +36,16 @@ const evaluateSheetPipeline6 = (req, res) => __awaiter(void 0, void 0, void 0, f
         });
     }
 });
+// GET /v1/ai-evaluation/queue — how many sheets are in OCR / AI evaluation right now.
+const getQueueStatus = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    return res.status(http_status_1.default.OK).json({
+        error: false,
+        statusCode: http_status_1.default.OK,
+        message: "Evaluation queue status.",
+        data: pipeline6_service_1.default.getQueueSnapshot(),
+    });
+});
 exports.default = {
     evaluateSheetPipeline6,
+    getQueueStatus,
 };

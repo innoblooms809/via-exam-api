@@ -1,6 +1,8 @@
 import { Router } from "express";
 import {
   createQuestionPaper,
+  updateQuestionPaper,
+  deleteQuestionPaper,
   getQuestionPaperUploads,
   uploadImageController,
   getQuestionPaperBySelection,
@@ -32,6 +34,19 @@ router.post(
   "/createQuestionPaper",
   authenticate,
   createQuestionPaper
+);
+
+// Edit / delete an existing paper (only while DRAFT or REJECTED)
+router.put(
+  "/updateQuestionPaper/:paperId",
+  authenticate,
+  updateQuestionPaper
+);
+
+router.delete(
+  "/deleteQuestionPaper/:paperId",
+  authenticate,
+  deleteQuestionPaper
 );
 
 router.post(
