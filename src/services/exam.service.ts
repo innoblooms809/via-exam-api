@@ -10,8 +10,65 @@ import Notification from "../modals/Notification.modal";
 import StudentProfile from "../modals/Student.modal";
 import Scanner from "../modals/Scanner.modal";
 import RegHelper from "../utils/helper";
-import { Op } from "sequelize";
 import StudentService from "./student.service";
+import { Op } from "sequelize";
+
+/** Single exam-table status that drives Manage Exams + approval. */
+export const EXAM_WORKFLOW_STATUSES = [
+  "Draft",
+  "Paper Created",
+  "Pending Approval",
+  "Approved",
+  "Rejected",
+  "Live",
+  "Completed",
+] as const;
+
+// Approval works per SET (question paper + answer sheet of one exam set). Every set
+// keeps its own status; the exam status is only a summary derived from its sets —
+// it is never copied back onto the sets (that used to mark never-submitted sets
+// as approved when a different set of the same exam was approved).
+
+/** Summary exam status from the status of each set. */
+export function deriveExamStatus(setStatuses: string[], hasAnyPackage: boolean): string {
+  if (!hasAnyPackage) return "Draft";
+  if (setStatuses.includes("PENDING_APPROVAL")) return "Pending Approval";
+  if (setStatuses.includes("REJECTED")) return "Rejected";
+  if (setStatuses.some((s) => s === "APPROVED" || s === "PUBLISHED")) return "Approved";
+  return "Paper Created";
+}
+
+/** Recomputes the exam status from its sets (Live / Completed exams are left alone). */
+export async function refreshExamStatus(examId: string): Promise<string | null> {
+  const exam = await Exam.findOne({ where: { examId, isDeleted: false } });
+  if (!exam) return null;
+  if (exam.status === "Live" || exam.status === "Completed") return exam.status;
+
+  const QuestionPaper = (await import("../modals/question-paper/QuestionPaper.modal")).default;
+  const QuestionPaperAnswer = (await import("../modals/question-paper/stander-answer.model")).default;
+
+  const [papers, answerCount] = await Promise.all([
+    QuestionPaper.findAll({ where: { examId }, attributes: ["status"] }),
+    QuestionPaperAnswer.count({ where: { examId } }),
+  ]);
+
+  const next = deriveExamStatus(
+    papers.map((p) => p.status),
+    papers.length > 0 || answerCount > 0
+  );
+  if (next !== exam.status) {
+    await exam.update({ status: next });
+  }
+  return next;
+}
+
+export async function markExamPaperCreated(examId: string): Promise<void> {
+  const exam = await Exam.findOne({ where: { examId, isDeleted: false } });
+  if (!exam) return;
+  if (exam.status === "Draft") {
+    await exam.update({ status: "Paper Created" });
+  }
+}
 
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
 const createExam = async (body: any, createdBy: any): Promise<any> => {
@@ -137,6 +194,7 @@ const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
         { model: Class, as: "class", where: { isDeleted: false }, required: true },
         { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
         { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -192,6 +250,7 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
       });
       return {
         id: exam.examId,
+        examId: exam.examId,
         classId: exam.class?.classId || exam.classId,
         className: exam.class?.className || "N/A",
         sectionId: exam.section?.sectionId || exam.sectionId,
@@ -202,8 +261,16 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
         sessionName: exam.session?.sessionName || "N/A",
         examType: exam.examType,
         status: exam.status,
+        totalMarks: exam.totalMarks,
+        passingMarks: exam.passingMarks,
+        duration: exam.duration,
+        instructions: exam.instructions,
+        teacherId: exam.teacherId,
+        examinerId: exam.examinerId,
         totalStudents,
-        uploadedSheets
+        uploadedSheets,
+        createdAt: exam.createdAt,
+        updatedAt: exam.updatedAt
       };
     }));
 
@@ -273,8 +340,8 @@ const updateExamStatus = async (
   requestedBy: any,
 ): Promise<any> => {
   try {
-    const allowed = ["Draft", "Live", "Completed"];
-    if (!allowed.includes(status)) {
+    const allowed = [...EXAM_WORKFLOW_STATUSES];
+    if (!allowed.includes(status as any)) {
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
@@ -355,13 +422,13 @@ const updateExam = async (
     // Status Validation
     if (body.status) {
 
-      const allowedStatus = ["Draft", "Live", "Completed"];
+      const allowedStatus = [...EXAM_WORKFLOW_STATUSES];
 
       if (!allowedStatus.includes(body.status)) {
         return {
           error: true,
           statusCode: 400,
-          message: "Status must be one of: Draft, Live, Completed",
+          message: `Status must be one of: ${allowedStatus.join(", ")}`,
         };
       }
     }
@@ -601,6 +668,7 @@ const getAssignedExamsSummary = async (requestedBy: any): Promise<any> => {
 
         return {
           id: exam.examId,
+          examId: exam.examId,
           classId: exam.class?.classId || exam.classId,
           className: exam.class?.className || "N/A",
           sectionId: exam.section?.sectionId || exam.sectionId || null,
@@ -611,8 +679,16 @@ const getAssignedExamsSummary = async (requestedBy: any): Promise<any> => {
           sessionName: exam.session?.sessionName || "N/A",
           examType: exam.examType,
           status: exam.status,
+          totalMarks: exam.totalMarks,
+          passingMarks: exam.passingMarks,
+          duration: exam.duration,
+          instructions: exam.instructions,
+          teacherId: exam.teacherId,
+          examinerId: exam.examinerId,
           totalStudents,
           uploadedSheets,
+          createdAt: exam.createdAt,
+          updatedAt: exam.updatedAt
         };
       })
     );

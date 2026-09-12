@@ -24,89 +24,9 @@ const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const logger_1 = __importDefault(require("../config/logger"));
 const axios_1 = __importDefault(require("axios"));
-// Helper to format question paper content into text
-const formatQuestionPaper = (content, ansDoc) => {
-    var _a, _b;
-    let questions = "";
-    let answers = "";
-    if (!content) {
-        return { questions, answers };
-    }
-    // Parse ansDoc map
-    const answerMap = {};
-    if (ansDoc) {
-        let ansData = ansDoc;
-        if (typeof ansData === "string") {
-            try {
-                ansData = JSON.parse(ansData);
-            }
-            catch (_c) { }
-        }
-        if (Array.isArray(ansData)) {
-            ansData.forEach((a) => {
-                const id = a.questionId || a.id || a.key;
-                if (id) {
-                    answerMap[id] = a;
-                }
-            });
-        }
-        else if (ansData && typeof ansData === "object") {
-            Object.keys(ansData).forEach((key) => {
-                const a = ansData[key];
-                const id = a.questionId || a.id || a.key || key;
-                answerMap[id] = a;
-            });
-        }
-    }
-    // Handle case where title is available
-    if (content.title) {
-        questions += `Title: ${content.title}\n`;
-    }
-    let foundQuestions = false;
-    if (Array.isArray(content.sections) && content.sections.length > 0) {
-        for (const section of content.sections) {
-            const secName = section.name || section.title || "";
-            if (!secName && (!section.questions || section.questions.length === 0))
-                continue;
-            questions += `\n--- Section: ${secName} ---\n`;
-            if (section.instructions) {
-                questions += `Instructions: ${section.instructions}\n`;
-            }
-            if (Array.isArray(section.questions)) {
-                for (const q of section.questions) {
-                    foundQuestions = true;
-                    const qId = q.questionId || q.id || q.key || "";
-                    const qText = q.text || q.question || "";
-                    const qMarks = q.marks !== undefined ? q.marks : "";
-                    questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-                    const expectedAns = ((_a = answerMap[qId]) === null || _a === void 0 ? void 0 : _a.answer) || q.answer;
-                    if (expectedAns) {
-                        answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-                    }
-                }
-            }
-        }
-    }
-    if (Array.isArray(content.questions) && content.questions.length > 0) {
-        questions += `\n--- Questions ---\n`;
-        for (const q of content.questions) {
-            foundQuestions = true;
-            const qId = q.questionId || q.id || q.key || "";
-            const qText = q.text || q.question || "";
-            const qMarks = q.marks !== undefined ? q.marks : "";
-            questions += `${qId}. ${qText} ${qMarks ? `[Marks: ${qMarks}]` : ""}\n`;
-            const expectedAns = ((_b = answerMap[qId]) === null || _b === void 0 ? void 0 : _b.answer) || q.answer;
-            if (expectedAns) {
-                answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-            }
-        }
-    }
-    if (!foundQuestions && typeof content === "object") {
-        // Fallback simple stringify for non-standard JSON schemas
-        questions = JSON.stringify(content, null, 2);
-    }
-    return { questions, answers };
-};
+const pythonServices_1 = require("../config/pythonServices");
+const questionPaperText_1 = require("../utils/questionPaperText");
+const pipeline6_service_1 = require("./pipeline6.service");
 // ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
 const triggerEvaluation = (sheetId, force = false) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -234,7 +154,7 @@ const triggerEvaluation = (sheetId, force = false) => __awaiter(void 0, void 0, 
                     });
                 }
                 const ansDoc = qpAnswer ? qpAnswer.answers : null;
-                const { questions, answers } = formatQuestionPaper(questionPaper.content, ansDoc);
+                const { questions, answers } = (0, questionPaperText_1.formatQuestionPaper)(questionPaper.content, ansDoc);
                 if (questions)
                     questionText = questions;
                 if (answers)
@@ -276,7 +196,7 @@ const runBackgroundEvaluation = (sheet, aiEval, studentId, examId, maxMarks, que
             fileName = `${fileName}${ext}`;
         }
         // Call OCR API
-        const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
+        const ocrApiUrl = pythonServices_1.pythonServices.ocrUrl();
         const ocrFormData = new FormData();
         const fileBlob = new Blob([sheet.fileBuffer], { type: sheet.fileMimeType || "image/png" });
         ocrFormData.append("file", fileBlob, fileName);
@@ -288,7 +208,7 @@ const runBackgroundEvaluation = (sheet, aiEval, studentId, examId, maxMarks, que
         const studentAnsOcr = ocrResult.combined_markdown || "";
         logger_1.default.info("OCR completed successfully (background).");
         // 2. Call Evaluation API
-        const evaluationApiUrl = process.env.EVALUATION_API_URL || "http://localhost:8002/evaluation";
+        const evaluationApiUrl = pythonServices_1.pythonServices.evaluationUrl();
         const evalFormData = new FormData();
         evalFormData.append("student_id", studentId);
         evalFormData.append("exam_id", examId);
@@ -368,6 +288,8 @@ const getEvaluationBySheetId = (sheetId) => __awaiter(void 0, void 0, void 0, fu
         const evalDataJson = aiEval.toJSON();
         evalDataJson.studentName = studentName;
         evalDataJson.className = className;
+        // While Pending: where the sheet is in the Pipeline 6 queue (stage + place in line).
+        evalDataJson.queue = (0, pipeline6_service_1.getSheetQueueInfo)(sheetId);
         return {
             error: false,
             statusCode: http_status_1.default.OK,

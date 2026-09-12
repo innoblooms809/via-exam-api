@@ -1,374 +1,244 @@
+// ─── Pipeline 6 — main AI evaluation ────────────────────────────────────────────
+//
+// Every evaluation request goes through ONE in-process, two-stage job queue:
+//
+//   trigger ──► [ Stage 1: OCR :8000  ‖  AI diagram pre-scan :8006 ] ──► [ Stage 2: AI evaluation :8006 ] ──► saved
+//
+// • Queue: each stage works on at most N sheets at a time (EVAL_QUEUE_OCR_CONCURRENCY /
+//   EVAL_QUEUE_EVAL_CONCURRENCY, default 1). Other sheets wait in FIFO order, so a
+//   batch of "Evaluate All" never floods the Python servers.
+// • Parallel workflow:
+//     – within a sheet: OCR reads the text while the AI already pre-scans the
+//       diagrams/handwriting from the PDF (/visual-pre-eval, cached for /evaluate-text);
+//     – across sheets: while the AI evaluates student 1, OCR is already reading student 2.
+// • A sheet is never queued twice; asking again returns its current place in line.
+// • Uploaded (PDF) model answers are OCR-ed ONCE and saved (answerKeyOcr.service),
+//   then reused for every student instead of being OCR-ed per student.
+// • The student's original file is sent along with the OCR text, so when the OCR
+//   is weak or answer mapping fails, pipeline6.py can fall back to reading the
+//   whole sheet (page images) and map the answers itself.
+// • Jobs still "Pending" after a server restart are put back in the queue on start.
+
 import httpStatus from "http-status";
+import { Op } from "sequelize";
 import Scanner from "../modals/Scanner.modal";
 import Exam from "../modals/Exam.modal";
 import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
 import QuestionPaperAnswer from "../modals/question-paper/stander-answer.model";
 import AIEvaluation from "../modals/AIEvaluation.modal";
 import StudentProfile from "../modals/Student.modal";
-import ApiError from "../utils/ApiError";
+import RegHelper from "../utils/helper";
 import logger from "../config/logger";
 import axios from "axios";
-import FormData from "form-data";
+import { pythonServices } from "../config/pythonServices";
+import { formatQuestionPaper } from "../utils/questionPaperText";
+import { getAnswerKeyText, ocrDocument } from "./answerKeyOcr.service";
 
-// Helper to format question paper content into text
-const formatQuestionPaper = (content: any, ansDoc?: any): { questions: string; answers: string; calculatedTotalMarks: number } => {
-  let questions = "";
-  let answers = "";
-  let calculatedTotalMarks = 0;
+const EVAL_TIMEOUT_MS = 3600000; // 1 hour — CPU inference on long papers is slow
 
-  if (!content) {
-    return { questions: "", answers: "", calculatedTotalMarks: 0 };
-  }
-
-  let parsedContent = content;
-  if (typeof content === "string") {
-    try {
-      parsedContent = JSON.parse(content);
-    } catch (e) {
-      return { questions: content, answers: "", calculatedTotalMarks: 0 };
-    }
-  }
-
-  let answerMap: { [key: string]: any } = {};
-  if (ansDoc) {
-    let parsedAns = ansDoc;
-    if (typeof ansDoc === "string") {
-      try {
-        parsedAns = JSON.parse(ansDoc);
-      } catch (e) {}
-    }
-
-    if (Array.isArray(parsedAns)) {
-      parsedAns.forEach((item: any) => {
-        const qId = String(item.questionId || item.question_id || item.id || "");
-        if (qId) answerMap[qId] = item;
-      });
-    } else if (typeof parsedAns === "object" && parsedAns !== null) {
-      if (Array.isArray(parsedAns.answers)) {
-        parsedAns.answers.forEach((item: any) => {
-          const qId = String(item.questionId || item.question_id || item.id || "");
-          if (qId) answerMap[qId] = item;
-        });
-      } else {
-        Object.keys(parsedAns).forEach((key) => {
-          answerMap[key] = parsedAns[key];
-        });
-      }
-    }
-  }
-
-  let foundQuestions = false;
-
-  const processSingleQuestion = (q: any) => {
-    foundQuestions = true;
-    const qId = String(q.questionId || q.id || q.number || "");
-    const qText = q.questionText || q.text || q.title || q.question || "";
-    const rawMarks = q.marks !== undefined ? q.marks : q.maxMarks;
-    const numMarks = Number(rawMarks);
-    if (!isNaN(numMarks) && numMarks > 0) {
-      calculatedTotalMarks += numMarks;
-    }
-
-    const marksFormatted =
-      !isNaN(numMarks) && numMarks > 0
-        ? `[Marks: ${numMarks}]`
-        : rawMarks !== null && rawMarks !== undefined && rawMarks !== ""
-        ? `[Marks: ${rawMarks}]`
-        : "";
-
-    questions += `${qId}. ${qText} ${marksFormatted}\n`.trim() + "\n";
-
-    const expectedAns =
-      answerMap[qId]?.answer ||
-      answerMap[q.id]?.answer ||
-      q.answer ||
-      q.expectedAnswer ||
-      "";
-    if (expectedAns) {
-      answers += `${qId}. Expected Answer: ${expectedAns}\n`;
-    }
-  };
-
-  if (Array.isArray(parsedContent.sections) && parsedContent.sections.length > 0) {
-    for (const section of parsedContent.sections) {
-      const secName = section.name || section.title || "";
-      if (!secName && (!section.questions || section.questions.length === 0)) continue;
-
-      questions += `\n--- Section: ${secName} ---\n`;
-      if (section.instructions) {
-        questions += `Instructions: ${section.instructions}\n`;
-      }
-      if (Array.isArray(section.questions)) {
-        for (const q of section.questions) {
-          processSingleQuestion(q);
-        }
-      }
-    }
-  }
-
-  if (Array.isArray(parsedContent.questions) && parsedContent.questions.length > 0) {
-    if (!parsedContent.sections || parsedContent.sections.length === 0) {
-      questions += `\n--- Questions ---\n`;
-    }
-    for (const q of parsedContent.questions) {
-      processSingleQuestion(q);
-    }
-  }
-
-  if (!foundQuestions && typeof parsedContent === "object") {
-    questions = JSON.stringify(parsedContent, null, 2);
-  }
-
-  return { questions, answers, calculatedTotalMarks };
+const positiveInt = (value: string | undefined, fallback: number) => {
+  const n = Number.parseInt(String(value ?? ""), 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
 };
 
-// ─── Pipeline 6.3 Evaluation Trigger ──────────────────────────────────────────
-export const triggerPipeline6Evaluation = async (
-  sheetId: string,
-  force: boolean = false
-): Promise<any> => {
-  try {
-    // 1. Fetch Scanner Sheet
-    const sheet: any = (await Scanner.findOne({ where: { sheetId, isDeleted: false } })) || (await Scanner.findByPk(sheetId));
-    if (!sheet) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Scanner sheet not found.",
-      };
-    }
+// ─── Job ────────────────────────────────────────────────────────────────────────
 
-    // 2. Find or reset AIEvaluation record
-    let aiEval: any = await AIEvaluation.findOne({ where: { sheetId } });
+/** Everything needed to evaluate one student sheet, resolved when it is queued. */
+interface EvaluationJob {
+  sheetId: string;
+  studentId: string;
+  examId: string;
+  maxMarks: number;
+  questionText: string;
+  /** Typed model answers ("1. Expected Answer: …"); empty when the key is an uploaded file. */
+  typedAnswerKey: string;
+  /** Answer sheet row whose uploaded file must be OCR-ed (or read from its saved OCR cache). */
+  answerKeyFileAnswerId: string | null;
+  queuedAt: number;
+  // Filled by stage 1 (OCR):
+  studentText?: string;
+  answerKeyText?: string;
+  /** AI diagram/handwriting pre-scan started alongside OCR; never rejects. */
+  visualPreEval?: Promise<void>;
+}
 
-    if (aiEval && aiEval.status === "Pending" && !force) {
-      const timeElapsed = Date.now() - new Date(aiEval.updatedAt!).getTime();
-      if (timeElapsed < 60000) { // 1 minute protection against rapid double clicks
-        return {
-          error: false,
-          statusCode: httpStatus.OK,
-          message: "Pipeline 6.3 evaluation is already in progress.",
-          data: aiEval,
-        };
-      }
-      logger.info(`Sheet ${sheetId} has been in Pending for ${Math.round(timeElapsed / 1000)}s. Starting fresh Pipeline 6.3 evaluation.`);
-    }
+// ─── Stage queue ────────────────────────────────────────────────────────────────
 
-    // 3. Resolve Student, Question Paper, Answer Key
-    const student = await StudentProfile.findOne({
-      where: { rollNumber: sheet.rollNo, instituteId: sheet.instituteId, classId: sheet.classId },
-    });
-    const studentId = student ? student.userId : (sheet.studentId || `STUDENT-${sheet.rollNo}`);
-    let examId = sheet.examType || "EXAM-1";
-    let maxMarks = 10;
-    let questionText = "Evaluate student answer sheet.";
-    let standardAnsText = "";
+/** A FIFO queue that runs at most `concurrency` jobs of one stage at a time. */
+class StageQueue {
+  private waiting: EvaluationJob[] = [];
+  private running = new Map<string, EvaluationJob>();
 
-    const exam = await Exam.findOne({
-      where: { instituteId: sheet.instituteId, classId: sheet.classId, subjectId: sheet.subjectId, examType: sheet.examType, isDeleted: false },
-      order: [["createdAt", "DESC"]],
-    });
+  constructor(
+    readonly name: string,
+    private readonly concurrency: number,
+    private readonly work: (job: EvaluationJob) => Promise<void>
+  ) {}
 
-    if (exam) {
-      examId = exam.examId;
-      maxMarks = exam.totalMarks || 10;
-      const targetPaperSet = sheet.section || "A";
-
-      let questionPaper = await QuestionPaper.findOne({
-        where: { examId: exam.examId, instituteId: sheet.instituteId, paperSet: targetPaperSet },
-        order: [["createdAt", "DESC"]],
-      }) || await QuestionPaper.findOne({
-        where: { examId: exam.examId, instituteId: sheet.instituteId },
-        order: [["createdAt", "DESC"]],
-      });
-
-      if (questionPaper) {
-        let qpAnswer = await QuestionPaperAnswer.findOne({
-          where: { paperId: questionPaper.paperId, paperSet: questionPaper.paperSet },
-        }) || await QuestionPaperAnswer.findOne({
-          where: { paperId: questionPaper.paperId },
-        });
-
-        const { questions, answers, calculatedTotalMarks } = formatQuestionPaper(questionPaper.content, qpAnswer ? qpAnswer.answers : null);
-        if (questions) questionText = questions;
-        if (answers) standardAnsText = answers;
-        if (calculatedTotalMarks > 0) {
-          maxMarks = calculatedTotalMarks;
-        }
-      }
-    }
-
-    // 4. Upsert AIEvaluation Record
-    if (!aiEval) {
-      aiEval = await AIEvaluation.create({
-        sheetId,
-        studentId,
-        examId,
-        classId: sheet.classId || "",
-        subjectId: sheet.subjectId || "",
-        examType: sheet.examType || "",
-        section: sheet.section || "",
-        status: "Pending",
-        totalScore: 0,
-        evaluations: [],
-      });
-    } else {
-      await aiEval.update({
-        status: "Pending",
-        error: undefined,
-      });
-    }
-
-    // 5. Fire Async Pipeline 6.3 Background Job
-    runBackgroundPipeline6Evaluation(
-      sheet,
-      aiEval,
-      studentId,
-      examId,
-      maxMarks,
-      questionText,
-      standardAnsText
-    ).catch((err) => {
-      logger.error("[Pipeline6 Service] Background evaluation job failed:", err);
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Pipeline 6.3 AI evaluation triggered successfully.",
-      data: aiEval,
-    };
-  } catch (error: any) {
-    logger.error("[Pipeline6 Service] Initialization failed:", error);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Failed to initialize Pipeline 6.3 evaluation: ${error.message}`,
-    };
+  push(job: EvaluationJob) {
+    this.waiting.push(job);
+    this.pump();
   }
-};
 
-// ─── Background Execution: Parallel Student OCR + Rubric Pre-warming + Pipeline 6 ────────
-const runBackgroundPipeline6Evaluation = async (
-  sheet: any,
-  aiEval: any,
-  studentId: string,
-  examId: string,
-  maxMarks: number,
-  questionText: string,
-  standardAnsText: string
-): Promise<void> => {
+  has(sheetId: string) {
+    return this.running.has(sheetId) || this.waiting.some((j) => j.sheetId === sheetId);
+  }
+
+  isRunning(sheetId: string) {
+    return this.running.has(sheetId);
+  }
+
+  /** 1-based place in the waiting line, or 0 when not waiting. */
+  position(sheetId: string) {
+    return this.waiting.findIndex((j) => j.sheetId === sheetId) + 1;
+  }
+
+  counts() {
+    return { running: this.running.size, waiting: this.waiting.length };
+  }
+
+  // Start as many waiting jobs as the concurrency limit allows; each finished job
+  // frees its slot and pulls in the next one.
+  private pump() {
+    while (this.running.size < this.concurrency && this.waiting.length > 0) {
+      const job = this.waiting.shift()!;
+      this.running.set(job.sheetId, job);
+      this.work(job)
+        .catch((err) => logger.error(`[Pipeline6 Queue] ${this.name} stage crashed for sheet ${job.sheetId}:`, err))
+        .finally(() => {
+          this.running.delete(job.sheetId);
+          this.pump();
+        });
+    }
+  }
+}
+
+/** Marks the sheet's evaluation as failed with a readable reason. */
+async function failJob(sheetId: string, stage: string, err: any) {
+  const message = err?.response?.data?.detail || err?.message || "Unknown error";
+  logger.error(`[Pipeline6] ${stage} failed for sheet ${sheetId}: ${message}`);
+  await AIEvaluation.update(
+    { status: "Failed", error: `${stage} failed: ${message}` },
+    { where: { sheetId } }
+  ).catch(() => undefined);
+}
+
+// ─── Stage 1: OCR (port 8000) ‖ AI diagram pre-scan (port 8006) ─────────────────
+//
+// When a sheet's turn comes, two things start AT THE SAME TIME (as in the earlier
+// V2 flow):
+//   • OCR reads the student's written text                      → ocr_server.py :8000
+//   • the AI pre-scans the diagrams / handwriting in the PDF    → pipeline6.py /visual-pre-eval
+//     (results are cached in pipeline6.py and reused by /evaluate-text)
+// This stage ends as soon as OCR is done, so the OCR server moves straight on to
+// the next sheet; the AI stage waits only for THIS sheet's pre-scan before it runs.
+
+async function readStudentSheet(job: EvaluationJob, sheet: any): Promise<string> {
+  let studentText = String(sheet.ocrText || sheet.answerText || "");
+  if (!studentText && sheet.fileBuffer?.length) {
+    let fileName = sheet.fileName || "sheet.png";
+    if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
+      fileName += sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
+    }
+    logger.info(`[Pipeline6] [OCR] Reading student sheet ${job.sheetId} (${fileName}, ${sheet.fileBuffer.length} bytes)`);
+    studentText = await ocrDocument(sheet.fileBuffer, fileName, sheet.fileMimeType || "image/png");
+  }
+  return studentText;
+}
+
+/** AI pre-scan of diagrams/handwriting from the student's file. Only logs on failure —
+ *  /evaluate-text then evaluates the diagrams itself. */
+async function runVisualPreEval(job: EvaluationJob, sheet: any, answerKeyText: string): Promise<void> {
+  if (!sheet.fileBuffer?.length) return;
+  const started = Date.now();
   try {
-    const ocrApiUrl = process.env.OCR_API_URL || "http://localhost:8000/ocrOutput";
-    const pipeline6Url = process.env.OCR6_PIPELINE_URL || process.env.PIPELINE6_API_URL || process.env.OCR_PIPELINE_URL || "http://localhost:8007/evaluate-text";
-    const preprocessUrl = process.env.PIPELINE6_PREPROCESS_URL || "http://localhost:8007/preprocess-exam";
-
-    // ⚡ 1. PARALLEL THREADS
-    // Thread 1: Student Answer Sheet OCR (Port 8000)
-    const studentOcrTask = (async (): Promise<string> => {
-      let studentAnsText = sheet.ocrText || sheet.answerText || "";
-      if (!studentAnsText && sheet.fileBuffer && sheet.fileBuffer.length > 0) {
-        let fileName = sheet.fileName || "sheet.png";
-        if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
-          const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
-          fileName = `${fileName}${ext}`;
-        }
-
-        const ocrFormData = new FormData();
-        ocrFormData.append("file", sheet.fileBuffer, {
-          filename: fileName,
-          contentType: sheet.fileMimeType || "image/png",
-        });
-
-        logger.info(`[Pipeline6 Service] [Thread 1] Sending student answer sheet (${fileName}, ${sheet.fileBuffer.length} bytes) to OCR API: ${ocrApiUrl}`);
-        const ocrResponse = await axios.post(ocrApiUrl, ocrFormData, {
-          headers: ocrFormData.getHeaders(),
-          timeout: 3600000,
-        });
-
-        studentAnsText = ocrResponse.data?.combined_markdown || "";
-        logger.info(`[Pipeline6 Service] [Thread 1] Student answer OCR completed (${studentAnsText.length} chars).`);
+    logger.info(`[Pipeline6] [AI pre-scan] Scanning diagrams of sheet ${job.sheetId} while OCR runs`);
+    await axios.post(
+      pythonServices.pipeline6VisualPreEvalUrl(),
+      {
+        student_id: job.studentId,
+        exam_id: job.examId,
+        question_paper_text: job.questionText,
+        answer_key_text: answerKeyText,
+        student_pdf_base64: sheet.fileBuffer.toString("base64"),
+        max_marks: job.maxMarks,
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        // Can wait behind another sheet's evaluation on the same AI server.
+        timeout: EVAL_TIMEOUT_MS,
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
       }
-      return studentAnsText;
-    })();
+    );
+    logger.info(`[Pipeline6] [AI pre-scan] Sheet ${job.sheetId} pre-scanned in ${Math.round((Date.now() - started) / 1000)}s`);
+  } catch (err: any) {
+    logger.warn(`[Pipeline6] [AI pre-scan] Sheet ${job.sheetId} skipped (evaluation will scan diagrams itself): ${err?.message || err}`);
+  }
+}
 
-    // Thread 2: Answer Key OCR (if file) & Pre-warming Rubric Cache on Pipeline 6 (Port 8007)
-    const answerKeyAndRubricTask = (async (): Promise<string> => {
-      let finalAnswerKeyText = standardAnsText;
-      if (
-        standardAnsText &&
-        (standardAnsText.startsWith("http://") ||
-          standardAnsText.startsWith("https://") ||
-          /\.(pdf|png|jpg|jpeg|webp)$/i.test(standardAnsText.trim()))
-      ) {
-        try {
-          logger.info(`[Pipeline6 Service] [Thread 2] Answer key is a file URL/path. Running OCR: ${standardAnsText}`);
-          const ansKeyFileRes = await axios.get(standardAnsText.trim(), { responseType: "arraybuffer" });
-          const ansKeyFormData = new FormData();
-          ansKeyFormData.append(
-            "file",
-            ansKeyFileRes.data,
-            "answer_key" + (standardAnsText.slice(standardAnsText.lastIndexOf(".")) || ".pdf")
-          );
+async function runOcrStage(job: EvaluationJob) {
+  try {
+    const sheet: any = await Scanner.findOne({ where: { sheetId: job.sheetId, isDeleted: false } });
+    if (!sheet) throw new Error("Scanner sheet not found.");
 
-          const ansKeyOcrRes = await axios.post(ocrApiUrl, ansKeyFormData, {
-            headers: ansKeyFormData.getHeaders(),
-            timeout: 3600000,
-          });
-          if (ansKeyOcrRes.data?.combined_markdown) {
-            finalAnswerKeyText = ansKeyOcrRes.data.combined_markdown;
-            logger.info("[Pipeline6 Service] [Thread 2] Answer Key OCR completed successfully.");
-          }
-        } catch (ansKeyOcrErr: any) {
-          logger.error("[Pipeline6 Service] [Thread 2] Answer Key OCR failed, using original string:", ansKeyOcrErr.message);
-        }
-      }
+    // Model answer first (the pre-scan needs it): typed answers as-is; an uploaded
+    // file comes from its saved OCR text (OCR-ed only the first time, then cached).
+    let answerKeyText = job.typedAnswerKey;
+    if (!answerKeyText && job.answerKeyFileAnswerId) {
+      answerKeyText = (await getAnswerKeyText(job.answerKeyFileAnswerId)) ?? "";
+    }
+    job.answerKeyText = answerKeyText;
 
-      // Pre-warm Exam Rubric Cache on Pipeline 6 (Port 8007)
-      if (questionText && finalAnswerKeyText) {
-        try {
-          logger.info(`[Pipeline6 Service] [Thread 2] Pre-warming rubric cache on Pipeline 6: ${preprocessUrl}`);
-          await axios.post(preprocessUrl, {
-            exam_id: examId,
-            question_paper_text: questionText,
-            answer_key_text: finalAnswerKeyText,
-            max_marks: maxMarks,
-          }, { timeout: 30000 });
-          logger.info("[Pipeline6 Service] [Thread 2] Rubric cache pre-warmed successfully.");
-        } catch (err: any) {
-          logger.warn(`[Pipeline6 Service] [Thread 2] Rubric pre-warming notification warning (will infer on demand): ${err.message}`);
-        }
-      }
+    // ⚡ In parallel: AI pre-scan (8006) runs while OCR (8000) reads the text.
+    job.visualPreEval = runVisualPreEval(job, sheet, answerKeyText);
+    const studentText = await readStudentSheet(job, sheet);
 
-      return finalAnswerKeyText;
-    })();
+    // Empty/weak OCR is NOT a failure: stage 2 sends the original file too, and
+    // pipeline6.py reads the whole sheet from its page images in that case.
+    logger.info(`[Pipeline6] [OCR] Sheet ${job.sheetId}: ${studentText.length} chars of student text.`);
 
-    // 🚀 AWAIT BOTH PARALLEL THREADS
-    const [studentAnsOcr, finalAnswerKeyText] = await Promise.all([studentOcrTask, answerKeyAndRubricTask]);
+    job.studentText = studentText;
+    evaluationQueue.push(job); // hand over to the AI stage; OCR moves on to the next sheet
+  } catch (err: any) {
+    await failJob(job.sheetId, "OCR", err);
+  }
+}
 
-    // 2. Dispatch Payload to Pipeline 6.3 Evaluation Endpoint (Port 8007)
-    const pipelinePayload = {
-      student_id: studentId,
-      exam_id: examId,
-      question_paper_text: questionText,
-      answer_key_text: finalAnswerKeyText,
-      student_answer_text: studentAnsOcr || "No student answer text available.",
-      max_marks: maxMarks,
+// ─── Stage 2: AI evaluation (port 8006) ─────────────────────────────────────────
+
+async function runEvaluationStage(job: EvaluationJob) {
+  try {
+    const sheet: any = await Scanner.findOne({ where: { sheetId: job.sheetId, isDeleted: false } });
+    const aiEval: any = await AIEvaluation.findOne({ where: { sheetId: job.sheetId } });
+    if (!sheet || !aiEval) throw new Error("Sheet or evaluation record no longer exists.");
+
+    // Let this sheet's diagram pre-scan finish, so /evaluate-text reuses its cached
+    // results instead of scanning the diagrams a second time.
+    if (job.visualPreEval) await job.visualPreEval;
+
+    const payload = {
+      student_id: job.studentId,
+      exam_id: job.examId,
+      question_paper_text: job.questionText,
+      answer_key_text: job.answerKeyText || "",
+      student_answer_text: job.studentText || "",
+      max_marks: job.maxMarks,
+      // Original sheet: pipeline6.py uses its page images for diagram questions and
+      // for the whole-sheet fallback when OCR confidence is low / mapping fails.
+      student_pdf_base64: sheet.fileBuffer?.length ? sheet.fileBuffer.toString("base64") : undefined,
     };
 
-    logger.info(`[Pipeline6 Service] Posting payload to Pipeline 6.3 endpoint: ${pipeline6Url}`);
-    const evalResponse = await axios.post(pipeline6Url, pipelinePayload, {
+    logger.info(`[Pipeline6] [AI] Evaluating sheet ${job.sheetId} on ${pythonServices.pipeline6Url()}`);
+    const evalResponse = await axios.post(pythonServices.pipeline6Url(), payload, {
       headers: { "Content-Type": "application/json" },
-      timeout: 3600000, // 1 hour
+      timeout: EVAL_TIMEOUT_MS,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
     });
-
     const evalResult = evalResponse.data;
-    logger.info("[Pipeline6 Service] Pipeline 6.3 evaluation completed successfully.");
-    console.log("==================== PIPELINE 6.3 RESPONSE ====================");
-    console.log(JSON.stringify(evalResult, null, 2));
-    console.log("===============================================================");
 
-    // 3. Map Pipeline 6.3 response to clean AIEvaluation DB schema
+    // Map the pipeline response to the AIEvaluation DB schema.
     const rawQuestions = evalResult.questions || evalResult.evaluations || [];
     const mappedQuestions = rawQuestions.map((q: any) => ({
       questionId: q.questionId || q.question_id || "",
@@ -383,17 +253,14 @@ const runBackgroundPipeline6Evaluation = async (
       evaluation: q.evaluation || {
         confidence: typeof q.confidence === "object" ? q.confidence : {
           score: q.confidence !== undefined ? q.confidence : 1.0,
-          reason: "Evaluated by Pipeline 6.3 multi-agent engine"
+          reason: "Evaluated by Pipeline 6.3 multi-agent engine",
         },
         reasoning: typeof q.reasoning === "object" ? q.reasoning : {
           analysis: q.reasoning || q.feedback || "",
-          comparison: {
-            student: q.studentAnswer || "",
-            expected: q.expectedAnswer || "",
-          },
+          comparison: { student: q.studentAnswer || "", expected: q.expectedAnswer || "" },
           conceptsIdentified: q.strengths || [],
           missingConcepts: q.missingConcepts || q.missing_concepts || [],
-          markJustification: `Awarded ${q.obtainedMarks || q.score || 0} marks based on answer analysis.`
+          markJustification: `Awarded ${q.obtainedMarks || q.score || 0} marks based on answer analysis.`,
         },
         feedback: typeof q.feedback === "string" ? q.feedback : (q.feedback?.overall || "Evaluated"),
         strengths: q.strengths || [],
@@ -401,39 +268,224 @@ const runBackgroundPipeline6Evaluation = async (
         keywords: {
           matched: q.keywordsMatched || q.keywords?.matched || [],
           missing: q.keywordsMissing || q.keywords?.missing || [],
-        }
-      }
+        },
+      },
     }));
 
     const totalObtainedScore = evalResult.summary ? evalResult.summary.obtainedMarks : (evalResult.total_score || 0);
 
-    // 4. Update AIEvaluation Details in Database
     await aiEval.update({
       status: "Success",
       totalScore: totalObtainedScore,
-      feedback: typeof evalResult.feedback === "object" ? (evalResult.feedback.overall || JSON.stringify(evalResult.feedback)) : (evalResult.feedback || ""),
+      feedback: typeof evalResult.feedback === "object"
+        ? (evalResult.feedback.overall || JSON.stringify(evalResult.feedback))
+        : (evalResult.feedback || ""),
       evaluations: mappedQuestions,
-      summary: evalResult.summary || null,
-      metadata: evalResult.metadata || null,
-      studentAnsOcr: studentAnsOcr,
-      standardAnsOcr: finalAnswerKeyText,
-      questionOcr: questionText,
+      studentAnsOcr: job.studentText || "",
+      standardAnsOcr: job.answerKeyText || "",
+      questionOcr: job.questionText,
       error: null,
     });
-
-    // 5. Update Scanner Sheet status to Evaluated
     await sheet.update({ status: "Evaluated" });
-    logger.info(`[Pipeline6 Service] Successfully completed and saved evaluation for sheet: ${sheet.sheetId}`);
-  } catch (error: any) {
-    logger.error(`[Pipeline6 Service] Evaluation background job failed for sheet ${sheet.sheetId}:`, error);
 
-    await aiEval.update({
-      status: "Failed",
-      error: error.message || "Unknown error occurred during background Pipeline 6.3 AI evaluation.",
+    const waitedSeconds = Math.round((Date.now() - job.queuedAt) / 1000);
+    logger.info(`[Pipeline6] [AI] Sheet ${job.sheetId} evaluated: ${totalObtainedScore} marks (${waitedSeconds}s since queued).`);
+  } catch (err: any) {
+    await failJob(job.sheetId, "AI evaluation", err);
+  }
+}
+
+// One OCR worker and one AI worker by default — raise only if the servers have headroom.
+const ocrQueue = new StageQueue("OCR", positiveInt(process.env.EVAL_QUEUE_OCR_CONCURRENCY, 1), runOcrStage);
+const evaluationQueue = new StageQueue("AI evaluation", positiveInt(process.env.EVAL_QUEUE_EVAL_CONCURRENCY, 1), runEvaluationStage);
+
+// ─── Queue status (shown on the queue page) ─────────────────────────────────────
+
+export type QueueStage = "waiting_for_ocr" | "ocr" | "waiting_for_evaluation" | "evaluating";
+
+export interface SheetQueueInfo {
+  stage: QueueStage;
+  /** 1-based place in the waiting line of that stage (0 while running). */
+  position: number;
+}
+
+/** Where a sheet currently is in the queue, or null when it is not queued. */
+export function getSheetQueueInfo(sheetId: string): SheetQueueInfo | null {
+  if (ocrQueue.isRunning(sheetId)) return { stage: "ocr", position: 0 };
+  if (evaluationQueue.isRunning(sheetId)) return { stage: "evaluating", position: 0 };
+  const ocrPos = ocrQueue.position(sheetId);
+  if (ocrPos) return { stage: "waiting_for_ocr", position: ocrPos };
+  const evalPos = evaluationQueue.position(sheetId);
+  if (evalPos) return { stage: "waiting_for_evaluation", position: evalPos };
+  return null;
+}
+
+export function getQueueSnapshot() {
+  return { ocr: ocrQueue.counts(), evaluation: evaluationQueue.counts() };
+}
+
+const isQueued = (sheetId: string) => ocrQueue.has(sheetId) || evaluationQueue.has(sheetId);
+
+// ─── Trigger (enqueue) ──────────────────────────────────────────────────────────
+
+export const triggerPipeline6Evaluation = async (
+  sheetId: string,
+  force: boolean = false
+): Promise<any> => {
+  try {
+    const sheet: any = (await Scanner.findOne({ where: { sheetId, isDeleted: false } })) || (await Scanner.findByPk(sheetId));
+    if (!sheet) {
+      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Scanner sheet not found." };
+    }
+    sheetId = sheet.sheetId;
+
+    let aiEval: any = await AIEvaluation.findOne({ where: { sheetId } });
+
+    // Already in line: never queue the same sheet twice.
+    if (isQueued(sheetId)) {
+      return {
+        error: false,
+        statusCode: httpStatus.OK,
+        message: "This sheet is already queued for evaluation.",
+        data: aiEval ? { ...aiEval.get({ plain: true }), queue: getSheetQueueInfo(sheetId) } : null,
+      };
+    }
+
+    if (aiEval && aiEval.status === "Success" && !force) {
+      return { error: false, statusCode: httpStatus.OK, message: "Sheet already evaluated.", data: aiEval };
+    }
+
+    // ── Resolve student, exam, question paper and model answer ──
+    const student = await StudentProfile.findOne({
+      where: { rollNumber: sheet.rollNo, instituteId: sheet.instituteId, classId: sheet.classId },
     });
+    const studentId = student ? student.userId : (sheet.studentId || `STUDENT-${sheet.rollNo}`);
+
+    let examId = sheet.examType || "EXAM-1";
+    let maxMarks = 10;
+    let questionText = "Evaluate student answer sheet.";
+    let typedAnswerKey = "";
+    let answerKeyFileAnswerId: string | null = null;
+
+    const exam = await Exam.findOne({
+      where: { instituteId: sheet.instituteId, classId: sheet.classId, subjectId: sheet.subjectId, examType: sheet.examType, isDeleted: false },
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (exam) {
+      examId = exam.examId;
+      maxMarks = exam.totalMarks || 10;
+      const targetPaperSet = sheet.section || "A";
+
+      const questionPaper = await QuestionPaper.findOne({
+        where: { examId: exam.examId, instituteId: sheet.instituteId, paperSet: targetPaperSet },
+        order: [["createdAt", "DESC"]],
+      }) || await QuestionPaper.findOne({
+        // Set not found: prefer an approved set of the exam over a draft one.
+        where: { examId: exam.examId, instituteId: sheet.instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED"] } },
+        order: [["paperSet", "ASC"]],
+      }) || await QuestionPaper.findOne({
+        where: { examId: exam.examId, instituteId: sheet.instituteId },
+        order: [["createdAt", "DESC"]],
+      });
+
+      if (questionPaper) {
+        const qpAnswer = await QuestionPaperAnswer.findOne({
+          where: { paperId: questionPaper.paperId, paperSet: questionPaper.paperSet },
+        }) || await QuestionPaperAnswer.findOne({
+          where: { paperId: questionPaper.paperId },
+        }) || await QuestionPaperAnswer.findOne({
+          // Answer sheet kept from an earlier (deleted) paper of the same set.
+          where: { examId: questionPaper.examId, paperSet: questionPaper.paperSet },
+          order: [["updatedAt", "DESC"]],
+        });
+
+        const { questions, answers, calculatedTotalMarks, answerKeyFileUrl } =
+          formatQuestionPaper(questionPaper.content, qpAnswer ? qpAnswer.answers : null);
+        if (questions) questionText = questions;
+        if (answers) typedAnswerKey = answers;
+        else if (answerKeyFileUrl && qpAnswer) answerKeyFileAnswerId = qpAnswer.answerId; // uploaded model answer
+        if (calculatedTotalMarks > 0) maxMarks = calculatedTotalMarks;
+      }
+    }
+
+    // ── Evaluation record → Pending (the queue page polls this) ──
+    if (!aiEval) {
+      aiEval = await AIEvaluation.create({
+        evaluationId: await RegHelper.generateUserId(),
+        sheetId,
+        studentId,
+        examId,
+        classId: sheet.classId || "",
+        subjectId: sheet.subjectId || "",
+        examType: sheet.examType || "",
+        section: sheet.section || "",
+        status: "Pending",
+        totalScore: 0,
+        evaluations: [],
+      } as any);
+    } else {
+      await aiEval.update({ status: "Pending", error: null });
+    }
+
+    ocrQueue.push({
+      sheetId,
+      studentId,
+      examId,
+      maxMarks,
+      questionText,
+      typedAnswerKey,
+      answerKeyFileAnswerId,
+      queuedAt: Date.now(),
+    });
+
+    const queue = getSheetQueueInfo(sheetId);
+    logger.info(`[Pipeline6] Sheet ${sheetId} queued (${queue?.stage}, #${queue?.position}).`);
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: queue?.stage === "waiting_for_ocr"
+        ? `Queued for AI evaluation (position ${queue.position}).`
+        : "AI evaluation started.",
+      data: { ...aiEval.get({ plain: true }), queue },
+    };
+  } catch (error: any) {
+    logger.error("[Pipeline6 Service] Initialization failed:", error);
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Failed to initialize Pipeline 6.3 evaluation: ${error.message}`,
+    };
   }
 };
 
+// ─── Restart recovery ───────────────────────────────────────────────────────────
+
+/**
+ * The queue lives in memory, so a restart drops it. Evaluations left "Pending"
+ * (queued or mid-way) in the last 24 hours are put back in line on startup.
+ * Disable with EVAL_QUEUE_RECOVER_ON_START=false.
+ */
+export async function recoverPipeline6Queue(): Promise<void> {
+  if (String(process.env.EVAL_QUEUE_RECOVER_ON_START ?? "true").toLowerCase() === "false") return;
+  try {
+    const stuck = await AIEvaluation.findAll({
+      where: { status: "Pending", updatedAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+      order: [["updatedAt", "ASC"]],
+    });
+    for (const row of stuck) {
+      await triggerPipeline6Evaluation(row.sheetId, true);
+    }
+    if (stuck.length) logger.info(`[Pipeline6 Queue] Re-queued ${stuck.length} evaluation(s) left pending before restart.`);
+  } catch (err: any) {
+    logger.warn(`[Pipeline6 Queue] Could not recover pending evaluations: ${err?.message || err}`);
+  }
+}
+
 export default {
   triggerPipeline6Evaluation,
+  getSheetQueueInfo,
+  getQueueSnapshot,
+  recoverPipeline6Queue,
 };

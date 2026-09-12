@@ -12,7 +12,9 @@ Scanner.init({
     section: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     subjectId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     examType: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    examId: { type: sequelize_1.DataTypes.STRING, allowNull: true },
     rollNo: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    studentName: { type: sequelize_1.DataTypes.STRING, allowNull: true },
     fileName: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     fileBuffer: { type: sequelize_1.DataTypes.BLOB("long"), allowNull: false },
     fileMimeType: { type: sequelize_1.DataTypes.STRING, allowNull: false },
@@ -39,6 +41,8 @@ Scanner.init({
             name: "viaexam_answer_sheets_institute_id_class_id_section_subject_id_",
             fields: ["instituteId", "classId", "section", "subjectId", "examType"],
         },
+        // Index for approval workflow (viaexam_answer_sheets_exam_id_index)
+        // exists in DB via migration — not declared here to avoid sync conflicts.
         // Unique sheet per student per exam
         {
             unique: true,

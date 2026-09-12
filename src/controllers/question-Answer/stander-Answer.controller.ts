@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import QuestionPaperAnswerService from "../../services/question-answer/stander-answer.service";
 import Session from "../../modals/Session.modal";
 import Class from "../../modals/Class.modal";
@@ -7,6 +8,7 @@ import Exam from "../../modals/Exam.modal";
 import QuestionPaperAnswer from "../../modals/question-paper/stander-answer.model";
 import httpStatus from "http-status";
 import cloudinary from "../../utils/cloudinary";
+import { warmAnswerKeyOcr } from "../../services/answerKeyOcr.service";
 import fs from "fs";
 import path from "path";
 
@@ -136,6 +138,16 @@ export const uploadPdfController = async (
         ? [req.file as Express.Multer.File]
         : [];
 
+    const { paperId, examId, paperSet } = req.body;
+    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
+    const teacherId = req.viaExamUser?.userId || req.body.teacherId;
+    const linkToPaper = Boolean(paperId && examId && paperSet && instituteId && teacherId);
+
+    // Refuse before uploading if this set's answer sheet is already under review/approved.
+    if (linkToPaper) {
+      await QuestionPaperAnswerService.assertReplaceable(paperId, paperSet, examId);
+    }
+
     const urls: string[] = [];
 
     for (const file of files) {
@@ -155,12 +167,8 @@ export const uploadPdfController = async (
       });
     }
 
-    const { paperId, examId, paperSet } = req.body;
-    const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
-    const teacherId = req.viaExamUser?.userId || req.body.teacherId;
-
     let dbResult = null;
-    if (paperId && examId && paperSet && instituteId && teacherId) {
+    if (linkToPaper) {
       try {
         dbResult = await QuestionPaperAnswerService.saveAnswerSheetPdfUrl({
           paperId,
@@ -170,8 +178,16 @@ export const uploadPdfController = async (
           teacherId,
           pdfUrl: urls[0],
         });
+        // Read the uploaded model answer by OCR once, in the background, and save the
+        // text — AI evaluation then reuses it for every student instead of re-reading it.
+        if (dbResult?.answerId) warmAnswerKeyOcr(dbResult.answerId);
       } catch (dbErr: any) {
         console.error("Failed to save answer sheet PDF url to database:", dbErr.message);
+        // The file reached storage but is not linked to the paper — report it as a failure.
+        return res.status(dbErr?.statusCode || httpStatus.BAD_REQUEST).json({
+          error: true,
+          message: dbErr.message || "Answer sheet uploaded but could not be saved. Please try again.",
+        });
       }
     }
 
@@ -185,9 +201,49 @@ export const uploadPdfController = async (
       },
     });
   } catch (e: any) {
-    return res.status(500).json({
+    return res.status(e?.statusCode || 500).json({
       error: true,
       message: e.message,
+    });
+  }
+};
+
+export const updateQuestionPaperAnswer = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { answerId } = req.params;
+    const answer = await QuestionPaperAnswerService.updateQuestionPaperAnswer(
+      answerId,
+      req.viaExamUser,
+      req.body?.answers
+    );
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Answer sheet updated successfully",
+      data: answer,
+    });
+  } catch (error: any) {
+    return res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: error.message,
+    });
+  }
+};
+
+export const deleteQuestionPaperAnswer = async (req: any, res: Response): Promise<any> => {
+  try {
+    const { answerId } = req.params;
+    const result = await QuestionPaperAnswerService.deleteQuestionPaperAnswer(answerId, req.viaExamUser);
+
+    return res.status(httpStatus.OK).json({
+      error: false,
+      message: "Answer sheet deleted successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    return res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
+      error: true,
+      message: error.message,
     });
   }
 };
@@ -203,6 +259,7 @@ export const getQuestionPaperAnswerBySelection = async (
       examType,
       session,
       paperSet,
+      examId,
     } = req.body;
 
     const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
@@ -213,8 +270,30 @@ export const getQuestionPaperAnswerBySelection = async (
       examType,
       session,
       paperSet,
+      examId,
       instituteId,
     });
+
+    // 1. Direct lookup by examId if provided
+    if (examId) {
+      const qpaWhere: any = { examId };
+      if (paperSet) qpaWhere.paperSet = paperSet;
+      const directQpa = await QuestionPaperAnswer.findOne({ where: qpaWhere });
+      if (directQpa) {
+        const examObj = await Exam.findOne({ where: { examId } });
+        return res.status(httpStatus.OK).json({
+          error: false,
+          message: "Question paper answer fetched successfully.",
+          data: {
+            exam: examObj || { examId, examType, subjectName: subject, className: classVal },
+            questionPaperAnswer: directQpa,
+          },
+        });
+      }
+    }
+
+    // 2. Lookup by session, class, subject, examType
+    const cleanClass = (classVal || "").replace(/^class\s*/i, "").trim();
 
     const [sessionData, classData] = await Promise.all([
       Session.findOne({
@@ -227,19 +306,19 @@ export const getQuestionPaperAnswerBySelection = async (
 
       Class.findOne({
         where: {
-          className: classVal,
+          [Op.or]: [
+            { className: classVal },
+            { className: `Class ${cleanClass}` },
+            { className: cleanClass },
+          ],
           instituteId,
           isDeleted: false,
         },
       }),
     ]);
 
-    if (!sessionData) {
+    if (!sessionData && session) {
       console.warn(`[getQuestionPaperAnswerBySelection] 404: Session '${session}' not found for institute '${instituteId}'`);
-      return res.status(httpStatus.NOT_FOUND).json({
-        error: true,
-        message: "Session not found.",
-      });
     }
 
     if (!classData) {
@@ -267,16 +346,16 @@ export const getQuestionPaperAnswerBySelection = async (
       });
     }
 
-    const exam = await Exam.findOne({
-      where: {
-        sessionId: sessionData.sessionId,
-        classId: classData.classId,
-        subjectId: subjectData.subjectId,
-        examType,
-        instituteId,
-        isDeleted: false,
-      },
-    });
+    const examWhere: any = {
+      classId: classData.classId,
+      subjectId: subjectData.subjectId,
+      examType,
+      instituteId,
+      isDeleted: false,
+    };
+    if (sessionData) examWhere.sessionId = sessionData.sessionId;
+
+    const exam = await Exam.findOne({ where: examWhere });
 
     if (!exam) {
       console.warn(`[getQuestionPaperAnswerBySelection] 404: Exam not found for session '${session}', class '${classVal}', subject '${subject}', examType '${examType}'`);
@@ -286,12 +365,10 @@ export const getQuestionPaperAnswerBySelection = async (
       });
     }
 
-    const questionPaperAnswer = await QuestionPaperAnswer.findOne({
-      where: {
-        examId: exam.examId,
-        paperSet,
-      },
-    });
+    const qpaWhere: any = { examId: exam.examId };
+    if (paperSet) qpaWhere.paperSet = paperSet;
+
+    const questionPaperAnswer = await QuestionPaperAnswer.findOne({ where: qpaWhere });
 
     if (!questionPaperAnswer) {
       console.warn(`[getQuestionPaperAnswerBySelection] 404: Question paper answer not found for examId '${exam.examId}', paperSet '${paperSet}'`);
@@ -353,17 +430,15 @@ export const getQuestionPaperAnswerUploads = async (req: Request, res: Response)
 export const submitAnswerSheet = async (req: any, res: Response): Promise<any> => {
   try {
     const { answerId } = req.params;
-    const teacherId = req.viaExamUser.userId;
-
-    const answer = await QuestionPaperAnswerService.submitForApproval(answerId, teacherId);
+    const answer = await QuestionPaperAnswerService.submitForApproval(answerId, req.viaExamUser);
 
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Answer sheet submitted for approval.",
+      message: `Set ${answer.paperSet} submitted for approval.`,
       data: answer,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
+    return res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
       error: true,
       message: error.message,
     });
@@ -373,17 +448,15 @@ export const submitAnswerSheet = async (req: any, res: Response): Promise<any> =
 export const approveAnswerSheet = async (req: any, res: Response): Promise<any> => {
   try {
     const { answerId } = req.params;
-    const reviewerId = req.viaExamUser.userId;
-
-    const answer = await QuestionPaperAnswerService.approveAnswer(answerId, reviewerId);
+    const answer = await QuestionPaperAnswerService.approveAnswer(answerId, req.viaExamUser);
 
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Answer sheet approved.",
+      message: `Set ${answer.paperSet} approved.`,
       data: answer,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
+    return res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
       error: true,
       message: error.message,
     });
@@ -393,18 +466,17 @@ export const approveAnswerSheet = async (req: any, res: Response): Promise<any> 
 export const rejectAnswerSheet = async (req: any, res: Response): Promise<any> => {
   try {
     const { answerId } = req.params;
-    const reviewerId = req.viaExamUser.userId;
     const { rejectionNote } = req.body;
 
-    const answer = await QuestionPaperAnswerService.rejectAnswer(answerId, reviewerId, rejectionNote);
+    const answer = await QuestionPaperAnswerService.rejectAnswer(answerId, req.viaExamUser, rejectionNote);
 
     return res.status(httpStatus.OK).json({
       error: false,
-      message: "Answer sheet rejected.",
+      message: `Set ${answer.paperSet} rejected.`,
       data: answer,
     });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
+    return res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
       error: true,
       message: error.message,
     });

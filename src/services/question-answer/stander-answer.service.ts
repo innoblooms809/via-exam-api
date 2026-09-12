@@ -1,8 +1,27 @@
 import QuestionPaperAnswer from "../../modals/question-paper/stander-answer.model";
 import QuestionPaper from "../../modals/question-paper/QuestionPaper.modal";
-import Exam from "../../modals/Exam.modal";
 import Notification from "../../modals/Notification.modal";
 import RegHelper from "../../utils/helper";
+import ApiError from "../../utils/ApiError";
+import httpStatus from "http-status";
+import {
+  markExamPaperCreated,
+  refreshExamStatus,
+} from "../exam.service";
+import { QuestionPaperService, assertEditableStatus, isTeacherUser } from "./questionPaper.service";
+import { cleanupUploadsInBackground, collectUploadRefs } from "../uploadedFiles.service";
+import { reconcileTypedAnswers } from "../../utils/answerSheetReconcile";
+
+/**
+ * Stores on every typed answer which question it answers (text, marks, number), so
+ * the answers can be re-linked if the paper is later rebuilt or edited
+ * (see utils/answerSheetReconcile). Uploaded-PDF answer sheets pass through as-is.
+ */
+async function withQuestionSnapshots(answers: unknown, paperId: string): Promise<object> {
+  const paper = paperId ? await QuestionPaper.findOne({ where: { paperId } }) : null;
+  const stamped = paper ? reconcileTypedAnswers(answers, paper.content, null) : null;
+  return (stamped ? stamped.answers : answers) as object;
+}
 
 class QuestionPaperAnswerService {
   // ─────────────────────────────────────────────
@@ -33,9 +52,13 @@ class QuestionPaperAnswerService {
         examId: data.examId,
         teacherId: data.teacherId,
         paperSet: data.paperSet,
-        answers: data.answers,
+        answers: await withQuestionSnapshots(data.answers, data.paperId),
         status: data.status || "DRAFT",
       });
+
+      if (data.examId) {
+        await markExamPaperCreated(data.examId);
+      }
 
       return result;
     } catch (error: any) {
@@ -55,20 +78,29 @@ class QuestionPaperAnswerService {
     pdfUrl: string;
   }) {
     try {
+      // The set's answer sheet: linked to this paper, or kept from a deleted paper of the same set.
       const existing = await QuestionPaperAnswer.findOne({
         where: {
           paperId: data.paperId,
           paperSet: data.paperSet,
         },
+      }) || await QuestionPaperAnswer.findOne({
+        where: { examId: data.examId, paperSet: data.paperSet },
+        order: [["updatedAt", "DESC"]],
       });
 
       if (existing) {
+        assertEditableStatus(existing.status, "answer sheet", "replaced");
+        const filesBefore = collectUploadRefs(existing.answers);
         await existing.update({
+          paperId: data.paperId,
           answers: { pdfUrl: data.pdfUrl },
           teacherId: data.teacherId,
           instituteId: data.instituteId,
           examId: data.examId,
         });
+        // The replaced PDF (and any old answer diagrams) are no longer used.
+        cleanupUploadsInBackground(filesBefore, `replacing answer sheet ${existing.answerId}`);
         return existing;
       } else {
         const answerId = await RegHelper.generateUserId();
@@ -82,179 +114,130 @@ class QuestionPaperAnswerService {
           answers: { pdfUrl: data.pdfUrl },
           status: "DRAFT",
         });
+        await markExamPaperCreated(data.examId);
         return result;
       }
     } catch (error: any) {
+      if (error instanceof ApiError) throw error;
       throw new Error(error.message);
     }
   }
 
-
   // ─────────────────────────────────────────────
-  // SUBMIT FOR APPROVAL  (DRAFT → PENDING_APPROVAL)
-  // ─────────────────────────────────────────────
-
-  static async submitForApproval(
-    answerId: string,
-    teacherId: string
-  ) {
-    const answer = await QuestionPaperAnswer.findOne({
-      where: { answerId },
-    });
-
-    if (!answer) {
-      throw new Error("Answer sheet not found");
-    }
-
-    if (answer.teacherId !== teacherId) {
-      throw new Error("You can only submit your own answer sheet");
-    }
-
-    if (answer.status !== "DRAFT") {
-      throw new Error(
-        `Cannot submit. Current status: ${answer.status}. Only DRAFT answer sheets can be submitted.`
-      );
-    }
-
-    await answer.update({
-      status: "PENDING_APPROVAL",
-      submittedAt: new Date(),
-    });
-
-    return answer;
-  }
-
-  // ─────────────────────────────────────────────
-  // APPROVE  (PENDING_APPROVAL → APPROVED)
+  // FIND AN ANSWER SHEET THE USER MAY CHANGE
   // ─────────────────────────────────────────────
 
-  static async approveAnswer(
-    answerId: string,
-    reviewerId: string
-  ) {
-    const answer = await QuestionPaperAnswer.findOne({
-      where: { answerId },
-    });
+  static async findAnswerForUser(answerId: string, user: any) {
+    const answer = await QuestionPaperAnswer.findOne({ where: { answerId } });
 
-    if (!answer) {
-      throw new Error("Answer sheet not found");
+    if (!answer || (user?.instituteId && answer.instituteId !== user.instituteId)) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Answer sheet not found");
     }
 
-    if (answer.status !== "PENDING_APPROVAL") {
-      throw new Error(
-        `Cannot approve. Current status: ${answer.status}. Only PENDING_APPROVAL answer sheets can be approved.`
-      );
-    }
-
-    await answer.update({
-      status: "APPROVED",
-      approvedAt: new Date(),
-      rejectionNote: null,
-    });
-
-    // Notify the teacher
-    const notificationId = await RegHelper.generateUserId();
-    try {
-      await Notification.create({
-        notificationId,
-        instituteId: answer.instituteId,
-        userId: answer.teacherId,
-        type: "ANSWER_APPROVED",
-        title: "Answer Sheet Approved",
-        message: "Your answer sheet has been approved.",
-        referenceId: answerId,
-      });
-    } catch (_) {
-      // non-blocking
-    }
-
-    // Check if both QP and Answer are approved → set exam to Live
-    await QuestionPaperAnswerService.checkAndSetExamLive(answer.examId);
-
-    return answer;
-  }
-
-  // ─────────────────────────────────────────────
-  // REJECT  (PENDING_APPROVAL → REJECTED)
-  // ─────────────────────────────────────────────
-
-  static async rejectAnswer(
-    answerId: string,
-    reviewerId: string,
-    rejectionNote: string
-  ) {
-    if (!rejectionNote || !rejectionNote.trim()) {
-      throw new Error("Rejection note is required");
-    }
-
-    const answer = await QuestionPaperAnswer.findOne({
-      where: { answerId },
-    });
-
-    if (!answer) {
-      throw new Error("Answer sheet not found");
-    }
-
-    if (answer.status !== "PENDING_APPROVAL") {
-      throw new Error(
-        `Cannot reject. Current status: ${answer.status}. Only PENDING_APPROVAL answer sheets can be rejected.`
-      );
-    }
-
-    await answer.update({
-      status: "REJECTED",
-      rejectedAt: new Date(),
-      rejectionNote: rejectionNote.trim(),
-    });
-
-    // Notify the teacher
-    const notificationId = await RegHelper.generateUserId();
-    try {
-      await Notification.create({
-        notificationId,
-        instituteId: answer.instituteId,
-        userId: answer.teacherId,
-        type: "ANSWER_REJECTED",
-        title: "Answer Sheet Rejected",
-        message: `Your answer sheet has been rejected. Reason: ${rejectionNote.trim()}`,
-        referenceId: answerId,
-      });
-    } catch (_) {
-      // non-blocking
+    if (isTeacherUser(user) && answer.teacherId !== user.userId) {
+      // Older answer sheets were saved under a fixed teacher id, so also accept
+      // the teacher who owns the matching question paper.
+      const paper = await QuestionPaper.findOne({ where: { paperId: answer.paperId } });
+      if (!paper || paper.teacherId !== user.userId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "You can only change your own answer sheet");
+      }
     }
 
     return answer;
   }
 
+  // Throws before anything is uploaded when an existing answer sheet is locked.
+  static async assertReplaceable(paperId: string, paperSet: string, examId?: string) {
+    const existing = await QuestionPaperAnswer.findOne({ where: { paperId, paperSet } }) ||
+      (examId
+        ? await QuestionPaperAnswer.findOne({ where: { examId, paperSet: paperSet as any }, order: [["updatedAt", "DESC"]] })
+        : null);
+    if (existing) assertEditableStatus(existing.status, "answer sheet", "replaced");
+  }
+
   // ─────────────────────────────────────────────
+  // UPDATE ANSWER SHEET  (DRAFT / REJECTED only)
+  // ─────────────────────────────────────────────
+
+  static async updateQuestionPaperAnswer(answerId: string, user: any, answers: unknown) {
+    if (!answers || typeof answers !== "object") {
+      throw new ApiError(httpStatus.BAD_REQUEST, "answers must be an array or object");
+    }
+
+    const answer = await QuestionPaperAnswerService.findAnswerForUser(answerId, user);
+    assertEditableStatus(answer.status, "answer sheet", "edited");
+
+    const filesBefore = collectUploadRefs(answer.answers);
+    await answer.update({ answers: await withQuestionSnapshots(answers, answer.paperId) });
+    // A replaced uploaded PDF / removed answer diagrams are no longer used.
+    cleanupUploadsInBackground(filesBefore, `editing answer sheet ${answerId}`);
+    return answer;
+  }
+
+  // ─────────────────────────────────────────────
+  // DELETE ANSWER SHEET  (DRAFT / REJECTED only)
+  // Independent of the question paper: the paper is never touched. The uploaded
+  // PDF / answer diagrams of this answer sheet are removed with it.
+  // ─────────────────────────────────────────────
+
+  static async deleteQuestionPaperAnswer(answerId: string, user: any) {
+    const answer = await QuestionPaperAnswerService.findAnswerForUser(answerId, user);
+    assertEditableStatus(answer.status, "answer sheet", "deleted");
+
+    const uploadedFiles = collectUploadRefs(answer.answers);
+
+    // Hard delete so a new answer sheet can be created for the same set.
+    await answer.destroy({ force: true });
+    await refreshExamStatus(answer.examId);
+    cleanupUploadsInBackground(uploadedFiles, `deleting answer sheet ${answerId}`);
+
+    return { answerId, examId: answer.examId, paperSet: answer.paperSet };
+  }
+
+  // ─────────────────────────────────────────────
+  // APPROVAL — an answer sheet is reviewed together with its set's question
+  // paper, so these delegate to the per-set workflow of that set only.
+  // ─────────────────────────────────────────────
+
+  private static async getAnswerOrFail(answerId: string) {
+    const answer = await QuestionPaperAnswer.findOne({ where: { answerId } });
+    if (!answer) throw new ApiError(httpStatus.NOT_FOUND, "Answer sheet not found");
+    return answer;
+  }
+
+  static async submitForApproval(answerId: string, user: any) {
+    const answer = await QuestionPaperAnswerService.getAnswerOrFail(answerId);
+    await QuestionPaperService.submitSet(answer.examId, answer.paperSet, user);
+    return answer.reload();
+  }
+
+  static async approveAnswer(answerId: string, reviewer: any) {
+    const answer = await QuestionPaperAnswerService.getAnswerOrFail(answerId);
+    await QuestionPaperService.approveSet(answer.examId, answer.paperSet, reviewer);
+    return answer.reload();
+  }
+
+  static async rejectAnswer(answerId: string, reviewer: any, rejectionNote: string) {
+    const answer = await QuestionPaperAnswerService.getAnswerOrFail(answerId);
+    await QuestionPaperService.rejectSet(answer.examId, answer.paperSet, reviewer, rejectionNote);
+    return answer.reload();
+  }
+
   // PUBLISH  (APPROVED → PUBLISHED)
-  // ─────────────────────────────────────────────
-
   static async publishAnswer(answerId: string) {
-    const answer = await QuestionPaperAnswer.findOne({
-      where: { answerId },
-    });
-
-    if (!answer) {
-      throw new Error("Answer sheet not found");
-    }
-
+    const answer = await QuestionPaperAnswerService.getAnswerOrFail(answerId);
     if (answer.status !== "APPROVED") {
-      throw new Error(
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
         `Cannot publish. Current status: ${answer.status}. Only APPROVED answer sheets can be published.`
       );
     }
 
-    await answer.update({
-      status: "PUBLISHED",
-      publishedAt: new Date(),
-    });
+    await answer.update({ status: "PUBLISHED", publishedAt: new Date() });
 
-    // Notify the teacher
-    const notificationId = await RegHelper.generateUserId();
     try {
       await Notification.create({
-        notificationId,
+        notificationId: await RegHelper.generateUserId(),
         instituteId: answer.instituteId,
         userId: answer.teacherId,
         type: "ANSWER_PUBLISHED",
@@ -268,6 +251,8 @@ class QuestionPaperAnswerService {
 
     return answer;
   }
+
+
 
   // ─────────────────────────────────────────────
   // GET PENDING ANSWER SHEETS
@@ -307,27 +292,6 @@ class QuestionPaperAnswerService {
     return answers;
   }
 
-  // ─────────────────────────────────────────────
-  // CHECK AND SET EXAM LIVE
-  // ─────────────────────────────────────────────
-
-  private static async checkAndSetExamLive(examId: string) {
-    try {
-      const [qp, ans] = await Promise.all([
-        QuestionPaper.findOne({ where: { examId, status: "APPROVED" } }),
-        QuestionPaperAnswer.findOne({ where: { examId, status: "APPROVED" } }),
-      ]);
-
-      if (qp && ans) {
-        await Exam.update(
-          { status: "Live" },
-          { where: { examId } }
-        );
-      }
-    } catch (_) {
-      // non-blocking
-    }
-  }
 }
 
 export default QuestionPaperAnswerService;

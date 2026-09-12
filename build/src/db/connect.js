@@ -49,7 +49,7 @@ const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
     }
     catch (err) {
         logger_1.default.error("Error connecting to PostgreSQL / syncing models");
-        logger_1.default.error(err);
+        logger_1.default.error((err === null || err === void 0 ? void 0 : err.stack) || (err === null || err === void 0 ? void 0 : err.message) || String(err));
         // Exit process with failure
         process.exit(1);
     }
