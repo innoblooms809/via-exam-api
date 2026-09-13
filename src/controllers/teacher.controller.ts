@@ -163,8 +163,23 @@ const getTeacherExamsWithApprovalStatus = async (req: any, res: Response): Promi
   }
 };
 
+// PATCH /teacher/specializations/:userId  { specializations: string[] } — school admin only.
+const updateSpecializations = async (req: any, res: Response): Promise<any> => {
+  try {
+    const role = String(req.viaExamUser?.role?.role ?? "").toUpperCase();
+    if (!["ADMIN", "SUPER_ADMIN"].includes(role)) {
+      return res.status(403).json({ error: true, statusCode: 403, message: "Only the school admin can change specialisations." });
+    }
+    const result = await TeacherService.updateSpecializations(req.params.userId, req.body, req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
 export default {
   createTeacher,
+  updateSpecializations,
   getAllTeachers,
   getTeacherById,
   updateTeacher,

@@ -1,5 +1,6 @@
 import { Response } from "express";
 import * as academicCalendarService from "../services/academicCalendar.service";
+import * as examScheduleService from "../services/examSchedule.service";
 import httpStatus from "http-status";
 
 const createEvent = async (req: any, res: Response): Promise<any> => {
@@ -106,10 +107,58 @@ const getEventsByMonth = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// Date sheets for the teacher / student / scanner portals (students: own class only).
+const getExamSchedule = async (req: any, res: Response): Promise<any> => {
+  try {
+    const response = await examScheduleService.getExamSchedule(req.viaExamUser);
+    return res.status(response.statusCode).send(response);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+// Date sheets are published by the school office only.
+const isSchoolAdmin = (user: any) => ["admin", "super_admin"].includes(String(user?.role?.role ?? "").toLowerCase());
+
+// POST /academic-calendar/exam-schedule  { papers: [...] } — publish a date sheet in one go.
+const createExamSchedule = async (req: any, res: Response): Promise<any> => {
+  try {
+    const user = req.viaExamUser;
+    if (!isSchoolAdmin(user)) {
+      return res.status(httpStatus.FORBIDDEN).send({ error: true, message: "Only the school admin can publish date sheets." });
+    }
+    const response = await academicCalendarService.createExamSchedule(req.body?.papers, user.instituteId, user.userName);
+    return res.status(response.statusCode).send(response);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ error: true, message: "Internal Server Error" });
+  }
+};
+
+// POST /academic-calendar/bulk-delete  { eventIds: [...] }
+const deleteEvents = async (req: any, res: Response): Promise<any> => {
+  try {
+    const user = req.viaExamUser;
+    if (!isSchoolAdmin(user)) {
+      return res.status(httpStatus.FORBIDDEN).send({ error: true, message: "Only the school admin can unschedule papers." });
+    }
+    const response = await academicCalendarService.deleteEvents(req.body?.eventIds, user.instituteId);
+    return res.status(response.statusCode).send(response);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).send({ error: true, message: "Internal Server Error" });
+  }
+};
+
 export default {
   createEvent,
   updateEvent,
   deleteEvent,
   getAllEvents,
-  getEventsByMonth
+  getEventsByMonth,
+  getExamSchedule,
+  createExamSchedule,
+  deleteEvents,
 };
