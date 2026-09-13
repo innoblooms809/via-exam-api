@@ -48,6 +48,13 @@ router.put(
   Controller.updateTeacher
 );
 
+// PATCH  /v1/teacher/specializations/:userId  { specializations: string[] }
+router.patch(
+  "/specializations/:userId",
+  authenticate,
+  Controller.updateSpecializations
+);
+
 // DELETE /v1/teachers/:userId
 router.delete(
   "/deleteTeacher/:userId",
