@@ -22,8 +22,10 @@ const exclude_1 = __importDefault(require("../utils/exclude"));
 const sequelize_1 = require("../config/sequelize");
 const sequelize_2 = require("sequelize");
 const mailHelper_1 = require("../utils/mailHelper");
+const config_1 = __importDefault(require("../config/config"));
+// ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
 const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     // Use a transaction — if admin user creation fails, institute also rolls back
     const t = yield sequelize_1.sequelize.transaction();
     try {
@@ -37,45 +39,60 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 message: "This slug is already taken. Choose a different institute name.",
             };
         }
-        // 2. Check admin email uniqueness
-        const emailExists = yield User_modal_1.default.findOne({
-            where: { emailId: body.adminEmail },
+        // 2. Check institute contact email uniqueness
+        const contactEmailExists = yield Institute_modal_1.default.findOne({
+            where: { contactEmail: body.contactEmail },
         });
-        if (emailExists) {
+        if (contactEmailExists) {
             yield t.rollback();
             return {
                 error: true,
                 statusCode: http_status_1.default.CONFLICT,
-                message: "Admin email is already registered.",
+                message: "Institute contact email is already in use.",
             };
         }
-        // 3. Check admin phone uniqueness
-        const phoneExists = yield User_modal_1.default.findOne({
-            where: { phoneNumber: body.adminPhone },
+        // 2b. Check institute contact phone uniqueness
+        const contactPhoneExists = yield Institute_modal_1.default.findOne({
+            where: { contactPhone: body.contactPhone },
         });
-        if (phoneExists) {
+        if (contactPhoneExists) {
             yield t.rollback();
             return {
                 error: true,
                 statusCode: http_status_1.default.CONFLICT,
-                message: "Admin phone number is already registered.",
+                message: "Institute contact phone is already in use.",
             };
         }
-        // 4. Get file paths from multer
+        // 3. Check admin email uniqueness (only if admin data provided)
+        const hasAdminData = body.adminEmail && body.adminEmail.trim();
+        if (hasAdminData) {
+            const emailExists = yield User_modal_1.default.findOne({
+                where: { emailId: body.adminEmail },
+            });
+            if (emailExists) {
+                yield t.rollback();
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Admin email is already registered.",
+                };
+            }
+        }
+        // 5. Get file paths from multer
         const logoUrl = ((_a = files === null || files === void 0 ? void 0 : files.logo) === null || _a === void 0 ? void 0 : _a[0])
             ? `/${files.logo[0].path.replace(/\\/g, "/")}`
             : null;
         const bannerUrl = ((_b = files === null || files === void 0 ? void 0 : files.banner) === null || _b === void 0 ? void 0 : _b[0])
             ? `/${files.banner[0].path.replace(/\\/g, "/")}`
             : null;
-        // 5. Calculate trial end date
+        // 6. Calculate trial end date
         const trialDays = parseInt(body.trialDays) || 0;
         const trialEndsAt = trialDays > 0
             ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
             : null;
-        // 6. Generate institute ID
-        const instituteId = yield helper_1.default.generateUserId(); // reuse your ID generator
-        // 7. Create Institute record
+        // 7. Generate institute ID
+        const instituteId = yield helper_1.default.generateUserId();
+        // 8. Create Institute record
         const institute = yield Institute_modal_1.default.create({
             instituteId,
             instituteName: body.instituteName,
@@ -101,63 +118,139 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             bannerUrl,
             status: 1,
         }, { transaction: t });
-        // 8. Find admin role
-        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
-        if (!adminRole) {
-            yield t.rollback();
-            return {
-                error: true,
-                statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-                message: "Admin role not found. Please seed roles first.",
-            };
+        let adminResponse = null;
+        const loginUrl = `${config_1.default.frontendUrl}/${body.slug}/auth/signin`;
+        // 9. Create Admin user ONLY if admin fields are provided
+        if (hasAdminData) {
+            const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+            if (!adminRole) {
+                yield t.rollback();
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+                    message: "Admin role not found. Please seed roles first.",
+                };
+            }
+            const encryptedPassword = yield encryption_1.default.encryptPassword(body.adminPassword);
+            const adminUserId = yield helper_1.default.generateUserId();
+            const adminUser = yield User_modal_1.default.create({
+                userId: adminUserId,
+                userName: `${body.adminFirstName} ${body.adminLastName}`,
+                emailId: body.adminEmail,
+                phoneNumber: body.adminPhone,
+                password: encryptedPassword,
+                roleId: adminRole.id,
+                instituteId: institute.instituteId,
+                status: 1,
+            }, { transaction: t });
+            adminResponse = (0, exclude_1.default)(adminUser.toJSON(), [
+                "password",
+                "refreshToken",
+            ]);
+            // Send credentials email to admin
+            yield (0, mailHelper_1.sendAdminCredentials)({
+                adminName: `${body.adminFirstName} ${body.adminLastName}`,
+                adminEmail: body.adminEmail,
+                adminPassword: body.adminPassword,
+                instituteName: body.instituteName,
+                loginUrl,
+                plan: body.plan,
+            });
         }
-        // 9. Create Admin user tied to this institute
-        const encryptedPassword = yield encryption_1.default.encryptPassword(body.adminPassword);
-        const adminUserId = yield helper_1.default.generateUserId();
-        const adminUser = yield User_modal_1.default.create({
-            userId: adminUserId,
-            userName: `${body.adminFirstName} ${body.adminLastName}`,
-            emailId: body.adminEmail,
-            phoneNumber: body.adminPhone,
-            password: encryptedPassword,
-            roleId: adminRole.id,
-            instituteId: institute.instituteId,
-            status: 1,
-        }, { transaction: t });
-        // 10. All good — commit
+        // All good — commit
         yield t.commit();
-        const adminResponse = (0, exclude_1.default)(adminUser.toJSON(), [
-            "password",
-            "refreshToken",
-        ]);
-        // 11. Send credentials email to admin
-        // const loginUrl = `${process.env.FRONTEND_URL ?? "http://localhost:3040"}/${
-        //   body.slug
-        // }/auth/signin`;
-        const loginUrl = `${(_c = process.env.FRONTEND_URL) !== null && _c !== void 0 ? _c : "http://localhost:3000"}/${body.slug}/auth/signin`;
-        yield (0, mailHelper_1.sendAdminCredentials)({
-            adminName: `${body.adminFirstName} ${body.adminLastName}`,
-            adminEmail: body.adminEmail,
-            adminPassword: body.adminPassword,
-            instituteName: body.instituteName,
-            loginUrl,
-            plan: body.plan,
-        });
         return {
             error: false,
             statusCode: http_status_1.default.CREATED,
-            message: "Institute registered successfully.",
+            message: hasAdminData
+                ? "Institute registered and admin created successfully."
+                : "Institute registered successfully. Admin can be added later from Add Admin page.",
             data: {
                 institute,
                 admin: adminResponse,
-                // loginUrl: `${process.env.FRONTEND_URL}/${body.slug}/auth/signin`,
-                loginUrl: `${(_d = process.env.FRONTEND_URL) !== null && _d !== void 0 ? _d : "http://localhost:3000"}/${body.slug}/auth/signin`,
+                loginUrl: `${(_c = process.env.FRONTEND_URL) !== null && _c !== void 0 ? _c : "http://localhost:3000"}/${body.slug}/auth/signin`,
                 logoUrl,
             },
         };
     }
     catch (e) {
         yield t.rollback();
+        console.error(e);
+        if (e.name === "SequelizeUniqueConstraintError") {
+            const field = (_e = (_d = e.errors) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.path;
+            let message = "This record already exists.";
+            if (field === "phoneNumber")
+                message = "This phone number is already registered.";
+            if (field === "emailId")
+                message = "This email is already registered.";
+            return {
+                error: true,
+                statusCode: http_status_1.default.CONFLICT,
+                message,
+            };
+        }
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// ----------RESEND ADMIN CREDENTIALS EMAIL (IF NOT RECEIVED)----------------
+const resendAdminCredentials = (instituteId, password) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // 1. Find institute
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
+        if (!institute) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Institute not found.",
+            };
+        }
+        // 2. Find admin user of this institute
+        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+        const adminUser = yield User_modal_1.default.findOne({
+            where: { instituteId: institute.instituteId, roleId: adminRole === null || adminRole === void 0 ? void 0 : adminRole.id },
+        });
+        if (!adminUser) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Admin user not found for this institute.",
+            };
+        }
+        // 3. Use the provided password
+        const newPassword = password || helper_1.default.generateTempPassword();
+        const encrypted = yield encryption_1.default.encryptPassword(newPassword);
+        // 4. Update password in DB
+        yield adminUser.update({ password: encrypted });
+        // 5. Build login URL same way as registration
+        const loginUrl = `${config_1.default.frontendUrl}/${institute.slug}/auth/signin`;
+        // 6. Re-send credentials email
+        yield (0, mailHelper_1.sendAdminCredentials)({
+            adminName: adminUser.userName,
+            adminEmail: adminUser.emailId,
+            adminPassword: newPassword,
+            instituteName: institute.instituteName,
+            loginUrl,
+            plan: institute.plan,
+        });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: `Credentials resent to ${adminUser.emailId} successfully.`,
+            data: { email: adminUser.emailId },
+        };
+    }
+    catch (e) {
         console.error(e);
         return {
             error: true,
@@ -195,12 +288,33 @@ const getAllInstitutes = (query) => __awaiter(void 0, void 0, void 0, function* 
             limit: parseInt(limit),
             offset,
         });
+        // Fetch admin users for all institutes in this page
+        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+        let institutesWithAdmin = rows.map((inst) => inst.toJSON());
+        if (adminRole) {
+            const instituteIds = rows.map((inst) => inst.instituteId);
+            const adminUsers = yield User_modal_1.default.findAll({
+                where: {
+                    instituteId: { [sequelize_2.Op.in]: instituteIds },
+                    roleId: adminRole.id,
+                    isDeleted: false,
+                },
+                attributes: { exclude: ["password", "refreshToken"] },
+            });
+            // Build a map of instituteId → admin user
+            const adminMap = {};
+            for (const admin of adminUsers) {
+                adminMap[admin.instituteId] = admin.toJSON();
+            }
+            // Attach admin to each institute
+            institutesWithAdmin = institutesWithAdmin.map((inst) => (Object.assign(Object.assign({}, inst), { admin: adminMap[inst.instituteId] || null })));
+        }
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Institutes fetched successfully.",
             data: {
-                institutes: rows,
+                institutes: institutesWithAdmin,
                 pagination: {
                     total: count,
                     page: parseInt(page),
@@ -223,7 +337,6 @@ const getAllInstitutes = (query) => __awaiter(void 0, void 0, void 0, function* 
 // Also returns the admin user linked to this institute
 const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("🔍 Looking for:", identifier);
         // Build where clause — supports both numeric id (4) and instituteId (IB726935)
         const where = {
             isDeleted: false,
@@ -234,7 +347,6 @@ const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, funct
         };
         // ✅ Using the where clause we built above (was using wrong variable before)
         const institute = yield Institute_modal_1.default.findOne({ where });
-        console.log("📦 Found:", institute ? institute.instituteId : "NULL");
         if (!institute) {
             return {
                 error: true,
@@ -276,11 +388,16 @@ const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, funct
 // Update institute details + optionally update logo/banner
 // Does NOT update admin credentials here (separate API for that)
 const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
+    var _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z;
     try {
-        const institute = yield Institute_modal_1.default.findOne({
-            where: { instituteId, isDeleted: false },
-        });
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
         if (!institute) {
             return {
                 error: true,
@@ -293,7 +410,7 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
             const slugExists = yield Institute_modal_1.default.findOne({
                 where: {
                     slug: body.slug,
-                    instituteId: { [sequelize_2.Op.ne]: instituteId }, // exclude current institute
+                    instituteId: { [sequelize_2.Op.ne]: institute.instituteId }, // exclude current institute
                 },
             });
             if (slugExists) {
@@ -305,31 +422,62 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
             }
         }
         // Handle new file uploads — keep old ones if no new file sent
-        const logoUrl = ((_e = files === null || files === void 0 ? void 0 : files.logo) === null || _e === void 0 ? void 0 : _e[0])
+        if (body.contactEmail && body.contactEmail !== institute.contactEmail) {
+            const contactEmailExists = yield Institute_modal_1.default.findOne({
+                where: {
+                    contactEmail: body.contactEmail,
+                    instituteId: { [sequelize_2.Op.ne]: institute.instituteId },
+                },
+            });
+            if (contactEmailExists) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Institute contact email is already in use.",
+                };
+            }
+        }
+        if (body.contactPhone && body.contactPhone !== institute.contactPhone) {
+            const contactPhoneExists = yield Institute_modal_1.default.findOne({
+                where: {
+                    contactPhone: body.contactPhone,
+                    instituteId: { [sequelize_2.Op.ne]: institute.instituteId },
+                },
+            });
+            if (contactPhoneExists) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Institute contact phone is already in use.",
+                };
+            }
+        }
+        // Handle new file uploads â€” keep old ones if no new file sent
+        const logoUrl = ((_f = files === null || files === void 0 ? void 0 : files.logo) === null || _f === void 0 ? void 0 : _f[0])
             ? `/${files.logo[0].path.replace(/\\/g, "/")}`
             : institute.logoUrl;
-        const bannerUrl = ((_f = files === null || files === void 0 ? void 0 : files.banner) === null || _f === void 0 ? void 0 : _f[0])
+        const bannerUrl = ((_g = files === null || files === void 0 ? void 0 : files.banner) === null || _g === void 0 ? void 0 : _g[0])
             ? `/${files.banner[0].path.replace(/\\/g, "/")}`
             : institute.bannerUrl;
         // Only update fields that are sent in body
         yield institute.update({
-            instituteName: (_g = body.instituteName) !== null && _g !== void 0 ? _g : institute.instituteName,
-            instituteType: (_h = body.instituteType) !== null && _h !== void 0 ? _h : institute.instituteType,
-            boardType: (_j = body.boardType) !== null && _j !== void 0 ? _j : institute.boardType,
-            registrationNumber: (_k = body.registrationNumber) !== null && _k !== void 0 ? _k : institute.registrationNumber,
-            establishedYear: (_l = body.establishedYear) !== null && _l !== void 0 ? _l : institute.establishedYear,
-            websiteUrl: (_m = body.websiteUrl) !== null && _m !== void 0 ? _m : institute.websiteUrl,
-            slug: (_o = body.slug) !== null && _o !== void 0 ? _o : institute.slug,
-            contactPersonName: (_p = body.contactPersonName) !== null && _p !== void 0 ? _p : institute.contactPersonName,
-            contactEmail: (_q = body.contactEmail) !== null && _q !== void 0 ? _q : institute.contactEmail,
-            contactPhone: (_r = body.contactPhone) !== null && _r !== void 0 ? _r : institute.contactPhone,
-            alternatePhone: (_s = body.alternatePhone) !== null && _s !== void 0 ? _s : institute.alternatePhone,
-            addressLine1: (_t = body.addressLine1) !== null && _t !== void 0 ? _t : institute.addressLine1,
-            addressLine2: (_u = body.addressLine2) !== null && _u !== void 0 ? _u : institute.addressLine2,
-            city: (_v = body.city) !== null && _v !== void 0 ? _v : institute.city,
-            state: (_w = body.state) !== null && _w !== void 0 ? _w : institute.state,
-            pincode: (_x = body.pincode) !== null && _x !== void 0 ? _x : institute.pincode,
-            plan: (_y = body.plan) !== null && _y !== void 0 ? _y : institute.plan,
+            instituteName: (_h = body.instituteName) !== null && _h !== void 0 ? _h : institute.instituteName,
+            instituteType: (_j = body.instituteType) !== null && _j !== void 0 ? _j : institute.instituteType,
+            boardType: (_k = body.boardType) !== null && _k !== void 0 ? _k : institute.boardType,
+            registrationNumber: (_l = body.registrationNumber) !== null && _l !== void 0 ? _l : institute.registrationNumber,
+            establishedYear: (_m = body.establishedYear) !== null && _m !== void 0 ? _m : institute.establishedYear,
+            websiteUrl: (_o = body.websiteUrl) !== null && _o !== void 0 ? _o : institute.websiteUrl,
+            slug: (_p = body.slug) !== null && _p !== void 0 ? _p : institute.slug,
+            contactPersonName: (_q = body.contactPersonName) !== null && _q !== void 0 ? _q : institute.contactPersonName,
+            contactEmail: (_r = body.contactEmail) !== null && _r !== void 0 ? _r : institute.contactEmail,
+            contactPhone: (_s = body.contactPhone) !== null && _s !== void 0 ? _s : institute.contactPhone,
+            alternatePhone: (_t = body.alternatePhone) !== null && _t !== void 0 ? _t : institute.alternatePhone,
+            addressLine1: (_u = body.addressLine1) !== null && _u !== void 0 ? _u : institute.addressLine1,
+            addressLine2: (_v = body.addressLine2) !== null && _v !== void 0 ? _v : institute.addressLine2,
+            city: (_w = body.city) !== null && _w !== void 0 ? _w : institute.city,
+            state: (_x = body.state) !== null && _x !== void 0 ? _x : institute.state,
+            pincode: (_y = body.pincode) !== null && _y !== void 0 ? _y : institute.pincode,
+            plan: (_z = body.plan) !== null && _z !== void 0 ? _z : institute.plan,
             logoUrl,
             bannerUrl,
         });
@@ -354,9 +502,14 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
 const softDeleteInstitute = (instituteId) => __awaiter(void 0, void 0, void 0, function* () {
     const t = yield sequelize_1.sequelize.transaction();
     try {
-        const institute = yield Institute_modal_1.default.findOne({
-            where: { instituteId, isDeleted: false },
-        });
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
         if (!institute) {
             yield t.rollback();
             return {
@@ -368,7 +521,7 @@ const softDeleteInstitute = (instituteId) => __awaiter(void 0, void 0, void 0, f
         // Soft delete institute
         yield institute.update({ isDeleted: true, status: 0 }, { transaction: t });
         // Also deactivate all users of this institute
-        yield User_modal_1.default.update({ status: 0 }, { where: { instituteId }, transaction: t });
+        yield User_modal_1.default.update({ status: 0 }, { where: { instituteId: institute.instituteId }, transaction: t });
         yield t.commit();
         return {
             error: false,
@@ -391,9 +544,14 @@ const softDeleteInstitute = (instituteId) => __awaiter(void 0, void 0, void 0, f
 // Useful for suspending without deleting
 const toggleInstituteStatus = (instituteId, status) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const institute = yield Institute_modal_1.default.findOne({
-            where: { instituteId, isDeleted: false },
-        });
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
         if (!institute) {
             return {
                 error: true,
@@ -403,7 +561,7 @@ const toggleInstituteStatus = (instituteId, status) => __awaiter(void 0, void 0,
         }
         yield institute.update({ status });
         // Also update all users of this institute
-        yield User_modal_1.default.update({ status }, { where: { instituteId } });
+        yield User_modal_1.default.update({ status }, { where: { instituteId: institute.instituteId } });
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -419,6 +577,236 @@ const toggleInstituteStatus = (instituteId, status) => __awaiter(void 0, void 0,
         };
     }
 });
+const getInstituteBySlug = (slug) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const institute = yield Institute_modal_1.default.findOne({
+            where: {
+                slug,
+                isDeleted: false,
+            },
+            attributes: ["instituteName", "logoUrl", "bannerUrl", "slug", "status", "city"],
+        });
+        if (!institute) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Institute not found.",
+            };
+        }
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Institute fetched successfully.",
+            data: institute,
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+// ─── GET CREDENTIALS ───────────────────────────────────────────────────────────
+const getInstituteCredentials = (instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
+        if (!institute) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Institute not found.",
+            };
+        }
+        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+        const adminUser = yield User_modal_1.default.findOne({
+            where: { instituteId: institute.instituteId, roleId: adminRole === null || adminRole === void 0 ? void 0 : adminRole.id },
+        });
+        if (!adminUser) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Admin user not found for this institute.",
+            };
+        }
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Credentials fetched successfully.",
+            data: {
+                adminEmail: adminUser.emailId,
+            },
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
+const addInstituteAdmin = (instituteId, body) => __awaiter(void 0, void 0, void 0, function* () {
+    var _0, _1;
+    try {
+        const whereCondition = {
+            isDeleted: false,
+            [sequelize_2.Op.or]: [
+                { instituteId },
+                ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
+            ],
+        };
+        const institute = yield Institute_modal_1.default.findOne({ where: whereCondition });
+        if (!institute) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Institute not found.",
+            };
+        }
+        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+        if (!adminRole) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+                message: "Admin role not found in database.",
+            };
+        }
+        const { adminFirstName, adminLastName, adminEmail, adminPhone, adminPassword } = body;
+        // Find existing admin for this institute
+        let adminUser = yield User_modal_1.default.findOne({
+            where: { instituteId: institute.instituteId, roleId: adminRole.id, isDeleted: false },
+        });
+        const plainPassword = adminPassword || helper_1.default.generateTempPassword();
+        const encryptedPassword = yield encryption_1.default.encryptPassword(plainPassword);
+        let sendMailNeeded = false;
+        if (adminUser) {
+            // Check if email changed and is taken by another user
+            if (adminEmail && adminEmail !== adminUser.emailId) {
+                const emailTaken = yield User_modal_1.default.findOne({
+                    where: { emailId: adminEmail, userId: { [sequelize_2.Op.ne]: adminUser.userId } },
+                });
+                if (emailTaken) {
+                    return {
+                        error: true,
+                        statusCode: http_status_1.default.CONFLICT,
+                        message: "Email is already registered by another user.",
+                    };
+                }
+            }
+            if (adminPhone && adminPhone !== adminUser.phoneNumber) {
+                const phoneTaken = yield User_modal_1.default.findOne({
+                    where: { phoneNumber: adminPhone, userId: { [sequelize_2.Op.ne]: adminUser.userId } },
+                });
+                if (phoneTaken) {
+                    return {
+                        error: true,
+                        statusCode: http_status_1.default.CONFLICT,
+                        message: "Phone number is already registered by another user.",
+                    };
+                }
+            }
+            // If password or email changed, send email
+            if (adminPassword || (adminEmail && adminEmail !== adminUser.emailId)) {
+                sendMailNeeded = true;
+            }
+            yield adminUser.update(Object.assign({ userName: `${adminFirstName !== null && adminFirstName !== void 0 ? adminFirstName : ""} ${adminLastName !== null && adminLastName !== void 0 ? adminLastName : ""}`.trim() || adminUser.userName, emailId: adminEmail !== null && adminEmail !== void 0 ? adminEmail : adminUser.emailId, phoneNumber: adminPhone !== null && adminPhone !== void 0 ? adminPhone : adminUser.phoneNumber }, (adminPassword ? { password: encryptedPassword } : {})));
+        }
+        else {
+            // Create new admin
+            if (!adminEmail) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.BAD_REQUEST,
+                    message: "Admin email is required.",
+                };
+            }
+            const emailTaken = yield User_modal_1.default.findOne({ where: { emailId: adminEmail } });
+            if (emailTaken) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Email is already registered by another user.",
+                };
+            }
+            if (adminPhone) {
+                const phoneTaken = yield User_modal_1.default.findOne({ where: { phoneNumber: adminPhone } });
+                if (phoneTaken) {
+                    return {
+                        error: true,
+                        statusCode: http_status_1.default.CONFLICT,
+                        message: "Phone number is already registered by another user.",
+                    };
+                }
+            }
+            const adminUserId = yield helper_1.default.generateUserId();
+            adminUser = yield User_modal_1.default.create({
+                userId: adminUserId,
+                userName: `${adminFirstName !== null && adminFirstName !== void 0 ? adminFirstName : ""} ${adminLastName !== null && adminLastName !== void 0 ? adminLastName : ""}`.trim(),
+                emailId: adminEmail,
+                phoneNumber: adminPhone || "",
+                password: encryptedPassword,
+                roleId: adminRole.id,
+                instituteId: institute.instituteId,
+                status: 1,
+            });
+            sendMailNeeded = true;
+        }
+        const loginUrl = `${config_1.default.frontendUrl}/${institute.slug}/auth/signin`;
+        if (sendMailNeeded) {
+            try {
+                yield (0, mailHelper_1.sendAdminCredentials)({
+                    adminName: adminUser.userName,
+                    adminEmail: adminUser.emailId,
+                    adminPassword: plainPassword,
+                    instituteName: institute.instituteName,
+                    loginUrl,
+                    plan: institute.plan || "basic",
+                });
+            }
+            catch (mailErr) {
+                console.warn("Mail sending warning:", mailErr);
+            }
+        }
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Admin created/updated successfully and credentials emailed.",
+            data: {
+                admin: (0, exclude_1.default)(adminUser.toJSON(), ["password", "refreshToken"]),
+            },
+        };
+    }
+    catch (e) {
+        console.error("Error in addInstituteAdmin:", e);
+        if (e.name === "SequelizeUniqueConstraintError") {
+            const field = (_1 = (_0 = e.errors) === null || _0 === void 0 ? void 0 : _0[0]) === null || _1 === void 0 ? void 0 : _1.path;
+            let message = "This record already exists.";
+            if (field === "phoneNumber")
+                message = "This phone number is already registered.";
+            if (field === "emailId")
+                message = "This email is already registered.";
+            return {
+                error: true,
+                statusCode: http_status_1.default.CONFLICT,
+                message,
+            };
+        }
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Something went wrong: ${e.message}`,
+        };
+    }
+});
 exports.default = {
     registerInstitute,
     getAllInstitutes,
@@ -426,4 +814,8 @@ exports.default = {
     updateInstitute,
     softDeleteInstitute,
     toggleInstituteStatus,
+    resendAdminCredentials,
+    getInstituteBySlug,
+    getInstituteCredentials,
+    addInstituteAdmin,
 };

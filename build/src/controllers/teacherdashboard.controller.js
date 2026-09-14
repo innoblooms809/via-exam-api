@@ -1,0 +1,146 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const http_status_1 = __importDefault(require("http-status"));
+const teacherdashboard_service_1 = __importDefault(require("../services/teacherdashboard.service"));
+const getTeacherDashboardOverview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getTeacherDashboardOverview(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getUpcomingExams = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getUpcomingExams(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getExamActivity = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getExamActivity(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getActivityOverview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getActivityOverview(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getUpcomingWork = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getUpcomingWork(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getEvaluationStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getEvaluationStatus(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getSubjectWorkload = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getSubjectWorkload(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getRecentActivity = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getRecentActivity(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+exports.default = {
+    getTeacherDashboardOverview,
+    getUpcomingExams,
+    getExamActivity,
+    getActivityOverview,
+    getUpcomingWork,
+    getEvaluationStatus,
+    getSubjectWorkload,
+    getRecentActivity,
+};

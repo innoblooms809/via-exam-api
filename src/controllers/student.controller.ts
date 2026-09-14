@@ -1,20 +1,31 @@
 import httpStatus from "http-status";
 import { Response } from "express";
 import StudentService from "../services/student.service";
-import { sendEmailToNewUser } from "../utils/mailHelper";
+import config from "../config/config";
+import { sendUserCredentials } from "../utils/mailHelper";
 
 const createStudent = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await StudentService.createStudent(
       req.body, req.files, req.viaExamUser
     );
+  
 
     if (!result.error) {
-      await sendEmailToNewUser({
-        emailId:     req.body.email,
-        phoneNumber: req.body.mobile,
-        userName:    `${req.body.firstName} ${req.body.lastName}`,
-        password:    result.data.plainPassword,
+      const slug = req.viaExamUser?.institute?.slug;
+      const loginUrl = slug
+        ? `${config.frontendUrl}/${slug}/auth/signin`
+        : `${config.frontendUrl}/auth/signin`;
+
+      sendUserCredentials({
+        userName: `${req.body.firstName} ${req.body.lastName}`,
+        email:    req.body.email,
+        phone:    req.body.mobile,
+        password: result.data.plainPassword,
+        role:     "Student",
+        loginUrl,
+      }).catch((err) => {
+        console.error("Background student email dispatch failed:", err);
       });
     }
 
@@ -26,6 +37,7 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
 
 const getAllStudents = async (req: any, res: Response): Promise<any> => {
   try {
+    console.log("GET /v1/student/getAllStudents - query:", req.query, "user:", req.viaExamUser?.id);
     const result = await StudentService.getAllStudents(req.viaExamUser, req.query);
     return res.status(result.statusCode).send(result);
   } catch (error) {
@@ -44,6 +56,7 @@ const getStudentById = async (req: any, res: Response): Promise<any> => {
 
 const updateStudent = async (req: any, res: Response): Promise<any> => {
   try {
+    console.log("PUT /v1/student/updateStudent -", "params:", req.params, "body:", req.body, "user:", req.viaExamUser?.id);
     const result = await StudentService.updateStudent(
       req.params.userId, req.body, req.files, req.viaExamUser
     );

@@ -7,6 +7,8 @@ const express_1 = require("express");
 const user_controller_1 = __importDefault(require("../../controllers/auth/user.controller")); // Adjust the path as needed
 // import { RoleType } from "../modals/Role.modal";
 const auth_1 = require("../../middlewares/auth");
+const validate_1 = __importDefault(require("../../middlewares/validate"));
+const user_validation_1 = __importDefault(require("../../validations/user.validation"));
 const router = (0, express_1.Router)();
 // ─── Public Routes ────────────────────────────────────────────────────────────
 /**
@@ -16,12 +18,9 @@ const router = (0, express_1.Router)();
 router.get("/captcha", user_controller_1.default.getCaptcha);
 /**
  * POST /api/viaexam/auth/login
- * Body: { emailId, mobileNo, type, password, captcha }
- * type: 1 = email, 2 = mobile
+ * Body: { slug, emailId, password }
  */
-router.post("/login", 
-//  authenticate,
-user_controller_1.default.loginViaExamUser);
+router.post("/login", (0, validate_1.default)(user_validation_1.default.loginValidation), user_controller_1.default.loginViaExamUser);
 /**
  * POST /api/viaexam/user/refresh-token
  * Reads refreshToken from httpOnly cookie and refreshes accessToken.
@@ -32,8 +31,7 @@ router.post("/refresh-token", user_controller_1.default.refreshAccessToken);
  * POST /api/viaexam/auth/create-user
  * Only super_admin can create ViaExam users
  */
-router.post("/create-user", 
-//   authenticate,
+router.post("/create-user", auth_1.authenticate, 
 //   authorize(["super_admin","admin"]), // ← only super_admin and admin can create users
 user_controller_1.default.createViaExamUser);
 /**

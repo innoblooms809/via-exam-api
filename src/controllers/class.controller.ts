@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
-import { Response } from "express";
+import { Request,Response } from "express";
 import ClassService from "../services/class.service";
+import logger from "../config/logger";
 
 // ─── CREATE CLASS ─────────────────────────────────────────────────────────────
 const createClass = async (
@@ -17,6 +18,7 @@ const createClass = async (
     return res.status(result.statusCode).send(result);
 
   } catch (error: any) {
+    logger.error(`POST /v1/class/createClass 500 - error: ${error}`);
 
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
@@ -33,10 +35,9 @@ const getAllClasses = async (
   res: Response
 ): Promise<any> => {
   try {
-
+    logger.info(`GET /v1/class/getAllClasses - user: ${req.viaExamUser?.id}`);
     const result = await ClassService.getAllClasses(
-      req.query,
-      req.viaExamUser
+          req.viaExamUser
     );
 
     return res.status(result.statusCode).send(result);
