@@ -15,6 +15,7 @@ import ActivityLog from "../modals/ActivityLog.modal";
 import {
   DASHBOARD_COLORS,
   TEACHER_QUICK_ACTIONS,
+  computeScannerStatusBreakdown,
   countInBucket,
   formatCount,
   formatDate,
@@ -388,31 +389,7 @@ const getScannerAnalytics = async (instituteId: string) => {
       };
     });
 
-    const processed = sheets.filter((row) => mapSheetStatus(row.status) === "Processed").length;
-    const pending = sheets.filter((row) => mapSheetStatus(row.status) === "Pending").length;
-    const failed = sheets.filter((row) => mapSheetStatus(row.status) === "Failed").length;
-    const total = sheets.length;
-
-    const statusData = [
-      {
-        name: "Processed",
-        value: processed,
-        percentage: percentLabel(processed, total),
-        color: DASHBOARD_COLORS.GREEN,
-      },
-      {
-        name: "Pending",
-        value: pending,
-        percentage: percentLabel(pending, total),
-        color: DASHBOARD_COLORS.AMBER,
-      },
-      {
-        name: "Failed",
-        value: failed,
-        percentage: percentLabel(failed, total),
-        color: DASHBOARD_COLORS.RED,
-      },
-    ];
+    const { total, processed, pending, failed, statusData } = computeScannerStatusBreakdown(sheets);
 
     const recentScans = sheets.slice(0, 6).map((row) => {
       const mappedStatus = mapSheetStatus(row.status);

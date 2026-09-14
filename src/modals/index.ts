@@ -16,6 +16,7 @@ import AIEvaluation from "./AIEvaluation.modal";
 import ScannerProfile from "./ScannerProfile.modal";
 import ActivityLog from "./ActivityLog.modal";
 import UserPresenceSession from "./UserPresenceSession.modal";
+import RecheckRequest from "./RecheckRequest.modal";
 
 export {
   User,
@@ -36,6 +37,7 @@ export {
   ScannerProfile,
   ActivityLog,
   UserPresenceSession,
+  RecheckRequest,
 };
 
 // ROLE ↔ ACCESS
@@ -581,4 +583,81 @@ User.hasMany(Notification, {
   foreignKey: "userId",
   sourceKey: "userId",
   as: "notifications",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ USER (Student)
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest.belongsTo(User, {
+  foreignKey: "studentId",
+  targetKey: "userId",
+  as: "student",
+});
+User.hasMany(RecheckRequest, {
+  foreignKey: "studentId",
+  sourceKey: "userId",
+  as: "recheckRequests",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ USER (Reviewer)
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest.belongsTo(User, {
+  foreignKey: "reviewedBy",
+  targetKey: "userId",
+  as: "reviewer",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ INSTITUTE
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest.belongsTo(Institute, {
+  foreignKey: "instituteId",
+  targetKey: "instituteId",
+  as: "institute",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ EXAM
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest.belongsTo(Exam, {
+  foreignKey: "examId",
+  targetKey: "examId",
+  as: "exam",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ AI EVALUATION
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest.belongsTo(AIEvaluation, {
+  foreignKey: "evaluationId",
+  targetKey: "evaluationId",
+  as: "evaluation",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ SUBJECT
+// ══════════════════════════════════════════════════════════════
+RecheckRequest.belongsTo(Subject, {
+  foreignKey: "subjectId",
+  targetKey: "subjectId",
+  as: "subject",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// AI EVALUATION ↔ SUBJECT
+// ═══════════════════════════════════════════════════════════════
+AIEvaluation.belongsTo(Subject, {
+  foreignKey: "subjectId",
+  targetKey: "subjectId",
+  as: "subject",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// AI EVALUATION ↔ EXAM
+// ═══════════════════════════════════════════════════════════════
+AIEvaluation.belongsTo(Exam, {
+  foreignKey: "examId",
+  targetKey: "examId",
+  as: "exam",
 });
