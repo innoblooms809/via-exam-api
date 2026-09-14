@@ -12,6 +12,7 @@ import Scanner from "../modals/Scanner.modal";
 import RegHelper from "../utils/helper";
 import StudentService from "./student.service";
 import { Op } from "sequelize";
+import { checkTeacherForSubject } from "./teacherSubject.service";
 
 /** Single exam-table status that drives Manage Exams + approval. */
 export const EXAM_WORKFLOW_STATUSES = [
@@ -101,6 +102,12 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
         statusCode: httpStatus.NOT_FOUND,
         message: "Teacher not found in your institute.",
       };
+    }
+
+    // 2b. The teacher must specialise in the subject (or already teach it).
+    const fit = await checkTeacherForSubject(instituteId, teacher.userId, body.subjectId);
+    if (!fit.ok) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: fit.message };
     }
 
     // 3. Check duplicate exam
@@ -436,12 +443,30 @@ const updateExam = async (
       }
     }
 
+    // The edit dialog sends sessionId / subjectId / classId / teacherId; older callers session / subject.
+    const nextSubjectId = body.subjectId || body.subject || exam.subjectId;
+    const nextTeacherId = body.teacherId || exam.teacherId;
+    const nextClassId = body.classId || exam.classId;
+
+    if (nextSubjectId !== exam.subjectId || nextClassId !== exam.classId) {
+      const subject = await Subject.findOne({ where: { subjectId: nextSubjectId, instituteId, isDeleted: false } });
+      if (!subject || (nextClassId && subject.classId !== nextClassId)) {
+        return { error: true, statusCode: 400, message: "The subject does not belong to the selected class." };
+      }
+    }
+    if (nextTeacherId !== exam.teacherId || nextSubjectId !== exam.subjectId) {
+      const fit = await checkTeacherForSubject(instituteId, nextTeacherId, nextSubjectId);
+      if (!fit.ok) return { error: true, statusCode: 400, message: fit.message };
+    }
+    const teacherChanged = nextTeacherId !== exam.teacherId;
+
     await exam.update({
-      sessionId: body.session || exam.sessionId,
+      sessionId: body.sessionId || body.session || exam.sessionId,
       examType: body.examType || exam.examType,
-      classId: body.classId !== undefined ? body.classId : exam.classId,
+      classId: nextClassId,
       sectionId: body.sectionId !== undefined ? body.sectionId : exam.sectionId,
-      subjectId: body.subject || exam.subjectId,
+      subjectId: nextSubjectId,
+      teacherId: nextTeacherId,
       totalMarks: body.totalMarks || exam.totalMarks,
       passingMarks: body.passingMarks || exam.passingMarks,
       duration: body.duration || exam.duration,
@@ -450,6 +475,19 @@ const updateExam = async (
       examTime: body.examTime !== undefined ? body.examTime : exam.examTime,
       status: body.status || exam.status,
     });
+
+    // Tell the newly assigned teacher, like on create.
+    if (teacherChanged) {
+      await Notification.create({
+        notificationId: await RegHelper.generateUserId(),
+        instituteId,
+        userId: nextTeacherId,
+        type: "EXAM_ASSIGNED",
+        title: "Exam Assigned",
+        message: `A ${exam.examType} exam has been assigned to you.`,
+        referenceId: exam.examId,
+      }).catch((err: any) => console.error("Exam reassignment notification failed:", err?.message));
+    }
 
     return {
       error: false,

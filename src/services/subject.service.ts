@@ -3,6 +3,8 @@ import Subject from "../modals/Subject.modal";
 import RegHelper from "../utils/helper";
 import Class from "../modals/Class.modal";
 import User from "../modals/User.modal";
+import TeacherProfile from "../modals/TeacherProfile.modal";
+import { specialisesIn } from "../utils/specialization";
 
 // ─── CREATE SUBJECT ─────────────────────────────────────────────
 const createSubject = async (body: any, createdBy: any): Promise<any> => {
@@ -289,6 +291,21 @@ const updateSubject = async (
           error: true,
           statusCode: httpStatus.NOT_FOUND,
           message: "Teacher not found.",
+        };
+      }
+    }
+
+    // A (new) teacher for this subject must specialise in it.
+    const newTeacherId =
+      body.teacherId && body.teacherId !== "null" && body.teacherId !== "" ? String(body.teacherId) : null;
+    if (newTeacherId && newTeacherId !== subject.teacherId) {
+      const profile = await TeacherProfile.findOne({ where: { userId: newTeacherId, instituteId: createdBy.instituteId } });
+      const name = body.subjectName ?? subject.subjectName;
+      if (!specialisesIn(profile?.specialization, name)) {
+        return {
+          error: true,
+          statusCode: httpStatus.BAD_REQUEST,
+          message: `This teacher does not specialise in ${name}. Add ${name} to their specialisations first.`,
         };
       }
     }
