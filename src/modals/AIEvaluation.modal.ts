@@ -1,5 +1,7 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
+import Subject from "./Subject.modal";
+import Exam from "./Exam.modal";
 
 interface AIEvaluationAttributes {
   id: number;
@@ -61,6 +63,10 @@ class AIEvaluation extends Model<
   public error!: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Associations
+  public subject?: Subject;
+  public exam?: Exam;
 }
 
 AIEvaluation.init(
