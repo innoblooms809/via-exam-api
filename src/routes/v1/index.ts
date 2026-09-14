@@ -25,7 +25,9 @@ import dashboardRoutes from "./dashboard.route";
 import adminDashboardRoutes from "./Admindashboard.route";
 import teacherDashboardRoutes from "./teacherdashboard.route";
 import studentDashboardRoutes from "./studentdashboard.route";
+import scannerDashboardRoutes from "./scannerdashboard.route";
 import monitoringRoutes from "./monitoring.route";
+import recheckRequestRoutes from "./recheckRequest.route";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -56,6 +58,10 @@ const defaultRoutes = [
   {
     path: "/student-dashboard",
     route: studentDashboardRoutes,
+  },
+  {
+    path: "/scanner-dashboard",
+    route: scannerDashboardRoutes,
   },
   {
     path: "/sessions",
@@ -124,6 +130,10 @@ const defaultRoutes = [
   {
     path: "/monitoring",
     route: monitoringRoutes,
+  },
+  {
+    path: "/recheck-requests",
+    route: recheckRequestRoutes,
   },
   
   // {

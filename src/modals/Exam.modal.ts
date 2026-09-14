@@ -7,6 +7,7 @@ interface ExamAttributes {
   examId: string;
   instituteId: string; // FK → Institute
   classId: string | null; // FK → Class, nullable for school-wide exams
+  sectionId: string | null; // FK → Section
   sessionId: string; // 2024-25
   examType: string; // Mid-Term, Final etc
   subjectId: string; // Mathematics
@@ -16,7 +17,9 @@ interface ExamAttributes {
   passingMarks: number;
   duration: number | null;
   instructions: string | null;
-  status: string; // Draft → Paper Created → Pending Approval → Approved | Rejected
+  examDate: Date | null; // Scheduled exam date
+  examTime: string | null; // Scheduled exam time (HH:mm:ss)
+  status: string; // Draft → Paper Created → Pending Approval → Approved | Rejected → Live → Completed
   isDeleted: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -33,6 +36,9 @@ interface ExamCreationAttributes
     | "status"
     | "isDeleted"
     | "classId"
+    | "sectionId"
+    | "examDate"
+    | "examTime"
   > {}
 
 class Exam extends Model<ExamAttributes, ExamCreationAttributes> {
@@ -40,6 +46,7 @@ class Exam extends Model<ExamAttributes, ExamCreationAttributes> {
   public examId!: string;
   public instituteId!: string;
   public classId!: string | null;
+  public sectionId!: string | null;
   public sessionId!: string;
   public examType!: string;
   public subjectId!: string;
@@ -49,6 +56,8 @@ class Exam extends Model<ExamAttributes, ExamCreationAttributes> {
   public passingMarks!: number;
   public duration!: number | null;
   public instructions!: string | null;
+  public examDate!: Date | null;
+  public examTime!: string | null;
   public status!: string;
   public isDeleted!: boolean;
   public readonly createdAt!: Date;
@@ -79,6 +88,19 @@ Exam.init(
     passingMarks: { type: DataTypes.INTEGER, allowNull: false },
     duration: { type: DataTypes.INTEGER, allowNull: true, defaultValue: null },
     instructions: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
+    examDate: { type: DataTypes.DATEONLY, allowNull: true, defaultValue: null },
+    examTime: { type: DataTypes.TIME, allowNull: true, defaultValue: null },
+    sectionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+      references: {
+        model: "viaexam_sections",
+        key: "sectionId",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "SET NULL",
+    },
     status: { type: DataTypes.STRING, allowNull: false, defaultValue: "Draft" },
     isDeleted: {
       type: DataTypes.BOOLEAN,
