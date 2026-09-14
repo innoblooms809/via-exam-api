@@ -48,6 +48,17 @@ const uploadSheets = async (
 
     const results: { rollNo: string; status: string; reason?: string }[] = [];
 
+    // Find matching exam to link examId if available
+    const matchingExam = await Exam.findOne({
+      where: {
+        instituteId,
+        classId: body.classId,
+        subjectId: body.subjectId,
+        examType: body.examType,
+        isDeleted: false,
+      },
+    });
+
     for (const file of files) {
       // Roll number = filename without extension (matches your frontend logic)
       const rollNo = file.originalname.replace(/\.[^.]+$/, "");
@@ -80,6 +91,7 @@ const uploadSheets = async (
       await Scanner.create({
         sheetId,
         instituteId,
+        examId: matchingExam ? matchingExam.examId : undefined,
         classId: body.classId,
         section: body.section,
         subjectId: body.subjectId,
@@ -394,33 +406,59 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
       attributes: ["paperId", "examId", "paperSet", "status", "approvedAt"],
     });
 
-    // Same rule as the approval workflow: the exam is approved once both its
-    // question paper and answer key are approved (or the exam itself says so).
-    const approved = instituteExams
-      .map((exam) => {
-        const qp = questionPapers.find((p) => p.examId === exam.examId);
-        const ans = answerKeys.find(
-          (a) => a.examId === exam.examId || (qp && a.paperId === qp.paperId)
-        );
-        const isApproved =
-          APPROVED_EXAM_STATUSES.includes(exam.status) ||
-          (exam.status !== "Rejected" && Boolean(qp && ans));
-        return isApproved ? { exam, qp, ans } : null;
-      })
-      .filter(Boolean) as { exam: Exam; qp?: QuestionPaper; ans?: QuestionPaperAnswer }[];
+    // Collect all approved exam sets. An exam can have multiple approved paper sets (A, B, etc.)
+    const approvedList: {
+      exam: Exam;
+      qp?: QuestionPaper;
+      ans?: QuestionPaperAnswer;
+      paperSet: string;
+    }[] = [];
 
-    if (approved.length === 0) return empty;
+    for (const exam of instituteExams) {
+      const examQps = questionPapers.filter((p) => p.examId === exam.examId);
+      const examAns = answerKeys.filter(
+        (a) => a.examId === exam.examId || examQps.some((q) => a.paperId === q.paperId)
+      );
 
-    const exams = approved.map((a) => a.exam);
+      // Collect unique paperSet names from approved QPs and Answer Keys for this exam
+      const setNames = Array.from(
+        new Set(
+          [
+            ...examQps.map((q) => q.paperSet),
+            ...examAns.map((a) => a.paperSet),
+          ].filter((s) => Boolean(s && String(s).trim() !== ""))
+        )
+      );
+
+      if (setNames.length > 0) {
+        for (const set of setNames) {
+          const qp = examQps.find((q) => q.paperSet === set);
+          const ans = examAns.find((a) => a.paperSet === set || (qp && a.paperId === qp.paperId));
+          const isApproved =
+            APPROVED_EXAM_STATUSES.includes(exam.status) ||
+            (exam.status !== "Rejected" && Boolean(qp && ans));
+          if (isApproved) {
+            approvedList.push({ exam, qp, ans, paperSet: set });
+          }
+        }
+      } else {
+        if (APPROVED_EXAM_STATUSES.includes(exam.status)) {
+          approvedList.push({ exam, paperSet: "" });
+        }
+      }
+    }
+
+    if (approvedList.length === 0) return empty;
+
+    const exams = approvedList.map((a) => a.exam);
     const unique = (ids: (string | null | undefined)[]) =>
       Array.from(new Set(ids.filter(Boolean))) as string[];
-    const approvedExamIds = exams.map((e) => e.examId);
     const classIds = unique(exams.map((e) => e.classId));
     const subjectIds = unique(exams.map((e) => e.subjectId));
     const sessionIds = unique(exams.map((e) => e.sessionId));
     const userIds = unique(exams.flatMap((e) => [e.teacherId, e.examinerId]));
 
-    const [classesList, subjectsList, sessionsList, usersList, uploadCounts, studentCounts] =
+    const [classesList, subjectsList, sessionsList, usersList, allSheets, studentCounts] =
       await Promise.all([
         classIds.length ? Class.findAll({ where: { classId: { [Op.in]: classIds } } }) : [],
         subjectIds.length ? Subject.findAll({ where: { subjectId: { [Op.in]: subjectIds } } }) : [],
@@ -431,9 +469,9 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
               attributes: ["userId", "userName"],
             })
           : [],
-        Scanner.count({
-          where: { instituteId, examId: { [Op.in]: approvedExamIds }, isDeleted: false },
-          group: ["examId"],
+        Scanner.findAll({
+          where: { instituteId, isDeleted: false },
+          attributes: ["examId", "classId", "subjectId", "examType"],
         }),
         classIds.length
           ? StudentProfile.count({
@@ -447,17 +485,34 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
     const subjectMap = new Map<string, any>(subjectsList.map((s: any) => [s.subjectId, s]));
     const sessionMap = new Map<string, string>(sessionsList.map((s: any) => [s.sessionId, s.sessionName]));
     const userMap = new Map<string, string>(usersList.map((u: any) => [u.userId, u.userName]));
-    const uploadMap = new Map<string, number>(
-      (uploadCounts as any[]).map((r) => [r.examId, Number(r.count)])
-    );
     const studentMap = new Map<string, number>(
       (studentCounts as any[]).map((r) => [r.classId, Number(r.count)])
     );
 
-    const enrichedExams = approved.map(({ exam, qp, ans }) => {
+    // Calculate uploaded sheet count per exam, matching by examId OR (classId, subjectId, examType)
+    const countUploadedForExam = (exam: Exam) => {
+      return allSheets.filter((s: any) => {
+        if (s.examId && s.examId === exam.examId) return true;
+        if (
+          s.classId === exam.classId &&
+          s.subjectId === exam.subjectId &&
+          s.examType === exam.examType
+        ) {
+          return true;
+        }
+        return false;
+      }).length;
+    };
+
+    const enrichedExams = approvedList.map(({ exam, qp, ans, paperSet }) => {
       const subject = subjectMap.get(exam.subjectId);
+      const setLabel = paperSet || qp?.paperSet || ans?.paperSet || "";
+      const rowId = setLabel ? `${exam.examId}_${setLabel}` : exam.examId;
+
       return {
-        examId: exam.examId,
+        id: rowId,
+        examId: rowId,
+        rawExamId: exam.examId,
         examName: exam.examType,
         examType: exam.examType,
         classId: exam.classId,
@@ -469,13 +524,13 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
         session: sessionMap.get(exam.sessionId) || exam.sessionId,
         teacherName: userMap.get(exam.teacherId) || "",
         examinerName: exam.examinerId ? userMap.get(exam.examinerId) || "" : "",
-        setLabel: qp?.paperSet || ans?.paperSet || "",
+        setLabel,
         totalMarks: exam.totalMarks,
         passingMarks: exam.passingMarks,
         duration: exam.duration,
         instructions: exam.instructions,
         totalStudents: exam.classId ? studentMap.get(exam.classId) || 0 : 0,
-        uploadedCount: uploadMap.get(exam.examId) || 0,
+        uploadedCount: countUploadedForExam(exam),
         status: exam.status,
         questionPaperStatus: qp?.status || null,
         answerKeyStatus: ans?.status || null,

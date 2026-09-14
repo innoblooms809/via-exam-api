@@ -50,6 +50,7 @@ const Scanner_modal_1 = __importDefault(require("../modals/Scanner.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const student_service_1 = __importDefault(require("./student.service"));
 const sequelize_1 = require("sequelize");
+const teacherSubject_service_1 = require("./teacherSubject.service");
 /** Single exam-table status that drives Manage Exams + approval. */
 exports.EXAM_WORKFLOW_STATUSES = [
     "Draft",
@@ -139,6 +140,11 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
                 message: "Teacher not found in your institute.",
             };
         }
+        // 2b. The teacher must specialise in the subject (or already teach it).
+        const fit = yield (0, teacherSubject_service_1.checkTeacherForSubject)(instituteId, teacher.userId, body.subjectId);
+        if (!fit.ok) {
+            return { error: true, statusCode: http_status_1.default.BAD_REQUEST, message: fit.message };
+        }
         // 3. Check duplicate exam
         const duplicate = yield Exam_modal_1.default.findOne({
             where: {
@@ -165,6 +171,7 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
             sessionId: body.sessionId,
             examType: body.examType,
             classId: body.classId,
+            sectionId: body.sectionId || null,
             subjectId: body.subjectId,
             teacherId: teacher.userId,
             examinerId: createdBy.userId,
@@ -172,6 +179,8 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
             passingMarks: Number(body.passingMarks),
             duration: body.duration ? Number(body.duration) : null,
             instructions: body.instructions || null,
+            examDate: body.examDate || null,
+            examTime: body.examTime || null,
             status: "Draft",
         });
         // 6. Send notification to assigned teacher
@@ -436,16 +445,49 @@ const updateExam = (examId, body, requestedBy) => __awaiter(void 0, void 0, void
                 };
             }
         }
+        // The edit dialog sends sessionId / subjectId / classId / teacherId; older callers session / subject.
+        const nextSubjectId = body.subjectId || body.subject || exam.subjectId;
+        const nextTeacherId = body.teacherId || exam.teacherId;
+        const nextClassId = body.classId || exam.classId;
+        if (nextSubjectId !== exam.subjectId || nextClassId !== exam.classId) {
+            const subject = yield Subject_modal_1.default.findOne({ where: { subjectId: nextSubjectId, instituteId, isDeleted: false } });
+            if (!subject || (nextClassId && subject.classId !== nextClassId)) {
+                return { error: true, statusCode: 400, message: "The subject does not belong to the selected class." };
+            }
+        }
+        if (nextTeacherId !== exam.teacherId || nextSubjectId !== exam.subjectId) {
+            const fit = yield (0, teacherSubject_service_1.checkTeacherForSubject)(instituteId, nextTeacherId, nextSubjectId);
+            if (!fit.ok)
+                return { error: true, statusCode: 400, message: fit.message };
+        }
+        const teacherChanged = nextTeacherId !== exam.teacherId;
         yield exam.update({
-            sessionId: body.session || exam.sessionId,
+            sessionId: body.sessionId || body.session || exam.sessionId,
             examType: body.examType || exam.examType,
-            subjectId: body.subject || exam.subjectId,
+            classId: nextClassId,
+            sectionId: body.sectionId !== undefined ? body.sectionId : exam.sectionId,
+            subjectId: nextSubjectId,
+            teacherId: nextTeacherId,
             totalMarks: body.totalMarks || exam.totalMarks,
             passingMarks: body.passingMarks || exam.passingMarks,
             duration: body.duration || exam.duration,
             instructions: body.instructions || exam.instructions,
+            examDate: body.examDate !== undefined ? body.examDate : exam.examDate,
+            examTime: body.examTime !== undefined ? body.examTime : exam.examTime,
             status: body.status || exam.status,
         });
+        // Tell the newly assigned teacher, like on create.
+        if (teacherChanged) {
+            yield Notification_modal_1.default.create({
+                notificationId: yield helper_1.default.generateUserId(),
+                instituteId,
+                userId: nextTeacherId,
+                type: "EXAM_ASSIGNED",
+                title: "Exam Assigned",
+                message: `A ${exam.examType} exam has been assigned to you.`,
+                referenceId: exam.examId,
+            }).catch((err) => console.error("Exam reassignment notification failed:", err === null || err === void 0 ? void 0 : err.message));
+        }
         return {
             error: false,
             statusCode: 200,
