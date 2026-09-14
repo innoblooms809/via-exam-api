@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserPresenceSession = exports.ActivityLog = exports.ScannerProfile = exports.AIEvaluation = exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
+exports.RecheckRequest = exports.UserPresenceSession = exports.ActivityLog = exports.ScannerProfile = exports.AIEvaluation = exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
 const User_modal_1 = __importDefault(require("./User.modal"));
 exports.User = User_modal_1.default;
 const Role_modal_1 = __importDefault(require("./Role.modal"));
@@ -40,6 +40,8 @@ const ActivityLog_modal_1 = __importDefault(require("./ActivityLog.modal"));
 exports.ActivityLog = ActivityLog_modal_1.default;
 const UserPresenceSession_modal_1 = __importDefault(require("./UserPresenceSession.modal"));
 exports.UserPresenceSession = UserPresenceSession_modal_1.default;
+const RecheckRequest_modal_1 = __importDefault(require("./RecheckRequest.modal"));
+exports.RecheckRequest = RecheckRequest_modal_1.default;
 // ROLE ↔ ACCESS
 // ═══════════════════════════════════════════════════════════════
 // ROLE ↔ ACCESS
@@ -481,4 +483,73 @@ User_modal_1.default.hasMany(Notification_modal_1.default, {
     foreignKey: "userId",
     sourceKey: "userId",
     as: "notifications",
+});
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ USER (Student)
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest_modal_1.default.belongsTo(User_modal_1.default, {
+    foreignKey: "studentId",
+    targetKey: "userId",
+    as: "student",
+});
+User_modal_1.default.hasMany(RecheckRequest_modal_1.default, {
+    foreignKey: "studentId",
+    sourceKey: "userId",
+    as: "recheckRequests",
+});
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ USER (Reviewer)
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest_modal_1.default.belongsTo(User_modal_1.default, {
+    foreignKey: "reviewedBy",
+    targetKey: "userId",
+    as: "reviewer",
+});
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ INSTITUTE
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest_modal_1.default.belongsTo(Institute_modal_1.default, {
+    foreignKey: "instituteId",
+    targetKey: "instituteId",
+    as: "institute",
+});
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ EXAM
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest_modal_1.default.belongsTo(Exam_modal_1.default, {
+    foreignKey: "examId",
+    targetKey: "examId",
+    as: "exam",
+});
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ AI EVALUATION
+// ═══════════════════════════════════════════════════════════════
+RecheckRequest_modal_1.default.belongsTo(AIEvaluation_modal_1.default, {
+    foreignKey: "evaluationId",
+    targetKey: "evaluationId",
+    as: "evaluation",
+});
+// ═══════════════════════════════════════════════════════════════
+// RECHECK REQUEST ↔ SUBJECT
+// ══════════════════════════════════════════════════════════════
+RecheckRequest_modal_1.default.belongsTo(Subject_modal_1.default, {
+    foreignKey: "subjectId",
+    targetKey: "subjectId",
+    as: "subject",
+});
+// ═══════════════════════════════════════════════════════════════
+// AI EVALUATION ↔ SUBJECT
+// ═══════════════════════════════════════════════════════════════
+AIEvaluation_modal_1.default.belongsTo(Subject_modal_1.default, {
+    foreignKey: "subjectId",
+    targetKey: "subjectId",
+    as: "subject",
+});
+// ═══════════════════════════════════════════════════════════════
+// AI EVALUATION ↔ EXAM
+// ═══════════════════════════════════════════════════════════════
+AIEvaluation_modal_1.default.belongsTo(Exam_modal_1.default, {
+    foreignKey: "examId",
+    targetKey: "examId",
+    as: "exam",
 });

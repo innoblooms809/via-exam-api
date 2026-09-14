@@ -29,6 +29,134 @@ const getStudentDashboardOverview = (req, res) => __awaiter(void 0, void 0, void
         });
     }
 });
+const getUpcomingExams = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const studentId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield studentdashboard_service_1.default.getUpcomingExams(studentId, instituteId, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getExamProgress = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const studentId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield studentdashboard_service_1.default.getExamProgress(studentId, instituteId, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getPerformanceOverview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const studentId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield studentdashboard_service_1.default.getPerformanceOverview(studentId, instituteId, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getSubjectComparison = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const studentId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield studentdashboard_service_1.default.getSubjectComparison(studentId, instituteId, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getLatestResults = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const studentId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield studentdashboard_service_1.default.getLatestResults(studentId, instituteId, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getSubjectPerformance = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const studentId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield studentdashboard_service_1.default.getSubjectPerformance(studentId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getRecentActivity = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const studentId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield studentdashboard_service_1.default.getRecentActivity(studentId, instituteId, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getRecheckRequests = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const studentId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield studentdashboard_service_1.default.getRecheckRequests(studentId, instituteId, req.query);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
 exports.default = {
     getStudentDashboardOverview,
+    getUpcomingExams,
+    getExamProgress,
+    getPerformanceOverview,
+    getSubjectComparison,
+    getLatestResults,
+    getSubjectPerformance,
+    getRecentActivity,
+    getRecheckRequests,
 };
