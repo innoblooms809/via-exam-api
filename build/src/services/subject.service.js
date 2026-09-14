@@ -17,6 +17,8 @@ const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const Class_modal_1 = __importDefault(require("../modals/Class.modal"));
 const User_modal_1 = __importDefault(require("../modals/User.modal"));
+const TeacherProfile_modal_1 = __importDefault(require("../modals/TeacherProfile.modal"));
+const specialization_1 = require("../utils/specialization");
 // ─── CREATE SUBJECT ─────────────────────────────────────────────
 const createSubject = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d, _e, _f, _g, _h;
@@ -230,7 +232,7 @@ const getSubjectById = (subjectId, createdBy) => __awaiter(void 0, void 0, void 
 });
 // ─── UPDATE SUBJECT ────────────────────────────────────────────
 const updateSubject = (subjectId, body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _j, _k, _l, _m;
+    var _j, _k, _l, _m, _o;
     try {
         const subject = yield Subject_modal_1.default.findOne({
             where: {
@@ -279,8 +281,21 @@ const updateSubject = (subjectId, body, createdBy) => __awaiter(void 0, void 0, 
                 };
             }
         }
-        const totalMarks = (_j = body.totalMarks) !== null && _j !== void 0 ? _j : subject.totalMarks;
-        const passingMarks = (_k = body.passingMarks) !== null && _k !== void 0 ? _k : subject.passingMarks;
+        // A (new) teacher for this subject must specialise in it.
+        const newTeacherId = body.teacherId && body.teacherId !== "null" && body.teacherId !== "" ? String(body.teacherId) : null;
+        if (newTeacherId && newTeacherId !== subject.teacherId) {
+            const profile = yield TeacherProfile_modal_1.default.findOne({ where: { userId: newTeacherId, instituteId: createdBy.instituteId } });
+            const name = (_j = body.subjectName) !== null && _j !== void 0 ? _j : subject.subjectName;
+            if (!(0, specialization_1.specialisesIn)(profile === null || profile === void 0 ? void 0 : profile.specialization, name)) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.BAD_REQUEST,
+                    message: `This teacher does not specialise in ${name}. Add ${name} to their specialisations first.`,
+                };
+            }
+        }
+        const totalMarks = (_k = body.totalMarks) !== null && _k !== void 0 ? _k : subject.totalMarks;
+        const passingMarks = (_l = body.passingMarks) !== null && _l !== void 0 ? _l : subject.passingMarks;
         if (passingMarks > totalMarks) {
             return {
                 error: true,
@@ -289,8 +304,8 @@ const updateSubject = (subjectId, body, createdBy) => __awaiter(void 0, void 0, 
             };
         }
         yield subject.update({
-            subjectName: (_l = body.subjectName) !== null && _l !== void 0 ? _l : subject.subjectName,
-            subjectCode: (_m = body.subjectCode) !== null && _m !== void 0 ? _m : subject.subjectCode,
+            subjectName: (_m = body.subjectName) !== null && _m !== void 0 ? _m : subject.subjectName,
+            subjectCode: (_o = body.subjectCode) !== null && _o !== void 0 ? _o : subject.subjectCode,
             teacherId: body.teacherId !== undefined ? (body.teacherId === "null" || body.teacherId === "" || body.teacherId === null ? null : body.teacherId) : subject.teacherId,
             totalMarks,
             passingMarks,

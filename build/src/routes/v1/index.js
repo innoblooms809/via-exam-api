@@ -29,7 +29,9 @@ const dashboard_route_1 = __importDefault(require("./dashboard.route"));
 const Admindashboard_route_1 = __importDefault(require("./Admindashboard.route"));
 const teacherdashboard_route_1 = __importDefault(require("./teacherdashboard.route"));
 const studentdashboard_route_1 = __importDefault(require("./studentdashboard.route"));
+const scannerdashboard_route_1 = __importDefault(require("./scannerdashboard.route"));
 const monitoring_route_1 = __importDefault(require("./monitoring.route"));
+const recheckRequest_route_1 = __importDefault(require("./recheckRequest.route"));
 const router = express_1.default.Router();
 const defaultRoutes = [
     {
@@ -59,6 +61,10 @@ const defaultRoutes = [
     {
         path: "/student-dashboard",
         route: studentdashboard_route_1.default,
+    },
+    {
+        path: "/scanner-dashboard",
+        route: scannerdashboard_route_1.default,
     },
     {
         path: "/sessions",
@@ -127,6 +133,10 @@ const defaultRoutes = [
     {
         path: "/monitoring",
         route: monitoring_route_1.default,
+    },
+    {
+        path: "/recheck-requests",
+        route: recheckRequest_route_1.default,
     },
     // {
     //   path: '/captcha',

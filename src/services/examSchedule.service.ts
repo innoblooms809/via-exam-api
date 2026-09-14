@@ -23,6 +23,7 @@ import Session from "../modals/Session.modal";
 import Institute from "../modals/Institute.modal";
 import StudentProfile from "../modals/Student.modal";
 import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
+import QuestionPaperAnswer from "../modals/question-paper/stander-answer.model";
 import { isShift } from "../utils/examTime";
 
 export type PaperApproval = "approved" | "pending" | "rejected" | "in_preparation" | "not_created";
@@ -64,8 +65,8 @@ export interface DateSheet {
 
 type ViewerRole = "student" | "teacher" | "scanner" | "admin";
 
-const APPROVED_SET_STATUSES = ["APPROVED", "PUBLISHED"];
-const APPROVED_EXAM_STATUSES = ["Approved", "Live", "Completed"];
+const APPROVED_STATUS_LIST = ["APPROVED", "PUBLISHED", "LIVE", "COMPLETED"];
+const isApprovedStatus = (s: unknown): boolean => APPROVED_STATUS_LIST.includes(String(s || "").trim().toUpperCase());
 
 /** "Mid Term", "Mid-Term" and "midterm" are the same exam. */
 const typeKey = (value: unknown) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -97,14 +98,40 @@ const toDateOnly = (value: unknown): string | null => {
 };
 
 /** One approval state for an exam, from the statuses of its sets. */
-const approvalOf = (exam: Exam | undefined, sets: QuestionPaper[]): PaperApproval => {
+const approvalOf = (
+  exam: Exam | undefined,
+  sets: QuestionPaper[],
+  answers: QuestionPaperAnswer[] = []
+): PaperApproval => {
   if (!exam) return "not_created";
-  const statuses = sets.map((s) => s.status);
-  if (statuses.some((s) => APPROVED_SET_STATUSES.includes(s))) return "approved";
-  // Older exams were approved at exam level before approvals became per set.
-  if (APPROVED_EXAM_STATUSES.includes(exam.status)) return "approved";
-  if (statuses.includes("PENDING_APPROVAL")) return "pending";
-  if (statuses.includes("REJECTED")) return "rejected";
+  const setStatuses = sets.map((s) => String(s.status || "").trim().toUpperCase());
+  const ansStatuses = answers.map((a) => String(a.status || "").trim().toUpperCase());
+  const examStatus = String(exam.status || "").trim().toUpperCase();
+
+  if (
+    setStatuses.some(isApprovedStatus) ||
+    ansStatuses.some(isApprovedStatus) ||
+    isApprovedStatus(examStatus)
+  ) {
+    return "approved";
+  }
+
+  if (
+    setStatuses.includes("PENDING_APPROVAL") ||
+    ansStatuses.includes("PENDING_APPROVAL") ||
+    examStatus.includes("PENDING")
+  ) {
+    return "pending";
+  }
+
+  if (
+    setStatuses.includes("REJECTED") ||
+    ansStatuses.includes("REJECTED") ||
+    examStatus.includes("REJECTED")
+  ) {
+    return "rejected";
+  }
+
   return "in_preparation";
 };
 
@@ -170,9 +197,15 @@ export const getExamSchedule = async (user: any) => {
       new Set([...exams.map((e) => e.subjectId), ...events.map((e) => e.subjectId)].filter(Boolean))
     ) as string[];
 
-    const [sets, subjects] = await Promise.all([
+    const [sets, answers, subjects] = await Promise.all([
       examIds.length
         ? QuestionPaper.findAll({
+            where: { examId: { [Op.in]: examIds } },
+            attributes: ["examId", "paperSet", "status"],
+          })
+        : [],
+      examIds.length
+        ? QuestionPaperAnswer.findAll({
             where: { examId: { [Op.in]: examIds } },
             attributes: ["examId", "paperSet", "status"],
           })
@@ -186,6 +219,8 @@ export const getExamSchedule = async (user: any) => {
     const subjectById = new Map(subjects.map((s) => [s.subjectId, s]));
     const setsByExam = new Map<string, QuestionPaper[]>();
     for (const s of sets) setsByExam.set(s.examId, [...(setsByExam.get(s.examId) ?? []), s]);
+    const answersByExam = new Map<string, QuestionPaperAnswer[]>();
+    for (const a of answers) answersByExam.set(a.examId, [...(answersByExam.get(a.examId) ?? []), a]);
 
     const sheets = new Map<string, DateSheet>();
     const sheetFor = (sessionId: string | null, classId: string | null, className: string, examType: string) => {
@@ -217,7 +252,17 @@ export const getExamSchedule = async (user: any) => {
 
     const paperFromExam = (exam: Exam | undefined) => {
       const examSets = exam ? setsByExam.get(exam.examId) ?? [] : [];
-      const approval = approvalOf(exam, examSets);
+      const examAnswers = exam ? answersByExam.get(exam.examId) ?? [] : [];
+      const approval = approvalOf(exam, examSets, examAnswers);
+      const approvedSetList = Array.from(
+        new Set([
+          ...examSets.filter((s) => isApprovedStatus(s.status)).map((s) => s.paperSet),
+          ...examAnswers.filter((a) => isApprovedStatus(a.status)).map((a) => a.paperSet),
+        ])
+      )
+        .filter(Boolean)
+        .sort();
+
       return {
         examId: exam?.examId ?? null,
         totalMarks: exam?.totalMarks ?? null,
@@ -225,10 +270,7 @@ export const getExamSchedule = async (user: any) => {
         durationMinutes: exam?.duration ?? null,
         approval,
         examStatus: exam?.status ?? null,
-        approvedSets: examSets
-          .filter((s) => APPROVED_SET_STATUSES.includes(s.status))
-          .map((s) => s.paperSet)
-          .sort(),
+        approvedSets: approvedSetList,
       };
     };
 

@@ -47,6 +47,16 @@ const uploadSheets = (body, files, uploadedBy) => __awaiter(void 0, void 0, void
             };
         }
         const results = [];
+        // Find matching exam to link examId if available
+        const matchingExam = yield Exam_modal_1.default.findOne({
+            where: {
+                instituteId,
+                classId: body.classId,
+                subjectId: body.subjectId,
+                examType: body.examType,
+                isDeleted: false,
+            },
+        });
         for (const file of files) {
             // Roll number = filename without extension (matches your frontend logic)
             const rollNo = file.originalname.replace(/\.[^.]+$/, "");
@@ -74,6 +84,7 @@ const uploadSheets = (body, files, uploadedBy) => __awaiter(void 0, void 0, void
             yield Scanner_modal_1.default.create({
                 sheetId,
                 instituteId,
+                examId: matchingExam ? matchingExam.examId : undefined,
                 classId: body.classId,
                 section: body.section,
                 subjectId: body.subjectId,
@@ -354,27 +365,42 @@ const getApprovedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
             },
             attributes: ["paperId", "examId", "paperSet", "status", "approvedAt"],
         });
-        // Same rule as the approval workflow: the exam is approved once both its
-        // question paper and answer key are approved (or the exam itself says so).
-        const approved = instituteExams
-            .map((exam) => {
-            const qp = questionPapers.find((p) => p.examId === exam.examId);
-            const ans = answerKeys.find((a) => a.examId === exam.examId || (qp && a.paperId === qp.paperId));
-            const isApproved = APPROVED_EXAM_STATUSES.includes(exam.status) ||
-                (exam.status !== "Rejected" && Boolean(qp && ans));
-            return isApproved ? { exam, qp, ans } : null;
-        })
-            .filter(Boolean);
-        if (approved.length === 0)
+        // Collect all approved exam sets. An exam can have multiple approved paper sets (A, B, etc.)
+        const approvedList = [];
+        for (const exam of instituteExams) {
+            const examQps = questionPapers.filter((p) => p.examId === exam.examId);
+            const examAns = answerKeys.filter((a) => a.examId === exam.examId || examQps.some((q) => a.paperId === q.paperId));
+            // Collect unique paperSet names from approved QPs and Answer Keys for this exam
+            const setNames = Array.from(new Set([
+                ...examQps.map((q) => q.paperSet),
+                ...examAns.map((a) => a.paperSet),
+            ].filter((s) => Boolean(s && String(s).trim() !== ""))));
+            if (setNames.length > 0) {
+                for (const set of setNames) {
+                    const qp = examQps.find((q) => q.paperSet === set);
+                    const ans = examAns.find((a) => a.paperSet === set || (qp && a.paperId === qp.paperId));
+                    const isApproved = APPROVED_EXAM_STATUSES.includes(exam.status) ||
+                        (exam.status !== "Rejected" && Boolean(qp && ans));
+                    if (isApproved) {
+                        approvedList.push({ exam, qp, ans, paperSet: set });
+                    }
+                }
+            }
+            else {
+                if (APPROVED_EXAM_STATUSES.includes(exam.status)) {
+                    approvedList.push({ exam, paperSet: "" });
+                }
+            }
+        }
+        if (approvedList.length === 0)
             return empty;
-        const exams = approved.map((a) => a.exam);
+        const exams = approvedList.map((a) => a.exam);
         const unique = (ids) => Array.from(new Set(ids.filter(Boolean)));
-        const approvedExamIds = exams.map((e) => e.examId);
         const classIds = unique(exams.map((e) => e.classId));
         const subjectIds = unique(exams.map((e) => e.subjectId));
         const sessionIds = unique(exams.map((e) => e.sessionId));
         const userIds = unique(exams.flatMap((e) => [e.teacherId, e.examinerId]));
-        const [classesList, subjectsList, sessionsList, usersList, uploadCounts, studentCounts] = yield Promise.all([
+        const [classesList, subjectsList, sessionsList, usersList, allSheets, studentCounts] = yield Promise.all([
             classIds.length ? Class_modal_1.default.findAll({ where: { classId: { [sequelize_1.Op.in]: classIds } } }) : [],
             subjectIds.length ? Subject_modal_1.default.findAll({ where: { subjectId: { [sequelize_1.Op.in]: subjectIds } } }) : [],
             sessionIds.length ? Session_modal_1.default.findAll({ where: { sessionId: { [sequelize_1.Op.in]: sessionIds } } }) : [],
@@ -384,9 +410,9 @@ const getApprovedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
                     attributes: ["userId", "userName"],
                 })
                 : [],
-            Scanner_modal_1.default.count({
-                where: { instituteId, examId: { [sequelize_1.Op.in]: approvedExamIds }, isDeleted: false },
-                group: ["examId"],
+            Scanner_modal_1.default.findAll({
+                where: { instituteId, isDeleted: false },
+                attributes: ["examId", "classId", "subjectId", "examType"],
             }),
             classIds.length
                 ? Student_modal_1.default.count({
@@ -399,12 +425,28 @@ const getApprovedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
         const subjectMap = new Map(subjectsList.map((s) => [s.subjectId, s]));
         const sessionMap = new Map(sessionsList.map((s) => [s.sessionId, s.sessionName]));
         const userMap = new Map(usersList.map((u) => [u.userId, u.userName]));
-        const uploadMap = new Map(uploadCounts.map((r) => [r.examId, Number(r.count)]));
         const studentMap = new Map(studentCounts.map((r) => [r.classId, Number(r.count)]));
-        const enrichedExams = approved.map(({ exam, qp, ans }) => {
+        // Calculate uploaded sheet count per exam, matching by examId OR (classId, subjectId, examType)
+        const countUploadedForExam = (exam) => {
+            return allSheets.filter((s) => {
+                if (s.examId && s.examId === exam.examId)
+                    return true;
+                if (s.classId === exam.classId &&
+                    s.subjectId === exam.subjectId &&
+                    s.examType === exam.examType) {
+                    return true;
+                }
+                return false;
+            }).length;
+        };
+        const enrichedExams = approvedList.map(({ exam, qp, ans, paperSet }) => {
             const subject = subjectMap.get(exam.subjectId);
+            const setLabel = paperSet || (qp === null || qp === void 0 ? void 0 : qp.paperSet) || (ans === null || ans === void 0 ? void 0 : ans.paperSet) || "";
+            const rowId = setLabel ? `${exam.examId}_${setLabel}` : exam.examId;
             return {
-                examId: exam.examId,
+                id: rowId,
+                examId: rowId,
+                rawExamId: exam.examId,
                 examName: exam.examType,
                 examType: exam.examType,
                 classId: exam.classId,
@@ -416,13 +458,13 @@ const getApprovedExams = (requestedBy) => __awaiter(void 0, void 0, void 0, func
                 session: sessionMap.get(exam.sessionId) || exam.sessionId,
                 teacherName: userMap.get(exam.teacherId) || "",
                 examinerName: exam.examinerId ? userMap.get(exam.examinerId) || "" : "",
-                setLabel: (qp === null || qp === void 0 ? void 0 : qp.paperSet) || (ans === null || ans === void 0 ? void 0 : ans.paperSet) || "",
+                setLabel,
                 totalMarks: exam.totalMarks,
                 passingMarks: exam.passingMarks,
                 duration: exam.duration,
                 instructions: exam.instructions,
                 totalStudents: exam.classId ? studentMap.get(exam.classId) || 0 : 0,
-                uploadedCount: uploadMap.get(exam.examId) || 0,
+                uploadedCount: countUploadedForExam(exam),
                 status: exam.status,
                 questionPaperStatus: (qp === null || qp === void 0 ? void 0 : qp.status) || null,
                 answerKeyStatus: (ans === null || ans === void 0 ? void 0 : ans.status) || null,
