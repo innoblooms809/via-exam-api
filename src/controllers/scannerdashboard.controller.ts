@@ -1,14 +1,11 @@
 import { Response } from "express";
 import httpStatus from "http-status";
-import TeacherdashboardService from "../services/teacherdashboard.service";
+import ScannerdashboardService from "../services/scannerdashboard.service";
 
-const getTeacherDashboardOverview = async (req: any, res: Response): Promise<any> => {
+const getKpis = async (req: any, res: Response): Promise<any> => {
   try {
-    const teacherId = req.viaExamUser.userId;
     const instituteId = req.viaExamUser.instituteId;
-
-    const result = await TeacherdashboardService.getTeacherDashboardOverview(teacherId, instituteId);
-
+    const result = await ScannerdashboardService.getKpis(instituteId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -19,11 +16,10 @@ const getTeacherDashboardOverview = async (req: any, res: Response): Promise<any
   }
 };
 
-const getUpcomingExams = async (req: any, res: Response): Promise<any> => {
+const getHourlyActivity = async (req: any, res: Response): Promise<any> => {
   try {
-    const teacherId = req.viaExamUser.userId;
     const instituteId = req.viaExamUser.instituteId;
-    const result = await TeacherdashboardService.getUpcomingExams(teacherId, instituteId);
+    const result = await ScannerdashboardService.getHourlyActivity(instituteId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -34,11 +30,10 @@ const getUpcomingExams = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-const getExamActivity = async (req: any, res: Response): Promise<any> => {
+const getStatusDistribution = async (req: any, res: Response): Promise<any> => {
   try {
-    const teacherId = req.viaExamUser.userId;
     const instituteId = req.viaExamUser.instituteId;
-    const result = await TeacherdashboardService.getExamActivity(teacherId, instituteId);
+    const result = await ScannerdashboardService.getStatusDistribution(instituteId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -49,11 +44,10 @@ const getExamActivity = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-const getActivityOverview = async (req: any, res: Response): Promise<any> => {
+const getRecentScans = async (req: any, res: Response): Promise<any> => {
   try {
-    const teacherId = req.viaExamUser.userId;
     const instituteId = req.viaExamUser.instituteId;
-    const result = await TeacherdashboardService.getActivityOverview(teacherId, instituteId);
+    const result = await ScannerdashboardService.getRecentScans(instituteId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -64,11 +58,10 @@ const getActivityOverview = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-const getUpcomingWork = async (req: any, res: Response): Promise<any> => {
+const getExamProgress = async (req: any, res: Response): Promise<any> => {
   try {
-    const teacherId = req.viaExamUser.userId;
     const instituteId = req.viaExamUser.instituteId;
-    const result = await TeacherdashboardService.getUpcomingWork(teacherId, instituteId);
+    const result = await ScannerdashboardService.getExamProgress(instituteId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -79,26 +72,10 @@ const getUpcomingWork = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-const getEvaluationStatus = async (req: any, res: Response): Promise<any> => {
+const getPendingScans = async (req: any, res: Response): Promise<any> => {
   try {
-    const teacherId = req.viaExamUser.userId;
     const instituteId = req.viaExamUser.instituteId;
-    const result = await TeacherdashboardService.getEvaluationStatus(teacherId, instituteId);
-    return res.status(result.statusCode).send(result);
-  } catch (error) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
-    });
-  }
-};
-
-const getSubjectWorkload = async (req: any, res: Response): Promise<any> => {
-  try {
-    const teacherId = req.viaExamUser.userId;
-    const instituteId = req.viaExamUser.instituteId;
-    const result = await TeacherdashboardService.getSubjectWorkload(teacherId, instituteId);
+    const result = await ScannerdashboardService.getPendingScans(instituteId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -111,9 +88,8 @@ const getSubjectWorkload = async (req: any, res: Response): Promise<any> => {
 
 const getRecentActivity = async (req: any, res: Response): Promise<any> => {
   try {
-    const teacherId = req.viaExamUser.userId;
     const instituteId = req.viaExamUser.instituteId;
-    const result = await TeacherdashboardService.getRecentActivity(teacherId, instituteId);
+    const result = await ScannerdashboardService.getRecentActivity(instituteId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -125,12 +101,11 @@ const getRecentActivity = async (req: any, res: Response): Promise<any> => {
 };
 
 export default {
-  getTeacherDashboardOverview,
-  getUpcomingExams,
-  getExamActivity,
-  getActivityOverview,
-  getUpcomingWork,
-  getEvaluationStatus,
-  getSubjectWorkload,
+  getKpis,
+  getHourlyActivity,
+  getStatusDistribution,
+  getRecentScans,
+  getExamProgress,
+  getPendingScans,
   getRecentActivity,
 };

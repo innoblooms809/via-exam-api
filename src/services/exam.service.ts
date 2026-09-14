@@ -133,6 +133,7 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       sessionId: body.sessionId,
       examType: body.examType,
       classId: body.classId,
+      sectionId: body.sectionId || null,
       subjectId: body.subjectId,
       teacherId: teacher.userId, // store userId not name
       examinerId: createdBy.userId,
@@ -140,6 +141,8 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       passingMarks: Number(body.passingMarks),
       duration: body.duration ? Number(body.duration) : null,
       instructions: body.instructions || null,
+      examDate: body.examDate || null,
+      examTime: body.examTime || null,
       status: "Draft",
     });
 
@@ -436,11 +439,15 @@ const updateExam = async (
     await exam.update({
       sessionId: body.session || exam.sessionId,
       examType: body.examType || exam.examType,
+      classId: body.classId !== undefined ? body.classId : exam.classId,
+      sectionId: body.sectionId !== undefined ? body.sectionId : exam.sectionId,
       subjectId: body.subject || exam.subjectId,
       totalMarks: body.totalMarks || exam.totalMarks,
       passingMarks: body.passingMarks || exam.passingMarks,
       duration: body.duration || exam.duration,
       instructions: body.instructions || exam.instructions,
+      examDate: body.examDate !== undefined ? body.examDate : exam.examDate,
+      examTime: body.examTime !== undefined ? body.examTime : exam.examTime,
       status: body.status || exam.status,
     });
 

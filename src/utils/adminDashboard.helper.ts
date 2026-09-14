@@ -1,4 +1,4 @@
-const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export const DASHBOARD_COLORS = {
   BLUE: "#4F6EF7",
@@ -169,11 +169,62 @@ export const getSubjectIcon = (subjectName?: string | null): string => {
   return "MenuBook";
 };
 
+export const getGradeFromPercentage = (percentage: number): { grade: string; status: string } => {
+  let grade = "F";
+  if (percentage >= 90) grade = "A+";
+  else if (percentage >= 80) grade = "A";
+  else if (percentage >= 70) grade = "B+";
+  else if (percentage >= 60) grade = "B";
+  else if (percentage >= 50) grade = "C";
+  else if (percentage >= 40) grade = "D";
+
+  let status = "Passed";
+  if (percentage >= 90) status = "Excellent";
+  else if (percentage >= 80) status = "Good";
+  else if (percentage >= 60) status = "Average";
+
+  return { grade, status };
+};
+
+const SUBJECT_PERFORMANCE_PALETTE = [
+  { color: "#6C4CE6", lightColor: "#F1EEFF" },
+  { color: "#3B82D0", lightColor: "#EAF3FF" },
+  { color: "#22A06B", lightColor: "#E9F8F1" },
+  { color: "#F58A2A", lightColor: "#FFF3E7" },
+  { color: "#F0445E", lightColor: "#FFF0F2" },
+];
+
+export const getSubjectPerformanceStyle = (index: number) =>
+  SUBJECT_PERFORMANCE_PALETTE[index % SUBJECT_PERFORMANCE_PALETTE.length];
+
 export const mapSheetStatus = (status?: string | null): "Processed" | "Pending" | "Failed" => {
   const value = String(status || "").toLowerCase();
   if (value === "evaluated" || value === "processed" || value === "success") return "Processed";
   if (value === "failed" || value === "rejected") return "Failed";
   return "Pending";
+};
+
+export const computeScannerStatusBreakdown = (
+  sheets: { status?: string | null }[]
+): {
+  total: number;
+  processed: number;
+  pending: number;
+  failed: number;
+  statusData: { name: string; value: number; percentage: string; color: string }[];
+} => {
+  const processed = sheets.filter((row) => mapSheetStatus(row.status) === "Processed").length;
+  const pending = sheets.filter((row) => mapSheetStatus(row.status) === "Pending").length;
+  const failed = sheets.filter((row) => mapSheetStatus(row.status) === "Failed").length;
+  const total = sheets.length;
+
+  const statusData = [
+    { name: "Processed", value: processed, percentage: percentLabel(processed, total), color: DASHBOARD_COLORS.GREEN },
+    { name: "Pending", value: pending, percentage: percentLabel(pending, total), color: DASHBOARD_COLORS.AMBER },
+    { name: "Failed", value: failed, percentage: percentLabel(failed, total), color: DASHBOARD_COLORS.RED },
+  ];
+
+  return { total, processed, pending, failed, statusData };
 };
 
 export const mapExamUiStatus = (
