@@ -15,6 +15,11 @@ import RegHelper from "../utils/helper";
 import exclude from "../utils/exclude";
 import { sequelize } from "../config/sequelize";
 import { Op } from "sequelize";
+import {
+  formatSpecializations,
+  parseSpecializations,
+  validateSpecializations,
+} from "../utils/specialization";
 
 // ─── CREATE TEACHER ───────────────────────────────────────────────────────────
 const createTeacher = async (
@@ -144,7 +149,7 @@ const createTeacher = async (
 
         teacherType: body.teacherType,
         qualification: body.qualification,
-        specialization: body.specialization || null,
+        specialization: formatSpecializations(parseSpecializations(body.specialization)) || null,
         experience: body.experience || null,
         address: body.address || null,
         joiningDate: new Date(body.joiningDate),
@@ -423,7 +428,10 @@ const updateTeacher = async (
         {
           teacherType: body.teacherType ?? profile.teacherType,
           qualification: body.qualification ?? profile.qualification,
-          specialization: body.specialization ?? profile.specialization,
+          specialization:
+            body.specialization !== undefined
+              ? formatSpecializations(parseSpecializations(body.specialization)) || null
+              : profile.specialization,
           experience: body.experience ?? profile.experience,
           address: body.address ?? profile.address,
           profileUrl,
@@ -897,8 +905,33 @@ const getTeacherQuestionPapers = async (
   }
 };
 
+// ─── SPECIALISATIONS ─────────────────────────────────────────────────────────
+// Replaces a teacher's specialisation list. Subjects (and exams) can only go to teachers
+// who specialise in them — see services/teacherSubject.service.ts.
+const updateSpecializations = async (userId: string, body: any, requestedBy: any): Promise<any> => {
+  try {
+    const list = parseSpecializations(body?.specializations);
+    const problem = validateSpecializations(list);
+    if (problem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: problem };
+
+    const profile = await TeacherProfile.findOne({ where: { userId, instituteId: requestedBy.instituteId } });
+    if (!profile) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Teacher not found." };
+
+    await profile.update({ specialization: formatSpecializations(list) || null });
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: list.length ? `Specialisations updated: ${formatSpecializations(list)}.` : "Specialisations cleared.",
+      data: { userId, specialization: profile.specialization, specializations: list },
+    };
+  } catch (e: any) {
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Failed to update specialisations: ${e.message}` };
+  }
+};
+
 export default {
   createTeacher,
+  updateSpecializations,
   getAllTeachers,
   getTeacherById,
   updateTeacher,
