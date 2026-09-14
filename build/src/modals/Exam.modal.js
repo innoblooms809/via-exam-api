@@ -26,6 +26,19 @@ Exam.init({
     passingMarks: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
     duration: { type: sequelize_1.DataTypes.INTEGER, allowNull: true, defaultValue: null },
     instructions: { type: sequelize_1.DataTypes.TEXT, allowNull: true, defaultValue: null },
+    examDate: { type: sequelize_1.DataTypes.DATEONLY, allowNull: true, defaultValue: null },
+    examTime: { type: sequelize_1.DataTypes.TIME, allowNull: true, defaultValue: null },
+    sectionId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+            model: "viaexam_sections",
+            key: "sectionId",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
+    },
     status: { type: sequelize_1.DataTypes.STRING, allowNull: false, defaultValue: "Draft" },
     isDeleted: {
         type: sequelize_1.DataTypes.BOOLEAN,

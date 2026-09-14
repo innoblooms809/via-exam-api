@@ -326,30 +326,7 @@ const getScannerAnalytics = (instituteId) => __awaiter(void 0, void 0, void 0, f
                 failed,
             };
         });
-        const processed = sheets.filter((row) => (0, adminDashboard_helper_1.mapSheetStatus)(row.status) === "Processed").length;
-        const pending = sheets.filter((row) => (0, adminDashboard_helper_1.mapSheetStatus)(row.status) === "Pending").length;
-        const failed = sheets.filter((row) => (0, adminDashboard_helper_1.mapSheetStatus)(row.status) === "Failed").length;
-        const total = sheets.length;
-        const statusData = [
-            {
-                name: "Processed",
-                value: processed,
-                percentage: (0, adminDashboard_helper_1.percentLabel)(processed, total),
-                color: adminDashboard_helper_1.DASHBOARD_COLORS.GREEN,
-            },
-            {
-                name: "Pending",
-                value: pending,
-                percentage: (0, adminDashboard_helper_1.percentLabel)(pending, total),
-                color: adminDashboard_helper_1.DASHBOARD_COLORS.AMBER,
-            },
-            {
-                name: "Failed",
-                value: failed,
-                percentage: (0, adminDashboard_helper_1.percentLabel)(failed, total),
-                color: adminDashboard_helper_1.DASHBOARD_COLORS.RED,
-            },
-        ];
+        const { total, processed, pending, failed, statusData } = (0, adminDashboard_helper_1.computeScannerStatusBreakdown)(sheets);
         const recentScans = sheets.slice(0, 6).map((row) => {
             const mappedStatus = (0, adminDashboard_helper_1.mapSheetStatus)(row.status);
             const subjectName = subjectMap[row.subjectId] || row.examType || "Subject";

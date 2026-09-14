@@ -10405,3 +10405,616 @@
 {"level":"info","message":"GET /v1/student/getAllStudents 304 - 312.235 ms","timestamp":"2026-09-14T10:40:05.232Z"}
 {"level":"info","message":"GET /v1/teacher/getAllTeachers?_t=1789382404646 200 - 396.519 ms","timestamp":"2026-09-14T10:40:05.249Z"}
 {"level":"info","message":"SIGINT received. Closing server...","timestamp":"2026-09-14T11:15:26.638Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-09-14T11:42:17.476Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-09-14T11:42:19.260Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-09-14T11:42:19.269Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-09-14T11:42:19.271Z"}
+{"level":"info","message":"Evaluation service reachable: http://localhost:8006/health","timestamp":"2026-09-14T11:42:19.314Z"}
+{"level":"info","message":"OCR service reachable: http://localhost:8000/health","timestamp":"2026-09-14T11:42:19.341Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T11:43:54.550Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T11:43:54.570Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789386234278 200 - 450.965 ms","timestamp":"2026-09-14T11:43:54.774Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789386234281 200 - 454.774 ms","timestamp":"2026-09-14T11:43:54.798Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/scanner-user/getAllScanners | IP: ::1","timestamp":"2026-09-14T11:44:28.308Z"}
+{"level":"info","message":"GET /v1/scanner-user/getAllScanners?status=1 304 - 342.475 ms","timestamp":"2026-09-14T11:44:28.441Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: DELETE /v1/scanner-user/deleteScanner/IB691766 | IP: ::1","timestamp":"2026-09-14T11:44:35.785Z"}
+{"level":"info","message":"DELETE /v1/scanner-user/deleteScanner/IB691766 200 - 126.704 ms","timestamp":"2026-09-14T11:44:35.873Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/scanner-user/getAllScanners | IP: ::1","timestamp":"2026-09-14T11:44:36.083Z"}
+{"level":"info","message":"GET /v1/scanner-user/getAllScanners?status=1 200 - 113.087 ms","timestamp":"2026-09-14T11:44:36.151Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/scanner-user/getAllScanners | IP: ::1","timestamp":"2026-09-14T11:44:39.172Z"}
+{"level":"info","message":"GET /v1/scanner-user/getAllScanners?status=0 200 - 112.013 ms","timestamp":"2026-09-14T11:44:39.236Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: PATCH /v1/scanner-user/reactivateScanner/IB691766 | IP: ::1","timestamp":"2026-09-14T11:44:40.664Z"}
+{"level":"info","message":"PATCH /v1/scanner-user/reactivateScanner/IB691766 200 - 164.416 ms","timestamp":"2026-09-14T11:44:40.735Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/scanner-user/getAllScanners | IP: ::1","timestamp":"2026-09-14T11:44:41.226Z"}
+{"level":"info","message":"GET /v1/scanner-user/getAllScanners?status=0 200 - 105.017 ms","timestamp":"2026-09-14T11:44:41.289Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/scanner-user/getAllScanners | IP: ::1","timestamp":"2026-09-14T11:44:43.217Z"}
+{"level":"info","message":"GET /v1/scanner-user/getAllScanners?status=1 200 - 107.735 ms","timestamp":"2026-09-14T11:44:43.286Z"}
+{"level":"error","message":"GET /v1/scanner-dashboard/kpis 401 - 1.481 ms - message: -","timestamp":"2026-09-14T11:45:04.460Z"}
+{"level":"error","message":"GET /v1/scanner-dashboard/hourly-activity 401 - 1.226 ms - message: -","timestamp":"2026-09-14T11:45:04.472Z"}
+{"level":"error","message":"GET /v1/scanner-dashboard/status-distribution 401 - 0.977 ms - message: -","timestamp":"2026-09-14T11:45:04.475Z"}
+{"level":"error","message":"GET /v1/scanner-dashboard/recent-scans 401 - 1.056 ms - message: -","timestamp":"2026-09-14T11:45:04.478Z"}
+{"level":"error","message":"GET /v1/scanner-dashboard/exam-progress 401 - 0.827 ms - message: -","timestamp":"2026-09-14T11:45:04.480Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 199.442 ms","timestamp":"2026-09-14T11:45:04.662Z"}
+{"level":"error","message":"GET /v1/scanner-dashboard/pending-scans 401 - 1.121 ms - message: -","timestamp":"2026-09-14T11:45:04.774Z"}
+{"level":"error","message":"GET /v1/scanner-dashboard/recent-activity 401 - 0.977 ms - message: -","timestamp":"2026-09-14T11:45:04.793Z"}
+{"level":"error","message":"POST /v1/user/refresh-token 403 - 37.686 ms - message: -","timestamp":"2026-09-14T11:45:04.824Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 31.780 ms","timestamp":"2026-09-14T11:45:05.822Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:45:05.857Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:45:05.866Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 16.642 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:45:05.870Z"}
+{"level":"info","message":"[ACTIVITY_LOG] [LOGIN_SUCCESS] User: IB691766 (SCANNER) | Institute: IB228226 | Status: SUCCESS | IP: Internal","timestamp":"2026-09-14T11:45:42.795Z"}
+{"level":"info","message":"POST /v1/user/login 200 - 521.058 ms","timestamp":"2026-09-14T11:45:42.935Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/kpis | IP: ::1","timestamp":"2026-09-14T11:45:43.678Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/hourly-activity | IP: ::1","timestamp":"2026-09-14T11:45:43.706Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/status-distribution | IP: ::1","timestamp":"2026-09-14T11:45:43.739Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 108.630 ms","timestamp":"2026-09-14T11:45:43.769Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-scans | IP: ::1","timestamp":"2026-09-14T11:45:43.798Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/exam-progress | IP: ::1","timestamp":"2026-09-14T11:45:43.831Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/hourly-activity 200 - 233.240 ms","timestamp":"2026-09-14T11:45:43.880Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/status-distribution 200 - 233.337 ms","timestamp":"2026-09-14T11:45:43.887Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-scans 200 - 242.884 ms","timestamp":"2026-09-14T11:45:43.908Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/exam-progress 200 - 246.420 ms","timestamp":"2026-09-14T11:45:43.918Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/kpis 200 - 318.728 ms","timestamp":"2026-09-14T11:45:43.958Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/pending-scans | IP: ::1","timestamp":"2026-09-14T11:45:44.130Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/pending-scans 200 - 114.140 ms","timestamp":"2026-09-14T11:45:44.198Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:45:44.218Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:45:44.219Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 3.242 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:45:44.222Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 30.626 ms","timestamp":"2026-09-14T11:45:44.242Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-activity | IP: ::1","timestamp":"2026-09-14T11:45:44.245Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/hourly-activity | IP: ::1","timestamp":"2026-09-14T11:45:44.276Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-activity 200 - 80.704 ms","timestamp":"2026-09-14T11:45:44.282Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/hourly-activity 304 - 78.808 ms","timestamp":"2026-09-14T11:45:44.309Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/status-distribution | IP: ::1","timestamp":"2026-09-14T11:45:44.311Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/status-distribution 304 - 74.441 ms","timestamp":"2026-09-14T11:45:44.342Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-scans | IP: ::1","timestamp":"2026-09-14T11:45:44.551Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/exam-progress | IP: ::1","timestamp":"2026-09-14T11:45:44.566Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-scans 304 - 74.320 ms","timestamp":"2026-09-14T11:45:44.586Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/kpis | IP: ::1","timestamp":"2026-09-14T11:45:44.598Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/exam-progress 304 - 71.432 ms","timestamp":"2026-09-14T11:45:44.602Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/pending-scans | IP: ::1","timestamp":"2026-09-14T11:45:44.625Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-activity | IP: ::1","timestamp":"2026-09-14T11:45:44.655Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/kpis 304 - 136.145 ms","timestamp":"2026-09-14T11:45:44.691Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-activity 304 - 80.387 ms","timestamp":"2026-09-14T11:45:44.698Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/pending-scans 304 - 132.716 ms","timestamp":"2026-09-14T11:45:44.725Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T11:45:49.423Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T11:45:49.432Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789386349354 200 - 195.111 ms","timestamp":"2026-09-14T11:45:49.578Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789386349358 200 - 222.072 ms","timestamp":"2026-09-14T11:45:49.611Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/kpis | IP: ::1","timestamp":"2026-09-14T11:45:53.690Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/hourly-activity | IP: ::1","timestamp":"2026-09-14T11:45:53.695Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/status-distribution | IP: ::1","timestamp":"2026-09-14T11:45:53.701Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-scans | IP: ::1","timestamp":"2026-09-14T11:45:53.708Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/hourly-activity 304 - 72.700 ms","timestamp":"2026-09-14T11:45:53.734Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/status-distribution 304 - 85.404 ms","timestamp":"2026-09-14T11:45:53.751Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-scans 304 - 85.364 ms","timestamp":"2026-09-14T11:45:53.755Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/kpis 304 - 138.971 ms","timestamp":"2026-09-14T11:45:53.792Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/exam-progress | IP: ::1","timestamp":"2026-09-14T11:45:53.988Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/pending-scans | IP: ::1","timestamp":"2026-09-14T11:45:53.996Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/exam-progress 304 - 73.105 ms","timestamp":"2026-09-14T11:45:54.025Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/pending-scans 304 - 103.254 ms","timestamp":"2026-09-14T11:45:54.060Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-activity | IP: ::1","timestamp":"2026-09-14T11:45:54.084Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/hourly-activity | IP: ::1","timestamp":"2026-09-14T11:45:54.106Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/status-distribution | IP: ::1","timestamp":"2026-09-14T11:45:54.112Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-activity 200 - 76.723 ms","timestamp":"2026-09-14T11:45:54.120Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-scans | IP: ::1","timestamp":"2026-09-14T11:45:54.137Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/hourly-activity 304 - 81.721 ms","timestamp":"2026-09-14T11:45:54.145Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/status-distribution 304 - 80.045 ms","timestamp":"2026-09-14T11:45:54.152Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-scans 304 - 79.246 ms","timestamp":"2026-09-14T11:45:54.180Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/kpis | IP: ::1","timestamp":"2026-09-14T11:45:54.377Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/exam-progress | IP: ::1","timestamp":"2026-09-14T11:45:54.411Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/exam-progress 304 - 81.291 ms","timestamp":"2026-09-14T11:45:54.452Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/pending-scans | IP: ::1","timestamp":"2026-09-14T11:45:54.479Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/kpis 304 - 145.887 ms","timestamp":"2026-09-14T11:45:54.483Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-activity | IP: ::1","timestamp":"2026-09-14T11:45:54.490Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-activity 304 - 70.974 ms","timestamp":"2026-09-14T11:45:54.528Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/pending-scans 304 - 114.805 ms","timestamp":"2026-09-14T11:45:54.545Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T11:46:01.798Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T11:46:01.818Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789386361733 200 - 153.865 ms","timestamp":"2026-09-14T11:46:01.916Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789386361734 200 - 146.555 ms","timestamp":"2026-09-14T11:46:01.923Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:46:14.711Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:46:14.714Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.558 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:46:14.716Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:46:35.556Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:46:35.558Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.872 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:46:35.560Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:46:48.800Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:46:48.802Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.245 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:46:48.805Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:54:16.140Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:54:16.142Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.710 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:54:16.145Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:54:46.684Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:54:46.685Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.180 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:54:46.687Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:55:05.987Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:55:05.989Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 6.997 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:55:05.995Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:55:39.891Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:55:39.893Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.711 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:55:39.895Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:55:53.337Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:55:53.339Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.044 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:55:53.342Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:55:59.957Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:55:59.958Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.673 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:55:59.964Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:56:06.941Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:56:06.943Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.381 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:56:06.945Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:56:16.764Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:56:16.765Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 3.445 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:56:16.769Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T11:56:53.910Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T11:56:53.935Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789387013613 200 - 395.488 ms","timestamp":"2026-09-14T11:56:54.118Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789387013616 200 - 401.675 ms","timestamp":"2026-09-14T11:56:54.132Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:57:04.866Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:57:04.868Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 6.030 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:57:04.871Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:58:11.467Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:58:11.469Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 3.402 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:58:11.471Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T11:58:56.013Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T11:58:56.015Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.785 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T11:58:56.018Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:02:05.362Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:02:05.364Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.739 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:02:05.366Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:02:21.629Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:02:21.630Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 6.618 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:02:21.632Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-09-14T12:10:31.668Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-09-14T12:10:33.223Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-09-14T12:10:33.230Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-09-14T12:10:33.231Z"}
+{"level":"info","message":"Evaluation service reachable: http://localhost:8006/health","timestamp":"2026-09-14T12:10:33.272Z"}
+{"level":"info","message":"OCR service reachable: http://localhost:8000/health","timestamp":"2026-09-14T12:10:33.304Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:10:57.778Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 200 - 224.540 ms","timestamp":"2026-09-14T12:10:57.806Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:10:57.843Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:10:57.851Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 15.226 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:10:57.857Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789387857478 200 - 393.038 ms","timestamp":"2026-09-14T12:10:57.952Z"}
+{"level":"error","message":"GET /v1/academic-calendar/exam-schedule?_t=1789387878727 401 - 5.532 ms - message: -","timestamp":"2026-09-14T12:11:18.835Z"}
+{"level":"error","message":"GET /v1/notifications/getNotifications 401 - 3.512 ms - message: -","timestamp":"2026-09-14T12:11:18.846Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 215.983 ms","timestamp":"2026-09-14T12:11:19.053Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:11:19.097Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:11:19.099Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.753 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:11:19.101Z"}
+{"level":"info","message":"POST /v1/user/refresh-token 200 - 275.255 ms","timestamp":"2026-09-14T12:11:19.125Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:11:19.177Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789387878727 200 - 205.156 ms","timestamp":"2026-09-14T12:11:19.348Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/notifications/getNotifications | IP: ::1","timestamp":"2026-09-14T12:11:19.484Z"}
+{"level":"info","message":"GET /v1/notifications/getNotifications 304 - 77.761 ms","timestamp":"2026-09-14T12:11:19.519Z"}
+{"level":"error","message":"GET /v1/question-papers/getAllQuestionPapers?_t=1789387919823 401 - 3.909 ms - message: -","timestamp":"2026-09-14T12:11:59.870Z"}
+{"level":"error","message":"GET /v1/exam/getAllExams 401 - 3.191 ms - message: -","timestamp":"2026-09-14T12:11:59.875Z"}
+{"level":"error","message":"GET /v1/question-paper-answers?_t=1789387919823 401 - 3.260 ms - message: -","timestamp":"2026-09-14T12:11:59.880Z"}
+{"level":"error","message":"GET /v1/question-papers/getAllQuestionPapers?_t=1789387919827 401 - 3.318 ms - message: -","timestamp":"2026-09-14T12:11:59.885Z"}
+{"level":"error","message":"GET /v1/question-paper-answers?_t=1789387919827 401 - 2.979 ms - message: -","timestamp":"2026-09-14T12:11:59.890Z"}
+{"level":"error","message":"GET /v1/exam/getAllExams 401 - 3.120 ms - message: -","timestamp":"2026-09-14T12:12:00.188Z"}
+{"level":"info","message":"POST /v1/user/refresh-token 200 - 261.884 ms","timestamp":"2026-09-14T12:12:00.362Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/question-papers/getAllQuestionPapers | IP: ::1","timestamp":"2026-09-14T12:12:00.416Z"}
+{"level":"info","message":"GET /v1/question-papers/getAllQuestionPapers?_t=1789387919823 200 - 143.592 ms","timestamp":"2026-09-14T12:12:00.521Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/question-paper-answers/ | IP: ::1","timestamp":"2026-09-14T12:12:00.738Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/exam/getAllExams | IP: ::1","timestamp":"2026-09-14T12:12:00.746Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/question-paper-answers/ | IP: ::1","timestamp":"2026-09-14T12:12:00.752Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/question-papers/getAllQuestionPapers | IP: ::1","timestamp":"2026-09-14T12:12:00.768Z"}
+{"level":"info","message":"GET /v1/question-paper-answers?_t=1789387919823 200 - 87.604 ms","timestamp":"2026-09-14T12:12:00.787Z"}
+{"level":"info","message":"GET /v1/exam/getAllExams 200 - 115.801 ms","timestamp":"2026-09-14T12:12:00.825Z"}
+{"level":"info","message":"GET /v1/question-papers/getAllQuestionPapers?_t=1789387919827 200 - 143.315 ms","timestamp":"2026-09-14T12:12:00.865Z"}
+{"level":"info","message":"GET /v1/question-paper-answers?_t=1789387919827 200 - 151.807 ms","timestamp":"2026-09-14T12:12:00.868Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB237124 (ADMIN) | Action: GET /v1/exam/getAllExams | IP: ::1","timestamp":"2026-09-14T12:12:01.181Z"}
+{"level":"info","message":"GET /v1/exam/getAllExams 304 - 93.063 ms","timestamp":"2026-09-14T12:12:01.233Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:13:25.496Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:13:25.508Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 245.021 ms","timestamp":"2026-09-14T12:13:25.538Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388005274 200 - 268.253 ms","timestamp":"2026-09-14T12:13:25.579Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:13:25.584Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:13:25.585Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:13:25.637Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 154.415 ms","timestamp":"2026-09-14T12:13:25.679Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:13:25.682Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:13:25.703Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 200 - 142.803 ms","timestamp":"2026-09-14T12:13:25.715Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388005275 200 - 138.476 ms","timestamp":"2026-09-14T12:13:25.738Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 139.920 ms","timestamp":"2026-09-14T12:13:25.740Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:13:25.892Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:13:25.894Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 89.556 ms","timestamp":"2026-09-14T12:13:25.942Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:13:26.029Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 79.233 ms","timestamp":"2026-09-14T12:13:26.070Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:13:28.395Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388008335 200 - 73.840 ms","timestamp":"2026-09-14T12:13:28.432Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:13:28.599Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:13:28.606Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:13:28.606Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:13:28.610Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 67.735 ms","timestamp":"2026-09-14T12:13:28.630Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 79.511 ms","timestamp":"2026-09-14T12:13:28.650Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 85.401 ms","timestamp":"2026-09-14T12:13:28.661Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:13:28.674Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:13:28.685Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388008336 200 - 71.614 ms","timestamp":"2026-09-14T12:13:28.711Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 65.801 ms","timestamp":"2026-09-14T12:13:28.719Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:13:28.983Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:13:28.985Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:13:28.995Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 78.678 ms","timestamp":"2026-09-14T12:13:29.024Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 72.954 ms","timestamp":"2026-09-14T12:13:29.033Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:13:32.473Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388012414 200 - 80.019 ms","timestamp":"2026-09-14T12:13:32.514Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:13:32.785Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:13:32.792Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:13:32.793Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:13:32.801Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:13:32.804Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 75.822 ms","timestamp":"2026-09-14T12:13:32.822Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 80.473 ms","timestamp":"2026-09-14T12:13:32.835Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 89.702 ms","timestamp":"2026-09-14T12:13:32.853Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388012416 200 - 87.598 ms","timestamp":"2026-09-14T12:13:32.856Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:13:33.174Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:13:33.180Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:13:33.180Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:13:33.195Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 71.728 ms","timestamp":"2026-09-14T12:13:33.208Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 75.073 ms","timestamp":"2026-09-14T12:13:33.219Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 77.780 ms","timestamp":"2026-09-14T12:13:33.242Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:14:10.068Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 372.349 ms - message: -","timestamp":"2026-09-14T12:14:10.247Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:14:19.687Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 140.285 ms - message: -","timestamp":"2026-09-14T12:14:19.783Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:14:32.414Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 382.029 ms - message: -","timestamp":"2026-09-14T12:14:32.597Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:14:39.660Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 134.239 ms - message: -","timestamp":"2026-09-14T12:14:39.756Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:14:45.789Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 135.703 ms - message: -","timestamp":"2026-09-14T12:14:45.891Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:14:51.193Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 139.574 ms - message: -","timestamp":"2026-09-14T12:14:51.290Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:14:57.463Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 131.839 ms - message: -","timestamp":"2026-09-14T12:14:57.558Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:15:02.463Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 128.315 ms - message: -","timestamp":"2026-09-14T12:15:02.555Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:15:08.250Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 142.564 ms - message: -","timestamp":"2026-09-14T12:15:08.353Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:15:12.719Z"}
+{"level":"error","message":"POST /v1/question-papers/getExamBySelection 404 - 134.995 ms - message: -","timestamp":"2026-09-14T12:15:12.815Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:15:19.837Z"}
+{"level":"info","message":"POST /v1/question-papers/getExamBySelection 200 - 162.462 ms","timestamp":"2026-09-14T12:15:19.962Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:15:23.023Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 221.170 ms","timestamp":"2026-09-14T12:15:23.210Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:15:23.254Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:15:23.260Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789388123213&classId=IB336402&section=A&subjectId=IB214108&examType=Mid%20Term 200 - 123.563 ms","timestamp":"2026-09-14T12:15:23.350Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 237.952 ms","timestamp":"2026-09-14T12:15:23.458Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:15:23.667Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789388123623&classId=IB336402&section=A&subjectId=IB214108&examType=Mid%20Term 200 - 104.758 ms","timestamp":"2026-09-14T12:15:23.736Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getFile/IB268421 | IP: ::1","timestamp":"2026-09-14T12:15:35.246Z"}
+{"level":"info","message":"GET /v1/scanner/getFile/IB268421 304 - 425.899 ms","timestamp":"2026-09-14T12:15:35.459Z"}
+{"level":"error","message":"GET /v1/ai-evaluation/sheet/IB268421?_t=1789388147499 401 - 3.194 ms - message: -","timestamp":"2026-09-14T12:15:47.513Z"}
+{"level":"error","message":"GET /v1/ai-evaluation/sheet/IB268421?_t=1789388147499 401 - 3.752 ms - message: -","timestamp":"2026-09-14T12:15:47.524Z"}
+{"level":"info","message":"POST /v1/user/refresh-token 200 - 237.548 ms","timestamp":"2026-09-14T12:15:47.954Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/ai-evaluation/sheet/IB268421 | IP: ::1","timestamp":"2026-09-14T12:15:48.012Z"}
+{"level":"info","message":"GET /v1/ai-evaluation/sheet/IB268421?_t=1789388147499 200 - 228.092 ms","timestamp":"2026-09-14T12:15:48.204Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/ai-evaluation/sheet/IB268421 | IP: ::1","timestamp":"2026-09-14T12:15:48.255Z"}
+{"level":"info","message":"GET /v1/ai-evaluation/sheet/IB268421?_t=1789388147499 304 - 141.507 ms","timestamp":"2026-09-14T12:15:48.358Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:16:31.819Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 463.913 ms","timestamp":"2026-09-14T12:16:32.069Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:16:32.426Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:16:32.433Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789388192071&classId=IB336402&section=A&subjectId=IB214108&examType=Mid%20Term 200 - 102.768 ms","timestamp":"2026-09-14T12:16:32.491Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 224.438 ms","timestamp":"2026-09-14T12:16:32.620Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:16:32.703Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789388192644&classId=IB336402&section=A&subjectId=IB214108&examType=Mid%20Term 200 - 108.064 ms","timestamp":"2026-09-14T12:16:32.770Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getFile/IB268421 | IP: ::1","timestamp":"2026-09-14T12:16:35.201Z"}
+{"level":"info","message":"GET /v1/scanner/getFile/IB268421 304 - 246.939 ms","timestamp":"2026-09-14T12:16:35.409Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/kpis | IP: ::1","timestamp":"2026-09-14T12:18:27.246Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/hourly-activity | IP: ::1","timestamp":"2026-09-14T12:18:27.274Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/status-distribution | IP: ::1","timestamp":"2026-09-14T12:18:27.281Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-scans | IP: ::1","timestamp":"2026-09-14T12:18:27.304Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/exam-progress | IP: ::1","timestamp":"2026-09-14T12:18:27.310Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/pending-scans | IP: ::1","timestamp":"2026-09-14T12:18:27.334Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/hourly-activity 304 - 308.334 ms","timestamp":"2026-09-14T12:18:27.362Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/status-distribution 304 - 223.998 ms","timestamp":"2026-09-14T12:18:27.378Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-scans 304 - 233.064 ms","timestamp":"2026-09-14T12:18:27.393Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/exam-progress 304 - 233.867 ms","timestamp":"2026-09-14T12:18:27.401Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/kpis 304 - 403.661 ms","timestamp":"2026-09-14T12:18:27.444Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/pending-scans 304 - 301.169 ms","timestamp":"2026-09-14T12:18:27.476Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-activity | IP: ::1","timestamp":"2026-09-14T12:18:27.720Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/hourly-activity | IP: ::1","timestamp":"2026-09-14T12:18:27.722Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/status-distribution | IP: ::1","timestamp":"2026-09-14T12:18:27.744Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-scans | IP: ::1","timestamp":"2026-09-14T12:18:27.747Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-activity 200 - 80.000 ms","timestamp":"2026-09-14T12:18:27.756Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/hourly-activity 304 - 85.592 ms","timestamp":"2026-09-14T12:18:27.775Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/status-distribution 304 - 72.511 ms","timestamp":"2026-09-14T12:18:27.782Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-scans 304 - 79.675 ms","timestamp":"2026-09-14T12:18:27.794Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/exam-progress | IP: ::1","timestamp":"2026-09-14T12:18:27.812Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/kpis | IP: ::1","timestamp":"2026-09-14T12:18:27.838Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/exam-progress 304 - 86.670 ms","timestamp":"2026-09-14T12:18:27.847Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/kpis 304 - 118.356 ms","timestamp":"2026-09-14T12:18:27.904Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/pending-scans | IP: ::1","timestamp":"2026-09-14T12:18:28.107Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/pending-scans 304 - 103.507 ms","timestamp":"2026-09-14T12:18:28.171Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner-dashboard/recent-activity | IP: ::1","timestamp":"2026-09-14T12:18:28.391Z"}
+{"level":"info","message":"GET /v1/scanner-dashboard/recent-activity 304 - 71.039 ms","timestamp":"2026-09-14T12:18:28.424Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:18:28.525Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:18:28.533Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789388308457 200 - 142.237 ms","timestamp":"2026-09-14T12:18:28.631Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789388308455 200 - 158.455 ms","timestamp":"2026-09-14T12:18:28.655Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 185.750 ms","timestamp":"2026-09-14T12:22:47.293Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:22:47.296Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/notifications/getNotifications | IP: ::1","timestamp":"2026-09-14T12:22:47.308Z"}
+{"level":"info","message":"GET /v1/notifications/getNotifications 304 - 255.063 ms","timestamp":"2026-09-14T12:22:47.367Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789388565631 200 - 318.401 ms","timestamp":"2026-09-14T12:22:47.419Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 34.451 ms","timestamp":"2026-09-14T12:22:49.097Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:22:49.102Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:22:49.134Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:22:49.136Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.245 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:22:49.144Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789388568933 200 - 109.416 ms","timestamp":"2026-09-14T12:22:49.175Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 36.162 ms","timestamp":"2026-09-14T12:22:49.740Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:22:49.745Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/notifications/getNotifications | IP: ::1","timestamp":"2026-09-14T12:22:49.752Z"}
+{"level":"info","message":"GET /v1/notifications/getNotifications 304 - 87.178 ms","timestamp":"2026-09-14T12:22:49.803Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789388569549 200 - 109.251 ms","timestamp":"2026-09-14T12:22:49.820Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:22:50.087Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:22:50.089Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 5.428 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:22:50.092Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:23:44.954Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:23:44.967Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789388624710 200 - 430.972 ms","timestamp":"2026-09-14T12:23:45.178Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789388624716 200 - 451.434 ms","timestamp":"2026-09-14T12:23:45.211Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:25:05.123Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:25:05.141Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:25:05.142Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 257.298 ms","timestamp":"2026-09-14T12:25:05.173Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 281.566 ms","timestamp":"2026-09-14T12:25:05.208Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:25:05.224Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:25:05.273Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388704904 200 - 146.498 ms","timestamp":"2026-09-14T12:25:05.304Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:25:05.314Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:25:05.339Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 148.335 ms","timestamp":"2026-09-14T12:25:05.347Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388704905 200 - 137.924 ms","timestamp":"2026-09-14T12:25:05.372Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 141.681 ms","timestamp":"2026-09-14T12:25:05.382Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:25:05.534Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:25:05.535Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:25:05.568Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 91.612 ms","timestamp":"2026-09-14T12:25:05.578Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 84.467 ms","timestamp":"2026-09-14T12:25:05.608Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:25:41.432Z"}
+{"level":"info","message":"POST /v1/question-papers/getExamBySelection 200 - 409.444 ms","timestamp":"2026-09-14T12:25:41.641Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:26:01.023Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:26:01.027Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:26:01.053Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:26:01.054Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:26:01.058Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:26:01.085Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 413.725 ms","timestamp":"2026-09-14T12:26:01.114Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 219.041 ms","timestamp":"2026-09-14T12:26:01.157Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388760682 200 - 197.650 ms","timestamp":"2026-09-14T12:26:01.196Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:26:01.240Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 174.539 ms","timestamp":"2026-09-14T12:26:01.302Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 361.059 ms","timestamp":"2026-09-14T12:26:01.343Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388760681 200 - 672.401 ms","timestamp":"2026-09-14T12:26:01.387Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:26:01.522Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:26:01.522Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 103.750 ms","timestamp":"2026-09-14T12:26:01.580Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:26:01.697Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 82.693 ms","timestamp":"2026-09-14T12:26:01.741Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:26:24.404Z"}
+{"level":"info","message":"POST /v1/question-papers/getExamBySelection 200 - 426.094 ms","timestamp":"2026-09-14T12:26:24.621Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:26:25.136Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 239.390 ms","timestamp":"2026-09-14T12:26:25.335Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:26:25.391Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:26:25.397Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789388785337&classId=IB336402&section=A&subjectId=IB929829&examType=Mid%20Term 200 - 101.120 ms","timestamp":"2026-09-14T12:26:25.464Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 234.229 ms","timestamp":"2026-09-14T12:26:25.587Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:26:25.743Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789388785688&classId=IB336402&section=A&subjectId=IB929829&examType=Mid%20Term 200 - 100.863 ms","timestamp":"2026-09-14T12:26:25.805Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:26:42.251Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:26:42.264Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388802029 200 - 245.197 ms","timestamp":"2026-09-14T12:26:42.296Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 261.912 ms","timestamp":"2026-09-14T12:26:42.323Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:26:42.392Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:26:42.395Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:26:42.396Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:26:42.425Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 101.784 ms","timestamp":"2026-09-14T12:26:42.460Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 119.673 ms","timestamp":"2026-09-14T12:26:42.473Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388802030 200 - 111.447 ms","timestamp":"2026-09-14T12:26:42.475Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:26:42.672Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 72.942 ms","timestamp":"2026-09-14T12:26:42.708Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:26:42.816Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:26:42.820Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:26:42.821Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 73.556 ms","timestamp":"2026-09-14T12:26:42.851Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 73.490 ms","timestamp":"2026-09-14T12:26:42.861Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:27:30.257Z"}
+{"level":"info","message":"POST /v1/question-papers/getExamBySelection 200 - 425.487 ms","timestamp":"2026-09-14T12:27:30.480Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/scanner/uploadSheets | IP: ::1","timestamp":"2026-09-14T12:27:50.867Z"}
+{"level":"info","message":"POST /v1/scanner/uploadSheets 201 - 1294.208 ms","timestamp":"2026-09-14T12:27:51.951Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:28:05.548Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:28:05.560Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388885322 200 - 254.160 ms","timestamp":"2026-09-14T12:28:05.601Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 273.848 ms","timestamp":"2026-09-14T12:28:05.626Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:28:05.686Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:28:05.687Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:28:05.699Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:28:05.717Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 108.739 ms","timestamp":"2026-09-14T12:28:05.756Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 110.492 ms","timestamp":"2026-09-14T12:28:05.767Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789388885323 200 - 111.371 ms","timestamp":"2026-09-14T12:28:05.778Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:28:05.978Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 72.219 ms","timestamp":"2026-09-14T12:28:06.012Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:28:06.106Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:28:06.106Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:28:06.111Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 73.810 ms","timestamp":"2026-09-14T12:28:06.142Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 71.025 ms","timestamp":"2026-09-14T12:28:06.148Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:28:27.760Z"}
+{"level":"info","message":"POST /v1/question-papers/getExamBySelection 200 - 419.870 ms","timestamp":"2026-09-14T12:28:27.981Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:28:28.366Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 226.596 ms","timestamp":"2026-09-14T12:28:28.554Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:28:28.901Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:28:28.904Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789388908559&classId=IB336402&section=A&subjectId=IB929829&examType=Mid%20Term 200 - 99.126 ms","timestamp":"2026-09-14T12:28:28.970Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 226.907 ms","timestamp":"2026-09-14T12:28:29.093Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:28:29.174Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789388909124&classId=IB336402&section=A&subjectId=IB929829&examType=Mid%20Term 200 - 106.191 ms","timestamp":"2026-09-14T12:28:29.244Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:29:13.069Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:29:13.082Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789388952851 200 - 413.632 ms","timestamp":"2026-09-14T12:29:13.283Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789388952848 200 - 445.033 ms","timestamp":"2026-09-14T12:29:13.323Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 196.677 ms","timestamp":"2026-09-14T12:33:02.573Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:33:02.577Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:33:02.608Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:33:02.610Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 6.319 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:33:02.612Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789389182294 200 - 375.712 ms","timestamp":"2026-09-14T12:33:02.760Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-09-14T12:37:24.433Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-09-14T12:37:25.940Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-09-14T12:37:25.948Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-09-14T12:37:25.950Z"}
+{"level":"info","message":"Evaluation service reachable: http://localhost:8006/health","timestamp":"2026-09-14T12:37:25.984Z"}
+{"level":"info","message":"OCR service reachable: http://localhost:8000/health","timestamp":"2026-09-14T12:37:26.012Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 208.783 ms","timestamp":"2026-09-14T12:37:53.212Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:37:53.220Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:37:53.248Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:37:53.257Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 14.465 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:37:53.271Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789389472894 200 - 462.285 ms","timestamp":"2026-09-14T12:37:53.446Z"}
+{"level":"error","message":"GET /v1/scanner/approved-exams?_t=1789390052013 401 - 7.260 ms - message: -","timestamp":"2026-09-14T12:47:32.106Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 196.512 ms","timestamp":"2026-09-14T12:47:32.307Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:47:32.347Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:47:32.349Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 9.063 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:47:32.356Z"}
+{"level":"info","message":"POST /v1/user/refresh-token 200 - 251.365 ms","timestamp":"2026-09-14T12:47:32.372Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:47:32.422Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789390052013 200 - 234.589 ms","timestamp":"2026-09-14T12:47:32.622Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:47:37.235Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789390057149 200 - 128.953 ms","timestamp":"2026-09-14T12:47:37.327Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:47:37.329Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789390057151 200 - 111.533 ms","timestamp":"2026-09-14T12:47:37.408Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:47:43.592Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:47:43.602Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:47:43.604Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:47:43.613Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 79.371 ms","timestamp":"2026-09-14T12:47:43.633Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 89.606 ms","timestamp":"2026-09-14T12:47:43.650Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390063531 200 - 101.207 ms","timestamp":"2026-09-14T12:47:43.667Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:47:43.891Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:47:43.898Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 84.406 ms","timestamp":"2026-09-14T12:47:43.939Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390063532 200 - 86.347 ms","timestamp":"2026-09-14T12:47:43.953Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:47:43.981Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:47:43.996Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:47:43.998Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 67.613 ms","timestamp":"2026-09-14T12:47:44.015Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 80.465 ms","timestamp":"2026-09-14T12:47:44.042Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:47:44.288Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 78.345 ms","timestamp":"2026-09-14T12:47:44.328Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:47:47.943Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:47:47.948Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:47:47.949Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 70.254 ms","timestamp":"2026-09-14T12:47:47.978Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 74.051 ms","timestamp":"2026-09-14T12:47:47.989Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:47:48.166Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390067892 200 - 75.004 ms","timestamp":"2026-09-14T12:47:48.202Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:47:48.230Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:47:48.250Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:47:48.254Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 72.250 ms","timestamp":"2026-09-14T12:47:48.264Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390067893 200 - 72.529 ms","timestamp":"2026-09-14T12:47:48.286Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 74.679 ms","timestamp":"2026-09-14T12:47:48.292Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:47:48.326Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:47:48.328Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:47:48.338Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 76.066 ms","timestamp":"2026-09-14T12:47:48.370Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 80.288 ms","timestamp":"2026-09-14T12:47:48.381Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:47:50.039Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390069987 200 - 71.213 ms","timestamp":"2026-09-14T12:47:50.073Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:47:50.342Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:47:50.347Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:47:50.347Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:47:50.352Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 69.222 ms","timestamp":"2026-09-14T12:47:50.376Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 78.143 ms","timestamp":"2026-09-14T12:47:50.390Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 92.094 ms","timestamp":"2026-09-14T12:47:50.408Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:47:50.433Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390069987 304 - 76.850 ms","timestamp":"2026-09-14T12:47:50.472Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:47:50.731Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:47:50.736Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:47:50.736Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:47:50.751Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 74.495 ms","timestamp":"2026-09-14T12:47:50.765Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 74.516 ms","timestamp":"2026-09-14T12:47:50.775Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 78.212 ms","timestamp":"2026-09-14T12:47:50.795Z"}
+{"level":"error","message":"GET /v1/teacher/my-assignments?_t=1789390190908 401 - 5.696 ms - message: -","timestamp":"2026-09-14T12:49:50.950Z"}
+{"level":"error","message":"GET /v1/teacher/my-assignments?_t=1789390190910 401 - 4.630 ms - message: -","timestamp":"2026-09-14T12:49:50.957Z"}
+{"level":"info","message":"POST /v1/user/refresh-token 200 - 252.825 ms","timestamp":"2026-09-14T12:49:51.216Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/teacher/my-assignments | IP: ::1","timestamp":"2026-09-14T12:49:51.270Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB133210 (TEACHER) | Action: GET /v1/teacher/my-assignments | IP: ::1","timestamp":"2026-09-14T12:49:51.299Z"}
+{"level":"info","message":"GET /v1/teacher/my-assignments?_t=1789390190908 200 - 217.918 ms","timestamp":"2026-09-14T12:49:51.449Z"}
+{"level":"info","message":"GET /v1/teacher/my-assignments?_t=1789390190910 200 - 230.463 ms","timestamp":"2026-09-14T12:49:51.467Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:49:57.781Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/academic-calendar/exam-schedule | IP: ::1","timestamp":"2026-09-14T12:49:57.791Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789390197708 200 - 142.817 ms","timestamp":"2026-09-14T12:49:57.889Z"}
+{"level":"info","message":"GET /v1/academic-calendar/exam-schedule?_t=1789390197710 200 - 155.471 ms","timestamp":"2026-09-14T12:49:57.909Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:50:01.802Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:50:01.806Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789390201735 200 - 189.136 ms","timestamp":"2026-09-14T12:50:01.952Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789390201738 200 - 218.697 ms","timestamp":"2026-09-14T12:50:01.992Z"}
+{"level":"info","message":"GET /v1/institute/slug/gdmis 304 - 28.505 ms","timestamp":"2026-09-14T12:50:08.193Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/approved-exams | IP: ::1","timestamp":"2026-09-14T12:50:08.195Z"}
+{"level":"warn","message":"404 Not Found: GET /uploads/institutes/logos/logo-1785746772118.jpg","timestamp":"2026-09-14T12:50:08.221Z"}
+{"isOperational":true,"level":"error","statusCode":404,"timestamp":"2026-09-14T12:50:08.222Z"}
+{"level":"error","message":"GET /uploads/institutes/logos/logo-1785746772118.jpg 404 - 4.027 ms - message: Route GET /uploads/institutes/logos/logo-1785746772118.jpg Not Found","timestamp":"2026-09-14T12:50:08.224Z"}
+{"level":"info","message":"GET /v1/scanner/approved-exams?_t=1789390208077 200 - 191.495 ms","timestamp":"2026-09-14T12:50:08.349Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:53:16.216Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:53:16.231Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:53:16.232Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 255.430 ms","timestamp":"2026-09-14T12:53:16.264Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 282.218 ms","timestamp":"2026-09-14T12:53:16.304Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:53:16.316Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:53:16.364Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390395992 200 - 150.988 ms","timestamp":"2026-09-14T12:53:16.400Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:53:16.405Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:53:16.425Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 144.966 ms","timestamp":"2026-09-14T12:53:16.439Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390395993 200 - 133.194 ms","timestamp":"2026-09-14T12:53:16.457Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 140.076 ms","timestamp":"2026-09-14T12:53:16.466Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:53:16.624Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:53:16.624Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:53:16.651Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 88.358 ms","timestamp":"2026-09-14T12:53:16.669Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 70.130 ms","timestamp":"2026-09-14T12:53:16.687Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: POST /v1/question-papers/getExamBySelection | IP: ::1","timestamp":"2026-09-14T12:53:39.282Z"}
+{"level":"info","message":"POST /v1/question-papers/getExamBySelection 200 - 420.526 ms","timestamp":"2026-09-14T12:53:39.498Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:53:40.017Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 240.687 ms","timestamp":"2026-09-14T12:53:40.215Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:53:40.275Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/student/getAllStudents | IP: ::1","timestamp":"2026-09-14T12:53:40.283Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789390420217&classId=IB336402&section=A&subjectId=IB214108&examType=Mid%20Term 200 - 106.421 ms","timestamp":"2026-09-14T12:53:40.340Z"}
+{"level":"info","message":"GET /v1/student/getAllStudents?className=7&sectionId=A&session=2025-2026 304 - 235.690 ms","timestamp":"2026-09-14T12:53:40.479Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/scanner/getAllSheets | IP: ::1","timestamp":"2026-09-14T12:53:40.638Z"}
+{"level":"info","message":"GET /v1/scanner/getAllSheets?_t=1789390420582&classId=IB336402&section=A&subjectId=IB214108&examType=Mid%20Term 200 - 103.370 ms","timestamp":"2026-09-14T12:53:40.703Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:54:18.065Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:54:18.090Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:54:18.090Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 267.861 ms","timestamp":"2026-09-14T12:54:18.122Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:54:18.136Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 309.308 ms","timestamp":"2026-09-14T12:54:18.174Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390457841 200 - 137.746 ms","timestamp":"2026-09-14T12:54:18.219Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:54:18.230Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/section/allSections | IP: ::1","timestamp":"2026-09-14T12:54:18.249Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/sessions/getAllSessions | IP: ::1","timestamp":"2026-09-14T12:54:18.269Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 151.840 ms","timestamp":"2026-09-14T12:54:18.294Z"}
+{"level":"info","message":"GET /v1/section/allSections?_t=1789390457842 200 - 149.424 ms","timestamp":"2026-09-14T12:54:18.302Z"}
+{"level":"info","message":"GET /v1/sessions/getAllSessions 304 - 153.863 ms","timestamp":"2026-09-14T12:54:18.312Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/class/getAllClasses | IP: ::1","timestamp":"2026-09-14T12:54:18.475Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses - user: 43","timestamp":"2026-09-14T12:54:18.478Z"}
+{"level":"info","message":"GET /v1/class/getAllClasses 304 - 86.176 ms","timestamp":"2026-09-14T12:54:18.523Z"}
+{"level":"info","message":"[WINSTON_ACTIVITY] User: IB691766 (SCANNER) | Action: GET /v1/subject/getAllSubjects | IP: ::1","timestamp":"2026-09-14T12:54:18.526Z"}
+{"level":"info","message":"GET /v1/subject/getAllSubjects 304 - 79.746 ms","timestamp":"2026-09-14T12:54:18.567Z"}

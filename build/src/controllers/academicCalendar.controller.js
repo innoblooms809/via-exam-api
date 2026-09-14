@@ -36,6 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const academicCalendarService = __importStar(require("../services/academicCalendar.service"));
+const examScheduleService = __importStar(require("../services/examSchedule.service"));
 const http_status_1 = __importDefault(require("http-status"));
 const createEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
@@ -135,10 +136,59 @@ const getEventsByMonth = (req, res) => __awaiter(void 0, void 0, void 0, functio
         });
     }
 });
+// Date sheets for the teacher / student / scanner portals (students: own class only).
+const getExamSchedule = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const response = yield examScheduleService.getExamSchedule(req.viaExamUser);
+        return res.status(response.statusCode).send(response);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+// Date sheets are published by the school office only.
+const isSchoolAdmin = (user) => { var _a, _b; return ["admin", "super_admin"].includes(String((_b = (_a = user === null || user === void 0 ? void 0 : user.role) === null || _a === void 0 ? void 0 : _a.role) !== null && _b !== void 0 ? _b : "").toLowerCase()); };
+// POST /academic-calendar/exam-schedule  { papers: [...] } — publish a date sheet in one go.
+const createExamSchedule = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _g;
+    try {
+        const user = req.viaExamUser;
+        if (!isSchoolAdmin(user)) {
+            return res.status(http_status_1.default.FORBIDDEN).send({ error: true, message: "Only the school admin can publish date sheets." });
+        }
+        const response = yield academicCalendarService.createExamSchedule((_g = req.body) === null || _g === void 0 ? void 0 : _g.papers, user.instituteId, user.userName);
+        return res.status(response.statusCode).send(response);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).send({ error: true, message: "Internal Server Error" });
+    }
+});
+// POST /academic-calendar/bulk-delete  { eventIds: [...] }
+const deleteEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _h;
+    try {
+        const user = req.viaExamUser;
+        if (!isSchoolAdmin(user)) {
+            return res.status(http_status_1.default.FORBIDDEN).send({ error: true, message: "Only the school admin can unschedule papers." });
+        }
+        const response = yield academicCalendarService.deleteEvents((_h = req.body) === null || _h === void 0 ? void 0 : _h.eventIds, user.instituteId);
+        return res.status(response.statusCode).send(response);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).send({ error: true, message: "Internal Server Error" });
+    }
+});
 exports.default = {
     createEvent,
     updateEvent,
     deleteEvent,
     getAllEvents,
-    getEventsByMonth
+    getEventsByMonth,
+    getExamSchedule,
+    createExamSchedule,
+    deleteEvents,
 };

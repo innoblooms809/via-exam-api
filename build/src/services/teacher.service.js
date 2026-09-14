@@ -50,6 +50,7 @@ const encryption_1 = __importDefault(require("../utils/encryption"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const sequelize_1 = require("../config/sequelize");
 const sequelize_2 = require("sequelize");
+const specialization_1 = require("../utils/specialization");
 // ─── CREATE TEACHER ───────────────────────────────────────────────────────────
 const createTeacher = (body, files, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -155,7 +156,7 @@ const createTeacher = (body, files, createdBy) => __awaiter(void 0, void 0, void
             instituteId,
             teacherType: body.teacherType,
             qualification: body.qualification,
-            specialization: body.specialization || null,
+            specialization: (0, specialization_1.formatSpecializations)((0, specialization_1.parseSpecializations)(body.specialization)) || null,
             experience: body.experience || null,
             address: body.address || null,
             joiningDate: new Date(body.joiningDate),
@@ -369,7 +370,7 @@ const getTeacherById = (userId, createdBy) => __awaiter(void 0, void 0, void 0, 
 });
 // ─── UPDATE TEACHER ───────────────────────────────────────────────────────────
 const updateTeacher = (userId, body, files, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c, _d, _e, _f, _g, _h, _j, _k;
+    var _c, _d, _e, _f, _g, _h, _j;
     const t = yield sequelize_1.sequelize.transaction();
     try {
         const user = yield User_modal_1.default.findOne({
@@ -399,14 +400,16 @@ const updateTeacher = (userId, body, files, createdBy) => __awaiter(void 0, void
             yield profile.update({
                 teacherType: (_e = body.teacherType) !== null && _e !== void 0 ? _e : profile.teacherType,
                 qualification: (_f = body.qualification) !== null && _f !== void 0 ? _f : profile.qualification,
-                specialization: (_g = body.specialization) !== null && _g !== void 0 ? _g : profile.specialization,
-                experience: (_h = body.experience) !== null && _h !== void 0 ? _h : profile.experience,
-                address: (_j = body.address) !== null && _j !== void 0 ? _j : profile.address,
+                specialization: body.specialization !== undefined
+                    ? (0, specialization_1.formatSpecializations)((0, specialization_1.parseSpecializations)(body.specialization)) || null
+                    : profile.specialization,
+                experience: (_g = body.experience) !== null && _g !== void 0 ? _g : profile.experience,
+                address: (_h = body.address) !== null && _h !== void 0 ? _h : profile.address,
                 profileUrl,
             }, { transaction: t });
             // If teacherType is updated to something other than "Class Teacher",
             // remove them as class teacher from any class they were assigned to.
-            const newTeacherType = (_k = body.teacherType) !== null && _k !== void 0 ? _k : profile.teacherType;
+            const newTeacherType = (_j = body.teacherType) !== null && _j !== void 0 ? _j : profile.teacherType;
             if (newTeacherType !== "Class Teacher") {
                 const cls = yield Class_modal_1.default.findOne({
                     where: { classTeacherId: userId, instituteId: createdBy.instituteId },
@@ -822,8 +825,33 @@ const getTeacherQuestionPapers = (teacherUser, query, targetUserId) => __awaiter
         };
     }
 });
+// ─── SPECIALISATIONS ─────────────────────────────────────────────────────────
+// Replaces a teacher's specialisation list. Subjects (and exams) can only go to teachers
+// who specialise in them — see services/teacherSubject.service.ts.
+const updateSpecializations = (userId, body, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const list = (0, specialization_1.parseSpecializations)(body === null || body === void 0 ? void 0 : body.specializations);
+        const problem = (0, specialization_1.validateSpecializations)(list);
+        if (problem)
+            return { error: true, statusCode: http_status_1.default.BAD_REQUEST, message: problem };
+        const profile = yield TeacherProfile_modal_1.default.findOne({ where: { userId, instituteId: requestedBy.instituteId } });
+        if (!profile)
+            return { error: true, statusCode: http_status_1.default.NOT_FOUND, message: "Teacher not found." };
+        yield profile.update({ specialization: (0, specialization_1.formatSpecializations)(list) || null });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: list.length ? `Specialisations updated: ${(0, specialization_1.formatSpecializations)(list)}.` : "Specialisations cleared.",
+            data: { userId, specialization: profile.specialization, specializations: list },
+        };
+    }
+    catch (e) {
+        return { error: true, statusCode: http_status_1.default.INTERNAL_SERVER_ERROR, message: `Failed to update specialisations: ${e.message}` };
+    }
+});
 exports.default = {
     createTeacher,
+    updateSpecializations,
     getAllTeachers,
     getTeacherById,
     updateTeacher,

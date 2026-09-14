@@ -28,6 +28,8 @@ teacher_controller_1.default.getTeacherById);
 router.put("/updateTeacher/:userId", auth_1.authenticate, 
 //   authorize(["ADMIN"]),
 uploadSingleFile_1.handleUploadFile.fields([{ name: "profilePhoto", maxCount: 1 }]), teacher_controller_1.default.updateTeacher);
+// PATCH  /v1/teacher/specializations/:userId  { specializations: string[] }
+router.patch("/specializations/:userId", auth_1.authenticate, teacher_controller_1.default.updateSpecializations);
 // DELETE /v1/teachers/:userId
 router.delete("/deleteTeacher/:userId", auth_1.authenticate, 
 //   authorize(["ADMIN"]),

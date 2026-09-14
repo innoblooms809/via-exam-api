@@ -157,8 +157,24 @@ const getTeacherExamsWithApprovalStatus = (req, res) => __awaiter(void 0, void 0
         });
     }
 });
+// PATCH /teacher/specializations/:userId  { specializations: string[] } — school admin only.
+const updateSpecializations = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _e, _f, _g;
+    try {
+        const role = String((_g = (_f = (_e = req.viaExamUser) === null || _e === void 0 ? void 0 : _e.role) === null || _f === void 0 ? void 0 : _f.role) !== null && _g !== void 0 ? _g : "").toUpperCase();
+        if (!["ADMIN", "SUPER_ADMIN"].includes(role)) {
+            return res.status(403).json({ error: true, statusCode: 403, message: "Only the school admin can change specialisations." });
+        }
+        const result = yield teacher_service_1.default.updateSpecializations(req.params.userId, req.body, req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    }
+});
 exports.default = {
     createTeacher,
+    updateSpecializations,
     getAllTeachers,
     getTeacherById,
     updateTeacher,
