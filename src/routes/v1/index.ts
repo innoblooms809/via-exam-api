@@ -28,6 +28,7 @@ import studentDashboardRoutes from "./studentdashboard.route";
 import scannerDashboardRoutes from "./scannerdashboard.route";
 import monitoringRoutes from "./monitoring.route";
 import recheckRequestRoutes from "./recheckRequest.route";
+import evaluationAssignmentRoutes from "./evaluationAssignment.route";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -134,6 +135,10 @@ const defaultRoutes = [
   {
     path: "/recheck-requests",
     route: recheckRequestRoutes,
+  },
+  {
+    path: "/evaluation-assignments",
+    route: evaluationAssignmentRoutes,
   },
   
   // {

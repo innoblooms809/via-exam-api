@@ -9,22 +9,23 @@ const aiEvaluationNew_controller_1 = __importDefault(require("../../controllers/
 const ocrnew5_controller_1 = __importDefault(require("../../controllers/ocrnew5.controller"));
 const pipeline6_controller_1 = __importDefault(require("../../controllers/pipeline6.controller"));
 const auth_1 = require("../../middlewares/auth");
+const evaluationAccess_service_1 = require("../../services/evaluationAccess.service");
 const router = (0, express_1.Router)();
 // Trigger evaluation (legacy — uses old port 8002 API)
-router.post("/evaluate", auth_1.authenticate, aiEvaluation_controller_1.default.evaluateSheet);
+router.post("/evaluate", auth_1.authenticate, evaluationAccess_service_1.requireSheetEvaluateMiddleware, aiEvaluation_controller_1.default.evaluateSheet);
 // Trigger evaluation V2 (uses OCR pipeline on port 8003/8005)
-router.post("/evaluate2", auth_1.authenticate, aiEvaluationNew_controller_1.default.evaluateSheet2);
+router.post("/evaluate2", auth_1.authenticate, evaluationAccess_service_1.requireSheetEvaluateMiddleware, aiEvaluationNew_controller_1.default.evaluateSheet2);
 // Trigger evaluation OCRNew5 (uses multi-agent pipeline on port 8006)
-router.post("/evaluate-ocrnew5", auth_1.authenticate, ocrnew5_controller_1.default.evaluateSheetOCRNew5);
+router.post("/evaluate-ocrnew5", auth_1.authenticate, evaluationAccess_service_1.requireSheetEvaluateMiddleware, ocrnew5_controller_1.default.evaluateSheetOCRNew5);
 // Trigger evaluation Pipeline 6.3 (uses 9-agent pipeline with rubric pre-warming on port 8007)
-router.post("/evaluate-pipeline6", auth_1.authenticate, pipeline6_controller_1.default.evaluateSheetPipeline6);
-router.post("/evaluate6", auth_1.authenticate, pipeline6_controller_1.default.evaluateSheetPipeline6);
+router.post("/evaluate-pipeline6", auth_1.authenticate, evaluationAccess_service_1.requireSheetEvaluateMiddleware, pipeline6_controller_1.default.evaluateSheetPipeline6);
+router.post("/evaluate6", auth_1.authenticate, evaluationAccess_service_1.requireSheetEvaluateMiddleware, pipeline6_controller_1.default.evaluateSheetPipeline6);
 // Pipeline 6 queue: sheets waiting for / running OCR and AI evaluation
 router.get("/queue", auth_1.authenticate, pipeline6_controller_1.default.getQueueStatus);
 // Get evaluation result by sheet ID
-router.get("/sheet/:sheetId", auth_1.authenticate, aiEvaluation_controller_1.default.getEvaluation);
+router.get("/sheet/:sheetId", auth_1.authenticate, evaluationAccess_service_1.requireSheetAccessMiddleware, aiEvaluation_controller_1.default.getEvaluation);
 // Update evaluation details/marks by sheet ID
-router.put("/sheet/:sheetId", auth_1.authenticate, aiEvaluation_controller_1.default.updateEvaluation);
+router.put("/sheet/:sheetId", auth_1.authenticate, evaluationAccess_service_1.requireSheetEvaluateMiddleware, aiEvaluation_controller_1.default.updateEvaluation);
 // List evaluations
 router.get("/list", auth_1.authenticate, aiEvaluation_controller_1.default.getAllEvaluations);
 exports.default = router;

@@ -4,6 +4,7 @@ import NewController from "../../controllers/aiEvaluationNew.controller";
 import OCRNew5Controller from "../../controllers/ocrnew5.controller";
 import Pipeline6Controller from "../../controllers/pipeline6.controller";
 import { authenticate } from "../../middlewares/auth";
+import { requireSheetAccessMiddleware, requireSheetEvaluateMiddleware } from "../../services/evaluationAccess.service";
 
 const router = Router();
 
@@ -11,6 +12,7 @@ const router = Router();
 router.post(
   "/evaluate",
   authenticate,
+  requireSheetEvaluateMiddleware,
   Controller.evaluateSheet
 );
 
@@ -18,6 +20,7 @@ router.post(
 router.post(
   "/evaluate2",
   authenticate,
+  requireSheetEvaluateMiddleware,
   NewController.evaluateSheet2
 );
 
@@ -25,6 +28,7 @@ router.post(
 router.post(
   "/evaluate-ocrnew5",
   authenticate,
+  requireSheetEvaluateMiddleware,
   OCRNew5Controller.evaluateSheetOCRNew5
 );
 
@@ -32,12 +36,14 @@ router.post(
 router.post(
   "/evaluate-pipeline6",
   authenticate,
+  requireSheetEvaluateMiddleware,
   Pipeline6Controller.evaluateSheetPipeline6
 );
 
 router.post(
   "/evaluate6",
   authenticate,
+  requireSheetEvaluateMiddleware,
   Pipeline6Controller.evaluateSheetPipeline6
 );
 
@@ -53,6 +59,7 @@ router.get(
 router.get(
   "/sheet/:sheetId",
   authenticate,
+  requireSheetAccessMiddleware,
   Controller.getEvaluation
 );
 
@@ -60,6 +67,7 @@ router.get(
 router.put(
   "/sheet/:sheetId",
   authenticate,
+  requireSheetEvaluateMiddleware,
   Controller.updateEvaluation
 );
 

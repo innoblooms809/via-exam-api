@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
 const exam_service_1 = __importDefault(require("../../services/exam.service"));
+const evaluationAssignment_service_1 = __importDefault(require("../../services/evaluationAssignment.service"));
 const createExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield exam_service_1.default.createExam(req.body, req.viaExamUser);
@@ -107,6 +108,12 @@ const deleteExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 });
 const getExamProgress = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        try {
+            yield evaluationAssignment_service_1.default.examProgressAccess(req.viaExamUser, req.params.examId);
+        }
+        catch (err) {
+            return res.status(err.statusCode || http_status_1.default.FORBIDDEN).json({ error: true, statusCode: err.statusCode, message: err.message });
+        }
         const result = yield exam_service_1.default.getExamProgress(req.params.examId, req.viaExamUser);
         return res.status(result.statusCode).json(result);
     }

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RecheckRequest = exports.UserPresenceSession = exports.ActivityLog = exports.ScannerProfile = exports.AIEvaluation = exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
+exports.EvaluationAssignment = exports.RecheckRequest = exports.UserPresenceSession = exports.ActivityLog = exports.ScannerProfile = exports.AIEvaluation = exports.Notification = exports.AcademicCalendar = exports.QuestionPaper = exports.Session = exports.Exam = exports.Subject = exports.Section = exports.Class = exports.Institute = exports.StudentProfile = exports.TeacherProfile = exports.Access = exports.Role = exports.User = void 0;
 const User_modal_1 = __importDefault(require("./User.modal"));
 exports.User = User_modal_1.default;
 const Role_modal_1 = __importDefault(require("./Role.modal"));
@@ -42,6 +42,8 @@ const UserPresenceSession_modal_1 = __importDefault(require("./UserPresenceSessi
 exports.UserPresenceSession = UserPresenceSession_modal_1.default;
 const RecheckRequest_modal_1 = __importDefault(require("./RecheckRequest.modal"));
 exports.RecheckRequest = RecheckRequest_modal_1.default;
+const EvaluationAssignment_modal_1 = __importDefault(require("./EvaluationAssignment.modal"));
+exports.EvaluationAssignment = EvaluationAssignment_modal_1.default;
 // ROLE ↔ ACCESS
 // ═══════════════════════════════════════════════════════════════
 // ROLE ↔ ACCESS

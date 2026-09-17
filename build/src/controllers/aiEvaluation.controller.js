@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
 const aiEvaluation_service_1 = __importDefault(require("../services/aiEvaluation.service"));
+const evaluationAccess_service_1 = require("../services/evaluationAccess.service");
 // POST /v1/ai-evaluation/evaluate
 const evaluateSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -48,6 +49,14 @@ const getEvaluation = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             });
         }
         const result = yield aiEvaluation_service_1.default.getEvaluationBySheetId(sheetId);
+        // Assigned evaluators never receive the student's identity.
+        if (!result.error && req.sheetAccess === "masked" && result.data) {
+            result.data = (0, evaluationAccess_service_1.maskEvaluationIdentity)(result.data, req.accessSheet);
+        }
+        if (!result.error && result.data) {
+            const plain = typeof result.data.toJSON === "function" ? result.data.toJSON() : result.data;
+            result.data = Object.assign(Object.assign({}, plain), { canEvaluate: req.canEvaluate !== false });
+        }
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
@@ -60,8 +69,13 @@ const getEvaluation = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 });
 // GET /v1/ai-evaluation/list
 const getAllEvaluations = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const result = yield aiEvaluation_service_1.default.getAllEvaluations(req.query, req.viaExamUser);
+        if (!result.error && Array.isArray((_a = result.data) === null || _a === void 0 ? void 0 : _a.evaluations)) {
+            const evaluations = yield (0, evaluationAccess_service_1.scopeEvaluationRows)(req.viaExamUser, result.data.evaluations);
+            result.data = Object.assign(Object.assign({}, result.data), { evaluations, total: evaluations.length });
+        }
         return res.status(result.statusCode).send(result);
     }
     catch (error) {

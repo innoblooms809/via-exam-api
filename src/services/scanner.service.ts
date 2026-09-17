@@ -11,6 +11,7 @@ import Session from "../modals/Session.modal";
 import StudentProfile from "../modals/Student.modal";
 import UserModal from "../modals/User.modal";
 import RegHelper from "../utils/helper";
+import { isTeacherRequester, requireSheetAccess, scopeSheetRows } from "./evaluationAccess.service";
 
 // Exam-table statuses reached only after the QP + answer key pair is approved.
 const APPROVED_EXAM_STATUSES = ["Approved", "Live", "Completed"];
@@ -132,7 +133,7 @@ const uploadSheets = async (
 const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
   try {
     const instituteId = requestedBy.instituteId;
-    const { classId, section, subjectId, examType, rollNo, status } = query;
+    const { classId, section, subjectId, examType, rollNo, status, sheetId } = query;
 
     const where: any = { instituteId, isDeleted: false };
     if (classId) where.classId = classId;
@@ -141,6 +142,7 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
     if (examType) where.examType = examType;
     if (rollNo) where.rollNo = rollNo;
     if (status) where.status = status;
+    if (sheetId) where.sheetId = sheetId;
 
     // Never return fileBuffer in list — too heavy
     const sheets = await Scanner.findAll({
@@ -181,11 +183,17 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
       return s;
     });
 
+    // Teachers only see sheets of their own class subjects (real names) or of exams
+    // they were assigned to evaluate (names masked).
+    let visibleSheets = await scopeSheetRows(requestedBy, enrichedSheets);
+    // Looking a sheet up by real roll number would reveal a masked student.
+    if (rollNo && isTeacherRequester(requestedBy)) visibleSheets = visibleSheets.filter((s: any) => !s.identityMasked);
+
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Sheets fetched successfully.",
-      data: { sheets: enrichedSheets, total: enrichedSheets.length },
+      data: { sheets: visibleSheets, total: visibleSheets.length },
     };
   } catch (e: any) {
     return {
@@ -220,6 +228,14 @@ const getSheetFile = async (sheetId: string, requestedBy: any): Promise<any> => 
       };
     }
 
+    let access = "full";
+    try {
+      access = (await requireSheetAccess(requestedBy, sheetId)).access;
+    } catch (err: any) {
+      return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message || "Access denied." };
+    }
+    const ext = String(sheet.fileName ?? "").match(/\.[a-z0-9]{1,6}$/i)?.[0]?.toLowerCase() ?? "";
+
     return {
       error: false,
       statusCode: httpStatus.OK,
@@ -227,7 +243,7 @@ const getSheetFile = async (sheetId: string, requestedBy: any): Promise<any> => 
       data: {
         buffer: sheet.fileBuffer,
         mimeType: sheet.fileMimeType,
-        fileName: sheet.fileName,
+        fileName: access === "masked" ? `answer-sheet${ext}` : sheet.fileName,
       },
     };
   } catch (e: any) {

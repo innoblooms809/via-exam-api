@@ -1,6 +1,7 @@
 import { Response } from "express";
 import httpStatus from "http-status";
 import ExamService from "../../services/exam.service"
+import EvaluationAssignmentService from "../../services/evaluationAssignment.service";
 
 const createExam = async (req: any, res: Response): Promise<any> => {
   try {
@@ -110,6 +111,11 @@ const deleteExam = async (req: any, res: Response): Promise<any> => {
 
 const getExamProgress = async (req: any, res: Response): Promise<any> => {
   try {
+    try {
+      await EvaluationAssignmentService.examProgressAccess(req.viaExamUser, req.params.examId);
+    } catch (err: any) {
+      return res.status(err.statusCode || httpStatus.FORBIDDEN).json({ error: true, statusCode: err.statusCode, message: err.message });
+    }
     const result = await ExamService.getExamProgress(req.params.examId, req.viaExamUser);
     return res.status(result.statusCode).json(result);
   } catch (e: any) {
