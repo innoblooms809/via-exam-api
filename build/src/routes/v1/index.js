@@ -32,6 +32,7 @@ const studentdashboard_route_1 = __importDefault(require("./studentdashboard.rou
 const scannerdashboard_route_1 = __importDefault(require("./scannerdashboard.route"));
 const monitoring_route_1 = __importDefault(require("./monitoring.route"));
 const recheckRequest_route_1 = __importDefault(require("./recheckRequest.route"));
+const evaluationAssignment_route_1 = __importDefault(require("./evaluationAssignment.route"));
 const router = express_1.default.Router();
 const defaultRoutes = [
     {
@@ -137,6 +138,10 @@ const defaultRoutes = [
     {
         path: "/recheck-requests",
         route: recheckRequest_route_1.default,
+    },
+    {
+        path: "/evaluation-assignments",
+        route: evaluationAssignment_route_1.default,
     },
     // {
     //   path: '/captcha',
