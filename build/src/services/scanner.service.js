@@ -25,6 +25,7 @@ const Session_modal_1 = __importDefault(require("../modals/Session.modal"));
 const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
 const User_modal_1 = __importDefault(require("../modals/User.modal"));
 const helper_1 = __importDefault(require("../utils/helper"));
+const evaluationAccess_service_1 = require("./evaluationAccess.service");
 // Exam-table statuses reached only after the QP + answer key pair is approved.
 const APPROVED_EXAM_STATUSES = ["Approved", "Live", "Completed"];
 const APPROVED_PAPER_STATUSES = ["APPROVED", "PUBLISHED"];
@@ -121,7 +122,7 @@ const uploadSheets = (body, files, uploadedBy) => __awaiter(void 0, void 0, void
 const getAllSheets = (query, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const instituteId = requestedBy.instituteId;
-        const { classId, section, subjectId, examType, rollNo, status } = query;
+        const { classId, section, subjectId, examType, rollNo, status, sheetId } = query;
         const where = { instituteId, isDeleted: false };
         if (classId)
             where.classId = classId;
@@ -135,6 +136,8 @@ const getAllSheets = (query, requestedBy) => __awaiter(void 0, void 0, void 0, f
             where.rollNo = rollNo;
         if (status)
             where.status = status;
+        if (sheetId)
+            where.sheetId = sheetId;
         // Never return fileBuffer in list — too heavy
         const sheets = yield Scanner_modal_1.default.findAll({
             where,
@@ -171,11 +174,17 @@ const getAllSheets = (query, requestedBy) => __awaiter(void 0, void 0, void 0, f
             }
             return s;
         });
+        // Teachers only see sheets of their own class subjects (real names) or of exams
+        // they were assigned to evaluate (names masked).
+        let visibleSheets = yield (0, evaluationAccess_service_1.scopeSheetRows)(requestedBy, enrichedSheets);
+        // Looking a sheet up by real roll number would reveal a masked student.
+        if (rollNo && (0, evaluationAccess_service_1.isTeacherRequester)(requestedBy))
+            visibleSheets = visibleSheets.filter((s) => !s.identityMasked);
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Sheets fetched successfully.",
-            data: { sheets: enrichedSheets, total: enrichedSheets.length },
+            data: { sheets: visibleSheets, total: visibleSheets.length },
         };
     }
     catch (e) {
@@ -188,6 +197,7 @@ const getAllSheets = (query, requestedBy) => __awaiter(void 0, void 0, void 0, f
 });
 // ─── GET SHEET FILE (stream back to client) ───────────────────────────────────
 const getSheetFile = (sheetId, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c, _d;
     try {
         const sheet = yield Scanner_modal_1.default.findOne({
             where: { sheetId, isDeleted: false },
@@ -206,6 +216,14 @@ const getSheetFile = (sheetId, requestedBy) => __awaiter(void 0, void 0, void 0,
                 message: "Access denied.",
             };
         }
+        let access = "full";
+        try {
+            access = (yield (0, evaluationAccess_service_1.requireSheetAccess)(requestedBy, sheetId)).access;
+        }
+        catch (err) {
+            return { error: true, statusCode: (err === null || err === void 0 ? void 0 : err.statusCode) || http_status_1.default.FORBIDDEN, message: (err === null || err === void 0 ? void 0 : err.message) || "Access denied." };
+        }
+        const ext = (_d = (_c = (_b = String((_a = sheet.fileName) !== null && _a !== void 0 ? _a : "").match(/\.[a-z0-9]{1,6}$/i)) === null || _b === void 0 ? void 0 : _b[0]) === null || _c === void 0 ? void 0 : _c.toLowerCase()) !== null && _d !== void 0 ? _d : "";
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -213,7 +231,7 @@ const getSheetFile = (sheetId, requestedBy) => __awaiter(void 0, void 0, void 0,
             data: {
                 buffer: sheet.fileBuffer,
                 mimeType: sheet.fileMimeType,
-                fileName: sheet.fileName,
+                fileName: access === "masked" ? `answer-sheet${ext}` : sheet.fileName,
             },
         };
     }

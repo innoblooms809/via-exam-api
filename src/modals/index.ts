@@ -17,6 +17,7 @@ import ScannerProfile from "./ScannerProfile.modal";
 import ActivityLog from "./ActivityLog.modal";
 import UserPresenceSession from "./UserPresenceSession.modal";
 import RecheckRequest from "./RecheckRequest.modal";
+import EvaluationAssignment from "./EvaluationAssignment.modal";
 
 export {
   User,
@@ -38,6 +39,7 @@ export {
   ActivityLog,
   UserPresenceSession,
   RecheckRequest,
+  EvaluationAssignment,
 };
 
 // ROLE ↔ ACCESS
