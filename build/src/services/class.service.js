@@ -21,6 +21,7 @@ const Subject_modal_1 = __importDefault(require("../modals/Subject.modal"));
 const User_modal_1 = __importDefault(require("../modals/User.modal"));
 const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
 const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
+const TeacherProfile_modal_1 = __importDefault(require("../modals/TeacherProfile.modal"));
 const sequelize_1 = require("../config/sequelize");
 const academicNames_1 = require("../utils/academicNames");
 const fail = (statusCode, message) => ({ error: true, statusCode, message });
@@ -32,7 +33,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 // Accepts { className } or { classNames: [] }, plus optional sections / subjects
 // that are added to every class created.
 const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const instituteId = createdBy.instituteId;
     const classNames = (0, academicNames_1.uniqueNames)((_a = body.classNames) !== null && _a !== void 0 ? _a : body.className, academicNames_1.normalizeClassName);
     const sectionNames = (0, academicNames_1.uniqueNames)((_b = body.sections) !== null && _b !== void 0 ? _b : [], academicNames_1.normalizeSectionName);
@@ -71,33 +72,41 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
         }
         // Sections and subjects for the new classes (existing ones are left as they are).
         for (const cls of touched) {
+            const createdSectionMap = new Map();
             if (sectionNames.length) {
                 const current = yield Section_modal_1.default.findAll({ where: { classId: cls.classId }, transaction: t });
-                const sections = new Map(current.map((s) => [(0, academicNames_1.nameKey)(s.sectionName), s]));
+                const sectionsMap = new Map(current.map((s) => [(0, academicNames_1.nameKey)(s.sectionName), s]));
                 for (const sectionName of sectionNames) {
-                    const found = sections.get((0, academicNames_1.nameKey)(sectionName));
+                    const found = sectionsMap.get((0, academicNames_1.nameKey)(sectionName));
                     if (found) {
                         if (found.isDeleted)
                             yield found.update({ isDeleted: false, isActive: true }, { transaction: t });
+                        createdSectionMap.set((0, academicNames_1.nameKey)(found.sectionName), found.sectionId);
                         continue;
                     }
-                    yield Section_modal_1.default.create({ sectionId: yield helper_1.default.generateUserId(), classId: cls.classId, instituteId, sectionName }, { transaction: t });
+                    const newSec = yield Section_modal_1.default.create({ sectionId: yield helper_1.default.generateUserId(), classId: cls.classId, instituteId, sectionName }, { transaction: t });
+                    createdSectionMap.set((0, academicNames_1.nameKey)(sectionName), newSec.sectionId);
                 }
             }
-            if (subjectNames.length) {
-                const current = yield Subject_modal_1.default.findAll({ where: { classId: cls.classId }, transaction: t });
-                const subjects = new Map(current.map((s) => [(0, academicNames_1.nameKey)(s.subjectName), s]));
-                for (const subjectName of subjectNames) {
-                    const found = subjects.get((0, academicNames_1.nameKey)(subjectName));
+            if (body.subjects && Array.isArray(body.subjects) && body.subjects.length > 0) {
+                const currentSubjects = yield Subject_modal_1.default.findAll({ where: { classId: cls.classId }, transaction: t });
+                for (const item of body.subjects) {
+                    const subjectName = typeof item === "string" ? (0, academicNames_1.normalizeSubjectName)(item) : (0, academicNames_1.normalizeSubjectName)(item === null || item === void 0 ? void 0 : item.subjectName);
+                    if (!subjectName)
+                        continue;
+                    const itemSecName = typeof item === "object" && (item === null || item === void 0 ? void 0 : item.sectionName) ? (0, academicNames_1.normalizeSectionName)(item.sectionName) : null;
+                    const targetSectionId = itemSecName ? (_d = createdSectionMap.get((0, academicNames_1.nameKey)(itemSecName))) !== null && _d !== void 0 ? _d : null : null;
+                    const found = currentSubjects.find((s) => { var _a; return ((_a = s.sectionId) !== null && _a !== void 0 ? _a : null) === targetSectionId && (0, academicNames_1.nameKey)(s.subjectName) === (0, academicNames_1.nameKey)(subjectName); });
                     if (found) {
                         if (found.isDeleted)
-                            yield found.update({ isDeleted: false, isActive: true }, { transaction: t });
+                            yield found.update({ isDeleted: false, isActive: true, sectionId: targetSectionId }, { transaction: t });
                         continue;
                     }
                     yield Subject_modal_1.default.create({
                         subjectId: yield helper_1.default.generateUserId(),
-                        classId: cls.classId,
                         instituteId,
+                        classId: cls.classId,
+                        sectionId: targetSectionId,
                         subjectName,
                         totalMarks: 100,
                         passingMarks: 35,
@@ -135,7 +144,13 @@ const getAllClasses = (createdBy) => __awaiter(void 0, void 0, void 0, function*
             where: { instituteId, isActive: true, isDeleted: false },
             include: [
                 { model: Section_modal_1.default, as: "sections", where: { isDeleted: false }, required: false },
-                { model: Subject_modal_1.default, as: "subjects", where: { isDeleted: false }, required: false },
+                {
+                    model: Subject_modal_1.default,
+                    as: "subjects",
+                    where: { isDeleted: false },
+                    required: false,
+                    include: [{ model: Section_modal_1.default, as: "section", where: { isDeleted: false }, required: false }],
+                },
                 { model: User_modal_1.default, as: "classTeacher", attributes: ["userId", "userName", "emailId"], required: false },
             ],
         });
@@ -169,21 +184,77 @@ const getAllClasses = (createdBy) => __awaiter(void 0, void 0, void 0, function*
 });
 // ─── GET ONE CLASS ────────────────────────────────────────────────────────────
 const getClassById = (classId, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _d, _e;
+    var _e, _f;
     try {
         const classData = yield Class_modal_1.default.findOne({
             where: { classId, instituteId: createdBy.instituteId, isDeleted: false },
             include: [
-                { model: Section_modal_1.default, as: "sections", where: { isDeleted: false }, required: false },
-                { model: Subject_modal_1.default, as: "subjects", where: { isDeleted: false }, required: false },
-                { model: User_modal_1.default, as: "classTeacher", attributes: ["userId", "userName", "emailId"], required: false },
+                {
+                    model: Section_modal_1.default,
+                    as: "sections",
+                    where: { isDeleted: false },
+                    required: false,
+                    include: [
+                        {
+                            model: User_modal_1.default,
+                            as: "classTeacher",
+                            attributes: ["userId", "userName", "emailId", "phoneNumber"],
+                            required: false,
+                            include: [
+                                {
+                                    model: TeacherProfile_modal_1.default,
+                                    as: "teacherProfile",
+                                    attributes: ["qualification", "experience", "specialization"],
+                                    required: false,
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    model: Subject_modal_1.default,
+                    as: "subjects",
+                    where: { isDeleted: false },
+                    required: false,
+                    include: [
+                        { model: Section_modal_1.default, as: "section", where: { isDeleted: false }, required: false },
+                        {
+                            model: User_modal_1.default,
+                            as: "teacher",
+                            attributes: ["userId", "userName", "emailId", "phoneNumber"],
+                            required: false,
+                            include: [
+                                {
+                                    model: TeacherProfile_modal_1.default,
+                                    as: "teacherProfile",
+                                    attributes: ["qualification", "experience", "specialization"],
+                                    required: false,
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    model: User_modal_1.default,
+                    as: "classTeacher",
+                    attributes: ["userId", "userName", "emailId", "phoneNumber"],
+                    required: false,
+                    include: [
+                        {
+                            model: TeacherProfile_modal_1.default,
+                            as: "teacherProfile",
+                            attributes: ["qualification", "experience", "specialization"],
+                            required: false,
+                        },
+                    ],
+                },
             ],
         });
         if (!classData)
             return fail(404, "Class not found.");
         const json = classData.toJSON();
-        json.sections = [...((_d = json.sections) !== null && _d !== void 0 ? _d : [])].sort((a, b) => (0, exports.compareClassNames)(a.sectionName, b.sectionName));
-        json.subjects = [...((_e = json.subjects) !== null && _e !== void 0 ? _e : [])].sort((a, b) => a.subjectName.localeCompare(b.subjectName));
+        json.sections = [...((_e = json.sections) !== null && _e !== void 0 ? _e : [])].sort((a, b) => (0, exports.compareClassNames)(a.sectionName, b.sectionName));
+        json.subjects = [...((_f = json.subjects) !== null && _f !== void 0 ? _f : [])].sort((a, b) => a.subjectName.localeCompare(b.subjectName));
         json.studentCount = yield Student_modal_1.default.count({ where: { instituteId: createdBy.instituteId, classId } });
         return { error: false, statusCode: 200, message: "Class fetched successfully.", data: json };
     }
@@ -193,7 +264,7 @@ const getClassById = (classId, createdBy) => __awaiter(void 0, void 0, void 0, f
 });
 // ─── UPDATE CLASS ─────────────────────────────────────────────────────────────
 const updateClass = (classId, body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    var _f;
+    var _g;
     const instituteId = createdBy.instituteId;
     const t = yield sequelize_1.sequelize.transaction();
     try {
@@ -202,7 +273,7 @@ const updateClass = (classId, body, createdBy) => __awaiter(void 0, void 0, void
             yield t.rollback();
             return fail(404, "Class not found.");
         }
-        const className = (0, academicNames_1.normalizeClassName)((_f = body.className) !== null && _f !== void 0 ? _f : classData.className);
+        const className = (0, academicNames_1.normalizeClassName)((_g = body.className) !== null && _g !== void 0 ? _g : classData.className);
         if (!className) {
             yield t.rollback();
             return fail(http_status_1.default.BAD_REQUEST, "Class name can't be empty.");

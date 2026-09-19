@@ -145,60 +145,82 @@ const createExam = (body, createdBy) => __awaiter(void 0, void 0, void 0, functi
         if (!fit.ok) {
             return { error: true, statusCode: http_status_1.default.BAD_REQUEST, message: fit.message };
         }
-        // 3. Check duplicate exam
-        const duplicate = yield Exam_modal_1.default.findOne({
-            where: {
+        // Determine target sections
+        let targetSectionIds = [null];
+        if (Array.isArray(body.sectionIds) && body.sectionIds.length > 0) {
+            const validIds = body.sectionIds.filter((id) => id && id !== "ALL");
+            if (validIds.length > 0) {
+                targetSectionIds = validIds;
+            }
+        }
+        else if (body.sectionId && body.sectionId !== "ALL") {
+            targetSectionIds = [body.sectionId];
+        }
+        const createdExams = [];
+        const skippedSections = [];
+        for (const secId of targetSectionIds) {
+            // 3. Check duplicate exam for this specific section
+            const duplicate = yield Exam_modal_1.default.findOne({
+                where: {
+                    instituteId,
+                    sessionId: body.sessionId,
+                    examType: body.examType,
+                    subjectId: body.subjectId,
+                    classId: body.classId,
+                    sectionId: secId,
+                    isDeleted: false,
+                },
+            });
+            if (duplicate) {
+                skippedSections.push(secId || "Class-wide");
+                continue;
+            }
+            // 4. Generate exam ID
+            const examId = yield helper_1.default.generateUserId();
+            // 5. Create exam
+            const exam = yield Exam_modal_1.default.create({
+                examId,
                 instituteId,
                 sessionId: body.sessionId,
                 examType: body.examType,
+                classId: body.classId,
+                sectionId: secId,
                 subjectId: body.subjectId,
-                isDeleted: false,
-            },
-        });
-        if (duplicate) {
+                teacherId: teacher.userId,
+                examinerId: createdBy.userId,
+                totalMarks: Number(body.totalMarks),
+                passingMarks: Number(body.passingMarks),
+                duration: body.duration ? Number(body.duration) : null,
+                instructions: body.instructions || null,
+                examDate: body.examDate || null,
+                examTime: body.examTime || null,
+                status: "Draft",
+            });
+            // 6. Send notification to assigned teacher
+            const notificationId = yield helper_1.default.generateUserId();
+            yield Notification_modal_1.default.create({
+                notificationId,
+                instituteId,
+                userId: teacher.userId,
+                type: "EXAM_ASSIGNED",
+                title: "New Exam Assigned",
+                message: `A ${body.examType} exam has been assigned to you.`,
+                referenceId: examId,
+            });
+            createdExams.push(exam);
+        }
+        if (createdExams.length === 0) {
             return {
                 error: true,
                 statusCode: http_status_1.default.CONFLICT,
-                message: "An exam with same session, type, class and subject already exists.",
+                message: "An exam with same session, type, class/section and subject already exists.",
             };
         }
-        // 4. Generate exam ID
-        const examId = yield helper_1.default.generateUserId();
-        // 5. Create exam
-        const exam = yield Exam_modal_1.default.create({
-            examId,
-            instituteId,
-            sessionId: body.sessionId,
-            examType: body.examType,
-            classId: body.classId,
-            sectionId: body.sectionId || null,
-            subjectId: body.subjectId,
-            teacherId: teacher.userId,
-            examinerId: createdBy.userId,
-            totalMarks: Number(body.totalMarks),
-            passingMarks: Number(body.passingMarks),
-            duration: body.duration ? Number(body.duration) : null,
-            instructions: body.instructions || null,
-            examDate: body.examDate || null,
-            examTime: body.examTime || null,
-            status: "Draft",
-        });
-        // 6. Send notification to assigned teacher
-        const notificationId = yield helper_1.default.generateUserId();
-        yield Notification_modal_1.default.create({
-            notificationId,
-            instituteId,
-            userId: teacher.userId,
-            type: "EXAM_ASSIGNED",
-            title: "New Exam Assigned",
-            message: `A ${body.examType} exam has been assigned to you.`,
-            referenceId: examId,
-        });
         return {
             error: false,
             statusCode: http_status_1.default.CREATED,
-            message: "Exam created successfully.",
-            data: exam,
+            message: `${createdExams.length} exam(s) created successfully.${skippedSections.length > 0 ? ` (${skippedSections.length} skipped as duplicate)` : ""}`,
+            data: createdExams.length === 1 ? createdExams[0] : createdExams,
         };
     }
     catch (e) {
@@ -231,6 +253,7 @@ const getAllExams = (query, requestedBy) => __awaiter(void 0, void 0, void 0, fu
             where,
             include: [
                 { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: true },
+                { model: Section_modal_1.default, as: "section", attributes: ["sectionId", "sectionName"], required: false },
                 { model: Subject_modal_1.default, as: "subject", where: { isDeleted: false }, required: true },
                 { model: User_modal_1.default, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
                 { model: Session_modal_1.default, as: "session", attributes: ["sessionId", "sessionName"], required: false },
@@ -332,8 +355,10 @@ const getExamById = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, f
             where: { examId, isDeleted: false },
             include: [
                 { model: Class_modal_1.default, as: "class", where: { isDeleted: false }, required: true },
+                { model: Section_modal_1.default, as: "section", attributes: ["sectionId", "sectionName"], required: false },
                 { model: Subject_modal_1.default, as: "subject", where: { isDeleted: false }, required: true },
                 { model: User_modal_1.default, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+                { model: Session_modal_1.default, as: "session", attributes: ["sessionId", "sessionName"], required: false },
             ],
         });
         if (!exam) {

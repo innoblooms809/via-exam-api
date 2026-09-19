@@ -8,12 +8,13 @@ Subject.init({
     id: { type: sequelize_1.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     subjectId: { type: sequelize_1.DataTypes.STRING, allowNull: false, unique: true },
     classId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
+    sectionId: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null },
     instituteId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     subjectName: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    subjectCode: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null, unique: true, },
+    subjectCode: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null },
     teacherId: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null },
     totalMarks: { type: sequelize_1.DataTypes.INTEGER, allowNull: false, defaultValue: 100 },
-    passingMarks: { type: sequelize_1.DataTypes.INTEGER, allowNull: false, },
+    passingMarks: { type: sequelize_1.DataTypes.INTEGER, allowNull: false, defaultValue: 35 },
     isActive: { type: sequelize_1.DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     isDeleted: { type: sequelize_1.DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 }, {
@@ -23,8 +24,14 @@ Subject.init({
     timestamps: true,
     indexes: [
         {
+            name: "viaexam_subjects_class_section_subject",
             unique: true,
-            fields: ["classId", "subjectName"],
+            fields: ["classId", "sectionId", "subjectName"],
+        },
+        {
+            name: "viaexam_subjects_class_id",
+            unique: false,
+            fields: ["classId"],
         },
     ],
 });
