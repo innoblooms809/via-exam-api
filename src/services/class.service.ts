@@ -6,6 +6,7 @@ import Subject from "../modals/Subject.modal";
 import User from "../modals/User.modal";
 import Exam from "../modals/Exam.modal";
 import StudentProfile from "../modals/Student.modal";
+import TeacherProfile from "../modals/TeacherProfile.modal";
 import { sequelize } from "../config/sequelize";
 import {
   MAX_BULK_ITEMS,
@@ -73,35 +74,47 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
 
     // Sections and subjects for the new classes (existing ones are left as they are).
     for (const cls of touched) {
+      const createdSectionMap = new Map<string, string>();
+
       if (sectionNames.length) {
         const current = await Section.findAll({ where: { classId: cls.classId }, transaction: t });
-        const sections = new Map(current.map((s) => [nameKey(s.sectionName), s]));
+        const sectionsMap = new Map(current.map((s) => [nameKey(s.sectionName), s]));
         for (const sectionName of sectionNames) {
-          const found = sections.get(nameKey(sectionName));
+          const found = sectionsMap.get(nameKey(sectionName));
           if (found) {
             if (found.isDeleted) await found.update({ isDeleted: false, isActive: true }, { transaction: t });
+            createdSectionMap.set(nameKey(found.sectionName), found.sectionId);
             continue;
           }
-          await Section.create(
+          const newSec = await Section.create(
             { sectionId: await RegHelper.generateUserId(), classId: cls.classId, instituteId, sectionName },
             { transaction: t },
           );
+          createdSectionMap.set(nameKey(sectionName), newSec.sectionId);
         }
       }
-      if (subjectNames.length) {
-        const current = await Subject.findAll({ where: { classId: cls.classId }, transaction: t });
-        const subjects = new Map(current.map((s) => [nameKey(s.subjectName), s]));
-        for (const subjectName of subjectNames) {
-          const found = subjects.get(nameKey(subjectName));
+
+      if (body.subjects && Array.isArray(body.subjects) && body.subjects.length > 0) {
+        const currentSubjects = await Subject.findAll({ where: { classId: cls.classId }, transaction: t });
+        for (const item of body.subjects) {
+          const subjectName = typeof item === "string" ? normalizeSubjectName(item) : normalizeSubjectName(item?.subjectName);
+          if (!subjectName) continue;
+          const itemSecName = typeof item === "object" && item?.sectionName ? normalizeSectionName(item.sectionName) : null;
+          const targetSectionId = itemSecName ? createdSectionMap.get(nameKey(itemSecName)) ?? null : null;
+
+          const found = currentSubjects.find(
+            (s) => (s.sectionId ?? null) === targetSectionId && nameKey(s.subjectName) === nameKey(subjectName)
+          );
           if (found) {
-            if (found.isDeleted) await found.update({ isDeleted: false, isActive: true }, { transaction: t });
+            if (found.isDeleted) await found.update({ isDeleted: false, isActive: true, sectionId: targetSectionId }, { transaction: t });
             continue;
           }
           await Subject.create(
             {
               subjectId: await RegHelper.generateUserId(),
-              classId: cls.classId,
               instituteId,
+              classId: cls.classId,
+              sectionId: targetSectionId,
               subjectName,
               totalMarks: 100,
               passingMarks: 35,
@@ -146,7 +159,13 @@ const getAllClasses = async (createdBy: any): Promise<any> => {
       where: { instituteId, isActive: true, isDeleted: false },
       include: [
         { model: Section, as: "sections", where: { isDeleted: false }, required: false },
-        { model: Subject, as: "subjects", where: { isDeleted: false }, required: false },
+        {
+          model: Subject,
+          as: "subjects",
+          where: { isDeleted: false },
+          required: false,
+          include: [{ model: Section, as: "section", where: { isDeleted: false }, required: false }],
+        },
         { model: User, as: "classTeacher", attributes: ["userId", "userName", "emailId"], required: false },
       ],
     });
@@ -186,9 +205,65 @@ const getClassById = async (classId: string, createdBy: any): Promise<any> => {
     const classData = await Class.findOne({
       where: { classId, instituteId: createdBy.instituteId, isDeleted: false },
       include: [
-        { model: Section, as: "sections", where: { isDeleted: false }, required: false },
-        { model: Subject, as: "subjects", where: { isDeleted: false }, required: false },
-        { model: User, as: "classTeacher", attributes: ["userId", "userName", "emailId"], required: false },
+        {
+          model: Section,
+          as: "sections",
+          where: { isDeleted: false },
+          required: false,
+          include: [
+            {
+              model: User,
+              as: "classTeacher",
+              attributes: ["userId", "userName", "emailId", "phoneNumber"],
+              required: false,
+              include: [
+                {
+                  model: TeacherProfile,
+                  as: "teacherProfile",
+                  attributes: ["qualification", "experience", "specialization"],
+                  required: false,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: Subject,
+          as: "subjects",
+          where: { isDeleted: false },
+          required: false,
+          include: [
+            { model: Section, as: "section", where: { isDeleted: false }, required: false },
+            {
+              model: User,
+              as: "teacher",
+              attributes: ["userId", "userName", "emailId", "phoneNumber"],
+              required: false,
+              include: [
+                {
+                  model: TeacherProfile,
+                  as: "teacherProfile",
+                  attributes: ["qualification", "experience", "specialization"],
+                  required: false,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: User,
+          as: "classTeacher",
+          attributes: ["userId", "userName", "emailId", "phoneNumber"],
+          required: false,
+          include: [
+            {
+              model: TeacherProfile,
+              as: "teacherProfile",
+              attributes: ["qualification", "experience", "specialization"],
+              required: false,
+            },
+          ],
+        },
       ],
     });
     if (!classData) return fail(404, "Class not found.");
