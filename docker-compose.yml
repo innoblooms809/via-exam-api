@@ -1,40 +1,50 @@
 version: '3.8'
 
 services:
-  mongo:
-    image: mongo:4.2
+
+  postgres:
+    image: postgres:16
     environment:
-      - AUTH=no
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_DATABASE=candidates
-      - MONGO_INITDB_ROOT_PASSWORD=pass
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass}
+      POSTGRES_DB: ${DB_NAME:-Via-Exam}
     ports:
-      - '27017:27017'
-    volumes: 
-      - ./data:/data/db
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - node-network
-  email: 
+
+  email:
     image: rnwood/smtp4dev:v3
-    ports:  
-    - '3002:80'
-    - '2525:25'
-  
+    ports:
+      - '3005:80'
+      - '2525:25'
+    networks:
+      - node-network
+
   node-app:
     build: .
-    image: node-app
+    image: via-exam-backend
+    env_file:
+      - .env
+    environment:
+      # Override DB_HOST to point to the docker container network instead of the remote IP
+      - DB_HOST=postgres
     ports:
-      - '3000:3300'
+      - '5020:5020'
     depends_on:
-      - mongo
+      - postgres
       - email
     volumes:
       - .:/usr/src/node-app
+      # Anonymous volume for node_modules so the host node_modules don't overwrite the container's
+      - /usr/src/node-app/node_modules
     networks:
       - node-network
-  
+
 volumes:
-  dbdata:
+  postgres-data:
     driver: local
 
 networks:
