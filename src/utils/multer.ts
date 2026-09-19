@@ -16,6 +16,8 @@ const storage = multer.diskStorage({
       folder = "uploads/question-papers/school-logos/";
     else if (["diagram", "diagramUrls"].includes(file.fieldname))
       folder = "uploads/question-papers/diagrams/";
+    else if (file.fieldname === "profilePhoto")
+      folder = "uploads/students/";
 
     ensureDir(folder);
     cb(null, folder);
@@ -35,6 +37,16 @@ const fileFilter = (req: any, file: any, cb: any) => {
     cb(new Error("Only JPG, PNG, WEBP allowed"), false);
   }
 };
+
+export const studentUpload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB max
+  },
+}).fields([
+  { name: "profilePhoto", maxCount: 1 },
+]);
 
 export const instituteUpload = multer({
   storage,
@@ -72,3 +84,37 @@ export const questionPaperUpload = multer({
     maxCount: 1,
   },
 ]);
+
+export const answerPaperUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+}).fields([
+  {
+    name: "diagram",
+    maxCount: 10,
+  },
+  {
+    name: "diagramUrls",
+    maxCount: 10,
+  },
+]);
+
+const pdfFileFilter = (req: any, file: any, cb: any) => {
+  const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only JPG, PNG, WEBP, PDF allowed"), false);
+  }
+};
+
+export const answerPdfUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: pdfFileFilter,
+  limits: {
+    fileSize: 20 * 1024 * 1024,
+  },
+}).any();

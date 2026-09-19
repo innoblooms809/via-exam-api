@@ -1,4 +1,8 @@
 import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 export const sequelize = new Sequelize({
     dialect: 'postgres',
@@ -7,4 +11,4 @@ export const sequelize = new Sequelize({
     password: process.env.DB_PASSWORD || 'your_db_password',
     database: process.env.DB_NAME || 'your_db_name',
     logging: false, // You can enable logging for SQL queries if needed.
-  });
+  });

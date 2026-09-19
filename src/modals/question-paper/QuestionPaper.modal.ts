@@ -1,0 +1,256 @@
+import {
+  DataTypes,
+  Model,
+  Optional,
+} from "sequelize";
+
+import { sequelize } from "../../config/sequelize";
+
+// ─────────────────────────────────────────────────────────────────
+// Attributes
+// ─────────────────────────────────────────────────────────────────
+
+interface QuestionPaperAttributes {
+  id: number;
+
+  paperId: string;
+
+  instituteId: string;   // ✅ ADDED
+
+  examId: string;
+  teacherId: string;
+
+  paperSet: "A" | "B" | "C" | "D";
+
+  content: object;
+
+  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PUBLISHED";
+
+  rejectionNote: string | null;
+
+  submittedAt: Date | null;
+  approvedAt: Date | null;
+  rejectedAt: Date | null;
+  publishedAt: Date | null;
+
+  createdAt?: Date;
+  updatedAt?: Date;
+  deletedAt?: Date;
+}
+
+// ─────────────────────────────────────────────────────────────────
+
+interface QuestionPaperCreationAttributes
+  extends Optional<
+    QuestionPaperAttributes,
+    | "id"
+    | "paperId"
+    | "paperSet"
+    | "status"
+    | "rejectionNote"
+    | "submittedAt"
+    | "approvedAt"
+    | "rejectedAt"
+    | "publishedAt"
+    | "createdAt"
+    | "updatedAt"
+    | "deletedAt"
+  > {}
+
+// ─────────────────────────────────────────────────────────────────
+// Model Class
+// ─────────────────────────────────────────────────────────────────
+
+class QuestionPaper
+  extends Model<
+    QuestionPaperAttributes,
+    QuestionPaperCreationAttributes
+  >
+  implements QuestionPaperAttributes
+{
+  public id!: number;
+
+  public paperId!: string;
+
+  public instituteId!: string; // ✅ ADDED
+
+  public examId!: string;
+  public teacherId!: string;
+
+  public paperSet!: "A" | "B" | "C" | "D";
+
+  public content!: object;
+
+  public status!: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PUBLISHED";
+
+  public rejectionNote!: string | null;
+
+  public submittedAt!: Date | null;
+  public approvedAt!: Date | null;
+  public rejectedAt!: Date | null;
+  public publishedAt!: Date | null;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+  public readonly deletedAt!: Date;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────────
+
+QuestionPaper.init(
+  {
+    id: {
+      type: DataTypes.BIGINT,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+
+     paperId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      
+    },
+
+
+    instituteId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+
+      references: {
+        model: "viaexam_institutes",
+        key: "instituteId",
+      },
+
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
+    },
+
+    examId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+
+      references: {
+        model: "viaexam_exams",
+        key: "examId",
+      },
+
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
+    },
+
+    teacherId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+
+      references: {
+        model: "viaexam_users",
+        key: "userId",
+      },
+
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE",
+    },
+
+    paperSet: {
+      type: DataTypes.ENUM("A", "B", "C", "D"),
+      allowNull: false,
+      defaultValue: "A",
+      field: "paper_set",
+    },
+
+    content: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+
+      validate: {
+        notEmpty: true,
+      },
+    },
+
+    status: {
+      type: DataTypes.ENUM(
+        "DRAFT",
+        "PENDING_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "PUBLISHED"
+      ),
+      allowNull: false,
+      defaultValue: "DRAFT",
+    },
+
+    rejectionNote: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: null,
+    },
+
+    submittedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
+
+    approvedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
+
+    rejectedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
+
+    publishedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
+  },
+  {
+    sequelize,
+
+    tableName: "viaexam_question_papers",
+
+    modelName: "QuestionPaper",
+
+    timestamps: true,
+
+    paranoid: true,
+
+    indexes: [
+      {
+        fields: ["instituteId"],
+        name: "idx_qp_institute",
+      },
+
+      {
+        fields: ["teacherId"],
+        name: "idx_qp_teacher",
+      },
+
+      {
+        fields: ["status"],
+        name: "idx_qp_status",
+      },
+
+      {
+        fields: ["examId", "status"],
+        name: "idx_qp_exam_status",
+      },
+
+      {
+        fields: ["examId", "paper_set"],
+        name: "uq_question_paper_exam_paper_set",
+        unique: true,
+      },
+    ],
+  }
+);
+
+export default QuestionPaper;

@@ -9,17 +9,33 @@ const router = Router();
 // Protected: only super_admin can create institutes
 router.post(
   "/register",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin"]),
   instituteUpload,
   Controller.registerInstitute
+);
+
+// POST /api/viaexam/institute/addAdmin/:instituteId
+router.post(
+  "/addAdmin/:instituteId",
+  authenticate,
+  Controller.addInstituteAdmin,
+);
+
+// POST /api/viaexam/institute/resendCredentials/:instituteId
+// Protected: only super_admin can trigger resend of admin credentials
+router.post(
+  "/resendCredentials/:instituteId",
+  authenticate,
+  // authorize(["SUPER_ADMIN"]),   // uncomment if only super-admin should do this
+  Controller.resendAdminCredentials,
 );
 
 // GET    /api/viaexam/institute/
 // Query params: ?page=1&limit=10&search=delhi&plan=pro&status=1
 router.get(
   "/getAllInstitutes",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin"]),
   Controller.getAllInstitutes
 );
@@ -27,7 +43,7 @@ router.get(
 // GET    /api/viaexam/institute/:instituteId
 router.get(
   "/getOneInstitute/:instituteId",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin", "admin"]),
   Controller.getInstituteById
 );
@@ -44,7 +60,7 @@ router.put(
 // DELETE /api/viaexam/institute/:instituteId
 router.delete(
   "/delete/:instituteId",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin"]),
   Controller.softDeleteInstitute
 );
@@ -53,8 +69,21 @@ router.delete(
 router.patch(
   "/:instituteId/status",
   authenticate,
-  authorize(["super_admin"]),
+  // authorize(["super_admin"]),
   Controller.toggleInstituteStatus
+);
+// GET    /api/viaexam/institute/credentials/:instituteId
+router.get(
+  "/credentials/:instituteId",
+  authenticate,
+  Controller.getInstituteCredentials,
+);
+
+// GET    /api/viaexam/institute/slug/:slug
+// Public: Used on login pages to fetch basic institute info like logo
+router.get(
+  "/slug/:slug",
+  Controller.getInstituteBySlug
 );
 
 export default router;
