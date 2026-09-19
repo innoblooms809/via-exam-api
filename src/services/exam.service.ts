@@ -110,66 +110,91 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       return { error: true, statusCode: httpStatus.BAD_REQUEST, message: fit.message };
     }
 
-    // 3. Check duplicate exam
-    const duplicate = await Exam.findOne({
-      where: {
+    // Determine target sections
+    let targetSectionIds: (string | null)[] = [null];
+    if (Array.isArray(body.sectionIds) && body.sectionIds.length > 0) {
+      const validIds = body.sectionIds.filter((id: string) => id && id !== "ALL");
+      if (validIds.length > 0) {
+        targetSectionIds = validIds;
+      }
+    } else if (body.sectionId && body.sectionId !== "ALL") {
+      targetSectionIds = [body.sectionId];
+    }
+
+    const createdExams: any[] = [];
+    const skippedSections: string[] = [];
+
+    for (const secId of targetSectionIds) {
+      // 3. Check duplicate exam for this specific section
+      const duplicate = await Exam.findOne({
+        where: {
+          instituteId,
+          sessionId: body.sessionId,
+          examType: body.examType,
+          subjectId: body.subjectId,
+          classId: body.classId,
+          sectionId: secId,
+          isDeleted: false,
+        },
+      });
+
+      if (duplicate) {
+        skippedSections.push(secId || "Class-wide");
+        continue;
+      }
+
+      // 4. Generate exam ID
+      const examId = await RegHelper.generateUserId();
+
+      // 5. Create exam
+      const exam = await Exam.create({
+        examId,
         instituteId,
         sessionId: body.sessionId,
         examType: body.examType,
+        classId: body.classId,
+        sectionId: secId,
         subjectId: body.subjectId,
-        isDeleted: false,
-      },
-    });
+        teacherId: teacher.userId, // store userId not name
+        examinerId: createdBy.userId,
+        totalMarks: Number(body.totalMarks),
+        passingMarks: Number(body.passingMarks),
+        duration: body.duration ? Number(body.duration) : null,
+        instructions: body.instructions || null,
+        examDate: body.examDate || null,
+        examTime: body.examTime || null,
+        status: "Draft",
+      });
 
-    if (duplicate) {
+      // 6. Send notification to assigned teacher
+      const notificationId = await RegHelper.generateUserId();
+      await Notification.create({
+        notificationId,
+        instituteId,
+        userId: teacher.userId,
+        type: "EXAM_ASSIGNED",
+        title: "New Exam Assigned",
+        message: `A ${body.examType} exam has been assigned to you.`,
+        referenceId: examId,
+      });
+
+      createdExams.push(exam);
+    }
+
+    if (createdExams.length === 0) {
       return {
         error: true,
         statusCode: httpStatus.CONFLICT,
         message:
-          "An exam with same session, type, class and subject already exists.",
+          "An exam with same session, type, class/section and subject already exists.",
       };
     }
-
-    // 4. Generate exam ID
-    const examId = await RegHelper.generateUserId();
-
-    // 5. Create exam
-    const exam = await Exam.create({
-      examId,
-      instituteId,
-      sessionId: body.sessionId,
-      examType: body.examType,
-      classId: body.classId,
-      sectionId: body.sectionId || null,
-      subjectId: body.subjectId,
-      teacherId: teacher.userId, // store userId not name
-      examinerId: createdBy.userId,
-      totalMarks: Number(body.totalMarks),
-      passingMarks: Number(body.passingMarks),
-      duration: body.duration ? Number(body.duration) : null,
-      instructions: body.instructions || null,
-      examDate: body.examDate || null,
-      examTime: body.examTime || null,
-      status: "Draft",
-    });
-
-    // 6. Send notification to assigned teacher
-    const notificationId = await RegHelper.generateUserId();
-    await Notification.create({
-      notificationId,
-      instituteId,
-      userId: teacher.userId,
-      type: "EXAM_ASSIGNED",
-      title: "New Exam Assigned",
-      message: `A ${body.examType} exam has been assigned to you.`,
-      referenceId: examId,
-    });
 
     return {
       error: false,
       statusCode: httpStatus.CREATED,
-      message: "Exam created successfully.",
-      data: exam,
+      message: `${createdExams.length} exam(s) created successfully.${skippedSections.length > 0 ? ` (${skippedSections.length} skipped as duplicate)` : ""}`,
+      data: createdExams.length === 1 ? createdExams[0] : createdExams,
     };
   } catch (e: any) {
     console.error(e);
@@ -202,6 +227,7 @@ const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
       where,
       include: [
         { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
         { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
         { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
         { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
@@ -306,8 +332,10 @@ const getExamById = async (examId: string, requestedBy: any): Promise<any> => {
       where: { examId, isDeleted: false },
       include: [
         { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
         { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
         { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
       ],
     });
 
