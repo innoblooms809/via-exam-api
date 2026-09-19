@@ -13,9 +13,12 @@ import {
   MAX_BULK_ITEMS,
   MAX_NAME_LENGTH,
   nameKey,
+  normalizeSectionName,
   normalizeSubjectCode,
   normalizeSubjectName,
 } from "../utils/academicNames";
+
+import Section from "../modals/Section.modal";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -38,8 +41,8 @@ const checkMarks = (total: unknown, passing: unknown, label = "") => {
 
 // ─── CREATE SUBJECT(S) ──────────────────────────────────────────
 // Accepts { classId | classIds[] } with either
-//   subjects: [{ subjectName, totalMarks?, passingMarks? }]   (many at once)
-// or the single fields { subjectName, subjectCode?, teacherId?, totalMarks?, passingMarks? }.
+//   subjects: [{ subjectName, totalMarks?, passingMarks?, sectionId? }]   (many at once)
+// or the single fields { subjectName, subjectCode?, teacherId?, sectionId?, totalMarks?, passingMarks? }.
 const createSubject = async (body: any, createdBy: any): Promise<any> => {
   const instituteId = createdBy.instituteId;
   const classIds: string[] = Array.from(
@@ -51,21 +54,33 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
   const single = !Array.isArray(body.subjects);
   const input: any[] = single ? [body] : body.subjects;
 
+  const sectionIdDefault = isBlankId(body.sectionId) ? null : String(body.sectionId);
+  const sectionNameDefault = body.sectionName ? normalizeSectionName(body.sectionName) : null;
+
   // Clean and de-duplicate the requested subjects.
-  const subjects: { subjectName: string; totalMarks: number; passingMarks: number }[] = [];
+  const subjects: { subjectName: string; sectionId: string | null; sectionName: string | null; totalMarks: number; passingMarks: number }[] = [];
   const seen = new Set<string>();
   for (const [i, item] of input.entries()) {
     const subjectName = normalizeSubjectName(item?.subjectName);
     if (!subjectName) continue;
+    const itemSecId = isBlankId(item?.sectionId) ? sectionIdDefault : String(item.sectionId);
+    const itemSecName = item?.sectionName ? normalizeSectionName(item.sectionName) : sectionNameDefault;
     const label = single ? "" : `${subjectName}: `;
     if (subjectName.length > MAX_NAME_LENGTH) {
       return fail(httpStatus.BAD_REQUEST, `Subject ${i + 1} is too long (max ${MAX_NAME_LENGTH} characters).`);
     }
     const marks = checkMarks(item?.totalMarks, item?.passingMarks, label);
     if (!("totalMarks" in marks)) return fail(httpStatus.BAD_REQUEST, marks.message!);
-    if (seen.has(nameKey(subjectName))) continue;
-    seen.add(nameKey(subjectName));
-    subjects.push({ subjectName, totalMarks: marks.totalMarks!, passingMarks: marks.passingMarks! });
+    const key = `${itemSecId || itemSecName || ""}_${nameKey(subjectName)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    subjects.push({
+      subjectName,
+      sectionId: itemSecId,
+      sectionName: itemSecName,
+      totalMarks: marks.totalMarks!,
+      passingMarks: marks.passingMarks!,
+    });
   }
   if (subjects.length === 0) return fail(httpStatus.BAD_REQUEST, "Enter at least one subject.");
   if (subjects.length > MAX_BULK_ITEMS) return fail(httpStatus.BAD_REQUEST, `You can add up to ${MAX_BULK_ITEMS} subjects at a time.`);
@@ -96,10 +111,45 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
 
     for (const cls of classes.sort((a, b) => compareClassNames(a.className, b.className))) {
       const current = await Subject.findAll({ where: { classId: cls.classId }, transaction: t });
-      const byKey = new Map(current.map((s) => [nameKey(s.subjectName), s]));
+      const currentSections = await Section.findAll({ where: { classId: cls.classId }, transaction: t });
 
       for (const subject of subjects) {
-        const found = byKey.get(nameKey(subject.subjectName));
+        let targetSectionId: string | null = null;
+        const secSearch = subject.sectionId || subject.sectionName;
+
+        if (secSearch) {
+          const secById = currentSections.find((s) => s.sectionId === secSearch);
+          if (secById) {
+            if (secById.isDeleted) {
+              await secById.update({ isDeleted: false, isActive: true }, { transaction: t });
+            }
+            targetSectionId = secById.sectionId;
+          } else {
+            const secByName = currentSections.find((s) => nameKey(s.sectionName) === nameKey(secSearch));
+            if (secByName) {
+              if (secByName.isDeleted) {
+                await secByName.update({ isDeleted: false, isActive: true }, { transaction: t });
+              }
+              targetSectionId = secByName.sectionId;
+            } else {
+              const newSec = await Section.create(
+                {
+                  sectionId: await RegHelper.generateUserId(),
+                  classId: cls.classId,
+                  instituteId,
+                  sectionName: normalizeSectionName(secSearch),
+                },
+                { transaction: t },
+              );
+              targetSectionId = newSec.sectionId;
+              currentSections.push(newSec);
+            }
+          }
+        }
+
+        const found = current.find(
+          (s) => (s.sectionId ?? null) === targetSectionId && nameKey(s.subjectName) === nameKey(subject.subjectName),
+        );
         if (found && !found.isDeleted) {
           skipped.push(classes.length > 1 ? `${found.subjectName} (${cls.className})` : found.subjectName);
           continue;
@@ -109,6 +159,7 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
             {
               isDeleted: false,
               isActive: true,
+              sectionId: targetSectionId,
               subjectName: subject.subjectName,
               totalMarks: subject.totalMarks,
               passingMarks: subject.passingMarks,
@@ -123,6 +174,7 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
               subjectId: await RegHelper.generateUserId(),
               instituteId,
               classId: cls.classId,
+              sectionId: targetSectionId,
               subjectName: subject.subjectName,
               subjectCode,
               teacherId,
@@ -155,7 +207,8 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
     };
   } catch (e: any) {
     await t.rollback();
-    return fail(httpStatus.INTERNAL_SERVER_ERROR, e.message);
+    console.error("Error creating subject:", e);
+    return fail(httpStatus.INTERNAL_SERVER_ERROR, e.message || "Failed to create subject.");
   }
 };
 
@@ -164,11 +217,13 @@ const getAllSubjects = async (query: any, createdBy: any): Promise<any> => {
   try {
     const where: any = { instituteId: createdBy.instituteId, isDeleted: false, isActive: true };
     if (query.classId) where.classId = query.classId;
+    if (query.sectionId) where.sectionId = query.sectionId;
 
     const subjects = await Subject.findAll({
       where,
       include: [
         { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", where: { isDeleted: false }, required: false },
         { model: User, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
       ],
     });
@@ -197,6 +252,7 @@ const getSubjectById = async (subjectId: string, createdBy: any): Promise<any> =
       where: { subjectId, instituteId: createdBy.instituteId, isDeleted: false },
       include: [
         { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", where: { isDeleted: false }, required: false },
         { model: User, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
       ],
     });
@@ -221,15 +277,28 @@ const updateSubject = async (subjectId: string, body: any, createdBy: any): Prom
       return fail(httpStatus.BAD_REQUEST, `Subject name can be at most ${MAX_NAME_LENGTH} characters.`);
     }
 
-    if (subjectName !== subject.subjectName) {
+    let sectionId = subject.sectionId;
+    if (body.sectionId !== undefined || body.sectionName !== undefined) {
+      const secSearch = isBlankId(body.sectionId) ? (body.sectionName ? String(body.sectionName) : null) : String(body.sectionId);
+      if (!secSearch) {
+        sectionId = null;
+      } else {
+        const classSections = await Section.findAll({ where: { classId: subject.classId, isDeleted: false } });
+        const secById = classSections.find((s) => s.sectionId === secSearch);
+        const secByName = classSections.find((s) => nameKey(s.sectionName) === nameKey(secSearch));
+        sectionId = secById?.sectionId ?? secByName?.sectionId ?? null;
+      }
+    }
+
+    if (subjectName !== subject.subjectName || sectionId !== subject.sectionId) {
       const siblings = await Subject.findAll({ where: { classId: subject.classId, subjectId: { [Op.ne]: subjectId } } });
-      const clash = siblings.find((s) => nameKey(s.subjectName) === nameKey(subjectName));
+      const clash = siblings.find((s) => (s.sectionId ?? null) === sectionId && nameKey(s.subjectName) === nameKey(subjectName));
       if (clash) {
         return fail(
           httpStatus.CONFLICT,
           clash.isDeleted
             ? `A deleted subject ${clash.subjectName} exists in this class. Add it again to restore it.`
-            : `${clash.subjectName} already exists in this class.`,
+            : `${clash.subjectName} already exists in this class section.`,
         );
       }
     }
@@ -264,6 +333,7 @@ const updateSubject = async (subjectId: string, body: any, createdBy: any): Prom
 
     await subject.update({
       subjectName,
+      sectionId,
       subjectCode,
       teacherId,
       totalMarks: marks.totalMarks,
