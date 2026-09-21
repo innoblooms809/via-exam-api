@@ -1,289 +1,372 @@
 import httpStatus from "http-status";
+import { Op } from "sequelize";
 import Subject from "../modals/Subject.modal";
 import RegHelper from "../utils/helper";
+import Class from "../modals/Class.modal";
+import User from "../modals/User.modal";
+import Exam from "../modals/Exam.modal";
+import TeacherProfile from "../modals/TeacherProfile.modal";
+import { sequelize } from "../config/sequelize";
+import { specialisesIn } from "../utils/specialization";
+import { compareClassNames } from "./class.service";
+import {
+  MAX_BULK_ITEMS,
+  MAX_NAME_LENGTH,
+  nameKey,
+  normalizeSectionName,
+  normalizeSubjectCode,
+  normalizeSubjectName,
+} from "../utils/academicNames";
 
+import Section from "../modals/Section.modal";
 
-// ─── CREATE SUBJECT ─────────────────────────────────────────────
-const createSubject = async (
-  body: any,
-  createdBy: any
-): Promise<any> => {
+const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
+
+const isBlankId = (value: unknown) => value === undefined || value === null || value === "" || value === "null";
+
+/** Validates marks; returns cleaned numbers or an error message. */
+const checkMarks = (total: unknown, passing: unknown, label = "") => {
+  const totalMarks = total === undefined || total === null || total === "" ? 100 : Number(total);
+  if (!Number.isInteger(totalMarks) || totalMarks < 1 || totalMarks > 1000) {
+    return { message: `${label}Total marks must be a whole number from 1 to 1000.` };
+  }
+  const passingMarks =
+    passing === undefined || passing === null || passing === "" ? Math.ceil(totalMarks * 0.35) : Number(passing);
+  if (!Number.isInteger(passingMarks) || passingMarks < 0) {
+    return { message: `${label}Passing marks must be a whole number.` };
+  }
+  if (passingMarks > totalMarks) return { message: `${label}Passing marks can't be more than total marks.` };
+  return { totalMarks, passingMarks };
+};
+
+// ─── CREATE SUBJECT(S) ──────────────────────────────────────────
+// Accepts { classId | classIds[] } with either
+//   subjects: [{ subjectName, totalMarks?, passingMarks?, sectionId? }]   (many at once)
+// or the single fields { subjectName, subjectCode?, teacherId?, sectionId?, totalMarks?, passingMarks? }.
+const createSubject = async (body: any, createdBy: any): Promise<any> => {
+  const instituteId = createdBy.instituteId;
+  const classIds: string[] = Array.from(
+    new Set((Array.isArray(body.classIds) ? body.classIds : [body.classId]).filter(Boolean).map(String)),
+  );
+  if (classIds.length === 0) return fail(httpStatus.BAD_REQUEST, "Choose at least one class.");
+  if (classIds.length > MAX_BULK_ITEMS) return fail(httpStatus.BAD_REQUEST, `You can choose up to ${MAX_BULK_ITEMS} classes at a time.`);
+
+  const single = !Array.isArray(body.subjects);
+  const input: any[] = single ? [body] : body.subjects;
+
+  const sectionIdDefault = isBlankId(body.sectionId) ? null : String(body.sectionId);
+  const sectionNameDefault = body.sectionName ? normalizeSectionName(body.sectionName) : null;
+
+  // Clean and de-duplicate the requested subjects.
+  const subjects: { subjectName: string; sectionId: string | null; sectionName: string | null; totalMarks: number; passingMarks: number }[] = [];
+  const seen = new Set<string>();
+  for (const [i, item] of input.entries()) {
+    const subjectName = normalizeSubjectName(item?.subjectName);
+    if (!subjectName) continue;
+    const itemSecId = isBlankId(item?.sectionId) ? sectionIdDefault : String(item.sectionId);
+    const itemSecName = item?.sectionName ? normalizeSectionName(item.sectionName) : sectionNameDefault;
+    const label = single ? "" : `${subjectName}: `;
+    if (subjectName.length > MAX_NAME_LENGTH) {
+      return fail(httpStatus.BAD_REQUEST, `Subject ${i + 1} is too long (max ${MAX_NAME_LENGTH} characters).`);
+    }
+    const marks = checkMarks(item?.totalMarks, item?.passingMarks, label);
+    if (!("totalMarks" in marks)) return fail(httpStatus.BAD_REQUEST, marks.message!);
+    const key = `${itemSecId || itemSecName || ""}_${nameKey(subjectName)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    subjects.push({
+      subjectName,
+      sectionId: itemSecId,
+      sectionName: itemSecName,
+      totalMarks: marks.totalMarks!,
+      passingMarks: marks.passingMarks!,
+    });
+  }
+  if (subjects.length === 0) return fail(httpStatus.BAD_REQUEST, "Enter at least one subject.");
+  if (subjects.length > MAX_BULK_ITEMS) return fail(httpStatus.BAD_REQUEST, `You can add up to ${MAX_BULK_ITEMS} subjects at a time.`);
+
+  // Code and teacher only make sense for one subject in one class.
+  const subjectCode = single && classIds.length === 1 ? normalizeSubjectCode(body.subjectCode) : null;
+  const teacherId = single && classIds.length === 1 && !isBlankId(body.teacherId) ? String(body.teacherId) : null;
+  if (teacherId && !(await User.findOne({ where: { userId: teacherId, instituteId, isDeleted: false } }))) {
+    return fail(httpStatus.NOT_FOUND, "Teacher not found.");
+  }
+  if (subjectCode && (await Subject.findOne({ where: { subjectCode } }))) {
+    return fail(httpStatus.CONFLICT, `Subject code ${subjectCode} is already in use.`);
+  }
+
+  const t = await sequelize.transaction();
   try {
-
-    if (!body.classId) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "classId is required.",
-      };
-    }
-
-    if (!body.sessionId) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "sessionId is required.",
-      };
-    }
-
-    if (!body.subjectName) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "subjectName is required.",
-      };
-    }
-
-    const instituteId = createdBy.instituteId;
-
-    // Check duplicate
-    const exists = await Subject.findOne({
-      where: {
-        instituteId,
-        classId: body.classId,
-        sectionId: body.sectionId || null,
-        subjectName: body.subjectName,
-        isDeleted: false,
-      },
+    const classes = await Class.findAll({
+      where: { classId: { [Op.in]: classIds }, instituteId, isDeleted: false },
+      transaction: t,
     });
-
-    if (exists) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Subject already exists.",
-      };
+    if (classes.length !== classIds.length) {
+      await t.rollback();
+      return fail(httpStatus.NOT_FOUND, "One of the chosen classes was not found. Refresh and try again.");
     }
 
-    const subjectId = await RegHelper.generateUserId();
+    let added = 0;
+    const skipped: string[] = [];
 
-    const newSubject = await Subject.create({
-      subjectId,
-      instituteId,
-      sessionId: body.sessionId,
-      classId: body.classId,
-      sectionId: body.sectionId || null,
-      subjectName: body.subjectName,
-      subjectCode: body.subjectCode || null,
-      teacherId: body.teacherId || null,
-      totalMarks: body.totalMarks || 100,
-      passingMarks: body.passingMarks || 35,
-    });
+    for (const cls of classes.sort((a, b) => compareClassNames(a.className, b.className))) {
+      const current = await Subject.findAll({ where: { classId: cls.classId }, transaction: t });
+      const currentSections = await Section.findAll({ where: { classId: cls.classId }, transaction: t });
 
+      for (const subject of subjects) {
+        let targetSectionId: string | null = null;
+        const secSearch = subject.sectionId || subject.sectionName;
+
+        if (secSearch) {
+          const secById = currentSections.find((s) => s.sectionId === secSearch);
+          if (secById) {
+            if (secById.isDeleted) {
+              await secById.update({ isDeleted: false, isActive: true }, { transaction: t });
+            }
+            targetSectionId = secById.sectionId;
+          } else {
+            const secByName = currentSections.find((s) => nameKey(s.sectionName) === nameKey(secSearch));
+            if (secByName) {
+              if (secByName.isDeleted) {
+                await secByName.update({ isDeleted: false, isActive: true }, { transaction: t });
+              }
+              targetSectionId = secByName.sectionId;
+            } else {
+              const newSec = await Section.create(
+                {
+                  sectionId: await RegHelper.generateUserId(),
+                  classId: cls.classId,
+                  instituteId,
+                  sectionName: normalizeSectionName(secSearch),
+                },
+                { transaction: t },
+              );
+              targetSectionId = newSec.sectionId;
+              currentSections.push(newSec);
+            }
+          }
+        }
+
+        const found = current.find(
+          (s) => (s.sectionId ?? null) === targetSectionId && nameKey(s.subjectName) === nameKey(subject.subjectName),
+        );
+        if (found && !found.isDeleted) {
+          skipped.push(classes.length > 1 ? `${found.subjectName} (${cls.className})` : found.subjectName);
+          continue;
+        }
+        if (found) {
+          await found.update(
+            {
+              isDeleted: false,
+              isActive: true,
+              sectionId: targetSectionId,
+              subjectName: subject.subjectName,
+              totalMarks: subject.totalMarks,
+              passingMarks: subject.passingMarks,
+              ...(subjectCode ? { subjectCode } : {}),
+              ...(teacherId ? { teacherId } : {}),
+            },
+            { transaction: t },
+          );
+        } else {
+          await Subject.create(
+            {
+              subjectId: await RegHelper.generateUserId(),
+              instituteId,
+              classId: cls.classId,
+              sectionId: targetSectionId,
+              subjectName: subject.subjectName,
+              subjectCode,
+              teacherId,
+              totalMarks: subject.totalMarks,
+              passingMarks: subject.passingMarks,
+            },
+            { transaction: t },
+          );
+        }
+        added += 1;
+      }
+    }
+
+    if (added === 0) {
+      await t.rollback();
+      return fail(
+        httpStatus.CONFLICT,
+        skipped.length === 1 ? `${skipped[0]} already exists in this class.` : `Already added: ${skipped.join(", ")}.`,
+      );
+    }
+    await t.commit();
+
+    const parts = [`${added} ${added === 1 ? "subject" : "subjects"} added`];
+    if (skipped.length) parts.push(`${skipped.length} already existed`);
     return {
       error: false,
       statusCode: httpStatus.CREATED,
-      message: "Subject created successfully.",
-      data: newSubject,
+      message: `${parts.join(" · ")}.`,
+      data: { added, skipped },
     };
-
   } catch (e: any) {
-
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: e.message,
-    };
-
+    await t.rollback();
+    console.error("Error creating subject:", e);
+    return fail(httpStatus.INTERNAL_SERVER_ERROR, e.message || "Failed to create subject.");
   }
 };
 
-
-
 // ─── GET ALL SUBJECTS ──────────────────────────────────────────
-const getAllSubjects = async (
-  query: any,
-  createdBy: any
-): Promise<any> => {
-
+const getAllSubjects = async (query: any, createdBy: any): Promise<any> => {
   try {
-
-    const where: any = {
-      instituteId: createdBy.instituteId,
-      isDeleted: false,
-      isActive: true,
-    };
-
-    if (query.classId) {
-      where.classId = query.classId;
-    }
-
-    if (query.sectionId) {
-      where.sectionId = query.sectionId;
-    }
+    const where: any = { instituteId: createdBy.instituteId, isDeleted: false, isActive: true };
+    if (query.classId) where.classId = query.classId;
+    if (query.sectionId) where.sectionId = query.sectionId;
 
     const subjects = await Subject.findAll({
       where,
-      order: [["subjectName", "ASC"]],
+      include: [
+        { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", where: { isDeleted: false }, required: false },
+        { model: User, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+      ],
     });
+
+    const sorted = subjects.sort(
+      (a: any, b: any) =>
+        compareClassNames(a.class?.className ?? "", b.class?.className ?? "") ||
+        a.subjectName.localeCompare(b.subjectName),
+    );
 
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Subjects fetched successfully.",
-      data: {
-        subjects,
-        total: subjects.length,
-      },
+      data: { subjects: sorted, total: sorted.length },
     };
-
   } catch (e: any) {
-
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: e.message,
-    };
-
+    return fail(httpStatus.INTERNAL_SERVER_ERROR, e.message);
   }
 };
-
-
 
 // ─── GET SUBJECT BY ID ─────────────────────────────────────────
-const getSubjectById = async (
-  subjectId: string,
-  createdBy: any
-): Promise<any> => {
-
+const getSubjectById = async (subjectId: string, createdBy: any): Promise<any> => {
   try {
-
     const subject = await Subject.findOne({
-      where: {
-        subjectId,
-        instituteId: createdBy.instituteId,
-        isDeleted: false,
-      },
+      where: { subjectId, instituteId: createdBy.instituteId, isDeleted: false },
+      include: [
+        { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", where: { isDeleted: false }, required: false },
+        { model: User, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+      ],
     });
+    if (!subject) return fail(httpStatus.NOT_FOUND, "Subject not found.");
 
-    if (!subject) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Subject not found.",
-      };
-    }
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Subject fetched successfully.",
-      data: subject,
-    };
-
+    return { error: false, statusCode: httpStatus.OK, message: "Subject fetched successfully.", data: subject };
   } catch (e: any) {
-
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: e.message,
-    };
-
+    return fail(httpStatus.INTERNAL_SERVER_ERROR, e.message);
   }
 };
-
-
 
 // ─── UPDATE SUBJECT ────────────────────────────────────────────
-const updateSubject = async (
-  subjectId: string,
-  body: any,
-  createdBy: any
-): Promise<any> => {
-
+const updateSubject = async (subjectId: string, body: any, createdBy: any): Promise<any> => {
   try {
+    const instituteId = createdBy.instituteId;
+    const subject = await Subject.findOne({ where: { subjectId, instituteId, isDeleted: false } });
+    if (!subject) return fail(httpStatus.NOT_FOUND, "Subject not found.");
 
-    const subject = await Subject.findOne({
-      where: {
-        subjectId,
-        instituteId: createdBy.instituteId,
-        isDeleted: false,
-      },
-    });
+    const subjectName = body.subjectName !== undefined ? normalizeSubjectName(body.subjectName) : subject.subjectName;
+    if (!subjectName) return fail(httpStatus.BAD_REQUEST, "Subject name can't be empty.");
+    if (subjectName.length > MAX_NAME_LENGTH) {
+      return fail(httpStatus.BAD_REQUEST, `Subject name can be at most ${MAX_NAME_LENGTH} characters.`);
+    }
 
-    if (!subject) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Subject not found.",
-      };
+    let sectionId = subject.sectionId;
+    if (body.sectionId !== undefined || body.sectionName !== undefined) {
+      const secSearch = isBlankId(body.sectionId) ? (body.sectionName ? String(body.sectionName) : null) : String(body.sectionId);
+      if (!secSearch) {
+        sectionId = null;
+      } else {
+        const classSections = await Section.findAll({ where: { classId: subject.classId, isDeleted: false } });
+        const secById = classSections.find((s) => s.sectionId === secSearch);
+        const secByName = classSections.find((s) => nameKey(s.sectionName) === nameKey(secSearch));
+        sectionId = secById?.sectionId ?? secByName?.sectionId ?? null;
+      }
+    }
+
+    if (subjectName !== subject.subjectName || sectionId !== subject.sectionId) {
+      const siblings = await Subject.findAll({ where: { classId: subject.classId, subjectId: { [Op.ne]: subjectId } } });
+      const clash = siblings.find((s) => (s.sectionId ?? null) === sectionId && nameKey(s.subjectName) === nameKey(subjectName));
+      if (clash) {
+        return fail(
+          httpStatus.CONFLICT,
+          clash.isDeleted
+            ? `A deleted subject ${clash.subjectName} exists in this class. Add it again to restore it.`
+            : `${clash.subjectName} already exists in this class section.`,
+        );
+      }
+    }
+
+    const subjectCode = body.subjectCode !== undefined ? normalizeSubjectCode(body.subjectCode) : subject.subjectCode;
+    if (subjectCode && subjectCode !== subject.subjectCode) {
+      const taken = await Subject.findOne({ where: { subjectCode, subjectId: { [Op.ne]: subjectId } } });
+      if (taken) return fail(httpStatus.CONFLICT, `Subject code ${subjectCode} is already in use.`);
+    }
+
+    const marks = checkMarks(body.totalMarks ?? subject.totalMarks, body.passingMarks ?? subject.passingMarks);
+    if (!("totalMarks" in marks)) return fail(httpStatus.BAD_REQUEST, marks.message!);
+
+    let teacherId = subject.teacherId;
+    if (body.teacherId !== undefined) {
+      teacherId = isBlankId(body.teacherId) ? null : String(body.teacherId);
+      if (teacherId && !(await User.findOne({ where: { userId: teacherId, instituteId, isDeleted: false } }))) {
+        return fail(httpStatus.NOT_FOUND, "Teacher not found.");
+      }
+    }
+
+    // A (new) teacher for this subject must specialise in it.
+    if (teacherId && teacherId !== subject.teacherId) {
+      const profile = await TeacherProfile.findOne({ where: { userId: teacherId, instituteId } });
+      if (!specialisesIn(profile?.specialization, subjectName)) {
+        return fail(
+          httpStatus.BAD_REQUEST,
+          `This teacher does not specialise in ${subjectName}. Add ${subjectName} to their specialisations first.`,
+        );
+      }
     }
 
     await subject.update({
-      subjectName: body.subjectName ?? subject.subjectName,
-      subjectCode: body.subjectCode ?? subject.subjectCode,
-      teacherId: body.teacherId ?? subject.teacherId,
-      totalMarks: body.totalMarks ?? subject.totalMarks,
-      passingMarks: body.passingMarks ?? subject.passingMarks,
+      subjectName,
+      sectionId,
+      subjectCode,
+      teacherId,
+      totalMarks: marks.totalMarks,
+      passingMarks: marks.passingMarks,
     });
 
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Subject updated successfully.",
-      data: subject,
-    };
-
+    return { error: false, statusCode: httpStatus.OK, message: `${subjectName} updated.`, data: subject };
   } catch (e: any) {
-
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: e.message,
-    };
-
+    return fail(httpStatus.INTERNAL_SERVER_ERROR, e.message);
   }
 };
-
-
 
 // ─── DELETE SUBJECT (SOFT DELETE) ─────────────────────────────
-const deleteSubject = async (
-  subjectId: string,
-  createdBy: any
-): Promise<any> => {
-
+const deleteSubject = async (subjectId: string, createdBy: any): Promise<any> => {
   try {
+    const instituteId = createdBy.instituteId;
+    const subject = await Subject.findOne({ where: { subjectId, instituteId, isDeleted: false } });
+    if (!subject) return fail(httpStatus.NOT_FOUND, "Subject not found.");
 
-    const subject = await Subject.findOne({
-      where: {
-        subjectId,
-        instituteId: createdBy.instituteId,
-        isDeleted: false,
-      },
-    });
-
-    if (!subject) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Subject not found.",
-      };
+    const exams = await Exam.count({ where: { instituteId, subjectId, isDeleted: false } });
+    if (exams) {
+      return fail(
+        httpStatus.CONFLICT,
+        `${subject.subjectName} can't be deleted because it has ${exams} ${exams === 1 ? "exam" : "exams"}.`,
+      );
     }
 
-    await subject.update({
-      isDeleted: true,
-      isActive: false,
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Subject deleted successfully.",
-      data: {},
-    };
-
+    await subject.update({ isDeleted: true, isActive: false });
+    return { error: false, statusCode: httpStatus.OK, message: `${subject.subjectName} deleted.`, data: {} };
   } catch (e: any) {
-
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: e.message,
-    };
-
+    return fail(httpStatus.INTERNAL_SERVER_ERROR, e.message);
   }
 };
-
 
 export default {
   createSubject,

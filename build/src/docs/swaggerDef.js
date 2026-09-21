@@ -3,16 +3,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const package_json_1 = require("../../package.json");
 const config_1 = __importDefault(require("../config/config"));
+const name = 'via-exam-api';
+const version = '1.0.0';
+const repository = 'https://github.com/innoblooms809/via-exam-api.git';
 const swaggerDef = {
     openapi: '3.0.0',
     info: {
-        title: `${package_json_1.name} API documentation`,
-        version: package_json_1.version,
+        title: `${name} API documentation`,
+        version,
         license: {
             name: 'MIT',
-            url: package_json_1.repository
+            url: repository
         }
     },
     servers: [

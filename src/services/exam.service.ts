@@ -2,8 +2,74 @@ import httpStatus from "http-status";
 import Exam from "../modals/Exam.modal";
 import UserModal from "../modals/User.modal";
 import Role from "../modals/Role.modal";
+import Class from "../modals/Class.modal";
+import Section from "../modals/Section.modal";
+import Subject from "../modals/Subject.modal";
+import Session from "../modals/Session.modal";
+import Notification from "../modals/Notification.modal";
+import StudentProfile from "../modals/Student.modal";
+import Scanner from "../modals/Scanner.modal";
 import RegHelper from "../utils/helper";
+import StudentService from "./student.service";
 import { Op } from "sequelize";
+import { checkTeacherForSubject } from "./teacherSubject.service";
+
+/** Single exam-table status that drives Manage Exams + approval. */
+export const EXAM_WORKFLOW_STATUSES = [
+  "Draft",
+  "Paper Created",
+  "Pending Approval",
+  "Approved",
+  "Rejected",
+  "Live",
+  "Completed",
+] as const;
+
+// Approval works per SET (question paper + answer sheet of one exam set). Every set
+// keeps its own status; the exam status is only a summary derived from its sets —
+// it is never copied back onto the sets (that used to mark never-submitted sets
+// as approved when a different set of the same exam was approved).
+
+/** Summary exam status from the status of each set. */
+export function deriveExamStatus(setStatuses: string[], hasAnyPackage: boolean): string {
+  if (!hasAnyPackage) return "Draft";
+  if (setStatuses.includes("PENDING_APPROVAL")) return "Pending Approval";
+  if (setStatuses.includes("REJECTED")) return "Rejected";
+  if (setStatuses.some((s) => s === "APPROVED" || s === "PUBLISHED")) return "Approved";
+  return "Paper Created";
+}
+
+/** Recomputes the exam status from its sets (Live / Completed exams are left alone). */
+export async function refreshExamStatus(examId: string): Promise<string | null> {
+  const exam = await Exam.findOne({ where: { examId, isDeleted: false } });
+  if (!exam) return null;
+  if (exam.status === "Live" || exam.status === "Completed") return exam.status;
+
+  const QuestionPaper = (await import("../modals/question-paper/QuestionPaper.modal")).default;
+  const QuestionPaperAnswer = (await import("../modals/question-paper/stander-answer.model")).default;
+
+  const [papers, answerCount] = await Promise.all([
+    QuestionPaper.findAll({ where: { examId }, attributes: ["status"] }),
+    QuestionPaperAnswer.count({ where: { examId } }),
+  ]);
+
+  const next = deriveExamStatus(
+    papers.map((p) => p.status),
+    papers.length > 0 || answerCount > 0
+  );
+  if (next !== exam.status) {
+    await exam.update({ status: next });
+  }
+  return next;
+}
+
+export async function markExamPaperCreated(examId: string): Promise<void> {
+  const exam = await Exam.findOne({ where: { examId, isDeleted: false } });
+  if (!exam) return;
+  if (exam.status === "Draft") {
+    await exam.update({ status: "Paper Created" });
+  }
+}
 
 // ─── CREATE EXAM ──────────────────────────────────────────────────────────────
 const createExam = async (body: any, createdBy: any): Promise<any> => {
@@ -28,10 +94,7 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
         status: 1,
       },
     });
-    console.log("Teacher Role =", teacherRole?.id);
-    console.log("Institute =", instituteId);
-    console.log("Teacher Name =", body.teacher);
-    console.log("Teacher =", teacher);
+
 
     if (!teacher) {
       return {
@@ -41,53 +104,97 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       };
     }
 
-    // 3. Check duplicate exam
-    const duplicate = await Exam.findOne({
-      where: {
-        instituteId,
-        session: body.session,
-        examType: body.examType,
-        classVal: body.classVal,
-        subject: body.subject,
-        isDeleted: false,
-      },
-    });
+    // 2b. The teacher must specialise in the subject (or already teach it).
+    const fit = await checkTeacherForSubject(instituteId, teacher.userId, body.subjectId);
+    if (!fit.ok) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: fit.message };
+    }
 
-    if (duplicate) {
+    // Determine target sections
+    let targetSectionIds: (string | null)[] = [null];
+    if (Array.isArray(body.sectionIds) && body.sectionIds.length > 0) {
+      const validIds = body.sectionIds.filter((id: string) => id && id !== "ALL");
+      if (validIds.length > 0) {
+        targetSectionIds = validIds;
+      }
+    } else if (body.sectionId && body.sectionId !== "ALL") {
+      targetSectionIds = [body.sectionId];
+    }
+
+    const createdExams: any[] = [];
+    const skippedSections: string[] = [];
+
+    for (const secId of targetSectionIds) {
+      // 3. Check duplicate exam for this specific section
+      const duplicate = await Exam.findOne({
+        where: {
+          instituteId,
+          sessionId: body.sessionId,
+          examType: body.examType,
+          subjectId: body.subjectId,
+          classId: body.classId,
+          sectionId: secId,
+          isDeleted: false,
+        },
+      });
+
+      if (duplicate) {
+        skippedSections.push(secId || "Class-wide");
+        continue;
+      }
+
+      // 4. Generate exam ID
+      const examId = await RegHelper.generateUserId();
+
+      // 5. Create exam
+      const exam = await Exam.create({
+        examId,
+        instituteId,
+        sessionId: body.sessionId,
+        examType: body.examType,
+        classId: body.classId,
+        sectionId: secId,
+        subjectId: body.subjectId,
+        teacherId: teacher.userId, // store userId not name
+        examinerId: createdBy.userId,
+        totalMarks: Number(body.totalMarks),
+        passingMarks: Number(body.passingMarks),
+        duration: body.duration ? Number(body.duration) : null,
+        instructions: body.instructions || null,
+        examDate: body.examDate || null,
+        examTime: body.examTime || null,
+        status: "Draft",
+      });
+
+      // 6. Send notification to assigned teacher
+      const notificationId = await RegHelper.generateUserId();
+      await Notification.create({
+        notificationId,
+        instituteId,
+        userId: teacher.userId,
+        type: "EXAM_ASSIGNED",
+        title: "New Exam Assigned",
+        message: `A ${body.examType} exam has been assigned to you.`,
+        referenceId: examId,
+      });
+
+      createdExams.push(exam);
+    }
+
+    if (createdExams.length === 0) {
       return {
         error: true,
         statusCode: httpStatus.CONFLICT,
         message:
-          "An exam with same session, type, class and subject already exists.",
+          "An exam with same session, type, class/section and subject already exists.",
       };
     }
-
-    // 4. Generate exam ID
-    const examId = await RegHelper.generateUserId();
-
-    // 5. Create exam
-    const exam = await Exam.create({
-      examId,
-      instituteId,
-      session: body.session,
-      year: body.year,
-      examType: body.examType,
-      examDate: new Date(body.examDate),
-      classVal: body.classVal,
-      subject: body.subject,
-      teacherId: teacher.userId, // store userId not name
-      totalMarks: Number(body.totalMarks),
-      passingMarks: Number(body.passingMarks),
-      duration: body.duration ? Number(body.duration) : null,
-      instructions: body.instructions || null,
-      status: "Draft",
-    });
 
     return {
       error: false,
       statusCode: httpStatus.CREATED,
-      message: "Exam created successfully.",
-      data: exam,
+      message: `${createdExams.length} exam(s) created successfully.${skippedSections.length > 0 ? ` (${skippedSections.length} skipped as duplicate)` : ""}`,
+      data: createdExams.length === 1 ? createdExams[0] : createdExams,
     };
   } catch (e: any) {
     console.error(e);
@@ -118,6 +225,13 @@ const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
 
     const exams = await Exam.findAll({
       where,
+      include: [
+        { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
+        { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
+        { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
+      ],
       order: [["createdAt", "DESC"]],
     });
 
@@ -136,11 +250,93 @@ const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
   }
 };
 
+// ─── GET ASSIGNED EXAMS (FOR TEACHER) ─────────────────────────────────────────
+const getAssignedExams = async (requestedBy: any): Promise<any> => {
+  try {
+    const instituteId = requestedBy.instituteId;
+    const teacherId = requestedBy.userId;
+
+    const exams: any = await Exam.findAll({
+      where: {
+        instituteId,
+        isDeleted: false,
+        teacherId
+      },
+      include: [
+        { model: Class, as: "class", attributes: ["className"], where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", attributes: ["sectionName"], required: false }, // exams might not have section
+        { model: Subject, as: "subject", attributes: ["subjectName"], where: { isDeleted: false }, required: true },
+        { model: Session, as: "session", attributes: ["sessionName"] },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const formattedExams = await Promise.all(exams.map(async (exam: any) => {
+      const totalStudents = await StudentProfile.count({
+        where: { instituteId, classId: exam.classId, isActive: true }
+      });
+      const uploadedSheets = await Scanner.count({
+        where: {
+          instituteId,
+          classId: exam.classId,
+          subjectId: exam.subjectId,
+          examType: exam.examType,
+          isDeleted: false
+        }
+      });
+      return {
+        id: exam.examId,
+        examId: exam.examId,
+        classId: exam.class?.classId || exam.classId,
+        className: exam.class?.className || "N/A",
+        sectionId: exam.section?.sectionId || exam.sectionId,
+        sectionName: exam.section?.sectionName || "N/A",
+        subjectId: exam.subject?.subjectId || exam.subjectId,
+        subjectName: exam.subject?.subjectName || "N/A",
+        sessionId: exam.session?.sessionId || exam.sessionId,
+        sessionName: exam.session?.sessionName || "N/A",
+        examType: exam.examType,
+        status: exam.status,
+        totalMarks: exam.totalMarks,
+        passingMarks: exam.passingMarks,
+        duration: exam.duration,
+        instructions: exam.instructions,
+        teacherId: exam.teacherId,
+        examinerId: exam.examinerId,
+        totalStudents,
+        uploadedSheets,
+        createdAt: exam.createdAt,
+        updatedAt: exam.updatedAt
+      };
+    }));
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Assigned exams fetched successfully.",
+      data: { exams: formattedExams },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 // ─── GET ONE EXAM ─────────────────────────────────────────────────────────────
 const getExamById = async (examId: string, requestedBy: any): Promise<any> => {
   try {
     const exam = await Exam.findOne({
       where: { examId, isDeleted: false },
+      include: [
+        { model: Class, as: "class", where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
+        { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
+        { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
+      ],
     });
 
     if (!exam) {
@@ -182,8 +378,8 @@ const updateExamStatus = async (
   requestedBy: any,
 ): Promise<any> => {
   try {
-    const allowed = ["Draft", "Live", "Completed"];
-    if (!allowed.includes(status)) {
+    const allowed = [...EXAM_WORKFLOW_STATUSES];
+    if (!allowed.includes(status as any)) {
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
@@ -264,30 +460,62 @@ const updateExam = async (
     // Status Validation
     if (body.status) {
 
-      const allowedStatus = ["Draft", "Live", "Completed"];
+      const allowedStatus = [...EXAM_WORKFLOW_STATUSES];
 
       if (!allowedStatus.includes(body.status)) {
         return {
           error: true,
           statusCode: 400,
-          message: "Status must be one of: Draft, Live, Completed",
+          message: `Status must be one of: ${allowedStatus.join(", ")}`,
         };
       }
     }
 
+    // The edit dialog sends sessionId / subjectId / classId / teacherId; older callers session / subject.
+    const nextSubjectId = body.subjectId || body.subject || exam.subjectId;
+    const nextTeacherId = body.teacherId || exam.teacherId;
+    const nextClassId = body.classId || exam.classId;
+
+    if (nextSubjectId !== exam.subjectId || nextClassId !== exam.classId) {
+      const subject = await Subject.findOne({ where: { subjectId: nextSubjectId, instituteId, isDeleted: false } });
+      if (!subject || (nextClassId && subject.classId !== nextClassId)) {
+        return { error: true, statusCode: 400, message: "The subject does not belong to the selected class." };
+      }
+    }
+    if (nextTeacherId !== exam.teacherId || nextSubjectId !== exam.subjectId) {
+      const fit = await checkTeacherForSubject(instituteId, nextTeacherId, nextSubjectId);
+      if (!fit.ok) return { error: true, statusCode: 400, message: fit.message };
+    }
+    const teacherChanged = nextTeacherId !== exam.teacherId;
+
     await exam.update({
-      session: body.session || exam.session,
-      year: body.year || exam.year,
+      sessionId: body.sessionId || body.session || exam.sessionId,
       examType: body.examType || exam.examType,
-      examDate: body.examDate || exam.examDate,
-      classVal: body.classVal || exam.classVal,
-      subject: body.subject || exam.subject,
+      classId: nextClassId,
+      sectionId: body.sectionId !== undefined ? body.sectionId : exam.sectionId,
+      subjectId: nextSubjectId,
+      teacherId: nextTeacherId,
       totalMarks: body.totalMarks || exam.totalMarks,
       passingMarks: body.passingMarks || exam.passingMarks,
       duration: body.duration || exam.duration,
       instructions: body.instructions || exam.instructions,
+      examDate: body.examDate !== undefined ? body.examDate : exam.examDate,
+      examTime: body.examTime !== undefined ? body.examTime : exam.examTime,
       status: body.status || exam.status,
     });
+
+    // Tell the newly assigned teacher, like on create.
+    if (teacherChanged) {
+      await Notification.create({
+        notificationId: await RegHelper.generateUserId(),
+        instituteId,
+        userId: nextTeacherId,
+        type: "EXAM_ASSIGNED",
+        title: "Exam Assigned",
+        message: `A ${exam.examType} exam has been assigned to you.`,
+        referenceId: exam.examId,
+      }).catch((err: any) => console.error("Exam reassignment notification failed:", err?.message));
+    }
 
     return {
       error: false,
@@ -343,11 +571,224 @@ const deleteExam = async (examId: string, requestedBy: any): Promise<any> => {
   }
 };
 
+
+// ─── GET EXAM PROGRESS ────────────────────────────────────────────────────────
+const getExamProgress = async (examId: string, requestedBy: any): Promise<any> => {
+  try {
+    const instituteId = requestedBy.instituteId;
+
+    const exam: any = await Exam.findOne({
+      where: { examId, instituteId, isDeleted: false },
+      include: [
+        { model: Class, as: "class", attributes: ["classId", "className"], required: true },
+        { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"] },
+      ],
+    });
+
+    if (!exam) {
+      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Exam not found." };
+    }
+
+    const sections: any = await Section.findAll({
+      where: { classId: exam.classId, isDeleted: false },
+    });
+
+    const className = exam.class?.className || exam.classId;
+    const sessionName = exam.session?.sessionName || exam.sessionId || "";
+
+    const progressData = await Promise.all(
+      sections.map(async (sec: any) => {
+        let studentsList: any[] = [];
+        try {
+          const studentRes = await StudentService.getAllStudents(requestedBy, {
+            className,
+            sectionId: sec.sectionName || sec.sectionId,
+            session: sessionName,
+          });
+          if (studentRes && !studentRes.error && Array.isArray(studentRes?.data?.students)) {
+            studentsList = studentRes.data.students;
+          }
+        } catch (err) {
+          console.error("Error fetching section progress students:", err);
+        }
+
+        const studentRolls = new Set(
+          studentsList.map((s: any) => String(s.rollNumber)).filter(Boolean)
+        );
+
+        const sheets = await Scanner.findAll({
+          where: {
+            instituteId,
+            classId: exam.classId,
+            section: { [Op.in]: [sec.sectionId, sec.sectionName] },
+            subjectId: exam.subjectId,
+            examType: exam.examType,
+            isDeleted: false,
+          },
+          attributes: ["sheetId", "rollNo"],
+        });
+
+        const orphanSheets = sheets.filter(
+          (sh: any) => !studentRolls.has(String(sh.rollNo))
+        );
+
+        const totalStudents = studentsList.length + orphanSheets.length;
+        const uploadedSheets = sheets.length;
+
+        return {
+          sectionId: sec.sectionId,
+          sectionName: sec.sectionName,
+          totalStudents,
+          uploadedSheets,
+        };
+      })
+    );
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Progress fetched successfully.",
+      data: { progress: progressData },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
+// ─── GET ASSIGNED EXAMS SUMMARY (section-aware counts) ────────────────────────
+// New endpoint for the answersheetevaluation page.
+// Unlike getAssignedExams, this filters totalStudents and uploadedSheets
+// by the exam's sectionId so counts match the uploaded-sheets detail page.
+const getAssignedExamsSummary = async (requestedBy: any): Promise<any> => {
+  try {
+    const instituteId = requestedBy.instituteId;
+    const teacherId = requestedBy.userId;
+
+    const exams: any = await Exam.findAll({
+      where: { instituteId, isDeleted: false, teacherId },
+      include: [
+        { model: Class, as: "class", attributes: ["classId", "className"], where: { isDeleted: false }, required: true },
+        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
+        { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], where: { isDeleted: false }, required: true },
+        { model: Session, as: "session", attributes: ["sessionId", "sessionName"] },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const formattedExams = await Promise.all(
+      exams.map(async (exam: any) => {
+        const className = exam.class?.className || exam.classId;
+        const sectionName = exam.section?.sectionName || exam.sectionId || "";
+        const sessionName = exam.session?.sessionName || exam.sessionId || "";
+
+        // 1. Get students matching exact same query as uploaded-sheets detail page
+        let studentsList: any[] = [];
+        try {
+          const studentRes = await StudentService.getAllStudents(requestedBy, {
+            className,
+            sectionId: sectionName,
+            session: sessionName,
+          });
+          if (studentRes && !studentRes.error && Array.isArray(studentRes?.data?.students)) {
+            studentsList = studentRes.data.students;
+          }
+        } catch (err) {
+          console.error("Error fetching students for exam summary:", err);
+        }
+
+        const studentRolls = new Set(
+          studentsList.map((s: any) => String(s.rollNumber)).filter(Boolean)
+        );
+
+        // 2. Get uploaded sheets matching the exam parameters
+        const sectionVals = Array.from(
+          new Set([exam.sectionId, exam.section?.sectionName].filter(Boolean))
+        );
+        const classVals = Array.from(
+          new Set([exam.classId, exam.class?.className].filter(Boolean))
+        );
+
+        const sheetWhere: any = {
+          instituteId,
+          subjectId: exam.subjectId,
+          examType: exam.examType,
+          isDeleted: false,
+        };
+
+        if (classVals.length > 0) {
+          sheetWhere.classId = { [Op.in]: classVals };
+        }
+        if (sectionVals.length > 0) {
+          sheetWhere.section = { [Op.in]: sectionVals };
+        }
+
+        const sheets = await Scanner.findAll({
+          where: sheetWhere,
+          attributes: ["sheetId", "rollNo"],
+        });
+
+        const orphanSheets = sheets.filter(
+          (sh: any) => !studentRolls.has(String(sh.rollNo))
+        );
+
+        const totalStudents = studentsList.length + orphanSheets.length;
+        const uploadedSheets = sheets.length;
+
+        return {
+          id: exam.examId,
+          examId: exam.examId,
+          classId: exam.class?.classId || exam.classId,
+          className: exam.class?.className || "N/A",
+          sectionId: exam.section?.sectionId || exam.sectionId || null,
+          sectionName: exam.section?.sectionName || "N/A",
+          subjectId: exam.subject?.subjectId || exam.subjectId,
+          subjectName: exam.subject?.subjectName || "N/A",
+          sessionId: exam.session?.sessionId || exam.sessionId,
+          sessionName: exam.session?.sessionName || "N/A",
+          examType: exam.examType,
+          status: exam.status,
+          totalMarks: exam.totalMarks,
+          passingMarks: exam.passingMarks,
+          duration: exam.duration,
+          instructions: exam.instructions,
+          teacherId: exam.teacherId,
+          examinerId: exam.examinerId,
+          totalStudents,
+          uploadedSheets,
+          createdAt: exam.createdAt,
+          updatedAt: exam.updatedAt
+        };
+      })
+    );
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Assigned exams summary fetched successfully.",
+      data: { exams: formattedExams },
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 export default {
+  getExamProgress,
   createExam,
   getAllExams,
   getExamById,
   updateExamStatus,
   updateExam,
   deleteExam,
+  getAssignedExams,
+  getAssignedExamsSummary,
 };

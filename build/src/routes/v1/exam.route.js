@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const exam_controller_1 = __importDefault(require("../../controllers/exam/exam.controller"));
 const auth_1 = require("../../middlewares/auth");
+// import { getExamBySelection }      from "../../controllers/exam/getExamBySelection";
 // import { authenticate, authorize } from "../middlewares/auth";
 const router = (0, express_1.Router)();
 // Admin and Examiner can create/manage exams
@@ -15,6 +16,8 @@ exam_controller_1.default.createExam);
 router.get("/getAllExams", auth_1.authenticate, 
 //   authorize(["ADMIN", "EXAMINER", "TEACHER"]),
 exam_controller_1.default.getAllExams);
+router.get("/assigned", auth_1.authenticate, exam_controller_1.default.getAssignedExams);
+router.get("/assigned-summary", auth_1.authenticate, exam_controller_1.default.getAssignedExamsSummary);
 router.get("/getOneExam/:examId", auth_1.authenticate, 
 //   authorize(["ADMIN", "EXAMINER", "TEACHER"]),
 exam_controller_1.default.getExamById);
@@ -25,4 +28,5 @@ router.put("/updateExam/:examId", auth_1.authenticate, exam_controller_1.default
 router.delete("/deleteExam/:examId", auth_1.authenticate, 
 //   authorize(["ADMIN", "EXAMINER"]),
 exam_controller_1.default.deleteExam);
+router.get("/progress/:examId", auth_1.authenticate, exam_controller_1.default.getExamProgress);
 exports.default = router;

@@ -10,7 +10,6 @@ Subject.init({
     classId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     sectionId: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null },
     instituteId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    sessionId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     subjectName: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     subjectCode: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null },
     teacherId: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null },
@@ -23,30 +22,34 @@ Subject.init({
     tableName: "viaexam_subjects",
     modelName: "Subject",
     timestamps: true,
+    indexes: [
+        {
+            name: "viaexam_subjects_class_section_subject",
+            unique: true,
+            fields: ["classId", "sectionId", "subjectName"],
+        },
+        {
+            name: "viaexam_subjects_class_id",
+            unique: false,
+            fields: ["classId"],
+        },
+    ],
 });
-// Subject.belongsTo(Section, {
-//   foreignKey: "sectionId",
-//   targetKey: "sectionId",
-//   as: "section",
+// Subject.belongsTo(Institute, {
+//   foreignKey: "instituteId",
+//   targetKey: "instituteId",
+//   as: "institute",
 // });
-// Section.hasMany(Subject, {
-//   foreignKey: "sectionId",
-//   sourceKey: "sectionId",
-//   as: "subjects",
-// });
-// Subject belongs to Class
 // Subject.belongsTo(Class, {
 //   foreignKey: "classId",
 //   targetKey: "classId",
 //   as: "class",
 // });
-// Subject belongs to Teacher
 // Subject.belongsTo(User, {
 //   foreignKey: "teacherId",
 //   targetKey: "userId",
 //   as: "teacher",
 // });
-// Subject has many Exams
 // Subject.hasMany(Exam, {
 //   foreignKey: "subjectId",
 //   sourceKey: "subjectId",

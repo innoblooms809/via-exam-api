@@ -50,7 +50,6 @@ function addColumn(sequelize, tableName, columnName, type, allowNull) {
                 allowNull: allowNull,
                 defaultValue: "-",
             });
-            console.log(`Column ${columnName} added in table ${tableName}`);
             return true;
         }
         catch (error) {
@@ -71,7 +70,6 @@ function dropColumn(sequelize, tableName, columnName) {
             const queryInterface = sequelize.getQueryInterface();
             // Attempt to remove the column
             yield queryInterface.removeColumn(tableName, columnName);
-            console.log(`Column ${columnName} removed from table ${tableName}`);
         }
         catch (error) {
             console.error(`Error removing column ${columnName} from table ${tableName}:`, error);
@@ -93,7 +91,6 @@ function renameColumn(sequelize, tableName, oldColumnName, newColumnName) {
             const queryInterface = sequelize.getQueryInterface();
             // Rename the column
             yield queryInterface.renameColumn(tableName, oldColumnName, newColumnName);
-            console.log(`Column renamed from ${oldColumnName} to ${newColumnName} in table ${tableName}`);
         }
         catch (error) {
             console.error(`Error renaming column ${oldColumnName} to ${newColumnName} in table ${tableName}:`, error);
@@ -116,7 +113,6 @@ exports.renameColumn = renameColumn;
 //       type: DataTypes[type as keyof typeof DataTypes],
 //       allowNull: allowNull,
 //     });
-//     console.log(`Column ${columnName} updated in table ${tableName}`);
 //   } catch (error) {
 //     console.error(
 //       `Error changing column ${columnName} in table ${tableName}:`,
