@@ -4,18 +4,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const multer_1 = __importDefault(require("multer"));
 const scanner_controller_1 = __importDefault(require("../../controllers/scanner.controller"));
 const auth_1 = require("../../middlewares/auth");
+const answerSheetUpload_1 = require("../../middlewares/answerSheetUpload");
+const uploadLimits_1 = require("../../config/uploadLimits");
 const router = (0, express_1.Router)();
-// Store files in memory — buffer goes straight to DB
-const upload = (0, multer_1.default)({
-    storage: multer_1.default.memoryStorage(),
-    limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB per file
+// Answer sheets are buffered to disk and streamed to Cloudinary; the row keeps
+// only a URL. Size and count caps live in config/uploadLimits.ts and are
+// enforced before the body is read — see middlewares/answerSheetUpload.ts.
+// What the client may send in one batch. The scanner UI reads this to split a
+// large selection into batches instead of guessing.
+router.get("/uploadLimits", auth_1.authenticate, (_req, res) => {
+    res.status(200).send({
+        error: false,
+        statusCode: 200,
+        message: "Upload limits.",
+        data: Object.assign(Object.assign({}, uploadLimits_1.ANSWER_SHEET_LIMITS), { summary: (0, uploadLimits_1.answerSheetLimitSummary)() }),
+    });
 });
 // Upload one or many sheets (multipart, field: "sheets")
-router.post("/uploadSheets", auth_1.authenticate, upload.array("sheets", 100), // max 100 files at once
-scanner_controller_1.default.uploadSheets);
+router.post("/uploadSheets", auth_1.authenticate, ...answerSheetUpload_1.answerSheetBatchUpload, scanner_controller_1.default.uploadSheets);
+// Replace the scan behind an existing sheet (multipart, field: "sheet")
+router.put("/replaceSheet/:sheetId", auth_1.authenticate, ...(0, answerSheetUpload_1.answerSheetSingleUpload)("sheet"), scanner_controller_1.default.replaceSheet);
 // List sheets with filters
 router.get("/getAllSheets", auth_1.authenticate, scanner_controller_1.default.getAllSheets);
 // Stream raw file back (used by the iframe preview in your dashboard)
@@ -30,7 +40,7 @@ router.delete("/deleteSheet/:sheetId", auth_1.authenticate, scanner_controller_1
 // Get approved exams for scanner to upload student answer papers
 router.get("/approved-exams", auth_1.authenticate, scanner_controller_1.default.getApprovedExams);
 // Upload single student answer paper for approval workflow
-router.post("/upload-student-answer", auth_1.authenticate, upload.single("answerPaperFile"), scanner_controller_1.default.uploadStudentAnswerPaper);
+router.post("/upload-student-answer", auth_1.authenticate, ...(0, answerSheetUpload_1.answerSheetSingleUpload)("answerPaperFile"), scanner_controller_1.default.uploadStudentAnswerPaper);
 // Get student answer papers for a specific exam
 router.get("/student-answers/:examId", auth_1.authenticate, scanner_controller_1.default.getStudentAnswerPapers);
 exports.default = router;

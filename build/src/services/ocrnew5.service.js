@@ -28,6 +28,7 @@ const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
 const pythonServices_1 = require("../config/pythonServices");
 const questionPaperText_1 = require("../utils/questionPaperText");
+const answerSheetStorage_1 = require("../utils/answerSheetStorage");
 const evaluateSheetOCRNew5 = (sheetId) => __awaiter(void 0, void 0, void 0, function* () {
     logger_1.default.info(`[OCRNew5 Service] Initiating AI evaluation for sheet: ${sheetId}`);
     // 1. Fetch Scanner Sheet
@@ -35,6 +36,11 @@ const evaluateSheetOCRNew5 = (sheetId) => __awaiter(void 0, void 0, void 0, func
     if (!sheet) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "Scanner sheet not found.");
     }
+    // Cloudinary-backed sheets keep fileBuffer null in the database; resolve the
+    // real bytes onto the in-memory instance before anything below reads it.
+    // sheet.update() further down passes an explicit field list, so this is
+    // never written back.
+    sheet.fileBuffer = yield (0, answerSheetStorage_1.resolveSheetBuffer)(sheet);
     // 2. Perform OCR on Student Answer Sheet if image/buffer available
     let studentAnsText = sheet.ocrText || sheet.answerText || "";
     if (!studentAnsText && sheet.fileBuffer && sheet.fileBuffer.length > 0) {

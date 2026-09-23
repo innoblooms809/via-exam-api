@@ -24,6 +24,7 @@ const helper_1 = __importDefault(require("../utils/helper"));
 const exclude_1 = __importDefault(require("../utils/exclude"));
 const sequelize_1 = require("../config/sequelize");
 const sequelize_2 = require("sequelize");
+const studentBulk_service_1 = __importDefault(require("./studentBulk.service"));
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const resolveClassId = (inputClass, instituteId) => __awaiter(void 0, void 0, void 0, function* () {
     if (!inputClass)
@@ -540,99 +541,10 @@ const deleteStudent = (userId, createdBy) => __awaiter(void 0, void 0, void 0, f
     }
 });
 // ─── BULK CREATE STUDENTS ─────────────────────────────────────────────────────
-const bulkCreateStudents = (students, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
-    const t = yield sequelize_1.sequelize.transaction();
-    try {
-        const instituteId = createdBy.instituteId;
-        const studentRole = yield Role_modal_1.default.findOne({ where: { role: "STUDENT" } });
-        if (!studentRole) {
-            yield t.rollback();
-            return {
-                error: true,
-                statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-                message: "STUDENT role not found.",
-            };
-        }
-        let created = 0;
-        let skipped = 0;
-        const errors = [];
-        for (const s of students) {
-            try {
-                // Check duplicates
-                const emailExists = yield User_modal_1.default.findOne({
-                    where: { emailId: s.email },
-                });
-                const phoneExists = yield User_modal_1.default.findOne({
-                    where: { phoneNumber: s.mobile },
-                });
-                const rollExists = yield Student_modal_1.default.findOne({
-                    where: {
-                        instituteId,
-                        rollNumber: s.rollNumber,
-                        className: s.className,
-                        sectionId: s.sectionId,
-                        session: s.session,
-                    },
-                });
-                if (emailExists || phoneExists || rollExists) {
-                    skipped++;
-                    continue;
-                }
-                // Resolve classId from Class table
-                const resolvedClassId = yield resolveClassId(s.classId || s.className, instituteId);
-                // Resolve sectionId from Section table
-                const resolvedSectionId = yield resolveSectionId(s.sectionId, resolvedClassId || "", instituteId);
-                const plainPassword = yield helper_1.default.generatePassword();
-                const encryptedPassword = yield encryption_1.default.encryptPassword(plainPassword);
-                const userId = yield helper_1.default.generateUserId();
-                const newUser = yield User_modal_1.default.create({
-                    userId,
-                    userName: `${s.firstName} ${s.lastName}`,
-                    emailId: s.email,
-                    phoneNumber: s.mobile,
-                    password: encryptedPassword,
-                    roleId: studentRole.id,
-                    instituteId,
-                    status: 1,
-                }, { transaction: t });
-                yield Student_modal_1.default.create({
-                    userId: newUser.userId,
-                    instituteId,
-                    classId: resolvedClassId,
-                    rollNumber: s.rollNumber,
-                    className: s.className,
-                    sectionId: resolvedSectionId,
-                    session: s.session,
-                    fatherName: s.fatherName || "Not provided",
-                    gender: s.gender || "other",
-                    dob: new Date(s.dob || "2000-01-01"),
-                    aadhar: s.aadhar || "000000000000",
-                    address: s.address || "Not provided",
-                }, { transaction: t });
-                created++;
-            }
-            catch (err) {
-                errors.push(`Row ${created + skipped + 1}: Failed — ${(err === null || err === void 0 ? void 0 : err.message) || err}`);
-                skipped++;
-            }
-        }
-        yield t.commit();
-        return {
-            error: false,
-            statusCode: http_status_1.default.CREATED,
-            message: `Bulk upload complete.`,
-            data: { created, skipped, errors },
-        };
-    }
-    catch (e) {
-        yield t.rollback();
-        return {
-            error: true,
-            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: `Something went wrong: ${e.message}`,
-        };
-    }
-});
+// Implemented in studentBulk.service.ts: bulk upload needs per-row validation,
+// per-row transactions and structured per-row error reporting, none of which
+// belong in the single-student CRUD path below.
+const bulkCreateStudents = studentBulk_service_1.default.bulkCreateStudents;
 exports.default = {
     createStudent,
     getAllStudents,

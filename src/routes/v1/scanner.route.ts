@@ -1,25 +1,43 @@
 import { Router } from "express";
-import multer from "multer";
 import Controller from "../../controllers/scanner.controller";
 import { authenticate } from "../../middlewares/auth";
+import {
+  answerSheetBatchUpload,
+  answerSheetSingleUpload,
+} from "../../middlewares/answerSheetUpload";
+import { ANSWER_SHEET_LIMITS, answerSheetLimitSummary } from "../../config/uploadLimits";
 
 const router = Router();
 
-// Store files in memory — buffer goes straight to DB
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 100 * 1024 * 1024, // 100 MB per file
-    fieldSize: 100 * 1024 * 1024, // 100 MB field size
-  },
+// Answer sheets are buffered to disk and streamed to Cloudinary; the row keeps
+// only a URL. Size and count caps live in config/uploadLimits.ts and are
+// enforced before the body is read — see middlewares/answerSheetUpload.ts.
+
+// What the client may send in one batch. The scanner UI reads this to split a
+// large selection into batches instead of guessing.
+router.get("/uploadLimits", authenticate, (_req, res) => {
+  res.status(200).send({
+    error: false,
+    statusCode: 200,
+    message: "Upload limits.",
+    data: { ...ANSWER_SHEET_LIMITS, summary: answerSheetLimitSummary() },
+  });
 });
 
 // Upload one or many sheets (multipart, field: "sheets")
 router.post(
   "/uploadSheets",
   authenticate,
-  upload.array("sheets", 100),       // max 100 files at once
+  ...answerSheetBatchUpload,
   Controller.uploadSheets
+);
+
+// Replace the scan behind an existing sheet (multipart, field: "sheet")
+router.put(
+  "/replaceSheet/:sheetId",
+  authenticate,
+  ...answerSheetSingleUpload("sheet"),
+  Controller.replaceSheet
 );
 
 // List sheets with filters
@@ -70,7 +88,7 @@ router.get(
 router.post(
   "/upload-student-answer",
   authenticate,
-  upload.single("answerPaperFile"),
+  ...answerSheetSingleUpload("answerPaperFile"),
   Controller.uploadStudentAnswerPaper
 );
 

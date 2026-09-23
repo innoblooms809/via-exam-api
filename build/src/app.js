@@ -30,10 +30,13 @@ if (config_1.default.env !== 'test') {
 app.use((0, helmet_1.default)({
     crossOriginResourcePolicy: false,
 }));
-// parse json request body
-app.use(express_1.default.json({ limit: "60MB" }));
+// Parse JSON request body.
+// 100MB was needed while answer sheets were base64'd through JSON. They are
+// multipart now and handled by their own middleware, so this only has to cover
+// real JSON payloads — question paper content is the largest of them.
+app.use(express_1.default.json({ limit: "25mb" }));
 // parse urlencoded request body
-app.use(express_1.default.urlencoded({ extended: true }));
+app.use(express_1.default.urlencoded({ limit: "25mb", extended: true }));
 app.use((0, cookie_parser_1.default)());
 // sanitize request data
 app.use((0, xss_1.default)());
@@ -54,7 +57,7 @@ app.use((0, express_session_1.default)({
     resave: false,
     saveUninitialized: false,
 }));
-app.use(body_parser_1.default.json());
+app.use(body_parser_1.default.json({ limit: "25mb" }));
 // limit repeated failed requests to auth endpoints
 if (config_1.default.env === 'production') {
     app.use('/v1/auth', rateLimiter_1.authLimiter);

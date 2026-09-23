@@ -766,7 +766,15 @@ const reactivateTeacher = (userId, createdBy) => __awaiter(void 0, void 0, void 
 });
 // ─── GET MY ASSIGNMENTS ─────────────────────────────────────────────────────────
 const getMyAssignments = (teacherId) => __awaiter(void 0, void 0, void 0, function* () {
+    var _m;
     try {
+        const user = yield User_modal_1.default.findOne({ where: { userId: teacherId } });
+        const instituteId = user === null || user === void 0 ? void 0 : user.instituteId;
+        const activeSession = instituteId
+            ? yield Session_modal_1.default.findOne({
+                where: { instituteId, isActive: true, isDeleted: false },
+            })
+            : null;
         const assignedSubjects = yield Subject_modal_1.default.findAll({
             where: {
                 teacherId,
@@ -780,6 +788,12 @@ const getMyAssignments = (teacherId) => __awaiter(void 0, void 0, void 0, functi
                     attributes: ["classId", "className"],
                     required: false,
                 },
+                {
+                    model: Section_modal_1.default,
+                    as: "section",
+                    attributes: ["sectionId", "sectionName"],
+                    required: false,
+                },
             ],
         });
         const assignedClasses = yield Class_modal_1.default.findAll({
@@ -788,6 +802,14 @@ const getMyAssignments = (teacherId) => __awaiter(void 0, void 0, void 0, functi
                 isActive: true,
                 isDeleted: false,
             },
+            include: [
+                {
+                    model: Section_modal_1.default,
+                    as: "sections",
+                    attributes: ["sectionId", "sectionName"],
+                    required: false,
+                },
+            ],
         });
         const assignedSections = yield Section_modal_1.default.findAll({
             where: {
@@ -804,14 +826,99 @@ const getMyAssignments = (teacherId) => __awaiter(void 0, void 0, void 0, functi
                 },
             ],
         });
+        // Fetch all active sections for the classes where the teacher teaches subjects
+        const subjectClassIds = Array.from(new Set(assignedSubjects.map((s) => s.classId).filter(Boolean)));
+        const classSectionsList = subjectClassIds.length > 0
+            ? yield Section_modal_1.default.findAll({
+                where: {
+                    classId: { [sequelize_2.Op.in]: subjectClassIds },
+                    isActive: true,
+                    isDeleted: false,
+                },
+                attributes: ["sectionId", "classId", "sectionName"],
+                order: [["sectionName", "ASC"]],
+            })
+            : [];
+        const classSectionsMap = new Map();
+        classSectionsList.forEach((sec) => {
+            const plainSec = sec.get({ plain: true });
+            const list = classSectionsMap.get(plainSec.classId) || [];
+            list.push(plainSec);
+            classSectionsMap.set(plainSec.classId, list);
+        });
+        // Group assigned subjects by classId + subjectName so multiple section entries merge
+        const groupedSubjectMap = new Map();
+        for (const s of assignedSubjects) {
+            const plain = s.get({ plain: true });
+            const className = ((_m = plain.class) === null || _m === void 0 ? void 0 : _m.className) || plain.className || "";
+            const subjectNameKey = (plain.subjectName || "").trim().toLowerCase();
+            const groupKey = `${plain.classId || className}_${subjectNameKey}`;
+            let secs = [];
+            if (plain.sectionId && plain.section) {
+                secs = [plain.section];
+            }
+            else if (plain.sectionId && !plain.section) {
+                const foundSec = classSectionsList.find((sec) => sec.sectionId === plain.sectionId);
+                if (foundSec)
+                    secs = [foundSec.get({ plain: true })];
+            }
+            else {
+                secs = classSectionsMap.get(plain.classId) || [];
+            }
+            if (!groupedSubjectMap.has(groupKey)) {
+                groupedSubjectMap.set(groupKey, Object.assign(Object.assign({}, plain), { className, sections: [...secs], sessionName: activeSession ? activeSession.sessionName : null }));
+            }
+            else {
+                const existing = groupedSubjectMap.get(groupKey);
+                const existingKeys = new Set(existing.sections.map((sec) => sec.sectionId || sec.sectionName));
+                for (const sec of secs) {
+                    const key = sec.sectionId || sec.sectionName;
+                    if (!existingKeys.has(key)) {
+                        existingKeys.add(key);
+                        existing.sections.push(sec);
+                    }
+                }
+            }
+        }
+        const formattedSubjects = Array.from(groupedSubjectMap.values()).map((sub) => {
+            let sectionNameStr = "All Sections";
+            if (sub.sections && sub.sections.length > 0) {
+                const cleanNames = Array.from(new Set(sub.sections
+                    .map((sec) => (sec.sectionName || "").replace(/^(sec|section)\s*/i, "").trim())
+                    .filter(Boolean)));
+                if (cleanNames.length > 0) {
+                    sectionNameStr = cleanNames.map((name) => `Sec ${name}`).join(", ");
+                }
+            }
+            return Object.assign(Object.assign({}, sub), { sectionName: sectionNameStr });
+        });
+        const formattedClasses = assignedClasses.map((c) => {
+            const plain = c.get({ plain: true });
+            let secName = "All Sections";
+            if (plain.sections && plain.sections.length > 0) {
+                const cleanNames = Array.from(new Set(plain.sections
+                    .map((s) => (s.sectionName || "").replace(/^(sec|section)\s*/i, "").trim())
+                    .filter(Boolean)));
+                if (cleanNames.length > 0) {
+                    secName = cleanNames.map((name) => `Sec ${name}`).join(", ");
+                }
+            }
+            return Object.assign(Object.assign({}, plain), { sectionName: secName, sessionName: activeSession ? activeSession.sessionName : null });
+        });
+        const formattedSections = assignedSections.map((sec) => {
+            const plain = sec.get({ plain: true });
+            const rawName = plain.sectionName ? plain.sectionName.replace(/^(sec|section)\s*/i, "").trim() : "";
+            return Object.assign(Object.assign({}, plain), { sectionName: rawName ? `Sec ${rawName}` : "—", sessionName: activeSession ? activeSession.sessionName : null });
+        });
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Assignments fetched successfully",
             data: {
-                assignedSubjects,
-                assignedClasses,
-                assignedSections,
+                assignedSubjects: formattedSubjects,
+                assignedClasses: formattedClasses,
+                assignedSections: formattedSections,
+                activeSession: activeSession ? activeSession.sessionName : null,
             },
         };
     }

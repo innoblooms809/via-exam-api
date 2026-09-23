@@ -86,10 +86,49 @@ const deleteStudent = async (req: any, res: Response): Promise<any> => {
 
 const bulkCreateStudents = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await StudentService.bulkCreateStudents(req.body.students, req.viaExamUser);
+    const result = await StudentService.bulkCreateStudents(
+      req.body?.students,
+      req.viaExamUser,
+    );
+
+    // Mirror the single-student flow: every student that was actually created
+    // gets their login details by email. Dispatched in the background and one
+    // at a time so a 500-row upload cannot stall the response or flood SMTP.
+    const created: any[] = !result.error ? (result.data?.successes ?? []) : [];
+    if (created.length > 0) {
+      const slug = req.viaExamUser?.institute?.slug;
+      const loginUrl = slug
+        ? `${config.frontendUrl}/${slug}/auth/signin`
+        : `${config.frontendUrl}/auth/signin`;
+
+      void (async () => {
+        for (const student of created) {
+          if (!student.generatedPassword) continue; // admin set the password themselves
+          try {
+            await sendUserCredentials({
+              userName: student.name,
+              email: student.email,
+              phone: student.mobile,
+              password: student.generatedPassword,
+              role: "Student",
+              loginUrl,
+            });
+          } catch (err) {
+            console.error(
+              `Background bulk student email dispatch failed for ${student.email}:`,
+              err,
+            );
+          }
+        }
+      })();
+    }
+
     return res.status(result.statusCode).send(result);
   } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+    console.error("bulkCreateStudents controller error:", error);
+    return res
+      .status(500)
+      .json({ error: true, statusCode: 500, message: "Internal Server Error" });
   }
 };
 
