@@ -31,10 +31,10 @@ app.use(
 );
 
 // parse json request body
-app.use(express.json({limit: "60MB"}));
+app.use(express.json({ limit: "100MB" }));
 
 // parse urlencoded request body
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ limit: "100MB", extended: true }));
 app.use(cookieParser());
 
 // sanitize request data
@@ -60,7 +60,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "100MB" }));
 // limit repeated failed requests to auth endpoints
 if (config.env === 'production') {
   app.use('/v1/auth', authLimiter);
