@@ -8,7 +8,10 @@ const router = Router();
 // Store files in memory — buffer goes straight to DB
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB per file
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100 MB per file
+    fieldSize: 100 * 1024 * 1024, // 100 MB field size
+  },
 });
 
 // Upload one or many sheets (multipart, field: "sheets")
