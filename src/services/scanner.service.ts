@@ -69,7 +69,7 @@ const uploadSheets = async (
         continue;
       }
 
-      // Check duplicate
+      // Check duplicate / existing sheet
       const existing = await Scanner.findOne({
         where: {
           instituteId,
@@ -83,8 +83,23 @@ const uploadSheets = async (
       });
 
       if (existing) {
-        results.push({ rollNo, status: "duplicate", reason: "Sheet already uploaded for this student" });
-        continue;
+        const isOverwrite =
+          (body as any).overwrite === "true" ||
+          (body as any).overwrite === true ||
+          (body as any).replace === "true" ||
+          (body as any).replace === true;
+
+        if (isOverwrite) {
+          await existing.update({ isDeleted: true });
+          try {
+            await AIEvaluation.destroy({ where: { sheetId: existing.sheetId } });
+          } catch (e) {
+            // ignore cleanup error
+          }
+        } else {
+          results.push({ rollNo, status: "duplicate", reason: "Sheet already uploaded for this student" });
+          continue;
+        }
       }
 
       const sheetId = await RegHelper.generateUserId();
@@ -356,6 +371,12 @@ const deleteSheet = async (sheetId: string, requestedBy: any): Promise<any> => {
     }
 
     await sheet.update({ isDeleted: true });
+
+    try {
+      await AIEvaluation.destroy({ where: { sheetId } });
+    } catch (e) {
+      // Ignore evaluation cleanup error if none exists
+    }
 
     return {
       error: false,

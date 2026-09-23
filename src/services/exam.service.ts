@@ -372,21 +372,20 @@ const getExamById = async (examId: string, requestedBy: any): Promise<any> => {
 };
 
 // ─── UPDATE EXAM STATUS ───────────────────────────────────────────────────────
-/** Synchronizes QuestionPaper and QuestionPaperAnswer statuses when an Exam status is updated. */
+/** Synchronizes QuestionPaper and QuestionPaperAnswer statuses when an Exam status is updated.
+ *  Only touches papers/answers that have been submitted (status != DRAFT).
+ *  DRAFT papers are ones the teacher hasn't submitted yet and must not be touched. */
 async function syncQuestionPaperStatuses(examId: string, status: string): Promise<void> {
   try {
     const dbStatusMap: Record<string, string> = {
-      "Draft": "DRAFT",
-      "Paper Created": "DRAFT",
       "Pending Approval": "PENDING_APPROVAL",
       "Approved": "APPROVED",
       "Rejected": "REJECTED",
-      "Live": "PUBLISHED",
       "Completed": "APPROVED",
-      "DRAFT": "DRAFT",
       "PENDING_APPROVAL": "PENDING_APPROVAL",
       "APPROVED": "APPROVED",
       "REJECTED": "REJECTED",
+      "Live": "PUBLISHED",
       "PUBLISHED": "PUBLISHED",
     };
 
@@ -395,6 +394,7 @@ async function syncQuestionPaperStatuses(examId: string, status: string): Promis
 
     const QuestionPaper = (await import("../modals/question-paper/QuestionPaper.modal")).default;
     const QuestionPaperAnswer = (await import("../modals/question-paper/stander-answer.model")).default;
+    const { Op } = await import("sequelize");
 
     const now = new Date();
     const updatePayload: any = { status: targetStatus };
@@ -402,9 +402,11 @@ async function syncQuestionPaperStatuses(examId: string, status: string): Promis
     if (targetStatus === "PENDING_APPROVAL") updatePayload.submittedAt = now;
     if (targetStatus === "REJECTED") updatePayload.rejectedAt = now;
 
+    // Only update papers/answers that have been submitted (not DRAFT).
+    // DRAFT papers are ones the teacher hasn't submitted yet and should not be touched.
     await Promise.all([
-      QuestionPaper.update(updatePayload, { where: { examId } }),
-      QuestionPaperAnswer.update(updatePayload, { where: { examId } }),
+      QuestionPaper.update(updatePayload, { where: { examId, status: { [Op.ne]: "DRAFT" } } }),
+      QuestionPaperAnswer.update(updatePayload, { where: { examId, status: { [Op.ne]: "DRAFT" } } }),
     ]);
   } catch (err: any) {
     console.error("syncQuestionPaperStatuses error:", err?.message || err);
