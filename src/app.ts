@@ -30,11 +30,14 @@ app.use(
   })
 );
 
-// parse json request body
-app.use(express.json({ limit: "100MB" }));
+// Parse JSON request body.
+// 100MB was needed while answer sheets were base64'd through JSON. They are
+// multipart now and handled by their own middleware, so this only has to cover
+// real JSON payloads — question paper content is the largest of them.
+app.use(express.json({ limit: "25mb" }));
 
 // parse urlencoded request body
-app.use(express.urlencoded({ limit: "100MB", extended: true }));
+app.use(express.urlencoded({ limit: "25mb", extended: true }));
 app.use(cookieParser());
 
 // sanitize request data
@@ -60,7 +63,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
-app.use(bodyParser.json({ limit: "100MB" }));
+app.use(bodyParser.json({ limit: "25mb" }));
 // limit repeated failed requests to auth endpoints
 if (config.env === 'production') {
   app.use('/v1/auth', authLimiter);

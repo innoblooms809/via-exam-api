@@ -16,9 +16,13 @@ Scanner.init({
     rollNo: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     studentName: { type: sequelize_1.DataTypes.STRING, allowNull: true },
     fileName: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    fileBuffer: { type: sequelize_1.DataTypes.BLOB("long"), allowNull: false },
+    // Nullable since the move to Cloudinary: new rows store a URL instead.
+    fileBuffer: { type: sequelize_1.DataTypes.BLOB("long"), allowNull: true },
+    fileUrl: { type: sequelize_1.DataTypes.TEXT, allowNull: true },
+    filePublicId: { type: sequelize_1.DataTypes.STRING, allowNull: true },
+    fileResourceType: { type: sequelize_1.DataTypes.STRING, allowNull: true },
     fileMimeType: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    fileSize: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
+    fileSize: { type: sequelize_1.DataTypes.BIGINT, allowNull: false },
     status: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,

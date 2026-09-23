@@ -33,6 +33,7 @@ import axios from "axios";
 import { pythonServices } from "../config/pythonServices";
 import { formatQuestionPaper } from "../utils/questionPaperText";
 import { getAnswerKeyText, ocrDocument } from "./answerKeyOcr.service";
+import { resolveSheetBuffer } from "../utils/answerSheetStorage";
 
 const EVAL_TIMEOUT_MS = 3600000; // 1 hour — CPU inference on long papers is slow
 
@@ -182,6 +183,11 @@ async function runOcrStage(job: EvaluationJob) {
     const sheet: any = await Scanner.findOne({ where: { sheetId: job.sheetId, isDeleted: false } });
     if (!sheet) throw new Error("Scanner sheet not found.");
 
+    // Cloudinary-backed sheets keep fileBuffer null in the database; resolve
+    // the real bytes onto the in-memory instance before readStudentSheet /
+    // runVisualPreEval (both share this same object) read it.
+    sheet.fileBuffer = await resolveSheetBuffer(sheet);
+
     // Model answer first (the pre-scan needs it): typed answers as-is; an uploaded
     // file comes from its saved OCR text (OCR-ed only the first time, then cached).
     let answerKeyText = job.typedAnswerKey;
@@ -212,6 +218,10 @@ async function runEvaluationStage(job: EvaluationJob) {
     const sheet: any = await Scanner.findOne({ where: { sheetId: job.sheetId, isDeleted: false } });
     const aiEval: any = await AIEvaluation.findOne({ where: { sheetId: job.sheetId } });
     if (!sheet || !aiEval) throw new Error("Sheet or evaluation record no longer exists.");
+
+    // Stage 2 re-fetches the sheet independently of stage 1, so it needs its
+    // own resolve too — Cloudinary-backed sheets keep fileBuffer null.
+    sheet.fileBuffer = await resolveSheetBuffer(sheet);
 
     // Let this sheet's diagram pre-scan finish, so /evaluate-text reuses its cached
     // results instead of scanning the diagrams a second time.

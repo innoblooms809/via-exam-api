@@ -11,6 +11,7 @@ import axios from "axios";
 import FormData from "form-data";
 import { pythonServices } from "../config/pythonServices";
 import { formatQuestionPaper } from "../utils/questionPaperText";
+import { resolveSheetBuffer } from "../utils/answerSheetStorage";
 
 // ─── TRIGGER EVALUATION V2 (OCR Pipeline on port 8002) ──────────────────────
 const triggerEvaluationV2 = async (
@@ -213,6 +214,13 @@ const runBackgroundEvaluationV2 = async (
   standardAnsText: string
 ): Promise<void> => {
   try {
+    // Resolve the sheet's bytes once, up front — Cloudinary-backed sheets keep
+    // fileBuffer null in the database, so every read of sheet.fileBuffer below
+    // (both OCR threads and the PDF-base64 fallback) needs it populated first.
+    // Assigned onto the in-memory instance only; sheet.update() elsewhere
+    // passes an explicit field list and never persists this back.
+    sheet.fileBuffer = await resolveSheetBuffer(sheet);
+
     const ocrApiUrl = pythonServices.ocrUrl();
 
     // ⚡ 1. PARALLEL EXECUTION THREADS

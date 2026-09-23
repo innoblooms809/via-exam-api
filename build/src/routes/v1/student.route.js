@@ -7,6 +7,8 @@ const express_1 = require("express");
 const student_controller_1 = __importDefault(require("../../controllers/student.controller"));
 const auth_1 = require("../../middlewares/auth");
 const multer_1 = require("../../utils/multer");
+const validate_1 = __importDefault(require("../../middlewares/validate"));
+const student_validation_1 = __importDefault(require("../../validations/student.validation"));
 const router = (0, express_1.Router)();
 // POST   /v1/students
 router.post("/createStudent", auth_1.authenticate, 
@@ -15,7 +17,9 @@ multer_1.studentUpload, student_controller_1.default.createStudent);
 // POST   /v1/students/bulk
 router.post("/createBulkStudents", auth_1.authenticate, 
 //   authorize(["ADMIN"]),
-student_controller_1.default.bulkCreateStudents);
+// Envelope only — individual rows are validated in the service so one bad
+// row reports a reason instead of rejecting the whole upload.
+(0, validate_1.default)(student_validation_1.default.bulkCreateStudents), student_controller_1.default.bulkCreateStudents);
 // GET    /v1/students
 // ?search=john&className=Class 10&division=A&academicYear=2024-25
 router.get("/getAllStudents", auth_1.authenticate, 

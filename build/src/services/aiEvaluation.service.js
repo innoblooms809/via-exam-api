@@ -27,6 +27,7 @@ const axios_1 = __importDefault(require("axios"));
 const pythonServices_1 = require("../config/pythonServices");
 const questionPaperText_1 = require("../utils/questionPaperText");
 const pipeline6_service_1 = require("./pipeline6.service");
+const answerSheetStorage_1 = require("../utils/answerSheetStorage");
 // ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
 const triggerEvaluation = (sheetId, force = false) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -185,7 +186,11 @@ const triggerEvaluation = (sheetId, force = false) => __awaiter(void 0, void 0, 
 const runBackgroundEvaluation = (sheet, aiEval, studentId, examId, maxMarks, questionText, standardAnsText) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d, _e, _f, _g;
     try {
-        // 1. Check file buffer validity
+        // 1. Resolve the sheet's bytes — Cloudinary-backed sheets keep fileBuffer
+        // null, so fetch the stored file before anything below reads it. This
+        // assigns onto the in-memory instance only; sheet.update() further down
+        // passes an explicit field list and never persists this back.
+        sheet.fileBuffer = yield (0, answerSheetStorage_1.resolveSheetBuffer)(sheet);
         if (!sheet.fileBuffer || sheet.fileBuffer.length === 0) {
             throw new Error("Answer sheet image file buffer is missing or empty in database.");
         }

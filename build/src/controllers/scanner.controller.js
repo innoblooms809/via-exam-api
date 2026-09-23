@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -29,6 +52,21 @@ const uploadSheets = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         });
     }
 });
+// PUT /replaceSheet/:sheetId  (multipart/form-data, field name: "sheet")
+const replaceSheet = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield scanner_service_1.default.replaceSheet(req.params.sheetId, req.file, req.viaExamUser);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (err) {
+        console.error("replaceSheet Controller Error:", err);
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: (err === null || err === void 0 ? void 0 : err.message) || "Internal Server Error",
+        });
+    }
+});
 // GET /getAllSheets?classId=&section=&subjectId=&examType=
 const getAllSheets = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -51,7 +89,39 @@ const getSheetFile = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (result.error) {
             return res.status(result.statusCode).send(result);
         }
-        const { buffer, mimeType, fileName } = result.data;
+        const { buffer, mimeType, fileName, redirectUrl } = result.data;
+        if (redirectUrl) {
+            // Preferred path: the caller takes the short-lived signed URL and loads
+            // the file straight from the CDN, so the bytes never touch this process.
+            if (String(req.query.mode) === "url") {
+                return res.status(http_status_1.default.OK).send({
+                    error: false,
+                    statusCode: http_status_1.default.OK,
+                    message: "File located.",
+                    data: { url: redirectUrl, mimeType, fileName },
+                });
+            }
+            // Compatibility path: callers that expect raw bytes get them streamed
+            // through. A 302 is not usable here — the browser would repeat the
+            // request to Cloudinary in credentialed CORS mode and be blocked.
+            const upstream = yield fetch(redirectUrl);
+            if (!upstream.ok || !upstream.body) {
+                return res.status(http_status_1.default.BAD_GATEWAY).json({
+                    error: true,
+                    statusCode: http_status_1.default.BAD_GATEWAY,
+                    message: "The stored file could not be retrieved. Please try again.",
+                });
+            }
+            res.setHeader("Content-Type", upstream.headers.get("content-type") || mimeType);
+            res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+            const length = upstream.headers.get("content-length");
+            if (length)
+                res.setHeader("Content-Length", length);
+            // Streamed rather than buffered so a 20 MB scan never sits on the heap.
+            const { Readable } = yield Promise.resolve().then(() => __importStar(require("stream")));
+            return Readable.fromWeb(upstream.body).pipe(res);
+        }
+        // Legacy sheet still held as a database blob.
         res.setHeader("Content-Type", mimeType);
         res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
         return res.send(buffer);
@@ -158,6 +228,7 @@ const getStudentAnswerPapers = (req, res) => __awaiter(void 0, void 0, void 0, f
 });
 exports.default = {
     uploadSheets,
+    replaceSheet,
     getAllSheets,
     getSheetFile,
     getSheetSummary,
