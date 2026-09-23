@@ -372,6 +372,45 @@ const getExamById = async (examId: string, requestedBy: any): Promise<any> => {
 };
 
 // ─── UPDATE EXAM STATUS ───────────────────────────────────────────────────────
+/** Synchronizes QuestionPaper and QuestionPaperAnswer statuses when an Exam status is updated. */
+async function syncQuestionPaperStatuses(examId: string, status: string): Promise<void> {
+  try {
+    const dbStatusMap: Record<string, string> = {
+      "Draft": "DRAFT",
+      "Paper Created": "DRAFT",
+      "Pending Approval": "PENDING_APPROVAL",
+      "Approved": "APPROVED",
+      "Rejected": "REJECTED",
+      "Live": "PUBLISHED",
+      "Completed": "APPROVED",
+      "DRAFT": "DRAFT",
+      "PENDING_APPROVAL": "PENDING_APPROVAL",
+      "APPROVED": "APPROVED",
+      "REJECTED": "REJECTED",
+      "PUBLISHED": "PUBLISHED",
+    };
+
+    const targetStatus = dbStatusMap[status];
+    if (!targetStatus) return;
+
+    const QuestionPaper = (await import("../modals/question-paper/QuestionPaper.modal")).default;
+    const QuestionPaperAnswer = (await import("../modals/question-paper/stander-answer.model")).default;
+
+    const now = new Date();
+    const updatePayload: any = { status: targetStatus };
+    if (targetStatus === "APPROVED") updatePayload.approvedAt = now;
+    if (targetStatus === "PENDING_APPROVAL") updatePayload.submittedAt = now;
+    if (targetStatus === "REJECTED") updatePayload.rejectedAt = now;
+
+    await Promise.all([
+      QuestionPaper.update(updatePayload, { where: { examId } }),
+      QuestionPaperAnswer.update(updatePayload, { where: { examId } }),
+    ]);
+  } catch (err: any) {
+    console.error("syncQuestionPaperStatuses error:", err?.message || err);
+  }
+}
+
 const updateExamStatus = async (
   examId: string,
   status: string,
@@ -405,6 +444,7 @@ const updateExamStatus = async (
     }
 
     await exam.update({ status });
+    await syncQuestionPaperStatuses(examId, status);
 
     return {
       error: false,
@@ -503,6 +543,10 @@ const updateExam = async (
       examTime: body.examTime !== undefined ? body.examTime : exam.examTime,
       status: body.status || exam.status,
     });
+
+    if (body.status) {
+      await syncQuestionPaperStatuses(examId, body.status);
+    }
 
     // Tell the newly assigned teacher, like on create.
     if (teacherChanged) {
