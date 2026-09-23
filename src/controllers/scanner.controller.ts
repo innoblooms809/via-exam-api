@@ -21,6 +21,25 @@ const uploadSheets = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// PUT /replaceSheet/:sheetId  (multipart/form-data, field name: "sheet")
+const replaceSheet = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await Scanner.replaceSheet(
+      req.params.sheetId,
+      req.file as Express.Multer.File | undefined,
+      req.viaExamUser
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (err: any) {
+    console.error("replaceSheet Controller Error:", err);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: err?.message || "Internal Server Error",
+    });
+  }
+};
+
 // GET /getAllSheets?classId=&section=&subjectId=&examType=
 const getAllSheets = async (req: any, res: Response): Promise<any> => {
   try {
@@ -48,7 +67,43 @@ const getSheetFile = async (req: any, res: Response): Promise<any> => {
       return res.status(result.statusCode).send(result);
     }
 
-    const { buffer, mimeType, fileName } = result.data;
+    const { buffer, mimeType, fileName, redirectUrl } = result.data;
+
+    if (redirectUrl) {
+      // Preferred path: the caller takes the short-lived signed URL and loads
+      // the file straight from the CDN, so the bytes never touch this process.
+      if (String(req.query.mode) === "url") {
+        return res.status(httpStatus.OK).send({
+          error: false,
+          statusCode: httpStatus.OK,
+          message: "File located.",
+          data: { url: redirectUrl, mimeType, fileName },
+        });
+      }
+
+      // Compatibility path: callers that expect raw bytes get them streamed
+      // through. A 302 is not usable here — the browser would repeat the
+      // request to Cloudinary in credentialed CORS mode and be blocked.
+      const upstream = await fetch(redirectUrl);
+      if (!upstream.ok || !upstream.body) {
+        return res.status(httpStatus.BAD_GATEWAY).json({
+          error: true,
+          statusCode: httpStatus.BAD_GATEWAY,
+          message: "The stored file could not be retrieved. Please try again.",
+        });
+      }
+
+      res.setHeader("Content-Type", upstream.headers.get("content-type") || mimeType);
+      res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+      const length = upstream.headers.get("content-length");
+      if (length) res.setHeader("Content-Length", length);
+
+      // Streamed rather than buffered so a 20 MB scan never sits on the heap.
+      const { Readable } = await import("stream");
+      return Readable.fromWeb(upstream.body as any).pipe(res);
+    }
+
+    // Legacy sheet still held as a database blob.
     res.setHeader("Content-Type", mimeType);
     res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
     return res.send(buffer);
@@ -173,6 +228,7 @@ const getStudentAnswerPapers = async (req: any, res: Response): Promise<any> => 
 
 export default {
   uploadSheets,
+  replaceSheet,
   getAllSheets,
   getSheetFile,
   getSheetSummary,

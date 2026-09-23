@@ -47,6 +47,7 @@ const axios_1 = __importDefault(require("axios"));
 const pythonServices_1 = require("../config/pythonServices");
 const questionPaperText_1 = require("../utils/questionPaperText");
 const answerKeyOcr_service_1 = require("./answerKeyOcr.service");
+const answerSheetStorage_1 = require("../utils/answerSheetStorage");
 const EVAL_TIMEOUT_MS = 3600000; // 1 hour — CPU inference on long papers is slow
 const positiveInt = (value, fallback) => {
     const n = Number.parseInt(String(value !== null && value !== void 0 ? value : ""), 10);
@@ -165,6 +166,10 @@ function runOcrStage(job) {
             const sheet = yield Scanner_modal_1.default.findOne({ where: { sheetId: job.sheetId, isDeleted: false } });
             if (!sheet)
                 throw new Error("Scanner sheet not found.");
+            // Cloudinary-backed sheets keep fileBuffer null in the database; resolve
+            // the real bytes onto the in-memory instance before readStudentSheet /
+            // runVisualPreEval (both share this same object) read it.
+            sheet.fileBuffer = yield (0, answerSheetStorage_1.resolveSheetBuffer)(sheet);
             // Model answer first (the pre-scan needs it): typed answers as-is; an uploaded
             // file comes from its saved OCR text (OCR-ed only the first time, then cached).
             let answerKeyText = job.typedAnswerKey;
@@ -195,6 +200,9 @@ function runEvaluationStage(job) {
             const aiEval = yield AIEvaluation_modal_1.default.findOne({ where: { sheetId: job.sheetId } });
             if (!sheet || !aiEval)
                 throw new Error("Sheet or evaluation record no longer exists.");
+            // Stage 2 re-fetches the sheet independently of stage 1, so it needs its
+            // own resolve too — Cloudinary-backed sheets keep fileBuffer null.
+            sheet.fileBuffer = yield (0, answerSheetStorage_1.resolveSheetBuffer)(sheet);
             // Let this sheet's diagram pre-scan finish, so /evaluate-text reuses its cached
             // results instead of scanning the diagrams a second time.
             if (job.visualPreEval)
