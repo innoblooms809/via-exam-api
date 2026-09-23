@@ -10,6 +10,7 @@ import RegHelper from "../utils/helper";
 import exclude from "../utils/exclude";
 import { sequelize } from "../config/sequelize";
 import { Op } from "sequelize";
+import StudentBulkService from "./studentBulk.service";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const resolveClassId = async (inputClass: string, instituteId: string): Promise<string | null> => {
@@ -601,119 +602,10 @@ const deleteStudent = async (userId: string, createdBy: any): Promise<any> => {
 };
 
 // ─── BULK CREATE STUDENTS ─────────────────────────────────────────────────────
-const bulkCreateStudents = async (
-  students: any[],
-  createdBy: any,
-): Promise<any> => {
-  const t = await sequelize.transaction();
-  try {
-    const instituteId = createdBy.instituteId;
-    const studentRole = await Role.findOne({ where: { role: "STUDENT" } });
-    if (!studentRole) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-        message: "STUDENT role not found.",
-      };
-    }
-
-    let created = 0;
-    let skipped = 0;
-    const errors: string[] = [];
-
-    for (const s of students) {
-      try {
-        // Check duplicates
-        const emailExists = await UserModal.findOne({
-          where: { emailId: s.email },
-        });
-        const phoneExists = await UserModal.findOne({
-          where: { phoneNumber: s.mobile },
-        });
-        const rollExists = await StudentProfile.findOne({
-          where: {
-            instituteId,
-            rollNumber: s.rollNumber,
-            className: s.className,
-            sectionId: s.sectionId,
-            session: s.session,
-          },
-        });
-
-        if (emailExists || phoneExists || rollExists) {
-          skipped++;
-          continue;
-        }
-
-        // Resolve classId from Class table
-        const resolvedClassId = await resolveClassId(s.classId || s.className, instituteId);
-
-        // Resolve sectionId from Section table
-        const resolvedSectionId = await resolveSectionId(s.sectionId, resolvedClassId || "", instituteId);
-
-        const plainPassword = await RegHelper.generatePassword();
-        const encryptedPassword = await EncryptPassword.encryptPassword(
-          plainPassword,
-        );
-        const userId = await RegHelper.generateUserId();
-
-        const newUser = await UserModal.create(
-          {
-            userId,
-            userName: `${s.firstName} ${s.lastName}`,
-            emailId: s.email,
-            phoneNumber: s.mobile,
-            password: encryptedPassword,
-            roleId: studentRole.id,
-            instituteId,
-            status: 1,
-          },
-          { transaction: t },
-        );
-
-        await StudentProfile.create(
-          {
-            userId: newUser.userId,
-            instituteId,
-            classId: resolvedClassId,
-            rollNumber: s.rollNumber,
-            className: s.className,
-            sectionId: resolvedSectionId,
-            session: s.session,
-            fatherName: s.fatherName || "Not provided",
-            gender: s.gender || "other",
-            dob: new Date(s.dob || "2000-01-01"),
-            aadhar: s.aadhar || "000000000000",
-            address: s.address || "Not provided",
-          },
-          { transaction: t },
-        );
-
-        created++;
-      } catch (err: any) {
-        errors.push(`Row ${created + skipped + 1}: Failed — ${err?.message || err}`);
-        skipped++;
-      }
-    }
-
-    await t.commit();
-
-    return {
-      error: false,
-      statusCode: httpStatus.CREATED,
-      message: `Bulk upload complete.`,
-      data: { created, skipped, errors },
-    };
-  } catch (e: any) {
-    await t.rollback();
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
+// Implemented in studentBulk.service.ts: bulk upload needs per-row validation,
+// per-row transactions and structured per-row error reporting, none of which
+// belong in the single-student CRUD path below.
+const bulkCreateStudents = StudentBulkService.bulkCreateStudents;
 
 export default {
   createStudent,

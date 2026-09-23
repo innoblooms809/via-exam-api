@@ -25,6 +25,7 @@ const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
 const pythonServices_1 = require("../config/pythonServices");
 const questionPaperText_1 = require("../utils/questionPaperText");
+const answerSheetStorage_1 = require("../utils/answerSheetStorage");
 // ─── TRIGGER EVALUATION V2 (OCR Pipeline on port 8002) ──────────────────────
 const triggerEvaluationV2 = (sheetId, force = false) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -187,6 +188,12 @@ const triggerEvaluationV2 = (sheetId, force = false) => __awaiter(void 0, void 0
 // // in parallel using Promise.all for maximum speed on high-spec servers.
 const runBackgroundEvaluationV2 = (sheet, aiEval, studentId, examId, maxMarks, questionText, standardAnsText) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        // Resolve the sheet's bytes once, up front — Cloudinary-backed sheets keep
+        // fileBuffer null in the database, so every read of sheet.fileBuffer below
+        // (both OCR threads and the PDF-base64 fallback) needs it populated first.
+        // Assigned onto the in-memory instance only; sheet.update() elsewhere
+        // passes an explicit field list and never persists this back.
+        sheet.fileBuffer = yield (0, answerSheetStorage_1.resolveSheetBuffer)(sheet);
         const ocrApiUrl = pythonServices_1.pythonServices.ocrUrl();
         // ⚡ 1. PARALLEL EXECUTION THREADS
         // Thread 1: Student Answer Sheet OCR (Port 8000)

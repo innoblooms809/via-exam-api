@@ -12,138 +12,25 @@ import StudentProfile from "../modals/Student.modal";
 import UserModal from "../modals/User.modal";
 import RegHelper from "../utils/helper";
 import { isTeacherRequester, requireSheetAccess, scopeSheetRows } from "./evaluationAccess.service";
+import AnswerSheetStorage from "./answerSheetStorage.service";
+import {
+  destroyAnswerSheet,
+  removeTempFile,
+  uploadAnswerSheet,
+} from "../utils/answerSheetStorage";
 
 // Exam-table statuses reached only after the QP + answer key pair is approved.
 const APPROVED_EXAM_STATUSES = ["Approved", "Live", "Completed"];
 const APPROVED_PAPER_STATUSES: ("APPROVED" | "PUBLISHED")[] = ["APPROVED", "PUBLISHED"];
 
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
+// Storage lives in answerSheetStorage.service.ts: scans now go to Cloudinary
+// rather than a Postgres BLOB, and keeping the row, the remote asset and the
+// temp file in step needs its own module.
+const uploadSheets = AnswerSheetStorage.uploadSheets;
 
-const uploadSheets = async (
-  body: {
-    classId: string;
-    section: string;
-    subjectId: string;
-    examType: string;
-  },
-  files: Express.Multer.File[],
-  uploadedBy: any
-): Promise<any> => {
-  try {
-    const instituteId = uploadedBy.instituteId;
-    if (!instituteId) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Institute not found for this user.",
-      };
-    }
-
-    if (!files || files.length === 0) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "No files provided.",
-      };
-    }
-
-    const results: { rollNo: string; status: string; reason?: string }[] = [];
-
-    // Find matching exam to link examId if available
-    const matchingExam = await Exam.findOne({
-      where: {
-        instituteId,
-        classId: body.classId,
-        subjectId: body.subjectId,
-        examType: body.examType,
-        isDeleted: false,
-      },
-    });
-
-    for (const file of files) {
-      // Roll number = filename without extension (matches your frontend logic)
-      const rollNo = file.originalname.replace(/\.[^.]+$/, "");
-
-      if (!/^\d+$/.test(rollNo)) {
-        results.push({ rollNo: file.originalname, status: "skipped", reason: "Filename is not a valid roll number" });
-        continue;
-      }
-
-      // Check duplicate / existing sheet
-      const existing = await Scanner.findOne({
-        where: {
-          instituteId,
-          classId: body.classId,
-          section: body.section,
-          subjectId: body.subjectId,
-          examType: body.examType,
-          rollNo,
-          isDeleted: false,
-        },
-      });
-
-      if (existing) {
-        const isOverwrite =
-          (body as any).overwrite === "true" ||
-          (body as any).overwrite === true ||
-          (body as any).replace === "true" ||
-          (body as any).replace === true;
-
-        if (isOverwrite) {
-          await existing.update({ isDeleted: true });
-          try {
-            await AIEvaluation.destroy({ where: { sheetId: existing.sheetId } });
-          } catch (e) {
-            // ignore cleanup error
-          }
-        } else {
-          results.push({ rollNo, status: "duplicate", reason: "Sheet already uploaded for this student" });
-          continue;
-        }
-      }
-
-      const sheetId = await RegHelper.generateUserId();
-
-      await Scanner.create({
-        sheetId,
-        instituteId,
-        examId: matchingExam ? matchingExam.examId : undefined,
-        classId: body.classId,
-        section: body.section,
-        subjectId: body.subjectId,
-        examType: body.examType,
-        rollNo,
-        fileName: file.originalname,
-        fileBuffer: file.buffer,
-        fileMimeType: file.mimetype,
-        fileSize: file.size,
-        uploadedBy: uploadedBy.userId,
-        status: "Pending",
-      });
-
-      results.push({ rollNo, status: "saved" });
-    }
-
-    const saved = results.filter((r) => r.status === "saved").length;
-    const failed = results.length - saved;
-
-    return {
-      error: false,
-      statusCode: httpStatus.CREATED,
-      message: `${saved} sheet(s) saved. ${failed} skipped/duplicate.`,
-      data: { results },
-    };
-  } catch (e: any) {
-    console.error(e);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
-
-// ─── GET ALL SHEETS (with filters) ───────────────────────────────────────────
+// ─── REPLACE ONE SHEET ────────────────────────────────────────────────────────
+const replaceSheet = AnswerSheetStorage.replaceSheet;
 
 const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
   try {
@@ -221,54 +108,7 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
 
 // ─── GET SHEET FILE (stream back to client) ───────────────────────────────────
 
-const getSheetFile = async (sheetId: string, requestedBy: any): Promise<any> => {
-  try {
-    const sheet = await Scanner.findOne({
-      where: { sheetId, isDeleted: false },
-    });
-
-    if (!sheet) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Sheet not found.",
-      };
-    }
-
-    if (sheet.instituteId !== requestedBy.instituteId) {
-      return {
-        error: true,
-        statusCode: httpStatus.FORBIDDEN,
-        message: "Access denied.",
-      };
-    }
-
-    let access = "full";
-    try {
-      access = (await requireSheetAccess(requestedBy, sheetId)).access;
-    } catch (err: any) {
-      return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message || "Access denied." };
-    }
-    const ext = String(sheet.fileName ?? "").match(/\.[a-z0-9]{1,6}$/i)?.[0]?.toLowerCase() ?? "";
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "File fetched.",
-      data: {
-        buffer: sheet.fileBuffer,
-        mimeType: sheet.fileMimeType,
-        fileName: access === "masked" ? `answer-sheet${ext}` : sheet.fileName,
-      },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
+const getSheetFile = AnswerSheetStorage.getSheetFile;
 
 // ─── GET SUMMARY (uploaded vs missing counts) ─────────────────────────────────
 
@@ -359,39 +199,8 @@ const updateSheetStatus = async (
 
 // ─── SOFT DELETE ──────────────────────────────────────────────────────────────
 
-const deleteSheet = async (sheetId: string, requestedBy: any): Promise<any> => {
-  try {
-    const sheet = await Scanner.findOne({ where: { sheetId, isDeleted: false } });
-    if (!sheet) {
-      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Sheet not found." };
-    }
-
-    if (sheet.instituteId !== requestedBy.instituteId) {
-      return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Access denied." };
-    }
-
-    await sheet.update({ isDeleted: true });
-
-    try {
-      await AIEvaluation.destroy({ where: { sheetId } });
-    } catch (e) {
-      // Ignore evaluation cleanup error if none exists
-    }
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Sheet deleted successfully.",
-      data: {},
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
+// Soft-deletes the row and destroys the stored scan once the change commits.
+const deleteSheet = AnswerSheetStorage.deleteSheet;
 
 // ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────────
 
@@ -658,25 +467,43 @@ const uploadStudentAnswerPaper = async (
       };
     }
 
-    const sheetId = await RegHelper.generateUserId();
+    const sheetId = `AS${String(Math.floor(Math.random() * 1_000_000_000)).padStart(9, "0")}`;
 
-    await Scanner.create({
-      sheetId,
+    // Same storage path as the batch upload: bytes go to Cloudinary, the row
+    // keeps a URL. Multer wrote the file to disk, so nothing is held in memory.
+    const stored = await uploadAnswerSheet({
+      filePath: file.path,
+      originalName: file.originalname,
+      mimeType: file.mimetype,
       instituteId,
-      examId: body.examId,
-      classId,
-      section,
-      subjectId: exam.subjectId,
-      examType: exam.examType,
-      rollNo: body.rollNumber,
-      studentName: body.studentName,
-      fileName: file.originalname,
-      fileBuffer: file.buffer,
-      fileMimeType: file.mimetype,
-      fileSize: file.size,
-      uploadedBy: uploadedBy.userId,
-      status: "UPLOADED",
+      sheetId,
     });
+
+    try {
+      await Scanner.create({
+        sheetId,
+        instituteId,
+        examId: body.examId,
+        classId,
+        section,
+        subjectId: exam.subjectId,
+        examType: exam.examType,
+        rollNo: body.rollNumber,
+        studentName: body.studentName,
+        fileName: file.originalname,
+        fileUrl: stored.url,
+        filePublicId: stored.publicId,
+        fileResourceType: stored.resourceType,
+        fileMimeType: file.mimetype,
+        fileSize: file.size ?? stored.bytes,
+        uploadedBy: uploadedBy.userId,
+        status: "UPLOADED",
+      });
+    } catch (err) {
+      // The row never landed, so the asset just uploaded is an orphan.
+      await destroyAnswerSheet(stored.publicId, stored.resourceType, `rollback ${sheetId}`);
+      throw err;
+    }
 
     return {
       error: false,
@@ -690,6 +517,8 @@ const uploadStudentAnswerPaper = async (
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       message: `Something went wrong: ${e.message}`,
     };
+  } finally {
+    await removeTempFile(file?.path);
   }
 };
 
@@ -721,6 +550,7 @@ const getStudentAnswerPapers = async (examId: string, requestedBy: any): Promise
 
 export default {
   uploadSheets,
+  replaceSheet,
   getAllSheets,
   getSheetFile,
   getSheetSummary,

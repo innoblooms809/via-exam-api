@@ -13,6 +13,7 @@ import axios from "axios";
 import FormData from "form-data";
 import { pythonServices } from "../config/pythonServices";
 import { formatQuestionPaper } from "../utils/questionPaperText";
+import { resolveSheetBuffer } from "../utils/answerSheetStorage";
 
 export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   logger.info(`[OCRNew5 Service] Initiating AI evaluation for sheet: ${sheetId}`);
@@ -22,6 +23,12 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   if (!sheet) {
     throw new ApiError(httpStatus.NOT_FOUND, "Scanner sheet not found.");
   }
+
+  // Cloudinary-backed sheets keep fileBuffer null in the database; resolve the
+  // real bytes onto the in-memory instance before anything below reads it.
+  // sheet.update() further down passes an explicit field list, so this is
+  // never written back.
+  sheet.fileBuffer = await resolveSheetBuffer(sheet);
 
   // 2. Perform OCR on Student Answer Sheet if image/buffer available
   let studentAnsText = sheet.ocrText || sheet.answerText || "";

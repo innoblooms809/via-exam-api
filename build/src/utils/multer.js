@@ -86,7 +86,8 @@ exports.answerPaperUpload = (0, multer_1.default)({
     storage: multer_1.default.memoryStorage(),
     fileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024,
+        fileSize: 100 * 1024 * 1024,
+        fieldSize: 100 * 1024 * 1024,
     },
 }).fields([
     {
@@ -111,6 +112,7 @@ exports.answerPdfUpload = (0, multer_1.default)({
     storage: multer_1.default.memoryStorage(),
     fileFilter: pdfFileFilter,
     limits: {
-        fileSize: 20 * 1024 * 1024,
+        fileSize: 100 * 1024 * 1024,
+        fieldSize: 100 * 1024 * 1024,
     },
 }).any();

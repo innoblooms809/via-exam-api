@@ -13,7 +13,14 @@ interface AnswerSheetAttributes {
   rollNo: string;
   studentName?: string; // For approval workflow
   fileName: string;
-  fileBuffer: Buffer;
+  /** Legacy: sheets uploaded before Cloudinary storage still carry their bytes here. */
+  fileBuffer: Buffer | null;
+  /** Cloudinary secure URL of the stored scan. Null only for legacy rows. */
+  fileUrl: string | null;
+  /** Cloudinary public id, needed to delete the asset when the sheet goes. */
+  filePublicId: string | null;
+  /** Cloudinary resource type ("raw" for PDFs, "image" otherwise). */
+  fileResourceType: string | null;
   fileMimeType: string;
   fileSize: number;
   status: string; // Pending, Evaluated, UPLOADED
@@ -26,7 +33,14 @@ interface AnswerSheetAttributes {
 interface AnswerSheetCreationAttributes
   extends Optional<
     AnswerSheetAttributes,
-    "id" | "sheetId" | "status" | "isDeleted"
+    | "id"
+    | "sheetId"
+    | "status"
+    | "isDeleted"
+    | "fileBuffer"
+    | "fileUrl"
+    | "filePublicId"
+    | "fileResourceType"
   > {}
 
 class Scanner extends Model<
@@ -44,7 +58,10 @@ class Scanner extends Model<
   public rollNo!: string;
   public studentName?: string;
   public fileName!: string;
-  public fileBuffer!: Buffer;
+  public fileBuffer!: Buffer | null;
+  public fileUrl!: string | null;
+  public filePublicId!: string | null;
+  public fileResourceType!: string | null;
   public fileMimeType!: string;
   public fileSize!: number;
   public status!: string;
@@ -67,9 +84,13 @@ Scanner.init(
     rollNo: { type: DataTypes.STRING, allowNull: false },
     studentName: { type: DataTypes.STRING, allowNull: true }, // For approval workflow
     fileName: { type: DataTypes.STRING, allowNull: false },
-    fileBuffer: { type: DataTypes.BLOB("long"), allowNull: false },
+    // Nullable since the move to Cloudinary: new rows store a URL instead.
+    fileBuffer: { type: DataTypes.BLOB("long"), allowNull: true },
+    fileUrl: { type: DataTypes.TEXT, allowNull: true },
+    filePublicId: { type: DataTypes.STRING, allowNull: true },
+    fileResourceType: { type: DataTypes.STRING, allowNull: true },
     fileMimeType: { type: DataTypes.STRING, allowNull: false },
-    fileSize: { type: DataTypes.INTEGER, allowNull: false },
+    fileSize: { type: DataTypes.BIGINT, allowNull: false },
     status: {
       type: DataTypes.STRING,
       allowNull: false,

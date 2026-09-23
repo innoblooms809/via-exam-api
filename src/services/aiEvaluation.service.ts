@@ -13,6 +13,7 @@ import axios from "axios";
 import { pythonServices } from "../config/pythonServices";
 import { formatQuestionPaper } from "../utils/questionPaperText";
 import { getSheetQueueInfo } from "./pipeline6.service";
+import { resolveSheetBuffer } from "../utils/answerSheetStorage";
 
 // ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
 const triggerEvaluation = async (sheetId: string, force: boolean = false): Promise<any> => {
@@ -201,7 +202,11 @@ const runBackgroundEvaluation = async (
   standardAnsText: string
 ): Promise<void> => {
   try {
-    // 1. Check file buffer validity
+    // 1. Resolve the sheet's bytes — Cloudinary-backed sheets keep fileBuffer
+    // null, so fetch the stored file before anything below reads it. This
+    // assigns onto the in-memory instance only; sheet.update() further down
+    // passes an explicit field list and never persists this back.
+    sheet.fileBuffer = await resolveSheetBuffer(sheet);
     if (!sheet.fileBuffer || sheet.fileBuffer.length === 0) {
       throw new Error("Answer sheet image file buffer is missing or empty in database.");
     }

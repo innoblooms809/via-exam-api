@@ -392,6 +392,49 @@ const getExamById = (examId, requestedBy) => __awaiter(void 0, void 0, void 0, f
     }
 });
 // ─── UPDATE EXAM STATUS ───────────────────────────────────────────────────────
+/** Synchronizes QuestionPaper and QuestionPaperAnswer statuses when an Exam status is updated.
+ *  Only touches papers/answers that have been submitted (status != DRAFT).
+ *  DRAFT papers are ones the teacher hasn't submitted yet and must not be touched. */
+function syncQuestionPaperStatuses(examId, status) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const dbStatusMap = {
+                "Pending Approval": "PENDING_APPROVAL",
+                "Approved": "APPROVED",
+                "Rejected": "REJECTED",
+                "Completed": "APPROVED",
+                "PENDING_APPROVAL": "PENDING_APPROVAL",
+                "APPROVED": "APPROVED",
+                "REJECTED": "REJECTED",
+                "Live": "PUBLISHED",
+                "PUBLISHED": "PUBLISHED",
+            };
+            const targetStatus = dbStatusMap[status];
+            if (!targetStatus)
+                return;
+            const QuestionPaper = (yield Promise.resolve().then(() => __importStar(require("../modals/question-paper/QuestionPaper.modal")))).default;
+            const QuestionPaperAnswer = (yield Promise.resolve().then(() => __importStar(require("../modals/question-paper/stander-answer.model")))).default;
+            const { Op } = yield Promise.resolve().then(() => __importStar(require("sequelize")));
+            const now = new Date();
+            const updatePayload = { status: targetStatus };
+            if (targetStatus === "APPROVED")
+                updatePayload.approvedAt = now;
+            if (targetStatus === "PENDING_APPROVAL")
+                updatePayload.submittedAt = now;
+            if (targetStatus === "REJECTED")
+                updatePayload.rejectedAt = now;
+            // Only update papers/answers that have been submitted (not DRAFT).
+            // DRAFT papers are ones the teacher hasn't submitted yet and should not be touched.
+            yield Promise.all([
+                QuestionPaper.update(updatePayload, { where: { examId, status: { [Op.ne]: "DRAFT" } } }),
+                QuestionPaperAnswer.update(updatePayload, { where: { examId, status: { [Op.ne]: "DRAFT" } } }),
+            ]);
+        }
+        catch (err) {
+            console.error("syncQuestionPaperStatuses error:", (err === null || err === void 0 ? void 0 : err.message) || err);
+        }
+    });
+}
 const updateExamStatus = (examId, status, requestedBy) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const allowed = [...exports.EXAM_WORKFLOW_STATUSES];
@@ -418,6 +461,7 @@ const updateExamStatus = (examId, status, requestedBy) => __awaiter(void 0, void
             };
         }
         yield exam.update({ status });
+        yield syncQuestionPaperStatuses(examId, status);
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -501,6 +545,9 @@ const updateExam = (examId, body, requestedBy) => __awaiter(void 0, void 0, void
             examTime: body.examTime !== undefined ? body.examTime : exam.examTime,
             status: body.status || exam.status,
         });
+        if (body.status) {
+            yield syncQuestionPaperStatuses(examId, body.status);
+        }
         // Tell the newly assigned teacher, like on create.
         if (teacherChanged) {
             yield Notification_modal_1.default.create({

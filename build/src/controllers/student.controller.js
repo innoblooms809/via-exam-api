@@ -89,12 +89,45 @@ const deleteStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 const bulkCreateStudents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _f, _g, _h, _j, _k;
     try {
-        const result = yield student_service_1.default.bulkCreateStudents(req.body.students, req.viaExamUser);
+        const result = yield student_service_1.default.bulkCreateStudents((_f = req.body) === null || _f === void 0 ? void 0 : _f.students, req.viaExamUser);
+        // Mirror the single-student flow: every student that was actually created
+        // gets their login details by email. Dispatched in the background and one
+        // at a time so a 500-row upload cannot stall the response or flood SMTP.
+        const created = !result.error ? ((_h = (_g = result.data) === null || _g === void 0 ? void 0 : _g.successes) !== null && _h !== void 0 ? _h : []) : [];
+        if (created.length > 0) {
+            const slug = (_k = (_j = req.viaExamUser) === null || _j === void 0 ? void 0 : _j.institute) === null || _k === void 0 ? void 0 : _k.slug;
+            const loginUrl = slug
+                ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
+                : `${config_1.default.frontendUrl}/auth/signin`;
+            void (() => __awaiter(void 0, void 0, void 0, function* () {
+                for (const student of created) {
+                    if (!student.generatedPassword)
+                        continue; // admin set the password themselves
+                    try {
+                        yield (0, mailHelper_1.sendUserCredentials)({
+                            userName: student.name,
+                            email: student.email,
+                            phone: student.mobile,
+                            password: student.generatedPassword,
+                            role: "Student",
+                            loginUrl,
+                        });
+                    }
+                    catch (err) {
+                        console.error(`Background bulk student email dispatch failed for ${student.email}:`, err);
+                    }
+                }
+            }))();
+        }
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
-        return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+        console.error("bulkCreateStudents controller error:", error);
+        return res
+            .status(500)
+            .json({ error: true, statusCode: 500, message: "Internal Server Error" });
     }
 });
 exports.default = {

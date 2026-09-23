@@ -2,6 +2,8 @@ import { Router } from "express";
 import Controller from "../../controllers/student.controller";
 import { authenticate, authorize } from "../../middlewares/auth";
 import { studentUpload } from "../../utils/multer";
+import validate from "../../middlewares/validate";
+import studentValidation from "../../validations/student.validation";
 
 const router = Router();
 
@@ -20,6 +22,9 @@ router.post(
   "/createBulkStudents",
   authenticate,
 //   authorize(["ADMIN"]),
+  // Envelope only — individual rows are validated in the service so one bad
+  // row reports a reason instead of rejecting the whole upload.
+  validate(studentValidation.bulkCreateStudents),
   Controller.bulkCreateStudents
 );
 
