@@ -27,7 +27,7 @@ const generateTempPassword = (): string => {
 };
 
 // ─── Resend Credentials for any user role ───────────────────────────────────────
-const resendCredentials = async (email: string): Promise<any> => {
+const resendCredentials = async (email: string, customPassword?: string): Promise<any> => {
   try {
     // 1. Find user
     const user = await UserModal.findOne({
@@ -45,8 +45,8 @@ const resendCredentials = async (email: string): Promise<any> => {
     // 2. Get user role
     const roleName = await getRoleName(user.roleId);
 
-    // 3. Generate new temporary password
-    const tempPassword = generateTempPassword();
+    // 3. Password to use
+    const tempPassword = customPassword && customPassword.trim() ? customPassword.trim() : generateTempPassword();
     const encrypted = await EncryptPassword.encryptPassword(tempPassword);
 
     // 4. Update password in DB
@@ -93,7 +93,9 @@ const resendCredentials = async (email: string): Promise<any> => {
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `Credentials resent to ${email} successfully.`,
+      message: customPassword
+        ? `Password updated and credentials sent to ${email} successfully.`
+        : `Credentials resent to ${email} successfully.`,
       data: { email: user.emailId },
     };
   } catch (e: any) {

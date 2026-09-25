@@ -23,8 +23,8 @@
  */
 
 export const ANSWER_SHEET_LIMITS = {
-  /** Largest single answer sheet accepted. */
-  maxFileBytes: 20 * 1024 * 1024,
+  /** Largest single answer sheet accepted (matches Cloudinary 10 MB raw/image limit). */
+  maxFileBytes: 10 * 1024 * 1024,
   /** Largest number of sheets in one request. */
   maxFilesPerRequest: 10,
   /** Largest total body size for one upload request, headers excluded. */
