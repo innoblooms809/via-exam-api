@@ -181,7 +181,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       data: {
         institute,
         admin: adminResponse,
-        loginUrl: `${process.env.FRONTEND_URL ?? "http://localhost:3000"}/${body.slug
+        loginUrl: `${process.env.FRONTEND_URL ?? "http://13.206.201.182:3000"}/${body.slug
           }/auth/signin`,
         logoUrl,
       },
