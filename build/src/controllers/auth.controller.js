@@ -57,7 +57,8 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 });
 const resendCredentials = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const result = yield auth_service_1.default.resendCredentials(req.body.email);
+        const { email, password } = req.body;
+        const result = yield auth_service_1.default.resendCredentials(email, password);
         return res.status(result.statusCode).send(result);
     }
     catch (_d) {

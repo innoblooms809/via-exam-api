@@ -26,8 +26,8 @@ const logger_1 = __importDefault(require("./logger"));
  */
 const firstSet = (...values) => values.map((v) => v === null || v === void 0 ? void 0 : v.trim()).find((v) => !!v);
 const base = (value, fallback) => (firstSet(value) || fallback).replace(/\/+$/, "");
-const ocrBase = () => base(process.env.OCR_SERVICE_URL, "http://localhost:8000");
-const evalBase = () => base(process.env.EVAL_SERVICE_URL, "http://localhost:8006");
+const ocrBase = () => base(process.env.OCR_SERVICE_URL, "http://13.206.201.182:8000");
+const evalBase = () => base(process.env.EVAL_SERVICE_URL, "http://13.206.201.182:8006");
 /** Legacy evaluation API lives on the evaluation host but on port 8002. */
 const legacyEvalBase = () => {
     try {
@@ -36,7 +36,7 @@ const legacyEvalBase = () => {
         return url.origin;
     }
     catch (_a) {
-        return "http://localhost:8002";
+        return "http://13.206.201.182:8002";
     }
 };
 exports.pythonServices = {
