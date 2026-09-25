@@ -18,9 +18,11 @@ import Scanner from "../modals/Scanner.modal";
 import AIEvaluation from "../modals/AIEvaluation.modal";
 import Notification from "../modals/Notification.modal";
 import EvaluationAssignment from "../modals/EvaluationAssignment.modal";
+import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
 import StudentService from "./student.service";
 import RegHelper from "../utils/helper";
 import ApiError from "../utils/ApiError";
+import { refreshExamStatus } from "./exam.service";
 import { specialisesIn } from "../utils/specialization";
 import {
   accessForSheet,
@@ -98,11 +100,33 @@ const listExams = async (admin: any, query: any) => {
   const instituteId = admin.instituteId;
   const search = clean(query?.search).toLowerCase();
 
+  // 1. Exams whose parent status is already synced to Approved/Live/Completed
   const exams: any[] = await Exam.findAll({
     where: { instituteId, isDeleted: false, status: { [Op.in]: EVALUATION_READY_STATUSES } },
     include: EXAM_INCLUDES,
     order: [["updatedAt", "DESC"]],
   });
+
+  // 2. Also find exams that have approved paper sets but parent status wasn't synced
+  const existingIds = new Set(exams.map((e: any) => e.examId));
+  const approvedPapers: any[] = await QuestionPaper.findAll({
+    where: { instituteId, status: { [Op.in]: ["APPROVED", "PUBLISHED"] } },
+    attributes: ["examId"],
+    group: ["examId"],
+  });
+  const missingIds = approvedPapers.map((p: any) => p.examId).filter((id: string) => !existingIds.has(id));
+
+  if (missingIds.length) {
+    const extraExams: any[] = await Exam.findAll({
+      where: { examId: { [Op.in]: missingIds }, instituteId, isDeleted: false },
+      include: EXAM_INCLUDES,
+    });
+    // Auto-fix their parent status so future queries work without this fallback
+    for (const ex of extraExams) {
+      try { await refreshExamStatus(ex.examId); } catch (_) { /* non-blocking */ }
+    }
+    exams.push(...extraExams);
+  }
 
   const active = exams.length
     ? await EvaluationAssignment.findAll({
