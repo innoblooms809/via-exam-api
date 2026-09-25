@@ -13,7 +13,7 @@ import Role from "../../modals/Role.modal";
 import { resolveRequestAuthRole } from "../../middlewares/auth";
 
 interface IGetUserInfoRequest extends Request {
-  session: any; // same interface as your boilerplate
+  session?: any; // Optional: express-session middleware is disabled (captcha not in use)
 }
 
 const getCookieValue = (req: Request, name: string): string | undefined => {
@@ -63,7 +63,7 @@ const getRoleCookieNames = (roleStr: string) => {
  */
 const getCaptcha = async (req: IGetUserInfoRequest, res: any) => {
   const captcha = svgCaptcha.create();
-  req.session.captcha = captcha.text;
+  // req.session.captcha = captcha.text; // Commented out: session middleware disabled
   res.set("Content-Type", "image/svg+xml");
   res.send(captcha.data);
 };

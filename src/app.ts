@@ -13,7 +13,7 @@ import routes from './routes/v1';
 import { errorConverter, errorHandler } from './middlewares/error';
 import ApiError from './utils/ApiError';
 import path from 'path';
-import session from 'express-session';
+// import session from 'express-session'; // Commented out: captcha is disabled, MemoryStore not needed in production
 import bodyParser from 'body-parser';
 const app = express();
 
@@ -58,11 +58,11 @@ const corsOptions: cors.CorsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-app.use(session({
-  secret: config.sessionSecret,
-  resave: false,
-  saveUninitialized: false,
-}));
+// app.use(session({
+//   secret: config.sessionSecret,
+//   resave: false,
+//   saveUninitialized: false,
+// })); // Commented out: session only used for CAPTCHA which is disabled
 app.use(bodyParser.json({ limit: "25mb" }));
 // limit repeated failed requests to auth endpoints
 if (config.env === 'production') {
