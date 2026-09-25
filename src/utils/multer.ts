@@ -89,8 +89,8 @@ export const answerPaperUpload = multer({
   storage: multer.memoryStorage(),
   fileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB max
-    fieldSize: 100 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10MB max
+    fieldSize: 10 * 1024 * 1024,
   },
 }).fields([
   {
@@ -116,7 +116,7 @@ export const answerPdfUpload = multer({
   storage: multer.memoryStorage(),
   fileFilter: pdfFileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB max
-    fieldSize: 100 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10MB max
+    fieldSize: 10 * 1024 * 1024,
   },
 }).any();

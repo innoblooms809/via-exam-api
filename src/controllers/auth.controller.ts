@@ -45,7 +45,8 @@ const resetPassword = async (req: Request, res: Response): Promise<any> => {
 
 const resendCredentials = async (req: Request, res: Response): Promise<any> => {
   try {
-    const result = await AuthService.resendCredentials(req.body.email);
+    const { email, password } = req.body;
+    const result = await AuthService.resendCredentials(email, password);
     return res.status(result.statusCode).send(result);
   } catch {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
