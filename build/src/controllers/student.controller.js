@@ -25,16 +25,20 @@ const createStudent = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             const loginUrl = slug
                 ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
                 : `${config_1.default.frontendUrl}/auth/signin`;
-            (0, mailHelper_1.sendUserCredentials)({
-                userName: `${req.body.firstName} ${req.body.lastName}`,
-                email: req.body.email,
-                phone: req.body.mobile,
-                password: result.data.plainPassword,
-                role: "Student",
-                loginUrl,
-            }).catch((err) => {
-                console.error("Background student email dispatch failed:", err);
-            });
+            const recipientEmail = req.body.emailId || req.body.email;
+            const recipientPhone = req.body.phoneNumber || req.body.mobile || req.body.phone;
+            if (recipientEmail) {
+                (0, mailHelper_1.sendUserCredentials)({
+                    userName: `${req.body.firstName} ${req.body.lastName}`,
+                    email: recipientEmail,
+                    phone: recipientPhone || "",
+                    password: result.data.plainPassword,
+                    role: "Student",
+                    loginUrl,
+                }).catch((err) => {
+                    console.error("Background student email dispatch failed:", err);
+                });
+            }
         }
         return res.status(result.statusCode).send(result);
     }
