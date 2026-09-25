@@ -18,16 +18,21 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
         ? `${config.frontendUrl}/${slug}/auth/signin`
         : `${config.frontendUrl}/auth/signin`;
 
-      sendUserCredentials({
-        userName: `${req.body.firstName} ${req.body.lastName}`,
-        email:    req.body.email,
-        phone:    req.body.mobile,
-        password: result.data.plainPassword,
-        role:     "Student",
-        loginUrl,
-      }).catch((err) => {
-        console.error("Background student email dispatch failed:", err);
-      });
+      const recipientEmail = req.body.emailId || req.body.email;
+      const recipientPhone = req.body.phoneNumber || req.body.mobile || req.body.phone;
+
+      if (recipientEmail) {
+        sendUserCredentials({
+          userName: `${req.body.firstName} ${req.body.lastName}`,
+          email:    recipientEmail,
+          phone:    recipientPhone || "",
+          password: result.data.plainPassword,
+          role:     "Student",
+          loginUrl,
+        }).catch((err) => {
+          console.error("Background student email dispatch failed:", err);
+        });
+      }
     }
 
     return res.status(result.statusCode).send(result);

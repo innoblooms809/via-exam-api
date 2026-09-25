@@ -119,6 +119,7 @@ const createScanner = (body, files, createdBy) => __awaiter(void 0, void 0, void
                 userId: newUser.userId,
                 plainPassword,
                 instituteName: institute.instituteName,
+                instituteSlug: institute.slug,
             },
         };
     }

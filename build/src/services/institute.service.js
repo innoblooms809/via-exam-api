@@ -25,7 +25,7 @@ const mailHelper_1 = require("../utils/mailHelper");
 const config_1 = __importDefault(require("../config/config"));
 // ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
 const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d;
     // Use a transaction — if admin user creation fails, institute also rolls back
     const t = yield sequelize_1.sequelize.transaction();
     try {
@@ -168,7 +168,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             data: {
                 institute,
                 admin: adminResponse,
-                loginUrl: `${(_c = process.env.FRONTEND_URL) !== null && _c !== void 0 ? _c : "http://localhost:3000"}/${body.slug}/auth/signin`,
+                loginUrl: `${config_1.default.frontendUrl}/${body.slug}/auth/signin`,
                 logoUrl,
             },
         };
@@ -177,7 +177,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
         yield t.rollback();
         console.error(e);
         if (e.name === "SequelizeUniqueConstraintError") {
-            const field = (_e = (_d = e.errors) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.path;
+            const field = (_d = (_c = e.errors) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.path;
             let message = "This record already exists.";
             if (field === "phoneNumber")
                 message = "This phone number is already registered.";
@@ -388,7 +388,7 @@ const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, funct
 // Update institute details + optionally update logo/banner
 // Does NOT update admin credentials here (separate API for that)
 const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z;
+    var _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
     try {
         const whereCondition = {
             isDeleted: false,
@@ -453,31 +453,31 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
             }
         }
         // Handle new file uploads â€” keep old ones if no new file sent
-        const logoUrl = ((_f = files === null || files === void 0 ? void 0 : files.logo) === null || _f === void 0 ? void 0 : _f[0])
+        const logoUrl = ((_e = files === null || files === void 0 ? void 0 : files.logo) === null || _e === void 0 ? void 0 : _e[0])
             ? `/${files.logo[0].path.replace(/\\/g, "/")}`
             : institute.logoUrl;
-        const bannerUrl = ((_g = files === null || files === void 0 ? void 0 : files.banner) === null || _g === void 0 ? void 0 : _g[0])
+        const bannerUrl = ((_f = files === null || files === void 0 ? void 0 : files.banner) === null || _f === void 0 ? void 0 : _f[0])
             ? `/${files.banner[0].path.replace(/\\/g, "/")}`
             : institute.bannerUrl;
         // Only update fields that are sent in body
         yield institute.update({
-            instituteName: (_h = body.instituteName) !== null && _h !== void 0 ? _h : institute.instituteName,
-            instituteType: (_j = body.instituteType) !== null && _j !== void 0 ? _j : institute.instituteType,
-            boardType: (_k = body.boardType) !== null && _k !== void 0 ? _k : institute.boardType,
-            registrationNumber: (_l = body.registrationNumber) !== null && _l !== void 0 ? _l : institute.registrationNumber,
-            establishedYear: (_m = body.establishedYear) !== null && _m !== void 0 ? _m : institute.establishedYear,
-            websiteUrl: (_o = body.websiteUrl) !== null && _o !== void 0 ? _o : institute.websiteUrl,
-            slug: (_p = body.slug) !== null && _p !== void 0 ? _p : institute.slug,
-            contactPersonName: (_q = body.contactPersonName) !== null && _q !== void 0 ? _q : institute.contactPersonName,
-            contactEmail: (_r = body.contactEmail) !== null && _r !== void 0 ? _r : institute.contactEmail,
-            contactPhone: (_s = body.contactPhone) !== null && _s !== void 0 ? _s : institute.contactPhone,
-            alternatePhone: (_t = body.alternatePhone) !== null && _t !== void 0 ? _t : institute.alternatePhone,
-            addressLine1: (_u = body.addressLine1) !== null && _u !== void 0 ? _u : institute.addressLine1,
-            addressLine2: (_v = body.addressLine2) !== null && _v !== void 0 ? _v : institute.addressLine2,
-            city: (_w = body.city) !== null && _w !== void 0 ? _w : institute.city,
-            state: (_x = body.state) !== null && _x !== void 0 ? _x : institute.state,
-            pincode: (_y = body.pincode) !== null && _y !== void 0 ? _y : institute.pincode,
-            plan: (_z = body.plan) !== null && _z !== void 0 ? _z : institute.plan,
+            instituteName: (_g = body.instituteName) !== null && _g !== void 0 ? _g : institute.instituteName,
+            instituteType: (_h = body.instituteType) !== null && _h !== void 0 ? _h : institute.instituteType,
+            boardType: (_j = body.boardType) !== null && _j !== void 0 ? _j : institute.boardType,
+            registrationNumber: (_k = body.registrationNumber) !== null && _k !== void 0 ? _k : institute.registrationNumber,
+            establishedYear: (_l = body.establishedYear) !== null && _l !== void 0 ? _l : institute.establishedYear,
+            websiteUrl: (_m = body.websiteUrl) !== null && _m !== void 0 ? _m : institute.websiteUrl,
+            slug: (_o = body.slug) !== null && _o !== void 0 ? _o : institute.slug,
+            contactPersonName: (_p = body.contactPersonName) !== null && _p !== void 0 ? _p : institute.contactPersonName,
+            contactEmail: (_q = body.contactEmail) !== null && _q !== void 0 ? _q : institute.contactEmail,
+            contactPhone: (_r = body.contactPhone) !== null && _r !== void 0 ? _r : institute.contactPhone,
+            alternatePhone: (_s = body.alternatePhone) !== null && _s !== void 0 ? _s : institute.alternatePhone,
+            addressLine1: (_t = body.addressLine1) !== null && _t !== void 0 ? _t : institute.addressLine1,
+            addressLine2: (_u = body.addressLine2) !== null && _u !== void 0 ? _u : institute.addressLine2,
+            city: (_v = body.city) !== null && _v !== void 0 ? _v : institute.city,
+            state: (_w = body.state) !== null && _w !== void 0 ? _w : institute.state,
+            pincode: (_x = body.pincode) !== null && _x !== void 0 ? _x : institute.pincode,
+            plan: (_y = body.plan) !== null && _y !== void 0 ? _y : institute.plan,
             logoUrl,
             bannerUrl,
         });
@@ -655,7 +655,7 @@ const getInstituteCredentials = (instituteId) => __awaiter(void 0, void 0, void 
     }
 });
 const addInstituteAdmin = (instituteId, body) => __awaiter(void 0, void 0, void 0, function* () {
-    var _0, _1;
+    var _z, _0;
     try {
         const whereCondition = {
             isDeleted: false,
@@ -788,7 +788,7 @@ const addInstituteAdmin = (instituteId, body) => __awaiter(void 0, void 0, void 
     catch (e) {
         console.error("Error in addInstituteAdmin:", e);
         if (e.name === "SequelizeUniqueConstraintError") {
-            const field = (_1 = (_0 = e.errors) === null || _0 === void 0 ? void 0 : _0[0]) === null || _1 === void 0 ? void 0 : _1.path;
+            const field = (_0 = (_z = e.errors) === null || _z === void 0 ? void 0 : _z[0]) === null || _0 === void 0 ? void 0 : _0.path;
             let message = "This record already exists.";
             if (field === "phoneNumber")
                 message = "This phone number is already registered.";

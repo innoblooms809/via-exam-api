@@ -13,21 +13,28 @@ const createScanner = async (req: any, res: Response): Promise<any> => {
     );
 
     if (!result.error) {
-      const slug = req.viaExamUser?.institute?.slug;
+      const slug = result.data?.instituteSlug || req.viaExamUser?.institute?.slug;
       const loginUrl = slug
         ? `${config.frontendUrl}/${slug}/auth/signin`
         : `${config.frontendUrl}/auth/signin`;
 
-      sendUserCredentials({
-        userName: `${req.body.firstName} ${req.body.lastName}`,
-        email:    req.body.email,
-        phone:    req.body.mobile,
-        password: result.data.plainPassword,
-        role:     "Scanner",
-        loginUrl,
-      }).catch((err) => {
-        console.error("Background scanner email dispatch failed:", err);
-      });
+      const recipientEmail = req.body.emailId || req.body.email;
+      const recipientPhone = req.body.phoneNumber || req.body.mobile || req.body.phone;
+
+      if (recipientEmail) {
+        sendUserCredentials({
+          userName: `${req.body.firstName} ${req.body.lastName}`,
+          email:    recipientEmail,
+          phone:    recipientPhone || "",
+          password: result.data.plainPassword,
+          role:     "Scanner",
+          loginUrl,
+        }).catch((err) => {
+          console.error("Background scanner email dispatch failed:", err);
+        });
+      } else {
+        console.warn("Scanner user created without an email address — skipping credentials email.");
+      }
     }
 
     return res.status(result.statusCode).send(result);

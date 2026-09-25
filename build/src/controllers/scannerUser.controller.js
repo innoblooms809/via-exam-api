@@ -16,24 +16,31 @@ const scannerUser_service_1 = __importDefault(require("../services/scannerUser.s
 const config_1 = __importDefault(require("../config/config"));
 const mailHelper_1 = require("../utils/mailHelper");
 const createScanner = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c;
     try {
         const result = yield scannerUser_service_1.default.createScanner(req.body, req.files, req.viaExamUser);
         if (!result.error) {
-            const slug = (_b = (_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.institute) === null || _b === void 0 ? void 0 : _b.slug;
+            const slug = ((_a = result.data) === null || _a === void 0 ? void 0 : _a.instituteSlug) || ((_c = (_b = req.viaExamUser) === null || _b === void 0 ? void 0 : _b.institute) === null || _c === void 0 ? void 0 : _c.slug);
             const loginUrl = slug
                 ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
                 : `${config_1.default.frontendUrl}/auth/signin`;
-            (0, mailHelper_1.sendUserCredentials)({
-                userName: `${req.body.firstName} ${req.body.lastName}`,
-                email: req.body.email,
-                phone: req.body.mobile,
-                password: result.data.plainPassword,
-                role: "Scanner",
-                loginUrl,
-            }).catch((err) => {
-                console.error("Background scanner email dispatch failed:", err);
-            });
+            const recipientEmail = req.body.emailId || req.body.email;
+            const recipientPhone = req.body.phoneNumber || req.body.mobile || req.body.phone;
+            if (recipientEmail) {
+                (0, mailHelper_1.sendUserCredentials)({
+                    userName: `${req.body.firstName} ${req.body.lastName}`,
+                    email: recipientEmail,
+                    phone: recipientPhone || "",
+                    password: result.data.plainPassword,
+                    role: "Scanner",
+                    loginUrl,
+                }).catch((err) => {
+                    console.error("Background scanner email dispatch failed:", err);
+                });
+            }
+            else {
+                console.warn("Scanner user created without an email address — skipping credentials email.");
+            }
         }
         return res.status(result.statusCode).send(result);
     }
