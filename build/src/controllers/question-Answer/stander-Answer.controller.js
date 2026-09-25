@@ -132,6 +132,14 @@ const uploadPdfController = (req, res) => __awaiter(void 0, void 0, void 0, func
         }
         const urls = [];
         for (const file of files) {
+            if (file.size > 10 * 1024 * 1024) {
+                return res.status(http_status_1.default.BAD_REQUEST).json({
+                    error: true,
+                    message: `File "${file.originalname}" exceeds the maximum allowed size limit of 10 MB.`,
+                });
+            }
+        }
+        for (const file of files) {
             try {
                 const url = yield (0, exports.uploadFileToCloudinary)(file);
                 if (url)

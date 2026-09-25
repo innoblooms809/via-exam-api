@@ -127,6 +127,7 @@ const createScanner = async (
         userId: newUser.userId,
         plainPassword,
         instituteName: institute.instituteName,
+        instituteSlug: institute.slug,
       },
     };
   } catch (e: any) {

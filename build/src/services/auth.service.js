@@ -39,7 +39,7 @@ const generateTempPassword = () => {
     return password;
 };
 // ─── Resend Credentials for any user role ───────────────────────────────────────
-const resendCredentials = (email) => __awaiter(void 0, void 0, void 0, function* () {
+const resendCredentials = (email, customPassword) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // 1. Find user
         const user = yield User_modal_1.default.findOne({
@@ -54,8 +54,8 @@ const resendCredentials = (email) => __awaiter(void 0, void 0, void 0, function*
         }
         // 2. Get user role
         const roleName = yield getRoleName(user.roleId);
-        // 3. Generate new temporary password
-        const tempPassword = generateTempPassword();
+        // 3. Password to use
+        const tempPassword = customPassword && customPassword.trim() ? customPassword.trim() : generateTempPassword();
         const encrypted = yield encryption_1.default.encryptPassword(tempPassword);
         // 4. Update password in DB
         yield user.update({ password: encrypted });
@@ -98,7 +98,9 @@ const resendCredentials = (email) => __awaiter(void 0, void 0, void 0, function*
         return {
             error: false,
             statusCode: http_status_1.default.OK,
-            message: `Credentials resent to ${email} successfully.`,
+            message: customPassword
+                ? `Password updated and credentials sent to ${email} successfully.`
+                : `Credentials resent to ${email} successfully.`,
             data: { email: user.emailId },
         };
     }
