@@ -537,7 +537,7 @@ const updateInstitute = async (
         return {
           error: true,
           statusCode: httpStatus.CONFLICT,
-          message: "Institute contact phone is already in use.",
+          message: "This phone number is already registered with another institute.",
         };
       }
     }
@@ -603,13 +603,90 @@ const updateInstitute = async (
       bannerPublicId,
     });
 
+    // Update linked admin user if admin fields are sent in body
+    const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
+    let updatedAdmin = null;
+    if (adminRole) {
+      const adminUser = await UserModal.findOne({
+        where: {
+          instituteId: institute.instituteId,
+          roleId: adminRole.id,
+        },
+      });
+
+      if (adminUser) {
+        const updateAdminData: any = {};
+        if (body.adminFirstName || body.adminLastName) {
+          const first = body.adminFirstName ?? "";
+          const last = body.adminLastName ?? "";
+          const newName = `${first} ${last}`.trim();
+          if (newName) updateAdminData.userName = newName;
+        }
+        if (body.adminEmail && body.adminEmail.trim() !== "" && body.adminEmail !== adminUser.emailId) {
+          const emailExists = await UserModal.findOne({
+            where: {
+              emailId: body.adminEmail,
+              userId: { [Op.ne]: adminUser.userId },
+            },
+          });
+          if (emailExists) {
+            return {
+              error: true,
+              statusCode: httpStatus.CONFLICT,
+              message: "Admin email is already registered to another user.",
+            };
+          }
+          updateAdminData.emailId = body.adminEmail;
+        }
+        if (body.adminPhone && body.adminPhone.trim() !== "") {
+          updateAdminData.phoneNumber = body.adminPhone;
+        }
+
+        if (Object.keys(updateAdminData).length > 0) {
+          await adminUser.update(updateAdminData);
+        }
+        updatedAdmin = await UserModal.findOne({
+          where: { userId: adminUser.userId },
+          attributes: { exclude: ["password", "refreshToken"] },
+        });
+      }
+    }
+
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Institute updated successfully.",
-      data: institute,
+      data: {
+        institute,
+        admin: updatedAdmin,
+      },
     };
   } catch (e: any) {
+    if (e.name === "SequelizeUniqueConstraintError") {
+      const field = e.errors?.[0]?.path;
+      let message = "This record already exists.";
+      if (field === "phoneNumber" || field === "contactPhone") {
+        message = "This phone number is already registered with another institute or user.";
+      } else if (field === "emailId" || field === "contactEmail") {
+        message = "This email address is already registered with another institute or user.";
+      } else if (field === "slug") {
+        message = "This URL slug is already taken.";
+      }
+
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message,
+      };
+    }
+    if (e.name === "SequelizeValidationError") {
+      const firstError = e.errors?.[0];
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: firstError?.message || `Validation error: ${e.message}`,
+      };
+    }
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -902,23 +979,29 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
         };
       }
 
-      if (adminPhone) {
-        const phoneTaken = await UserModal.findOne({ where: { phoneNumber: adminPhone } });
-        if (phoneTaken) {
-          return {
-            error: true,
-            statusCode: httpStatus.CONFLICT,
-            message: "Phone number is already registered by another user.",
-          };
-        }
+      if (!adminPhone || !adminPhone.trim()) {
+        return {
+          error: true,
+          statusCode: httpStatus.BAD_REQUEST,
+          message: "Admin phone number is required.",
+        };
+      }
+
+      const phoneTaken = await UserModal.findOne({ where: { phoneNumber: adminPhone.trim() } });
+      if (phoneTaken) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "Phone number is already registered by another user.",
+        };
       }
 
       const adminUserId = await RegHelper.generateUserId();
       adminUser = await UserModal.create({
         userId: adminUserId,
         userName: `${adminFirstName ?? ""} ${adminLastName ?? ""}`.trim(),
-        emailId: adminEmail,
-        phoneNumber: adminPhone || "",
+        emailId: adminEmail.trim(),
+        phoneNumber: adminPhone.trim(),
         password: encryptedPassword,
         roleId: adminRole.id,
         instituteId: institute.instituteId,
