@@ -18,6 +18,7 @@ interface UserAttributes {
   lockedUntil: Date | null;
   lastLoginAt: Date | null;
   refreshToken: string | null;
+  profileUrl?: string | null;
   isDeleted: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -33,6 +34,7 @@ interface UserCreationAttributes
     | "lockedUntil"
     | "lastLoginAt"
     | "refreshToken"
+    | "profileUrl"
     | "instituteId"
     | "isDeleted"
   > { }
@@ -56,6 +58,7 @@ class User extends Model<
   public lockedUntil!: Date | null;
   public lastLoginAt!: Date | null;
   public refreshToken!: string | null;
+  public profileUrl!: string | null;
   public isDeleted!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -127,6 +130,11 @@ User.init(
     },
     refreshToken: {
       type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: null,
+    },
+    profileUrl: {
+      type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null,
     },

@@ -57,4 +57,19 @@ const resendCredentials = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-export default { forgotPassword, verifyOtp, resetPassword, resendCredentials };
+const changePassword = async (req: any, res: Response): Promise<any> => {
+  try {
+    const userId = req.viaExamUser?.userId;
+    const { currentPassword, newPassword } = req.body;
+    const result = await AuthService.changePassword(userId, currentPassword, newPassword);
+    return res.status(result.statusCode).send(result);
+  } catch {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export default { forgotPassword, verifyOtp, resetPassword, resendCredentials, changePassword };

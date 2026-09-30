@@ -47,9 +47,20 @@ router.post(
  */
 router.post("/logout", authenticate, userController.logoutViaExamUser);
 
+import { profileUpload } from "../../utils/multer";
+
 /**
- * GET  /api/viaexam/auth/me
+ * GET  /auth/me, /auth/profile, /auth/profile/user
  */
 router.get("/me", authenticate, userController.getViaExamProfile);
+router.get("/profile", authenticate, userController.getViaExamProfile);
+router.get("/profile/user", authenticate, userController.getViaExamProfile);
+
+/**
+ * PUT  /auth/me, /auth/profile, /auth/profile/user
+ */
+router.put("/me", authenticate, profileUpload, userController.updateViaExamProfile);
+router.put("/profile", authenticate, profileUpload, userController.updateViaExamProfile);
+router.put("/profile/user", authenticate, profileUpload, userController.updateViaExamProfile);
 
 export default router;

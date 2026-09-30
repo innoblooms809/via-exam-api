@@ -281,4 +281,66 @@ const resetPassword = async (
   }
 };
 
-export default { forgotPassword, verifyOtp, resetPassword, resendCredentials };
+// ─── Change Password for logged in user ─────────────────────────────────────────
+const changePassword = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<any> => {
+  try {
+    if (!currentPassword || !newPassword) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "Both current password and new password are required.",
+      };
+    }
+
+    if (newPassword.length < 6) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "New password must be at least 6 characters long.",
+      };
+    }
+
+    const user = await UserModal.findOne({
+      where: { userId, status: 1 },
+    });
+
+    if (!user) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "User account not found.",
+      };
+    }
+
+    const isMatch = await EncryptPassword.isPasswordMatch(currentPassword, user.password);
+    if (!isMatch) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "Current password is incorrect.",
+      };
+    }
+
+    const encrypted = await EncryptPassword.encryptPassword(newPassword);
+    await user.update({ password: encrypted });
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Password updated successfully.",
+      data: {},
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Failed to change password: ${e.message}`,
+    };
+  }
+};
+
+export default { forgotPassword, verifyOtp, resetPassword, resendCredentials, changePassword };

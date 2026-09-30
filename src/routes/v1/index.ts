@@ -118,6 +118,10 @@ const defaultRoutes = [
   },
   {
     path: "/auth",
+    route: userRoutes,
+  },
+  {
+    path: "/auth",
     route: authRoutes,
   },
   {

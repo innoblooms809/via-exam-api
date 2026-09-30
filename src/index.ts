@@ -50,8 +50,14 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGUSR2", () => shutdown("SIGUSR2"));
 
 const unexpectedErrorHandler = (error: unknown) => {
-  logger.error(error);
-  shutdown("UNCAUGHT_ERROR");
+  if (error) {
+    logger.error("Uncaught exception / rejection detected:");
+    if (error instanceof Error) {
+      logger.error(error.stack || error.message);
+    } else {
+      logger.error(String(error));
+    }
+  }
 };
 
 process.on("uncaughtException", unexpectedErrorHandler);
