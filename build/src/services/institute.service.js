@@ -23,11 +23,18 @@ const sequelize_1 = require("../config/sequelize");
 const sequelize_2 = require("sequelize");
 const mailHelper_1 = require("../utils/mailHelper");
 const config_1 = __importDefault(require("../config/config"));
+const instituteStorage_1 = require("../utils/instituteStorage");
 // ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
 const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f;
     // Use a transaction — if admin user creation fails, institute also rolls back
     const t = yield sequelize_1.sequelize.transaction();
+    // Declared outside the try so the catch block can clean up an uploaded
+    // logo/banner if a later step (e.g. admin creation) fails.
+    let logoUrl = null;
+    let logoPublicId = null;
+    let bannerUrl = null;
+    let bannerPublicId = null;
     try {
         // 1. Check slug uniqueness
         const slugExists = yield Institute_modal_1.default.findOne({ where: { slug: body.slug } });
@@ -78,20 +85,46 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
                 };
             }
         }
-        // 5. Get file paths from multer
-        const logoUrl = ((_a = files === null || files === void 0 ? void 0 : files.logo) === null || _a === void 0 ? void 0 : _a[0])
-            ? `/${files.logo[0].path.replace(/\\/g, "/")}`
-            : null;
-        const bannerUrl = ((_b = files === null || files === void 0 ? void 0 : files.banner) === null || _b === void 0 ? void 0 : _b[0])
-            ? `/${files.banner[0].path.replace(/\\/g, "/")}`
-            : null;
-        // 6. Calculate trial end date
+        // 5. Generate institute ID (needed up front so uploads can be scoped by it)
+        const instituteId = yield helper_1.default.generateUserId();
+        // 6. Upload logo/banner to Cloudinary, if provided
+        try {
+            if ((_a = files === null || files === void 0 ? void 0 : files.logo) === null || _a === void 0 ? void 0 : _a[0]) {
+                const stored = yield (0, instituteStorage_1.uploadInstituteAsset)({
+                    buffer: files.logo[0].buffer,
+                    instituteId,
+                    kind: "logo",
+                });
+                logoUrl = stored.url;
+                logoPublicId = stored.publicId;
+            }
+            if ((_b = files === null || files === void 0 ? void 0 : files.banner) === null || _b === void 0 ? void 0 : _b[0]) {
+                const stored = yield (0, instituteStorage_1.uploadInstituteAsset)({
+                    buffer: files.banner[0].buffer,
+                    instituteId,
+                    kind: "banner",
+                });
+                bannerUrl = stored.url;
+                bannerPublicId = stored.publicId;
+            }
+        }
+        catch (uploadErr) {
+            yield t.rollback();
+            if (logoPublicId)
+                yield (0, instituteStorage_1.destroyInstituteAsset)(logoPublicId, "register rollback");
+            if (bannerPublicId)
+                yield (0, instituteStorage_1.destroyInstituteAsset)(bannerPublicId, "register rollback");
+            return {
+                error: true,
+                statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+                message: `Could not store logo/banner: ${(_c = uploadErr === null || uploadErr === void 0 ? void 0 : uploadErr.message) !== null && _c !== void 0 ? _c : uploadErr}`,
+            };
+        }
+        // 7. Calculate trial end date
         const trialDays = parseInt(body.trialDays) || 0;
         const trialEndsAt = trialDays > 0
             ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
             : null;
-        // 7. Generate institute ID
-        const instituteId = yield helper_1.default.generateUserId();
         // 8. Create Institute record
         const institute = yield Institute_modal_1.default.create({
             instituteId,
@@ -116,6 +149,8 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             trialEndsAt,
             logoUrl,
             bannerUrl,
+            logoPublicId,
+            bannerPublicId,
             status: 1,
         }, { transaction: t });
         let adminResponse = null;
@@ -125,6 +160,10 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
             if (!adminRole) {
                 yield t.rollback();
+                if (logoPublicId)
+                    yield (0, instituteStorage_1.destroyInstituteAsset)(logoPublicId, "register rollback");
+                if (bannerPublicId)
+                    yield (0, instituteStorage_1.destroyInstituteAsset)(bannerPublicId, "register rollback");
                 return {
                     error: true,
                     statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -168,7 +207,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             data: {
                 institute,
                 admin: adminResponse,
-                loginUrl: `${(_c = process.env.FRONTEND_URL) !== null && _c !== void 0 ? _c : "http://localhost:3000"}/${body.slug}/auth/signin`,
+                loginUrl: `${(_d = process.env.FRONTEND_URL) !== null && _d !== void 0 ? _d : "http://localhost:3000"}/${body.slug}/auth/signin`,
                 logoUrl,
             },
         };
@@ -176,8 +215,12 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
     catch (e) {
         yield t.rollback();
         console.error(e);
+        if (logoPublicId)
+            yield (0, instituteStorage_1.destroyInstituteAsset)(logoPublicId, "register rollback");
+        if (bannerPublicId)
+            yield (0, instituteStorage_1.destroyInstituteAsset)(bannerPublicId, "register rollback");
         if (e.name === "SequelizeUniqueConstraintError") {
-            const field = (_e = (_d = e.errors) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.path;
+            const field = (_f = (_e = e.errors) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.path;
             let message = "This record already exists.";
             if (field === "phoneNumber")
                 message = "This phone number is already registered.";
@@ -388,7 +431,7 @@ const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, funct
 // Update institute details + optionally update logo/banner
 // Does NOT update admin credentials here (separate API for that)
 const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z;
+    var _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1;
     try {
         const whereCondition = {
             isDeleted: false,
@@ -452,34 +495,63 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
                 };
             }
         }
-        // Handle new file uploads â€” keep old ones if no new file sent
-        const logoUrl = ((_f = files === null || files === void 0 ? void 0 : files.logo) === null || _f === void 0 ? void 0 : _f[0])
-            ? `/${files.logo[0].path.replace(/\\/g, "/")}`
-            : institute.logoUrl;
-        const bannerUrl = ((_g = files === null || files === void 0 ? void 0 : files.banner) === null || _g === void 0 ? void 0 : _g[0])
-            ? `/${files.banner[0].path.replace(/\\/g, "/")}`
-            : institute.bannerUrl;
+        // Handle new file uploads — keep old ones if no new file sent. Each
+        // upload overwrites the same Cloudinary public_id as before, so there is
+        // no separate asset to clean up here.
+        let logoUrl = institute.logoUrl;
+        let logoPublicId = institute.logoPublicId;
+        let bannerUrl = institute.bannerUrl;
+        let bannerPublicId = institute.bannerPublicId;
+        try {
+            if ((_g = files === null || files === void 0 ? void 0 : files.logo) === null || _g === void 0 ? void 0 : _g[0]) {
+                const stored = yield (0, instituteStorage_1.uploadInstituteAsset)({
+                    buffer: files.logo[0].buffer,
+                    instituteId: institute.instituteId,
+                    kind: "logo",
+                });
+                logoUrl = stored.url;
+                logoPublicId = stored.publicId;
+            }
+            if ((_h = files === null || files === void 0 ? void 0 : files.banner) === null || _h === void 0 ? void 0 : _h[0]) {
+                const stored = yield (0, instituteStorage_1.uploadInstituteAsset)({
+                    buffer: files.banner[0].buffer,
+                    instituteId: institute.instituteId,
+                    kind: "banner",
+                });
+                bannerUrl = stored.url;
+                bannerPublicId = stored.publicId;
+            }
+        }
+        catch (uploadErr) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+                message: `Could not store logo/banner: ${(_j = uploadErr === null || uploadErr === void 0 ? void 0 : uploadErr.message) !== null && _j !== void 0 ? _j : uploadErr}`,
+            };
+        }
         // Only update fields that are sent in body
         yield institute.update({
-            instituteName: (_h = body.instituteName) !== null && _h !== void 0 ? _h : institute.instituteName,
-            instituteType: (_j = body.instituteType) !== null && _j !== void 0 ? _j : institute.instituteType,
-            boardType: (_k = body.boardType) !== null && _k !== void 0 ? _k : institute.boardType,
-            registrationNumber: (_l = body.registrationNumber) !== null && _l !== void 0 ? _l : institute.registrationNumber,
-            establishedYear: (_m = body.establishedYear) !== null && _m !== void 0 ? _m : institute.establishedYear,
-            websiteUrl: (_o = body.websiteUrl) !== null && _o !== void 0 ? _o : institute.websiteUrl,
-            slug: (_p = body.slug) !== null && _p !== void 0 ? _p : institute.slug,
-            contactPersonName: (_q = body.contactPersonName) !== null && _q !== void 0 ? _q : institute.contactPersonName,
-            contactEmail: (_r = body.contactEmail) !== null && _r !== void 0 ? _r : institute.contactEmail,
-            contactPhone: (_s = body.contactPhone) !== null && _s !== void 0 ? _s : institute.contactPhone,
-            alternatePhone: (_t = body.alternatePhone) !== null && _t !== void 0 ? _t : institute.alternatePhone,
-            addressLine1: (_u = body.addressLine1) !== null && _u !== void 0 ? _u : institute.addressLine1,
-            addressLine2: (_v = body.addressLine2) !== null && _v !== void 0 ? _v : institute.addressLine2,
-            city: (_w = body.city) !== null && _w !== void 0 ? _w : institute.city,
-            state: (_x = body.state) !== null && _x !== void 0 ? _x : institute.state,
-            pincode: (_y = body.pincode) !== null && _y !== void 0 ? _y : institute.pincode,
-            plan: (_z = body.plan) !== null && _z !== void 0 ? _z : institute.plan,
+            instituteName: (_k = body.instituteName) !== null && _k !== void 0 ? _k : institute.instituteName,
+            instituteType: (_l = body.instituteType) !== null && _l !== void 0 ? _l : institute.instituteType,
+            boardType: (_m = body.boardType) !== null && _m !== void 0 ? _m : institute.boardType,
+            registrationNumber: (_o = body.registrationNumber) !== null && _o !== void 0 ? _o : institute.registrationNumber,
+            establishedYear: (_p = body.establishedYear) !== null && _p !== void 0 ? _p : institute.establishedYear,
+            websiteUrl: (_q = body.websiteUrl) !== null && _q !== void 0 ? _q : institute.websiteUrl,
+            slug: (_r = body.slug) !== null && _r !== void 0 ? _r : institute.slug,
+            contactPersonName: (_s = body.contactPersonName) !== null && _s !== void 0 ? _s : institute.contactPersonName,
+            contactEmail: (_t = body.contactEmail) !== null && _t !== void 0 ? _t : institute.contactEmail,
+            contactPhone: (_u = body.contactPhone) !== null && _u !== void 0 ? _u : institute.contactPhone,
+            alternatePhone: (_v = body.alternatePhone) !== null && _v !== void 0 ? _v : institute.alternatePhone,
+            addressLine1: (_w = body.addressLine1) !== null && _w !== void 0 ? _w : institute.addressLine1,
+            addressLine2: (_x = body.addressLine2) !== null && _x !== void 0 ? _x : institute.addressLine2,
+            city: (_y = body.city) !== null && _y !== void 0 ? _y : institute.city,
+            state: (_z = body.state) !== null && _z !== void 0 ? _z : institute.state,
+            pincode: (_0 = body.pincode) !== null && _0 !== void 0 ? _0 : institute.pincode,
+            plan: (_1 = body.plan) !== null && _1 !== void 0 ? _1 : institute.plan,
             logoUrl,
             bannerUrl,
+            logoPublicId,
+            bannerPublicId,
         });
         return {
             error: false,
@@ -523,6 +595,11 @@ const softDeleteInstitute = (instituteId) => __awaiter(void 0, void 0, void 0, f
         // Also deactivate all users of this institute
         yield User_modal_1.default.update({ status: 0 }, { where: { instituteId: institute.instituteId }, transaction: t });
         yield t.commit();
+        // Committed — the row is kept for audit, but the storage bytes can go.
+        if (institute.logoPublicId)
+            yield (0, instituteStorage_1.destroyInstituteAsset)(institute.logoPublicId, "deleted institute");
+        if (institute.bannerPublicId)
+            yield (0, instituteStorage_1.destroyInstituteAsset)(institute.bannerPublicId, "deleted institute");
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -655,7 +732,7 @@ const getInstituteCredentials = (instituteId) => __awaiter(void 0, void 0, void 
     }
 });
 const addInstituteAdmin = (instituteId, body) => __awaiter(void 0, void 0, void 0, function* () {
-    var _0, _1;
+    var _2, _3;
     try {
         const whereCondition = {
             isDeleted: false,
@@ -788,7 +865,7 @@ const addInstituteAdmin = (instituteId, body) => __awaiter(void 0, void 0, void 
     catch (e) {
         console.error("Error in addInstituteAdmin:", e);
         if (e.name === "SequelizeUniqueConstraintError") {
-            const field = (_1 = (_0 = e.errors) === null || _0 === void 0 ? void 0 : _0[0]) === null || _1 === void 0 ? void 0 : _1.path;
+            const field = (_3 = (_2 = e.errors) === null || _2 === void 0 ? void 0 : _2[0]) === null || _3 === void 0 ? void 0 : _3.path;
             let message = "This record already exists.";
             if (field === "phoneNumber")
                 message = "This phone number is already registered.";
