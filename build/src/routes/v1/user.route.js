@@ -38,8 +38,17 @@ user_controller_1.default.createViaExamUser);
  * POST /api/viaexam/auth/logout
  */
 router.post("/logout", auth_1.authenticate, user_controller_1.default.logoutViaExamUser);
+const multer_1 = require("../../utils/multer");
 /**
- * GET  /api/viaexam/auth/me
+ * GET  /auth/me, /auth/profile, /auth/profile/user
  */
 router.get("/me", auth_1.authenticate, user_controller_1.default.getViaExamProfile);
+router.get("/profile", auth_1.authenticate, user_controller_1.default.getViaExamProfile);
+router.get("/profile/user", auth_1.authenticate, user_controller_1.default.getViaExamProfile);
+/**
+ * PUT  /auth/me, /auth/profile, /auth/profile/user
+ */
+router.put("/me", auth_1.authenticate, multer_1.profileUpload, user_controller_1.default.updateViaExamProfile);
+router.put("/profile", auth_1.authenticate, multer_1.profileUpload, user_controller_1.default.updateViaExamProfile);
+router.put("/profile/user", auth_1.authenticate, multer_1.profileUpload, user_controller_1.default.updateViaExamProfile);
 exports.default = router;

@@ -69,4 +69,20 @@ const resendCredentials = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 });
-exports.default = { forgotPassword, verifyOtp, resetPassword, resendCredentials };
+const changePassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _e;
+    try {
+        const userId = (_e = req.viaExamUser) === null || _e === void 0 ? void 0 : _e.userId;
+        const { currentPassword, newPassword } = req.body;
+        const result = yield auth_service_1.default.changePassword(userId, currentPassword, newPassword);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (_f) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+exports.default = { forgotPassword, verifyOtp, resetPassword, resendCredentials, changePassword };
