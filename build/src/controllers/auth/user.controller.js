@@ -65,7 +65,7 @@ const getRoleCookieNames = (roleStr) => {
  */
 const getCaptcha = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const captcha = svg_captcha_1.default.create();
-    req.session.captcha = captcha.text;
+    // req.session.captcha = captcha.text; // Commented out: session middleware disabled
     res.set("Content-Type", "image/svg+xml");
     res.send(captcha.data);
 });
@@ -354,6 +354,24 @@ const getViaExamProfile = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 });
+/**
+ * PUT /api/viaexam/auth/me
+ * Protected — updates profile for current user
+ */
+const updateViaExamProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield user_service_1.default.viaExamUpdateProfile(req.viaExamUser.userId, req.body, req.files);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            data: {},
+            message: "Internal Server Error",
+        });
+    }
+});
 exports.default = {
     getCaptcha,
     loginViaExamUser,
@@ -361,4 +379,5 @@ exports.default = {
     createViaExamUser,
     logoutViaExamUser,
     getViaExamProfile,
+    updateViaExamProfile,
 };

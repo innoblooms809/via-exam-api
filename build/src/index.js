@@ -58,8 +58,15 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGUSR2", () => shutdown("SIGUSR2"));
 const unexpectedErrorHandler = (error) => {
-    logger_1.default.error(error);
-    shutdown("UNCAUGHT_ERROR");
+    if (error) {
+        logger_1.default.error("Uncaught exception / rejection detected:");
+        if (error instanceof Error) {
+            logger_1.default.error(error.stack || error.message);
+        }
+        else {
+            logger_1.default.error(String(error));
+        }
+    }
 };
 process.on("uncaughtException", unexpectedErrorHandler);
 process.on("unhandledRejection", unexpectedErrorHandler);

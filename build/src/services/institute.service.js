@@ -26,7 +26,7 @@ const config_1 = __importDefault(require("../config/config"));
 const instituteStorage_1 = require("../utils/instituteStorage");
 // ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
 const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e;
     // Use a transaction — if admin user creation fails, institute also rolls back
     const t = yield sequelize_1.sequelize.transaction();
     // Declared outside the try so the catch block can clean up an uploaded
@@ -207,7 +207,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
             data: {
                 institute,
                 admin: adminResponse,
-                loginUrl: `${(_d = process.env.FRONTEND_URL) !== null && _d !== void 0 ? _d : "http://localhost:3000"}/${body.slug}/auth/signin`,
+                loginUrl: `${config_1.default.frontendUrl}/${body.slug}/auth/signin`,
                 logoUrl,
             },
         };
@@ -220,7 +220,7 @@ const registerInstitute = (body, files) => __awaiter(void 0, void 0, void 0, fun
         if (bannerPublicId)
             yield (0, instituteStorage_1.destroyInstituteAsset)(bannerPublicId, "register rollback");
         if (e.name === "SequelizeUniqueConstraintError") {
-            const field = (_f = (_e = e.errors) === null || _e === void 0 ? void 0 : _e[0]) === null || _f === void 0 ? void 0 : _f.path;
+            const field = (_e = (_d = e.errors) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.path;
             let message = "This record already exists.";
             if (field === "phoneNumber")
                 message = "This phone number is already registered.";
@@ -431,7 +431,7 @@ const getInstituteById = (identifier) => __awaiter(void 0, void 0, void 0, funct
 // Update institute details + optionally update logo/banner
 // Does NOT update admin credentials here (separate API for that)
 const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, void 0, function* () {
-    var _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1;
+    var _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5;
     try {
         const whereCondition = {
             isDeleted: false,
@@ -491,7 +491,7 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
                 return {
                     error: true,
                     statusCode: http_status_1.default.CONFLICT,
-                    message: "Institute contact phone is already in use.",
+                    message: "This phone number is already registered with another institute.",
                 };
             }
         }
@@ -503,7 +503,7 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
         let bannerUrl = institute.bannerUrl;
         let bannerPublicId = institute.bannerPublicId;
         try {
-            if ((_g = files === null || files === void 0 ? void 0 : files.logo) === null || _g === void 0 ? void 0 : _g[0]) {
+            if ((_f = files === null || files === void 0 ? void 0 : files.logo) === null || _f === void 0 ? void 0 : _f[0]) {
                 const stored = yield (0, instituteStorage_1.uploadInstituteAsset)({
                     buffer: files.logo[0].buffer,
                     instituteId: institute.instituteId,
@@ -512,7 +512,7 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
                 logoUrl = stored.url;
                 logoPublicId = stored.publicId;
             }
-            if ((_h = files === null || files === void 0 ? void 0 : files.banner) === null || _h === void 0 ? void 0 : _h[0]) {
+            if ((_g = files === null || files === void 0 ? void 0 : files.banner) === null || _g === void 0 ? void 0 : _g[0]) {
                 const stored = yield (0, instituteStorage_1.uploadInstituteAsset)({
                     buffer: files.banner[0].buffer,
                     instituteId: institute.instituteId,
@@ -526,41 +526,117 @@ const updateInstitute = (instituteId, body, files) => __awaiter(void 0, void 0, 
             return {
                 error: true,
                 statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-                message: `Could not store logo/banner: ${(_j = uploadErr === null || uploadErr === void 0 ? void 0 : uploadErr.message) !== null && _j !== void 0 ? _j : uploadErr}`,
+                message: `Could not store logo/banner: ${(_h = uploadErr === null || uploadErr === void 0 ? void 0 : uploadErr.message) !== null && _h !== void 0 ? _h : uploadErr}`,
             };
         }
         // Only update fields that are sent in body
         yield institute.update({
-            instituteName: (_k = body.instituteName) !== null && _k !== void 0 ? _k : institute.instituteName,
-            instituteType: (_l = body.instituteType) !== null && _l !== void 0 ? _l : institute.instituteType,
-            boardType: (_m = body.boardType) !== null && _m !== void 0 ? _m : institute.boardType,
-            registrationNumber: (_o = body.registrationNumber) !== null && _o !== void 0 ? _o : institute.registrationNumber,
-            establishedYear: (_p = body.establishedYear) !== null && _p !== void 0 ? _p : institute.establishedYear,
-            websiteUrl: (_q = body.websiteUrl) !== null && _q !== void 0 ? _q : institute.websiteUrl,
-            slug: (_r = body.slug) !== null && _r !== void 0 ? _r : institute.slug,
-            contactPersonName: (_s = body.contactPersonName) !== null && _s !== void 0 ? _s : institute.contactPersonName,
-            contactEmail: (_t = body.contactEmail) !== null && _t !== void 0 ? _t : institute.contactEmail,
-            contactPhone: (_u = body.contactPhone) !== null && _u !== void 0 ? _u : institute.contactPhone,
-            alternatePhone: (_v = body.alternatePhone) !== null && _v !== void 0 ? _v : institute.alternatePhone,
-            addressLine1: (_w = body.addressLine1) !== null && _w !== void 0 ? _w : institute.addressLine1,
-            addressLine2: (_x = body.addressLine2) !== null && _x !== void 0 ? _x : institute.addressLine2,
-            city: (_y = body.city) !== null && _y !== void 0 ? _y : institute.city,
-            state: (_z = body.state) !== null && _z !== void 0 ? _z : institute.state,
-            pincode: (_0 = body.pincode) !== null && _0 !== void 0 ? _0 : institute.pincode,
-            plan: (_1 = body.plan) !== null && _1 !== void 0 ? _1 : institute.plan,
+            instituteName: (_j = body.instituteName) !== null && _j !== void 0 ? _j : institute.instituteName,
+            instituteType: (_k = body.instituteType) !== null && _k !== void 0 ? _k : institute.instituteType,
+            boardType: (_l = body.boardType) !== null && _l !== void 0 ? _l : institute.boardType,
+            registrationNumber: (_m = body.registrationNumber) !== null && _m !== void 0 ? _m : institute.registrationNumber,
+            establishedYear: (_o = body.establishedYear) !== null && _o !== void 0 ? _o : institute.establishedYear,
+            websiteUrl: (_p = body.websiteUrl) !== null && _p !== void 0 ? _p : institute.websiteUrl,
+            slug: (_q = body.slug) !== null && _q !== void 0 ? _q : institute.slug,
+            contactPersonName: (_r = body.contactPersonName) !== null && _r !== void 0 ? _r : institute.contactPersonName,
+            contactEmail: (_s = body.contactEmail) !== null && _s !== void 0 ? _s : institute.contactEmail,
+            contactPhone: (_t = body.contactPhone) !== null && _t !== void 0 ? _t : institute.contactPhone,
+            alternatePhone: (_u = body.alternatePhone) !== null && _u !== void 0 ? _u : institute.alternatePhone,
+            addressLine1: (_v = body.addressLine1) !== null && _v !== void 0 ? _v : institute.addressLine1,
+            addressLine2: (_w = body.addressLine2) !== null && _w !== void 0 ? _w : institute.addressLine2,
+            city: (_x = body.city) !== null && _x !== void 0 ? _x : institute.city,
+            state: (_y = body.state) !== null && _y !== void 0 ? _y : institute.state,
+            pincode: (_z = body.pincode) !== null && _z !== void 0 ? _z : institute.pincode,
+            plan: (_0 = body.plan) !== null && _0 !== void 0 ? _0 : institute.plan,
             logoUrl,
             bannerUrl,
             logoPublicId,
             bannerPublicId,
         });
+        // Update linked admin user if admin fields are sent in body
+        const adminRole = yield Role_modal_1.default.findOne({ where: { role: "ADMIN" } });
+        let updatedAdmin = null;
+        if (adminRole) {
+            const adminUser = yield User_modal_1.default.findOne({
+                where: {
+                    instituteId: institute.instituteId,
+                    roleId: adminRole.id,
+                },
+            });
+            if (adminUser) {
+                const updateAdminData = {};
+                if (body.adminFirstName || body.adminLastName) {
+                    const first = (_1 = body.adminFirstName) !== null && _1 !== void 0 ? _1 : "";
+                    const last = (_2 = body.adminLastName) !== null && _2 !== void 0 ? _2 : "";
+                    const newName = `${first} ${last}`.trim();
+                    if (newName)
+                        updateAdminData.userName = newName;
+                }
+                if (body.adminEmail && body.adminEmail.trim() !== "" && body.adminEmail !== adminUser.emailId) {
+                    const emailExists = yield User_modal_1.default.findOne({
+                        where: {
+                            emailId: body.adminEmail,
+                            userId: { [sequelize_2.Op.ne]: adminUser.userId },
+                        },
+                    });
+                    if (emailExists) {
+                        return {
+                            error: true,
+                            statusCode: http_status_1.default.CONFLICT,
+                            message: "Admin email is already registered to another user.",
+                        };
+                    }
+                    updateAdminData.emailId = body.adminEmail;
+                }
+                if (body.adminPhone && body.adminPhone.trim() !== "") {
+                    updateAdminData.phoneNumber = body.adminPhone;
+                }
+                if (Object.keys(updateAdminData).length > 0) {
+                    yield adminUser.update(updateAdminData);
+                }
+                updatedAdmin = yield User_modal_1.default.findOne({
+                    where: { userId: adminUser.userId },
+                    attributes: { exclude: ["password", "refreshToken"] },
+                });
+            }
+        }
         return {
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Institute updated successfully.",
-            data: institute,
+            data: {
+                institute,
+                admin: updatedAdmin,
+            },
         };
     }
     catch (e) {
+        if (e.name === "SequelizeUniqueConstraintError") {
+            const field = (_4 = (_3 = e.errors) === null || _3 === void 0 ? void 0 : _3[0]) === null || _4 === void 0 ? void 0 : _4.path;
+            let message = "This record already exists.";
+            if (field === "phoneNumber" || field === "contactPhone") {
+                message = "This phone number is already registered with another institute or user.";
+            }
+            else if (field === "emailId" || field === "contactEmail") {
+                message = "This email address is already registered with another institute or user.";
+            }
+            else if (field === "slug") {
+                message = "This URL slug is already taken.";
+            }
+            return {
+                error: true,
+                statusCode: http_status_1.default.CONFLICT,
+                message,
+            };
+        }
+        if (e.name === "SequelizeValidationError") {
+            const firstError = (_5 = e.errors) === null || _5 === void 0 ? void 0 : _5[0];
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: (firstError === null || firstError === void 0 ? void 0 : firstError.message) || `Validation error: ${e.message}`,
+            };
+        }
         return {
             error: true,
             statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
@@ -732,7 +808,7 @@ const getInstituteCredentials = (instituteId) => __awaiter(void 0, void 0, void 
     }
 });
 const addInstituteAdmin = (instituteId, body) => __awaiter(void 0, void 0, void 0, function* () {
-    var _2, _3;
+    var _6, _7;
     try {
         const whereCondition = {
             isDeleted: false,
@@ -814,22 +890,27 @@ const addInstituteAdmin = (instituteId, body) => __awaiter(void 0, void 0, void 
                     message: "Email is already registered by another user.",
                 };
             }
-            if (adminPhone) {
-                const phoneTaken = yield User_modal_1.default.findOne({ where: { phoneNumber: adminPhone } });
-                if (phoneTaken) {
-                    return {
-                        error: true,
-                        statusCode: http_status_1.default.CONFLICT,
-                        message: "Phone number is already registered by another user.",
-                    };
-                }
+            if (!adminPhone || !adminPhone.trim()) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.BAD_REQUEST,
+                    message: "Admin phone number is required.",
+                };
+            }
+            const phoneTaken = yield User_modal_1.default.findOne({ where: { phoneNumber: adminPhone.trim() } });
+            if (phoneTaken) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.CONFLICT,
+                    message: "Phone number is already registered by another user.",
+                };
             }
             const adminUserId = yield helper_1.default.generateUserId();
             adminUser = yield User_modal_1.default.create({
                 userId: adminUserId,
                 userName: `${adminFirstName !== null && adminFirstName !== void 0 ? adminFirstName : ""} ${adminLastName !== null && adminLastName !== void 0 ? adminLastName : ""}`.trim(),
-                emailId: adminEmail,
-                phoneNumber: adminPhone || "",
+                emailId: adminEmail.trim(),
+                phoneNumber: adminPhone.trim(),
                 password: encryptedPassword,
                 roleId: adminRole.id,
                 instituteId: institute.instituteId,
@@ -865,7 +946,7 @@ const addInstituteAdmin = (instituteId, body) => __awaiter(void 0, void 0, void 
     catch (e) {
         console.error("Error in addInstituteAdmin:", e);
         if (e.name === "SequelizeUniqueConstraintError") {
-            const field = (_3 = (_2 = e.errors) === null || _2 === void 0 ? void 0 : _2[0]) === null || _3 === void 0 ? void 0 : _3.path;
+            const field = (_7 = (_6 = e.errors) === null || _6 === void 0 ? void 0 : _6[0]) === null || _7 === void 0 ? void 0 : _7.path;
             let message = "This record already exists.";
             if (field === "phoneNumber")
                 message = "This phone number is already registered.";
