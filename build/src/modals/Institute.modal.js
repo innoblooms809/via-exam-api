@@ -59,6 +59,7 @@ Institute.init({
     contactPhone: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
+        unique: true,
     },
     alternatePhone: {
         type: sequelize_1.DataTypes.STRING,
@@ -110,6 +111,16 @@ Institute.init({
         allowNull: true,
         defaultValue: null,
     },
+    logoPublicId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+    bannerPublicId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
     status: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: false,
@@ -125,17 +136,52 @@ Institute.init({
     tableName: "viaexam_institutes",
     modelName: "Institute",
     timestamps: true,
+    indexes: [
+        {
+            unique: true,
+            fields: ["slug"],
+        },
+        {
+            unique: true,
+            fields: ["contactEmail"],
+        },
+    ],
 });
-// One institute has many users
+// // One institute has many users
 // Institute.hasMany(User, {
 //   foreignKey: "instituteId",  // ← string FK not integer
 //   sourceKey:  "instituteId",  // ← links via instituteId not id
 //   as: "users",
 // });
-// User belongs to institute
+// // User belongs to institute
 // User.belongsTo(Institute, {
 //   foreignKey: "instituteId",
 //   targetKey:  "instituteId",  // ← links via instituteId not id
 //   as: "institute",
+// });
+// Institute.hasMany(Class, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "classes",
+// });
+// Institute.hasMany(Section, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "sections",
+// });
+// Institute.hasMany(Subject, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "subjects",
+// });
+// Institute.hasMany(Exam, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "exams",
+// });
+// Institute.hasMany(Session, {
+//   foreignKey: "instituteId",
+//   sourceKey: "instituteId",
+//   as: "sessions",
 // });
 exports.default = Institute;

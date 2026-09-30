@@ -1,0 +1,83 @@
+import { Router } from "express";
+import Controller from "../../controllers/aiEvaluation.controller";
+import NewController from "../../controllers/aiEvaluationNew.controller";
+import OCRNew5Controller from "../../controllers/ocrnew5.controller";
+import Pipeline6Controller from "../../controllers/pipeline6.controller";
+import { authenticate } from "../../middlewares/auth";
+import { requireSheetAccessMiddleware, requireSheetEvaluateMiddleware } from "../../services/evaluationAccess.service";
+
+const router = Router();
+
+// Trigger evaluation (legacy — uses old port 8002 API)
+router.post(
+  "/evaluate",
+  authenticate,
+  requireSheetEvaluateMiddleware,
+  Controller.evaluateSheet
+);
+
+// Trigger evaluation V2 (uses OCR pipeline on port 8003/8005)
+router.post(
+  "/evaluate2",
+  authenticate,
+  requireSheetEvaluateMiddleware,
+  NewController.evaluateSheet2
+);
+
+// Trigger evaluation OCRNew5 (uses multi-agent pipeline on port 8006)
+router.post(
+  "/evaluate-ocrnew5",
+  authenticate,
+  requireSheetEvaluateMiddleware,
+  OCRNew5Controller.evaluateSheetOCRNew5
+);
+
+// Trigger evaluation Pipeline 6.3 (uses 9-agent pipeline with rubric pre-warming on port 8007)
+router.post(
+  "/evaluate-pipeline6",
+  authenticate,
+  requireSheetEvaluateMiddleware,
+  Pipeline6Controller.evaluateSheetPipeline6
+);
+
+router.post(
+  "/evaluate6",
+  authenticate,
+  requireSheetEvaluateMiddleware,
+  Pipeline6Controller.evaluateSheetPipeline6
+);
+
+// Pipeline 6 queue: sheets waiting for / running OCR and AI evaluation
+router.get(
+  "/queue",
+  authenticate,
+  Pipeline6Controller.getQueueStatus
+);
+
+
+// Get evaluation result by sheet ID
+router.get(
+  "/sheet/:sheetId",
+  authenticate,
+  requireSheetAccessMiddleware,
+  Controller.getEvaluation
+);
+
+// Update evaluation details/marks by sheet ID
+router.put(
+  "/sheet/:sheetId",
+  authenticate,
+  requireSheetEvaluateMiddleware,
+  Controller.updateEvaluation
+);
+
+// List evaluations
+router.get(
+  "/list",
+  authenticate,
+  Controller.getAllEvaluations
+);
+
+export default router;
+
+

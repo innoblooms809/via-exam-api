@@ -16,20 +16,70 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getExamBySelection = void 0;
 const http_status_1 = __importDefault(require("http-status"));
 const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
+const Subject_modal_1 = __importDefault(require("../../modals/Subject.modal"));
+const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
+const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
+const Institute_modal_1 = __importDefault(require("../../modals/Institute.modal"));
 const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const { classVal, subject, examType, teacherId } = req.body;
+        const { classVal, subject, examType, session, } = req.body;
+        const instituteId = ((_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.instituteId) || req.body.instituteId;
         // ─────────────────────────────────────────────
-        // Validation
+        // Find Session + Class Together
         // ─────────────────────────────────────────────
-        if (!classVal ||
-            !subject ||
-            !examType ||
-            !teacherId) {
-            return res.status(http_status_1.default.BAD_REQUEST).json({
+        const [sessionData, classData] = yield Promise.all([
+            Session_modal_1.default.findOne({
+                where: {
+                    sessionName: session,
+                    instituteId,
+                    isDeleted: false,
+                },
+            }),
+            Class_modal_1.default.findOne({
+                where: {
+                    className: classVal,
+                    instituteId,
+                    isDeleted: false,
+                },
+            }),
+        ]);
+        // ─────────────────────────────────────────────
+        // Session Check
+        // ─────────────────────────────────────────────
+        if (!sessionData) {
+            return res.status(http_status_1.default.NOT_FOUND).json({
                 error: true,
-                statusCode: http_status_1.default.BAD_REQUEST,
-                message: "classVal, subject, examType and teacherId are required",
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Session not found.",
+            });
+        }
+        // ─────────────────────────────────────────────
+        // Class Check
+        // ─────────────────────────────────────────────
+        if (!classData) {
+            return res.status(http_status_1.default.NOT_FOUND).json({
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Class not found.",
+            });
+        }
+        // ─────────────────────────────────────────────
+        // Find Subject
+        // ─────────────────────────────────────────────
+        const subjectData = yield Subject_modal_1.default.findOne({
+            where: {
+                subjectName: subject,
+                classId: classData.classId,
+                instituteId,
+                isDeleted: false,
+            },
+        });
+        if (!subjectData) {
+            return res.status(http_status_1.default.NOT_FOUND).json({
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "Subject not found.",
             });
         }
         // ─────────────────────────────────────────────
@@ -37,19 +87,13 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
         // ─────────────────────────────────────────────
         const exam = yield Exam_modal_1.default.findOne({
             where: {
-                classVal,
-                subject,
+                sessionId: sessionData.sessionId,
+                classId: classData.classId,
+                subjectId: subjectData.subjectId,
                 examType,
-                teacherId,
+                instituteId,
                 isDeleted: false,
             },
-            attributes: [
-                "examId",
-                "classVal",
-                "subject",
-                "examType",
-                "session",
-            ],
         });
         // ─────────────────────────────────────────────
         // Exam Not Found
@@ -62,13 +106,27 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         // ─────────────────────────────────────────────
+        // Fetch Institute Details for auto-fill
+        // ─────────────────────────────────────────────
+        const institute = yield Institute_modal_1.default.findOne({
+            where: {
+                instituteId: exam.instituteId,
+                isDeleted: false,
+            },
+        });
+        // ─────────────────────────────────────────────
         // Success
         // ─────────────────────────────────────────────
         return res.status(http_status_1.default.OK).json({
             error: false,
             statusCode: http_status_1.default.OK,
             message: "Exam fetched successfully.",
-            data: exam,
+            data: Object.assign(Object.assign({}, exam.toJSON()), { institute: institute ? {
+                    instituteId: institute.instituteId,
+                    instituteName: institute.instituteName,
+                    logoUrl: institute.logoUrl,
+                    slug: institute.slug,
+                } : null }),
         });
     }
     catch (e) {

@@ -9,7 +9,6 @@ TeacherProfile.init({
     id: { type: sequelize_1.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     userId: { type: sequelize_1.DataTypes.STRING, allowNull: false, unique: true },
     instituteId: { type: sequelize_1.DataTypes.STRING, allowNull: false },
-    employeeID: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     teacherType: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     qualification: { type: sequelize_1.DataTypes.STRING, allowNull: false },
     specialization: {
@@ -18,6 +17,7 @@ TeacherProfile.init({
         defaultValue: null,
     },
     experience: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null },
+    address: { type: sequelize_1.DataTypes.TEXT, allowNull: true, defaultValue: null },
     joiningDate: { type: sequelize_1.DataTypes.DATE, allowNull: false },
     dob: { type: sequelize_1.DataTypes.DATE, allowNull: false },
     profileUrl: { type: sequelize_1.DataTypes.STRING, allowNull: true, defaultValue: null },

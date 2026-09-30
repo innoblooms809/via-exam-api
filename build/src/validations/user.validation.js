@@ -72,4 +72,16 @@ const userCreateValidation = {
         permissions: joi_1.default.array().optional()
     }),
 };
-exports.default = { userCreateValidation };
+const loginValidation = {
+    body: joi_1.default.object().keys({
+        slug: joi_1.default.string().optional().allow(""),
+        emailId: joi_1.default.string().email().required().min(3).max(320).messages({
+            "string.email": "Please provide a valid email address.",
+            "any.required": "Email is required.",
+        }),
+        password: joi_1.default.string().required().messages({
+            "any.required": "Password is required.",
+        }),
+    }),
+};
+exports.default = { userCreateValidation, loginValidation };

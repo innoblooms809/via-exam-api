@@ -2,6 +2,8 @@ import { Router } from "express";
 import userController from "../../controllers/auth/user.controller" // Adjust the path as needed
 // import { RoleType } from "../modals/Role.modal";
 import {authenticate,authorize} from "../../middlewares/auth";
+import validate from "../../middlewares/validate";
+import userValidation from "../../validations/user.validation";
 
 const router = Router();
 
@@ -15,11 +17,10 @@ router.get("/captcha", userController.getCaptcha);
 
 /**
  * POST /api/viaexam/auth/login
- * Body: { emailId, mobileNo, type, password, captcha }
- * type: 1 = email, 2 = mobile
+ * Body: { slug, emailId, password }
  */
 router.post("/login",
-  //  authenticate,
+   validate(userValidation.loginValidation),
    userController.loginViaExamUser);
 
 /**
@@ -36,7 +37,7 @@ router.post("/refresh-token", userController.refreshAccessToken);
  */
 router.post(
   "/create-user",
-//   authenticate,
+  authenticate,
 //   authorize(["super_admin","admin"]), // ← only super_admin and admin can create users
   userController.createViaExamUser
 );
@@ -46,9 +47,20 @@ router.post(
  */
 router.post("/logout", authenticate, userController.logoutViaExamUser);
 
+import { profileUpload } from "../../utils/multer";
+
 /**
- * GET  /api/viaexam/auth/me
+ * GET  /auth/me, /auth/profile, /auth/profile/user
  */
 router.get("/me", authenticate, userController.getViaExamProfile);
+router.get("/profile", authenticate, userController.getViaExamProfile);
+router.get("/profile/user", authenticate, userController.getViaExamProfile);
+
+/**
+ * PUT  /auth/me, /auth/profile, /auth/profile/user
+ */
+router.put("/me", authenticate, profileUpload, userController.updateViaExamProfile);
+router.put("/profile", authenticate, profileUpload, userController.updateViaExamProfile);
+router.put("/profile/user", authenticate, profileUpload, userController.updateViaExamProfile);
 
 export default router;

@@ -20,8 +20,7 @@ router.get("/getAllSessions", auth_1.authenticate,
 session_controller_1.default.getAllSessions);
 // GET  /v1/sessions/active
 // Returns current active session
-router.get("/active", 
-//   authenticate,
+router.get("/active", auth_1.authenticate, 
 //   authorize(["ADMIN", "TEACHER", "EXAMINER", "STUDENT"]),
 session_controller_1.default.getActiveSession);
 // GET  /v1/sessions/:sessionId

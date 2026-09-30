@@ -5,13 +5,15 @@ import cors from 'cors';
 import httpStatus from 'http-status';
 import config from './config/config';
 import morgan from './config/morgan';
+import logger from './config/logger';
 import xss from './middlewares/xss';
+import cookieParser from 'cookie-parser';
 import { authLimiter } from './middlewares/rateLimiter';
 import routes from './routes/v1';
 import { errorConverter, errorHandler } from './middlewares/error';
 import ApiError from './utils/ApiError';
 import path from 'path';
-import session from 'express-session';
+// import session from 'express-session'; // Commented out: captcha is disabled, MemoryStore not needed in production
 import bodyParser from 'body-parser';
 const app = express();
 
@@ -28,11 +30,15 @@ app.use(
   })
 );
 
-// parse json request body
-app.use(express.json({limit: "60MB"}));
+// Parse JSON request body.
+// 100MB was needed while answer sheets were base64'd through JSON. They are
+// multipart now and handled by their own middleware, so this only has to cover
+// real JSON payloads — question paper content is the largest of them.
+app.use(express.json({ limit: "25mb" }));
 
 // parse urlencoded request body
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ limit: "25mb", extended: true }));
+app.use(cookieParser());
 
 // sanitize request data
 app.use(xss());
@@ -41,14 +47,23 @@ app.use(xss());
 app.use(compression());
 
 // enable cors
-app.use(cors());
-app.options('*', cors());
-app.use(session({
-  secret: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6',
-  resave: false,
-  saveUninitialized: true,
-}));
-app.use(bodyParser.json());
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow all origins (including localhost, subdomains, and live tunnels)
+    callback(null, true);
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+// app.use(session({
+//   secret: config.sessionSecret,
+//   resave: false,
+//   saveUninitialized: false,
+// })); // Commented out: session only used for CAPTCHA which is disabled
+app.use(bodyParser.json({ limit: "25mb" }));
 // limit repeated failed requests to auth endpoints
 if (config.env === 'production') {
   app.use('/v1/auth', authLimiter);
@@ -64,16 +79,32 @@ const allowCrossOriginUploads = (
   next();
 };
 
+const uploadsPath = path.resolve(process.cwd(), 'uploads');
+
 app.use(
-  "/v1/uploads",
+  '/uploads',
   allowCrossOriginUploads,
-  express.static(path.join(__dirname, "../uploads"), {
+  express.static(uploadsPath, {
     setHeaders: (res) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     },
   })
 );
+
+
+app.use(
+  '/v1/uploads',
+  allowCrossOriginUploads,
+  express.static(uploadsPath, {
+    setHeaders: (res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+  })
+);
+
+
 // v1 api routes
 app.use('/v1', routes);
 
@@ -82,7 +113,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
-  next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
+  logger.warn(`404 Not Found: ${req.method} ${req.originalUrl}`);
+  next(new ApiError(httpStatus.NOT_FOUND, `Route ${req.method} ${req.originalUrl} Not Found`));
 });
 
 // convert error to ApiError, if needed

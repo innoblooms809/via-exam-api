@@ -1,7 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
-import Institute from "./Institute.modal";
-import Class from "./Class.modal";
+
 
 interface SessionAttributes {
   id: number;
@@ -61,17 +60,10 @@ Session.init(
 
 // ─── ASSOCIATIONS ─────────────────────────────────────────
 
-Session.belongsTo(Institute, {
-  foreignKey: "instituteId",
-  targetKey: "instituteId",
-  as: "institute",
-});
-
-// Session has many Classes
-Session.hasMany(Class, {
-  foreignKey: "sessionId",
-  sourceKey: "sessionId",
-  as: "classes",
-});
+// Session.belongsTo(Institute, {
+//   foreignKey: "instituteId",
+//   targetKey: "instituteId",
+//   as: "institute",
+// });
 
 export default Session;

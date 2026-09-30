@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.questionPaperUpload = exports.instituteUpload = void 0;
+exports.answerPdfUpload = exports.answerPaperUpload = exports.questionPaperUpload = exports.instituteUpload = exports.profileUpload = exports.studentUpload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -23,6 +23,8 @@ const storage = multer_1.default.diskStorage({
             folder = "uploads/question-papers/school-logos/";
         else if (["diagram", "diagramUrls"].includes(file.fieldname))
             folder = "uploads/question-papers/diagrams/";
+        else if (file.fieldname === "profilePhoto")
+            folder = "uploads/students/";
         ensureDir(folder);
         cb(null, folder);
     },
@@ -41,8 +43,29 @@ const fileFilter = (req, file, cb) => {
         cb(new Error("Only JPG, PNG, WEBP allowed"), false);
     }
 };
-exports.instituteUpload = (0, multer_1.default)({
+exports.studentUpload = (0, multer_1.default)({
     storage,
+    fileFilter,
+    limits: {
+        fileSize: 2 * 1024 * 1024, // 2MB max
+    },
+}).fields([
+    { name: "profilePhoto", maxCount: 1 },
+]);
+exports.profileUpload = (0, multer_1.default)({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+}).fields([
+    { name: "profilePhoto", maxCount: 1 },
+    { name: "avatar", maxCount: 1 },
+]);
+exports.instituteUpload = (0, multer_1.default)({
+    // Logos/banners go straight to Cloudinary, so they're held in memory only
+    // long enough to stream out — never written to local disk.
+    storage: multer_1.default.memoryStorage(),
     fileFilter,
     limits: {
         fileSize: 5 * 1024 * 1024, // 5MB max (banner is larger)
@@ -71,3 +94,37 @@ exports.questionPaperUpload = (0, multer_1.default)({
         maxCount: 1,
     },
 ]);
+exports.answerPaperUpload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+        fieldSize: 10 * 1024 * 1024,
+    },
+}).fields([
+    {
+        name: "diagram",
+        maxCount: 10,
+    },
+    {
+        name: "diagramUrls",
+        maxCount: 10,
+    },
+]);
+const pdfFileFilter = (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (allowed.includes(file.mimetype)) {
+        cb(null, true);
+    }
+    else {
+        cb(new Error("Only JPG, PNG, WEBP, PDF allowed"), false);
+    }
+};
+exports.answerPdfUpload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    fileFilter: pdfFileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+        fieldSize: 10 * 1024 * 1024,
+    },
+}).any();

@@ -28,7 +28,7 @@ router.get(
 // Returns current active session
 router.get(
   "/active",
-//   authenticate,
+  authenticate,
 //   authorize(["ADMIN", "TEACHER", "EXAMINER", "STUDENT"]),
   Controller.getActiveSession
 );

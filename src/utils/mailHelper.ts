@@ -189,7 +189,7 @@
 // // Function to send OTP email with external HTML content
 // export const sendEmailToNewUser = async (requestBody: any) => {
 //   const { emailId, phoneNumber, userName, password } = requestBody;
-// console.log(emailId, phoneNumber, userName, password )
+
 //   // Read the HTML file asynchronously
 //   const htmlContent = await fs.promises.readFile(path.join(__dirname, 'welcome.html'), 'utf8');
 
@@ -249,7 +249,7 @@
 
 //     try {
 //       await this.newTransport().sendMail(mailOptions);
-//       console.log("Email sent successfully");
+
 //     } catch (err) {
 //       console.error("Error sending email:", err);
 //       throw new Error("Failed to send email.");
@@ -300,12 +300,12 @@ import config from "../config/config";
 
 // ─── Transporter ──────────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  host: config.email.smtp.host,
-  port: Number(config.email.smtp.port), // ← fix: was using host instead of port
-  secure: true, // ← true for port 465
+  host: config.email.smtp.host || "smtp.gmail.com",
+  port: Number(config.email.smtp.port || 465),
+  secure: Number(config.email.smtp.port || 465) === 465,
   auth: {
     user: config.email.smtp.auth.user,
-    pass: config.email.smtp.auth.pass,
+    pass: (config.email.smtp.auth.pass || "").replace(/\s+/g, ""),
   },
   tls: {
     rejectUnauthorized: false,
@@ -315,7 +315,7 @@ const transporter = nodemailer.createTransport({
 // ─── Existing function — keep as is ───────────────────────────────────────────
 export const sendEmailToNewUser = async (requestBody: any) => {
   const { emailId, phoneNumber, userName, password } = requestBody;
-  console.log(emailId, phoneNumber, userName, password);
+
 
   const htmlContent = await fs.promises.readFile(
     path.join(__dirname, "welcome.html"),
@@ -336,18 +336,120 @@ export const sendEmailToNewUser = async (requestBody: any) => {
   // };
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"ViaExam" <${config.email.smtp.auth.user}>`,
       to: emailId,
       subject: "Registration Completed",
       html: htmlContentFile,
     });
+
+
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
     return false;
   }
 };
+// ─── Send credentials to newly created non-admin users (student, teacher, etc.) ─
+export const sendUserCredentials = async (data: {
+  userName: string;
+  email: string;
+  phone: string;
+  password: string;
+  role: string;
+  loginUrl: string;
+}): Promise<boolean> => {
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8" />
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+          .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+          .header { background: linear-gradient(135deg, #0f0e1a 0%, #1a1535 100%); padding: 32px 40px; text-align: center; }
+          .header h1 { color: #fff; font-size: 22px; margin: 0; }
+          .header p { color: rgba(255,255,255,0.45); font-size: 13px; margin: 6px 0 0; }
+          .body { padding: 32px 40px; }
+          .greeting { font-size: 16px; color: #111827; font-weight: 600; margin-bottom: 10px; }
+          .text { font-size: 14px; color: #6b7280; line-height: 1.7; margin-bottom: 24px; }
+          .cred-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px 24px; margin-bottom: 24px; }
+          .cred-box h3 { font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 14px; }
+          .cred-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f3f4f6; }
+          .cred-row:last-child { border-bottom: none; }
+          .cred-label { font-size: 13px; color: #6b7280; }
+          .cred-value { font-size: 13px; color: #111827; font-weight: 700; font-family: monospace; }
+          .btn { display: block; width: fit-content; margin: 0 auto; background: linear-gradient(135deg, #534AB7, #3C3489); color: #fff; text-decoration: none; padding: 13px 30px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+          .warning { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin-top: 22px; }
+          .warning p { font-size: 13px; color: #92400e; margin: 0; line-height: 1.6; }
+          .footer { background: #f9fafb; padding: 18px 40px; text-align: center; }
+          .footer p { font-size: 12px; color: #9ca3af; margin: 0; }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="header">
+            <h1>🎓 ViaExam</h1>
+            <p>Institute Management Platform</p>
+          </div>
+          <div class="body">
+            <p class="greeting">Hello ${data.userName},</p>
+            <p class="text">
+              Your <strong>${data.role}</strong> account has been successfully created on ViaExam.
+              Below are your login credentials.
+            </p>
+            <div class="cred-box">
+              <h3>Login Credentials</h3>
+              <div class="cred-row">
+                <span class="cred-label">Email: </span>
+                <span class="cred-value">${data.email}</span>
+              </div>
+              <div class="cred-row">
+                <span class="cred-label">Mobile: </span>
+                <span class="cred-value">${data.phone}</span>
+              </div>
+              <div class="cred-row">
+                <span class="cred-label">Username: </span>
+                <span class="cred-value">${data.userName}</span>
+              </div>
+              <div class="cred-row">
+                <span class="cred-label">Password: </span>
+                <span class="cred-value">${data.password}</span>
+              </div>
+              <div class="cred-row">
+                <span class="cred-label">Login URL: </span>
+                <span class="cred-value" style="font-size:11px">${data.loginUrl}</span>
+              </div>
+            </div>
+            <a href="${data.loginUrl}" class="btn">Login to Dashboard →</a>
+            <div class="warning">
+              <p>⚠️ Please change your password immediately after your first login.</p>
+            </div>
+          </div>
+          <div class="footer">
+            <p>© 2026 ViaExam. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await transporter.sendMail({
+      from: `"ViaExam" <${config.email.smtp.auth.user}>`,
+      to: data.email,
+      subject: `Welcome to ViaExam — Your ${data.role} Account Credentials`,
+      html,
+    });
+
+
+    return true;
+  } catch (e: any) {
+    console.error(`❌ sendUserCredentials failed for ${data.email}:`, e.message);
+    return false;
+  }
+};
+
 // ─── NEW — Send admin credentials after institute registration ─────────────────
 export const sendAdminCredentials = async (data: {
   adminName: string;
@@ -437,17 +539,268 @@ export const sendAdminCredentials = async (data: {
       </html>
     `;
 
-    await transporter.sendMail({
+    const response=await transporter.sendMail({
       from: `"ViaExam" <${config.email.smtp.auth.user}>`,
       to: data.adminEmail,
       subject: `Welcome to ViaExam — Your Admin Credentials for ${data.instituteName}`,
       html,
     });
 
-    console.log(`✅ Credentials email sent to ${data.adminEmail}`);
+
     return true;
   } catch (e: any) {
     console.error("❌ sendAdminCredentials failed:", e.message);
     return false; // don't throw — email failure won't break registration
   }
 };
+
+// ─── Role-specific OTP email templates ──────────────────────────────────────────
+export const sendOtpEmail = async ({
+  toEmail,
+  userName,
+  otp,
+  role,
+}: {
+  toEmail: string;
+  userName: string;
+  otp: string;
+  role?: string;
+}) => {
+  try {
+    const roleSpecificContent = getRoleSpecificOTPContent(role);
+    
+    await transporter.sendMail({
+      from: `"ViaExam" <${config.email.smtp.auth.user}>`,
+      to: toEmail,
+      subject: roleSpecificContent.subject,
+      html: roleSpecificContent.html(userName, otp),
+    });
+  } catch (error) {
+    console.error("Failed to send OTP email:", error);
+  }
+};
+
+// Helper function to get role-specific email content
+function getRoleSpecificOTPContent(role?: string) {
+  const baseStyles = `
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(135deg, #0f0e1a 0%, #1a1535 100%); padding: 32px 40px; text-align: center; }
+    .header h1 { color: #fff; font-size: 22px; margin: 0; }
+    .header p { color: rgba(255,255,255,0.45); font-size: 13px; margin: 6px 0 0; }
+    .body { padding: 32px 40px; }
+    .greeting { font-size: 16px; color: #111827; font-weight: 600; margin-bottom: 10px; }
+    .text { font-size: 14px; color: #6b7280; line-height: 1.7; margin-bottom: 24px; }
+    .otp-box { background: linear-gradient(135deg, #534AB7, #3C3489); color: #fff; border-radius: 10px; padding: 24px; text-align: center; margin: 24px 0; }
+    .otp-code { font-size: 32px; font-weight: 700; letter-spacing: 8px; margin: 0; }
+    .warning { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin-top: 22px; }
+    .warning p { font-size: 13px; color: #92400e; margin: 0; line-height: 1.6; }
+    .footer { background: #f9fafb; padding: 18px 40px; text-align: center; }
+    .footer p { font-size: 12px; color: #9ca3af; margin: 0; }
+  `;
+
+  const roleMessages = {
+    admin: {
+      subject: "🔐 Password Reset OTP - ViaExam Admin Dashboard",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Admin Dashboard</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Admin</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact support immediately.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    },
+    teacher: {
+      subject: "🔐 Password Reset OTP - ViaExam Teacher Portal",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Teacher Portal</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Teacher</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact your institute administrator.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    },
+    student: {
+      subject: "🔐 Password Reset OTP - ViaExam Student Portal",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Student Portal</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Student</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact your teacher or institute administrator.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    },
+    scanner: {
+      subject: "🔐 Password Reset OTP - ViaExam Scanner Portal",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Scanner Portal</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Scanner</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact your institute administrator.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    },
+    super_admin: {
+      subject: "🔐 Password Reset OTP - ViaExam Super Admin Dashboard",
+      html: (userName: string, otp: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8" />
+          <style>${baseStyles}</style>
+        </head>
+        <body>
+          <div class="wrapper">
+            <div class="header">
+              <h1>🎓 ViaExam</h1>
+              <p>Super Admin Dashboard</p>
+            </div>
+            <div class="body">
+              <p class="greeting">Hello ${userName},</p>
+              <p class="text">
+                We received a request to reset your <strong>Super Admin</strong> account password. 
+                Use the OTP below to securely reset your password.
+              </p>
+              <div class="otp-box">
+                <p class="otp-code">${otp}</p>
+              </div>
+              <p class="text">
+                This OTP is valid for <strong>10 minutes</strong>. For security reasons, 
+                please do not share this code with anyone.
+              </p>
+              <div class="warning">
+                <p>⚠️ If you did not request this password reset, please ignore this email and contact platform support immediately.</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>© 2026 ViaExam. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    }
+  };
+
+  return roleMessages[role as keyof typeof roleMessages] || roleMessages.student;
+}
