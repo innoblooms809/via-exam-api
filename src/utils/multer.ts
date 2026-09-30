@@ -49,7 +49,9 @@ export const studentUpload = multer({
 ]);
 
 export const instituteUpload = multer({
-  storage,
+  // Logos/banners go straight to Cloudinary, so they're held in memory only
+  // long enough to stream out — never written to local disk.
+  storage: multer.memoryStorage(),
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB max (banner is larger)
