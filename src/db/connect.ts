@@ -8,6 +8,11 @@ const connectDB = async (fn: any) => {
     logger.info("Connected to PostgreSQL Database");
     await import("../modals/index"); // Ensure all models are imported and registered
 
+    // Ensure newly added columns exist in database
+    await sequelize.query(
+      `ALTER TABLE "viaexam_users" ADD COLUMN IF NOT EXISTS "profileUrl" VARCHAR(255);`
+    ).catch(() => null);
+
     await sequelize.sync({ force: false });
     
     logger.info("Models synced with PostgreSQL");
