@@ -259,4 +259,56 @@ const resetPassword = (email, otp, newPassword) => __awaiter(void 0, void 0, voi
         };
     }
 });
-exports.default = { forgotPassword, verifyOtp, resetPassword, resendCredentials };
+// ─── Change Password for logged in user ─────────────────────────────────────────
+const changePassword = (userId, currentPassword, newPassword) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!currentPassword || !newPassword) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "Both current password and new password are required.",
+            };
+        }
+        if (newPassword.length < 6) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "New password must be at least 6 characters long.",
+            };
+        }
+        const user = yield User_modal_1.default.findOne({
+            where: { userId, status: 1 },
+        });
+        if (!user) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                message: "User account not found.",
+            };
+        }
+        const isMatch = yield encryption_1.default.isPasswordMatch(currentPassword, user.password);
+        if (!isMatch) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.BAD_REQUEST,
+                message: "Current password is incorrect.",
+            };
+        }
+        const encrypted = yield encryption_1.default.encryptPassword(newPassword);
+        yield user.update({ password: encrypted });
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Password updated successfully.",
+            data: {},
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: `Failed to change password: ${e.message}`,
+        };
+    }
+});
+exports.default = { forgotPassword, verifyOtp, resetPassword, resendCredentials, changePassword };

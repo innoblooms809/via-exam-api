@@ -72,6 +72,11 @@ User.init({
         allowNull: true,
         defaultValue: null,
     },
+    profileUrl: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
     isDeleted: {
         type: sequelize_1.DataTypes.BOOLEAN,
         allowNull: false,
