@@ -9,12 +9,20 @@ import { sequelize } from "../config/sequelize";
 import { Op } from "sequelize";
 import { sendAdminCredentials } from "../utils/mailHelper";
 import config from "../config/config";
+import { destroyInstituteAsset, uploadInstituteAsset } from "../utils/instituteStorage";
 
 
 // ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
 const registerInstitute = async (body: any, files: any): Promise<any> => {
   // Use a transaction — if admin user creation fails, institute also rolls back
   const t = await sequelize.transaction();
+
+  // Declared outside the try so the catch block can clean up an uploaded
+  // logo/banner if a later step (e.g. admin creation) fails.
+  let logoUrl: string | null = null;
+  let logoPublicId: string | null = null;
+  let bannerUrl: string | null = null;
+  let bannerPublicId: string | null = null;
 
   try {
     // 1. Check slug uniqueness
@@ -71,23 +79,46 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       }
     }
 
-    // 5. Get file paths from multer
-    const logoUrl = files?.logo?.[0]
-      ? `/${files.logo[0].path.replace(/\\/g, "/")}`
-      : null;
-    const bannerUrl = files?.banner?.[0]
-      ? `/${files.banner[0].path.replace(/\\/g, "/")}`
-      : null;
+    // 5. Generate institute ID (needed up front so uploads can be scoped by it)
+    const instituteId = await RegHelper.generateUserId();
 
-    // 6. Calculate trial end date
+    // 6. Upload logo/banner to Cloudinary, if provided
+    try {
+      if (files?.logo?.[0]) {
+        const stored = await uploadInstituteAsset({
+          buffer: files.logo[0].buffer,
+          instituteId,
+          kind: "logo",
+        });
+        logoUrl = stored.url;
+        logoPublicId = stored.publicId;
+      }
+      if (files?.banner?.[0]) {
+        const stored = await uploadInstituteAsset({
+          buffer: files.banner[0].buffer,
+          instituteId,
+          kind: "banner",
+        });
+        bannerUrl = stored.url;
+        bannerPublicId = stored.publicId;
+      }
+    } catch (uploadErr: any) {
+      await t.rollback();
+      if (logoPublicId) await destroyInstituteAsset(logoPublicId, "register rollback");
+      if (bannerPublicId) await destroyInstituteAsset(bannerPublicId, "register rollback");
+      return {
+        error: true,
+        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+        message: `Could not store logo/banner: ${uploadErr?.message ?? uploadErr}`,
+      };
+    }
+
+    // 7. Calculate trial end date
     const trialDays = parseInt(body.trialDays) || 0;
     const trialEndsAt =
       trialDays > 0
         ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
         : null;
-
-    // 7. Generate institute ID
-    const instituteId = await RegHelper.generateUserId();
 
     // 8. Create Institute record
     const institute = await Institute.create(
@@ -114,6 +145,8 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         trialEndsAt,
         logoUrl,
         bannerUrl,
+        logoPublicId,
+        bannerPublicId,
         status: 1,
       },
       { transaction: t },
@@ -127,6 +160,8 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
       if (!adminRole) {
         await t.rollback();
+        if (logoPublicId) await destroyInstituteAsset(logoPublicId, "register rollback");
+        if (bannerPublicId) await destroyInstituteAsset(bannerPublicId, "register rollback");
         return {
           error: true,
           statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -188,6 +223,8 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
   } catch (e: any) {
     await t.rollback();
     console.error(e);
+    if (logoPublicId) await destroyInstituteAsset(logoPublicId, "register rollback");
+    if (bannerPublicId) await destroyInstituteAsset(bannerPublicId, "register rollback");
 
     if (e.name === "SequelizeUniqueConstraintError") {
       const field = e.errors?.[0]?.path;
@@ -505,14 +542,40 @@ const updateInstitute = async (
       }
     }
 
-    // Handle new file uploads â€” keep old ones if no new file sent
-    const logoUrl = files?.logo?.[0]
-      ? `/${files.logo[0].path.replace(/\\/g, "/")}`
-      : institute.logoUrl;
+    // Handle new file uploads — keep old ones if no new file sent. Each
+    // upload overwrites the same Cloudinary public_id as before, so there is
+    // no separate asset to clean up here.
+    let logoUrl = institute.logoUrl;
+    let logoPublicId = institute.logoPublicId;
+    let bannerUrl = institute.bannerUrl;
+    let bannerPublicId = institute.bannerPublicId;
 
-    const bannerUrl = files?.banner?.[0]
-      ? `/${files.banner[0].path.replace(/\\/g, "/")}`
-      : institute.bannerUrl;
+    try {
+      if (files?.logo?.[0]) {
+        const stored = await uploadInstituteAsset({
+          buffer: files.logo[0].buffer,
+          instituteId: institute.instituteId,
+          kind: "logo",
+        });
+        logoUrl = stored.url;
+        logoPublicId = stored.publicId;
+      }
+      if (files?.banner?.[0]) {
+        const stored = await uploadInstituteAsset({
+          buffer: files.banner[0].buffer,
+          instituteId: institute.instituteId,
+          kind: "banner",
+        });
+        bannerUrl = stored.url;
+        bannerPublicId = stored.publicId;
+      }
+    } catch (uploadErr: any) {
+      return {
+        error: true,
+        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+        message: `Could not store logo/banner: ${uploadErr?.message ?? uploadErr}`,
+      };
+    }
 
     // Only update fields that are sent in body
     await institute.update({
@@ -536,6 +599,8 @@ const updateInstitute = async (
       plan: body.plan ?? institute.plan,
       logoUrl,
       bannerUrl,
+      logoPublicId,
+      bannerPublicId,
     });
 
     return {
@@ -588,6 +653,10 @@ const softDeleteInstitute = async (instituteId: string): Promise<any> => {
     );
 
     await t.commit();
+
+    // Committed — the row is kept for audit, but the storage bytes can go.
+    if (institute.logoPublicId) await destroyInstituteAsset(institute.logoPublicId, "deleted institute");
+    if (institute.bannerPublicId) await destroyInstituteAsset(institute.bannerPublicId, "deleted institute");
 
     return {
       error: false,
