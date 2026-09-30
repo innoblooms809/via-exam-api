@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.answerPdfUpload = exports.answerPaperUpload = exports.questionPaperUpload = exports.instituteUpload = exports.studentUpload = void 0;
+exports.answerPdfUpload = exports.answerPaperUpload = exports.questionPaperUpload = exports.instituteUpload = exports.profileUpload = exports.studentUpload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
@@ -51,6 +51,16 @@ exports.studentUpload = (0, multer_1.default)({
     },
 }).fields([
     { name: "profilePhoto", maxCount: 1 },
+]);
+exports.profileUpload = (0, multer_1.default)({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+}).fields([
+    { name: "profilePhoto", maxCount: 1 },
+    { name: "avatar", maxCount: 1 },
 ]);
 exports.instituteUpload = (0, multer_1.default)({
     // Logos/banners go straight to Cloudinary, so they're held in memory only

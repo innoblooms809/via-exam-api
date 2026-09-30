@@ -18,7 +18,7 @@ const v1_1 = __importDefault(require("./routes/v1"));
 const error_1 = require("./middlewares/error");
 const ApiError_1 = __importDefault(require("./utils/ApiError"));
 const path_1 = __importDefault(require("path"));
-const express_session_1 = __importDefault(require("express-session"));
+// import session from 'express-session'; // Commented out: captcha is disabled, MemoryStore not needed in production
 const body_parser_1 = __importDefault(require("body-parser"));
 const app = (0, express_1.default)();
 if (config_1.default.env !== 'test') {
@@ -52,11 +52,11 @@ const corsOptions = {
 };
 app.use((0, cors_1.default)(corsOptions));
 app.options("*", (0, cors_1.default)(corsOptions));
-app.use((0, express_session_1.default)({
-    secret: config_1.default.sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-}));
+// app.use(session({
+//   secret: config.sessionSecret,
+//   resave: false,
+//   saveUninitialized: false,
+// })); // Commented out: session only used for CAPTCHA which is disabled
 app.use(body_parser_1.default.json({ limit: "25mb" }));
 // limit repeated failed requests to auth endpoints
 if (config_1.default.env === 'production') {
