@@ -53,7 +53,9 @@ exports.studentUpload = (0, multer_1.default)({
     { name: "profilePhoto", maxCount: 1 },
 ]);
 exports.instituteUpload = (0, multer_1.default)({
-    storage,
+    // Logos/banners go straight to Cloudinary, so they're held in memory only
+    // long enough to stream out — never written to local disk.
+    storage: multer_1.default.memoryStorage(),
     fileFilter,
     limits: {
         fileSize: 5 * 1024 * 1024, // 5MB max (banner is larger)

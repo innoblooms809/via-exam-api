@@ -111,6 +111,16 @@ Institute.init({
         allowNull: true,
         defaultValue: null,
     },
+    logoPublicId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+    bannerPublicId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
     status: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: false,

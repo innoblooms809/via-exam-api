@@ -35,6 +35,8 @@ interface InstituteAttributes {
 
   logoUrl: string | null;
   bannerUrl: string | null;
+  logoPublicId: string | null;
+  bannerPublicId: string | null;
 
   status: number;
   isDeleted: boolean;
@@ -56,6 +58,8 @@ interface InstituteCreationAttributes
     | "trialEndsAt"
     | "logoUrl"
     | "bannerUrl"
+    | "logoPublicId"
+    | "bannerPublicId"
     | "status"
     | "isDeleted"
   > {}
@@ -97,6 +101,8 @@ class Institute
 
   public logoUrl!: string | null;
   public bannerUrl!: string | null;
+  public logoPublicId!: string | null;
+  public bannerPublicId!: string | null;
 
   public status!: number;
   public isDeleted!: boolean;
@@ -230,6 +236,18 @@ Institute.init(
     },
 
     bannerUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+
+    logoPublicId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
+
+    bannerPublicId: {
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: null,
