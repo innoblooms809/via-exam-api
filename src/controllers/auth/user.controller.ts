@@ -404,6 +404,28 @@ const getViaExamProfile = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+/**
+ * PUT /api/viaexam/auth/me
+ * Protected — updates profile for current user
+ */
+const updateViaExamProfile = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await Service.viaExamUpdateProfile(
+      req.viaExamUser.userId,
+      req.body,
+      req.files
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      data: {},
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export default {
   getCaptcha,
   loginViaExamUser,
@@ -411,4 +433,5 @@ export default {
   createViaExamUser,
   logoutViaExamUser,
   getViaExamProfile,
+  updateViaExamProfile,
 };
