@@ -124,6 +124,36 @@ const getRecentActivity = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const getSetQuestions = async (req: any, res: Response): Promise<any> => {
+  try {
+    const teacherId = req.viaExamUser.userId;
+    const instituteId = req.viaExamUser.instituteId;
+    const result = await TeacherdashboardService.getSetQuestions(teacherId, instituteId);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const getSetAnswerSheets = async (req: any, res: Response): Promise<any> => {
+  try {
+    const teacherId = req.viaExamUser.userId;
+    const instituteId = req.viaExamUser.instituteId;
+    const result = await TeacherdashboardService.getSetAnswerSheets(teacherId, instituteId);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export default {
   getTeacherDashboardOverview,
   getUpcomingExams,
@@ -133,4 +163,6 @@ export default {
   getEvaluationStatus,
   getSubjectWorkload,
   getRecentActivity,
+  getSetQuestions,
+  getSetAnswerSheets,
 };

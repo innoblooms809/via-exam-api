@@ -49,10 +49,48 @@ const getTeacherDashboardOverview = async (teacherId: string, instituteId: strin
     ]);
 
     const kpis = [
-      { title: "Exams Created", value: formatCount(examsCreated), icon: "DescriptionOutlined", iconBg: "#e7f0ff", iconColor: "#3973c8" },
-      { title: "Question Papers Created", value: formatCount(questionPapersCreated), icon: "AssignmentOutlined", iconBg: "#f0e9ff", iconColor: "#7e57c2" },
-      { title: "Answer Sheets Evaluated", value: formatCount(answerSheetsEvaluated), icon: "FactCheckOutlined", iconBg: "#e3f7eb", iconColor: "#3c9a67" },
-      { title: "Results Published", value: formatCount(resultsPublished), icon: "InsertChartOutlined", iconBg: "#fff0e8", iconColor: "#f07836" },
+      {
+        title: "Exams Created",
+        value: formatCount(examsCreated),
+        icon: "DescriptionOutlined",
+        iconBg: "#e7f0ff",
+        iconColor: "#3973c8",
+        route: "/teacher/upcoming-exams",
+        action: "navigate",
+        description: "View all upcoming exams",
+      },
+      {
+        title: "Question Papers Created",
+        value: formatCount(questionPapersCreated),
+        icon: "AssignmentOutlined",
+        iconBg: "#f0e9ff",
+        iconColor: "#7e57c2",
+        route: "/teacher/upcoming-exams",
+        action: "navigate",
+        secondaryRoute: "/teacher/set-questions",
+        secondaryAction: "navigate",
+        description: "View upcoming exams or set questions",
+      },
+      {
+        title: "Answer Sheets Evaluated",
+        value: formatCount(answerSheetsEvaluated),
+        icon: "FactCheckOutlined",
+        iconBg: "#e3f7eb",
+        iconColor: "#3c9a67",
+        route: "/teacher/set-answer-sheets",
+        action: "navigate",
+        description: "View and evaluate answer sheets",
+      },
+      {
+        title: "Results Published",
+        value: formatCount(resultsPublished),
+        icon: "InsertChartOutlined",
+        iconBg: "#fff0e8",
+        iconColor: "#f07836",
+        route: null,
+        action: "none",
+        description: "Results published count",
+      },
     ];
 
     return {
@@ -321,6 +359,100 @@ const getRecentActivity = async (teacherId: string, instituteId: string) => {
   }
 };
 
+// ─── SET QUESTIONS ─────────────────────────────────────────────────────────────
+const getSetQuestions = async (teacherId: string, instituteId: string) => {
+  try {
+    const { examIdFilter } = await getTeacherExamIds(teacherId, instituteId);
+
+    const questionPapers = await QuestionPaper.findAll({
+      where: { instituteId, teacherId, examId: examIdFilter },
+      include: [
+        { model: Exam, as: "exam", attributes: ["examId", "examType", "examDate", "status"], required: false },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const setQuestions = questionPapers.map((qp: any) => ({
+      paperId: qp.paperId,
+      examId: qp.examId,
+      examType: qp.exam?.examType || "Exam",
+      examDate: qp.exam?.examDate || null,
+      examStatus: qp.exam?.status || "Draft",
+      paperSet: qp.paperSet,
+      status: qp.status,
+      content: qp.content,
+      createdAt: qp.createdAt,
+      updatedAt: qp.updatedAt,
+      submittedAt: qp.submittedAt,
+      approvedAt: qp.approvedAt,
+      publishedAt: qp.publishedAt,
+    }));
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Set questions fetched successfully.",
+      data: { setQuestions },
+    };
+  } catch (error: any) {
+    console.error("getSetQuestions error:", error);
+    return errorResult();
+  }
+};
+
+// ─── SET ANSWER SHEETS ─────────────────────────────────────────────────────────
+const getSetAnswerSheets = async (teacherId: string, instituteId: string) => {
+  try {
+    const { examIdFilter } = await getTeacherExamIds(teacherId, instituteId);
+
+    const evaluations = await AIEvaluation.findAll({
+      where: { examId: examIdFilter },
+      attributes: [
+        "evaluationId",
+        "sheetId",
+        "studentId",
+        "examId",
+        "classId",
+        "section",
+        "subjectId",
+        "examType",
+        "totalScore",
+        "feedback",
+        "status",
+        "createdAt",
+        "updatedAt",
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const answerSheets = evaluations.map((evaluation: any) => ({
+      evaluationId: evaluation.evaluationId,
+      sheetId: evaluation.sheetId,
+      studentId: evaluation.studentId,
+      examId: evaluation.examId,
+      classId: evaluation.classId,
+      section: evaluation.section,
+      subjectId: evaluation.subjectId,
+      examType: evaluation.examType,
+      totalScore: evaluation.totalScore,
+      feedback: evaluation.feedback,
+      status: evaluation.status,
+      createdAt: evaluation.createdAt,
+      updatedAt: evaluation.updatedAt,
+    }));
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Set answer sheets fetched successfully.",
+      data: { answerSheets },
+    };
+  } catch (error: any) {
+    console.error("getSetAnswerSheets error:", error);
+    return errorResult();
+  }
+};
+
 export default {
   getTeacherDashboardOverview,
   getUpcomingExams,
@@ -330,4 +462,6 @@ export default {
   getEvaluationStatus,
   getSubjectWorkload,
   getRecentActivity,
+  getSetQuestions,
+  getSetAnswerSheets,
 };
