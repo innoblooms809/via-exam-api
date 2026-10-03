@@ -134,6 +134,36 @@ const getRecentActivity = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 });
+const getSetQuestions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getSetQuestions(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
+const getSetAnswerSheets = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacherId = req.viaExamUser.userId;
+        const instituteId = req.viaExamUser.instituteId;
+        const result = yield teacherdashboard_service_1.default.getSetAnswerSheets(teacherId, instituteId);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            message: "Internal Server Error",
+        });
+    }
+});
 exports.default = {
     getTeacherDashboardOverview,
     getUpcomingExams,
@@ -143,4 +173,6 @@ exports.default = {
     getEvaluationStatus,
     getSubjectWorkload,
     getRecentActivity,
+    getSetQuestions,
+    getSetAnswerSheets,
 };

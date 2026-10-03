@@ -15,4 +15,6 @@ router.get("/upcoming-work", auth_1.authenticate, (0, auth_1.authorize)(["TEACHE
 router.get("/evaluation-status", auth_1.authenticate, (0, auth_1.authorize)(["TEACHER"]), teacherdashboard_controller_1.default.getEvaluationStatus);
 router.get("/subject-workload", auth_1.authenticate, (0, auth_1.authorize)(["TEACHER"]), teacherdashboard_controller_1.default.getSubjectWorkload);
 router.get("/activity/recent", auth_1.authenticate, (0, auth_1.authorize)(["TEACHER"]), teacherdashboard_controller_1.default.getRecentActivity);
+router.get("/set-questions", auth_1.authenticate, (0, auth_1.authorize)(["TEACHER"]), teacherdashboard_controller_1.default.getSetQuestions);
+router.get("/set-answer-sheets", auth_1.authenticate, (0, auth_1.authorize)(["TEACHER"]), teacherdashboard_controller_1.default.getSetAnswerSheets);
 exports.default = router;
