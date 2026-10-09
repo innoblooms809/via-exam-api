@@ -19,6 +19,9 @@ import UserPresenceSession from "./UserPresenceSession.model";
 import RecheckRequest from "./RecheckRequest.model";
 import EvaluationAssignment from "./EvaluationAssignment.model";
 import PushToken from "./PushToken.model";
+import Plan from "./Plan.model";
+import Subscription from "./Subscription.model";
+import SubscriptionTransaction from "./SubscriptionTransaction.model";
 
 export {
   User,
@@ -42,6 +45,9 @@ export {
   RecheckRequest,
   EvaluationAssignment,
   PushToken,
+  Plan,
+  Subscription,
+  SubscriptionTransaction,
 };
 
 // ROLE ↔ ACCESS
@@ -664,4 +670,32 @@ AIEvaluation.belongsTo(Exam, {
   foreignKey: "examId",
   targetKey: "examId",
   as: "exam",
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INSTITUTE ↔ SUBSCRIPTION / BILLING TRANSACTIONS
+// ═══════════════════════════════════════════════════════════════
+Institute.hasOne(Subscription, {
+  foreignKey: "instituteId",
+  sourceKey: "instituteId",
+  as: "subscription",
+  constraints: false,
+});
+Subscription.belongsTo(Institute, {
+  foreignKey: "instituteId",
+  targetKey: "instituteId",
+  as: "institute",
+  constraints: false,
+});
+Subscription.belongsTo(Plan, {
+  foreignKey: "planKey",
+  targetKey: "planKey",
+  as: "plan",
+  constraints: false,
+});
+SubscriptionTransaction.belongsTo(Institute, {
+  foreignKey: "instituteId",
+  targetKey: "instituteId",
+  as: "institute",
+  constraints: false,
 });
