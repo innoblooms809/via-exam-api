@@ -13,8 +13,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
-const exam_service_1 = __importDefault(require("../../services/exam.service"));
-const evaluationAssignment_service_1 = __importDefault(require("../../services/evaluationAssignment.service"));
+const exam_service_1 = __importDefault(require("../../services/exam/exam.service"));
+const evaluationAssignment_service_1 = __importDefault(require("../../services/evaluation/evaluationAssignment.service"));
 const createExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield exam_service_1.default.createExam(req.body, req.viaExamUser);

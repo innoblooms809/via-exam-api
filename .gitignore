@@ -84,3 +84,9 @@ next-env.d.ts
 
 # Log files
 *.log
+logs/
+
+
+# Firebase service-account key (secret)
+firebase-service-account*.json
+*-firebase-adminsdk-*.json

@@ -24,15 +24,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
-const User_modal_1 = __importDefault(require("../../modals/User.modal"));
-const Role_modal_1 = __importDefault(require("../../modals/Role.modal"));
+const User_model_1 = __importDefault(require("../../models/User.model"));
+const Role_model_1 = __importDefault(require("../../models/Role.model"));
 const encryption_1 = __importDefault(require("../../utils/encryption")); // reuse your existing utility
 const helper_1 = __importDefault(require("../../utils/helper")); // reuse your existing utility
 const exclude_1 = __importDefault(require("../../utils/exclude")); // reuse your existing utility
 const sequelize_1 = require("sequelize");
-const Institute_modal_1 = __importDefault(require("../../modals/Institute.modal"));
-const UserPresenceSession_modal_1 = __importDefault(require("../../modals/UserPresenceSession.modal"));
+const Institute_model_1 = __importDefault(require("../../models/Institute.model"));
+const UserPresenceSession_model_1 = __importDefault(require("../../models/UserPresenceSession.model"));
 const activityLogger_1 = require("../../utils/activityLogger");
+const TeacherProfile_model_1 = __importDefault(require("../../models/TeacherProfile.model"));
+const Student_model_1 = __importDefault(require("../../models/Student.model"));
+const ScannerProfile_model_1 = __importDefault(require("../../models/ScannerProfile.model"));
+const Section_model_1 = __importDefault(require("../../models/Section.model"));
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_SECONDS = 5;
@@ -52,10 +56,10 @@ const getViaExamUserByEmail = (emailId, instituteId) => __awaiter(void 0, void 0
     else if (instituteId === null) {
         where.instituteId = { [sequelize_1.Op.is]: null };
     }
-    return User_modal_1.default.findOne({
+    return User_model_1.default.findOne({
         include: [
             {
-                model: Role_modal_1.default,
+                model: Role_model_1.default,
                 as: "role",
             },
         ],
@@ -66,10 +70,10 @@ const getViaExamUserByEmail = (emailId, instituteId) => __awaiter(void 0, void 0
  * Fetch ViaExam user by phoneNumber — mirrors your getUserByMobile() pattern
  */
 const getViaExamUserByMobile = (phoneNumber) => __awaiter(void 0, void 0, void 0, function* () {
-    return User_modal_1.default.findOne({
+    return User_model_1.default.findOne({
         include: [
             {
-                model: Role_modal_1.default,
+                model: Role_model_1.default,
                 as: "role",
             },
         ],
@@ -104,7 +108,7 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
         const userId = yield helper_1.default.generateUserId();
         req.body.password = encryptedPassword;
         req.body.userId = userId;
-        const newUser = yield User_modal_1.default.create(req.body);
+        const newUser = yield User_model_1.default.create(req.body);
         const _a = newUser.toJSON(), { password: _ } = _a, userResponse = __rest(_a, ["password"]);
         return {
             error: false,
@@ -135,7 +139,7 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
         console.log("EMAIL RECEIVED:", emailId);
         let instituteId = null;
         if (slug) {
-            const institute = yield Institute_modal_1.default.findOne({ where: { slug } });
+            const institute = yield Institute_model_1.default.findOne({ where: { slug } });
             if (!institute) {
                 return {
                     error: true,
@@ -209,14 +213,14 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             };
         }
         // Reset lock info after successful login
-        yield User_modal_1.default.update({
+        yield User_model_1.default.update({
             loginAttempts: 0,
             lockedUntil: null,
             lastLoginAt: new Date(),
         }, { where: { userId: user.userId } });
         // Log Activity & Update Presence
         const now = new Date();
-        let presenceSession = yield UserPresenceSession_modal_1.default.findOne({ where: { userId: user.userId } });
+        let presenceSession = yield UserPresenceSession_model_1.default.findOne({ where: { userId: user.userId } });
         if (presenceSession) {
             presenceSession.presenceStatus = "ONLINE";
             presenceSession.lastActivityAt = now;
@@ -225,7 +229,7 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             yield presenceSession.save();
         }
         else {
-            yield UserPresenceSession_modal_1.default.create({
+            yield UserPresenceSession_model_1.default.create({
                 userId: user.userId,
                 role: ((_b = user.role) === null || _b === void 0 ? void 0 : _b.role) || "USER",
                 instituteId: user.instituteId || null,
@@ -265,14 +269,14 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
 const viaExamUserLogout = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     var _d;
     try {
-        const user = yield User_modal_1.default.findOne({
-            include: [{ model: Role_modal_1.default, as: "role" }],
+        const user = yield User_model_1.default.findOne({
+            include: [{ model: Role_model_1.default, as: "role" }],
             where: { userId },
         });
-        yield User_modal_1.default.update({ refreshToken: null }, { where: { userId } });
+        yield User_model_1.default.update({ refreshToken: null }, { where: { userId } });
         // Instantly update active presence session to OFFLINE
         const logoutTime = new Date();
-        const presenceSession = yield UserPresenceSession_modal_1.default.findOne({ where: { userId } });
+        const presenceSession = yield UserPresenceSession_model_1.default.findOne({ where: { userId } });
         if (presenceSession) {
             presenceSession.presenceStatus = "OFFLINE";
             presenceSession.currentActivity = "Logged Out";
@@ -309,8 +313,11 @@ const viaExamUserLogout = (userId) => __awaiter(void 0, void 0, void 0, function
  */
 const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const user = yield User_modal_1.default.findOne({
-            include: [{ model: Role_modal_1.default, as: "role" }],
+        const user = yield User_model_1.default.findOne({
+            include: [
+                { model: Role_model_1.default, as: "role" },
+                { model: Institute_model_1.default, as: "institute" },
+            ],
             where: { userId },
         });
         if (!user) {
@@ -322,6 +329,59 @@ const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function
             };
         }
         const userResponse = (0, exclude_1.default)(user.toJSON(), ["password", "refreshToken"]);
+        // Fetch role-specific details
+        const teacherProfile = yield TeacherProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
+        if (teacherProfile) {
+            userResponse.teacherProfile = teacherProfile.toJSON();
+            userResponse.qualification = teacherProfile.qualification;
+            userResponse.specialization = teacherProfile.specialization;
+            userResponse.specialSubject = teacherProfile.specialization;
+            userResponse.teacherType = teacherProfile.teacherType;
+            userResponse.experience = teacherProfile.experience;
+            userResponse.joiningDate = teacherProfile.joiningDate;
+            userResponse.isExaminer = teacherProfile.isExaminer;
+            userResponse.examinerSince = teacherProfile.examinerSince;
+            if (teacherProfile.dob)
+                userResponse.dob = teacherProfile.dob;
+            if (teacherProfile.address)
+                userResponse.address = teacherProfile.address;
+        }
+        const studentProfile = yield Student_model_1.default.findOne({ where: { userId } }).catch(() => null);
+        if (studentProfile) {
+            userResponse.studentProfile = studentProfile.toJSON();
+            userResponse.className = studentProfile.className;
+            userResponse.sectionId = studentProfile.sectionId;
+            userResponse.sectionName = studentProfile.sectionId;
+            if (studentProfile.sectionId) {
+                const sec = yield Section_model_1.default.findOne({ where: { sectionId: studentProfile.sectionId } }).catch(() => null);
+                if (sec) {
+                    userResponse.sectionName = sec.sectionName;
+                    userResponse.section = sec.sectionName;
+                }
+            }
+            userResponse.rollNumber = studentProfile.rollNumber;
+            userResponse.fatherName = studentProfile.fatherName;
+            userResponse.session = studentProfile.session;
+            userResponse.aadhar = studentProfile.aadhar;
+            if (studentProfile.gender)
+                userResponse.gender = studentProfile.gender;
+            if (studentProfile.dob)
+                userResponse.dob = studentProfile.dob;
+            if (studentProfile.address)
+                userResponse.address = studentProfile.address;
+        }
+        const scannerProfile = yield ScannerProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
+        if (scannerProfile) {
+            userResponse.scannerProfile = scannerProfile.toJSON();
+            if (scannerProfile.aadhar)
+                userResponse.aadhar = scannerProfile.aadhar;
+            if (scannerProfile.gender)
+                userResponse.gender = scannerProfile.gender;
+            if (scannerProfile.dob)
+                userResponse.dob = scannerProfile.dob;
+            if (scannerProfile.address)
+                userResponse.address = scannerProfile.address;
+        }
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -338,10 +398,200 @@ const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function
         };
     }
 });
+/**
+ * Update ViaExam user profile by userId (email ID cannot be updated)
+ */
+const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, void 0, function* () {
+    var _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
+    try {
+        const user = yield User_model_1.default.findOne({
+            include: [{ model: Role_model_1.default, as: "role" }],
+            where: { userId },
+        });
+        if (!user) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.NOT_FOUND,
+                data: {},
+                message: "User not found.",
+            };
+        }
+        const updates = {};
+        // 1. Name update
+        if (body.userName || body.name || body.firstName || body.lastName) {
+            const first = (_e = body.firstName) !== null && _e !== void 0 ? _e : "";
+            const last = (_f = body.lastName) !== null && _f !== void 0 ? _f : "";
+            const fullName = (body.userName || body.name || `${first} ${last}`).trim();
+            if (fullName) {
+                updates.userName = fullName;
+            }
+        }
+        // 2. Phone update
+        if (body.phoneNumber || body.mobile || body.phone) {
+            const phone = (body.phoneNumber || body.mobile || body.phone).trim();
+            if (phone && phone !== user.phoneNumber) {
+                const phoneExists = yield User_model_1.default.findOne({
+                    where: {
+                        phoneNumber: phone,
+                        userId: { [sequelize_1.Op.ne]: user.userId },
+                    },
+                });
+                if (phoneExists) {
+                    return {
+                        error: true,
+                        statusCode: http_status_1.default.CONFLICT,
+                        data: {},
+                        message: "Phone number is already registered to another user.",
+                    };
+                }
+                updates.phoneNumber = phone;
+            }
+        }
+        // 3. Profile Photo upload
+        const uploadedFile = ((_g = files === null || files === void 0 ? void 0 : files.profilePhoto) === null || _g === void 0 ? void 0 : _g[0]) || ((_h = files === null || files === void 0 ? void 0 : files.avatar) === null || _h === void 0 ? void 0 : _h[0]);
+        if (uploadedFile) {
+            updates.profileUrl = `/${uploadedFile.path.replace(/\\/g, "/")}`;
+        }
+        else if (body.profileUrl || body.profileImage) {
+            updates.profileUrl = body.profileUrl || body.profileImage;
+        }
+        // 4. Update Teacher Profile if provided/applicable
+        const teacherProfile = yield TeacherProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
+        if (teacherProfile || ((_k = (_j = user.role) === null || _j === void 0 ? void 0 : _j.role) === null || _k === void 0 ? void 0 : _k.toLowerCase()) === "teacher") {
+            const teacherUpdates = {};
+            if (body.qualification !== undefined)
+                teacherUpdates.qualification = body.qualification;
+            if (body.specialization !== undefined || body.specialSubject !== undefined) {
+                teacherUpdates.specialization = body.specialization || body.specialSubject;
+            }
+            if (body.teacherType !== undefined || body.designation !== undefined) {
+                teacherUpdates.teacherType = body.teacherType || body.designation;
+            }
+            if (body.experience !== undefined)
+                teacherUpdates.experience = body.experience;
+            if (body.joiningDate !== undefined)
+                teacherUpdates.joiningDate = body.joiningDate;
+            if (body.address !== undefined)
+                teacherUpdates.address = body.address;
+            if (body.dob !== undefined)
+                teacherUpdates.dob = body.dob;
+            if (Object.keys(teacherUpdates).length > 0) {
+                if (teacherProfile) {
+                    yield teacherProfile.update(teacherUpdates);
+                }
+                else if (user.instituteId) {
+                    yield TeacherProfile_model_1.default.create({
+                        userId,
+                        instituteId: user.instituteId,
+                        teacherType: teacherUpdates.teacherType || "Teacher",
+                        qualification: teacherUpdates.qualification || "Graduate",
+                        specialization: teacherUpdates.specialization || null,
+                        experience: teacherUpdates.experience || null,
+                        address: teacherUpdates.address || null,
+                        joiningDate: teacherUpdates.joiningDate || new Date(),
+                        dob: teacherUpdates.dob || new Date(),
+                        isExaminer: false,
+                    }).catch(() => null);
+                }
+            }
+        }
+        // 5. Update Student Profile if provided/applicable
+        const studentProfile = yield Student_model_1.default.findOne({ where: { userId } }).catch(() => null);
+        if (studentProfile || ((_m = (_l = user.role) === null || _l === void 0 ? void 0 : _l.role) === null || _m === void 0 ? void 0 : _m.toLowerCase()) === "student") {
+            const studentUpdates = {};
+            if (body.fatherName !== undefined)
+                studentUpdates.fatherName = body.fatherName;
+            if (body.rollNumber !== undefined)
+                studentUpdates.rollNumber = body.rollNumber;
+            if (body.className !== undefined)
+                studentUpdates.className = body.className;
+            if (body.sectionId !== undefined)
+                studentUpdates.sectionId = body.sectionId;
+            if (body.session !== undefined)
+                studentUpdates.session = body.session;
+            if (body.aadhar !== undefined)
+                studentUpdates.aadhar = body.aadhar;
+            if (body.address !== undefined)
+                studentUpdates.address = body.address;
+            if (body.dob !== undefined)
+                studentUpdates.dob = body.dob;
+            if (body.gender !== undefined)
+                studentUpdates.gender = body.gender;
+            if (Object.keys(studentUpdates).length > 0) {
+                if (studentProfile) {
+                    yield studentProfile.update(studentUpdates);
+                }
+                else if (user.instituteId) {
+                    yield Student_model_1.default.create({
+                        userId,
+                        instituteId: user.instituteId,
+                        rollNumber: studentUpdates.rollNumber || "STU-001",
+                        className: studentUpdates.className || "Standard",
+                        sectionId: studentUpdates.sectionId || "A",
+                        session: studentUpdates.session || "2024-2025",
+                        fatherName: studentUpdates.fatherName || "—",
+                        gender: studentUpdates.gender || "—",
+                        dob: studentUpdates.dob || new Date(),
+                        aadhar: studentUpdates.aadhar || "—",
+                        address: studentUpdates.address || "—",
+                    }).catch(() => null);
+                }
+            }
+        }
+        // 6. Update Scanner Profile if provided/applicable
+        const scannerProfile = yield ScannerProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
+        if (scannerProfile || ((_p = (_o = user.role) === null || _o === void 0 ? void 0 : _o.role) === null || _p === void 0 ? void 0 : _p.toLowerCase()) === "scanner") {
+            const scannerUpdates = {};
+            if (body.address !== undefined)
+                scannerUpdates.address = body.address;
+            if (body.dob !== undefined)
+                scannerUpdates.dob = body.dob;
+            if (body.gender !== undefined)
+                scannerUpdates.gender = body.gender;
+            if (body.aadhar !== undefined)
+                scannerUpdates.aadhar = body.aadhar;
+            if (Object.keys(scannerUpdates).length > 0) {
+                if (scannerProfile) {
+                    yield scannerProfile.update(scannerUpdates);
+                }
+                else if (user.instituteId) {
+                    yield ScannerProfile_model_1.default.create({
+                        userId,
+                        instituteId: user.instituteId,
+                        address: scannerUpdates.address || null,
+                        dob: scannerUpdates.dob || null,
+                        gender: scannerUpdates.gender || null,
+                        aadhar: scannerUpdates.aadhar || null,
+                    }).catch(() => null);
+                }
+            }
+        }
+        if (Object.keys(updates).length > 0) {
+            yield user.update(updates);
+        }
+        // Re-fetch full enriched profile data
+        const fullProfileRes = yield viaExamGetProfile(userId);
+        return {
+            error: false,
+            statusCode: http_status_1.default.OK,
+            data: fullProfileRes.data,
+            message: "Profile updated successfully.",
+        };
+    }
+    catch (e) {
+        return {
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            data: {},
+            message: e.message,
+        };
+    }
+});
 exports.default = {
     viaExamUserCreate,
     viaExamUserLogin,
     viaExamUserLogout,
     viaExamGetProfile,
-    getViaExamUserByEmail, // exported so controller/token service can use it
+    viaExamUpdateProfile,
+    getViaExamUserByEmail,
 };

@@ -17,7 +17,7 @@ import os from "os";
 import path from "path";
 
 import { sequelize } from "../config/sequelize";
-import Scanner from "../modals/Scanner.modal";
+import Scanner from "../models/Scanner.model";
 import logger from "../config/logger";
 import { uploadAnswerSheet, removeTempFile } from "../utils/answerSheetStorage";
 

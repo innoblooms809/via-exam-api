@@ -15,14 +15,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
 const svg_captcha_1 = __importDefault(require("svg-captcha")); // same as your boilerplate
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const token_service_1 = __importDefault(require("../../services/token.service")); // reuse your existing tokenService
+const token_service_1 = __importDefault(require("../../services/auth/token.service")); // reuse your existing tokenService
 const user_service_1 = __importDefault(require("../../services/auth/user.service"));
 const mailHelper_1 = require("../../utils/mailHelper"); // reuse your mail helper
 const config_1 = __importDefault(require("../../config/config"));
-const User_modal_1 = __importDefault(require("../../modals/User.modal"));
-const UserPresenceSession_modal_1 = __importDefault(require("../../modals/UserPresenceSession.modal"));
+const User_model_1 = __importDefault(require("../../models/User.model"));
+const UserPresenceSession_model_1 = __importDefault(require("../../models/UserPresenceSession.model"));
 const logger_1 = __importDefault(require("../../config/logger"));
-const Role_modal_1 = __importDefault(require("../../modals/Role.modal"));
+const Role_model_1 = __importDefault(require("../../models/Role.model"));
 const auth_1 = require("../../middlewares/auth");
 const getCookieValue = (req, name) => {
     var _a;
@@ -65,7 +65,7 @@ const getRoleCookieNames = (roleStr) => {
  */
 const getCaptcha = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const captcha = svg_captcha_1.default.create();
-    req.session.captcha = captcha.text;
+    // req.session.captcha = captcha.text; // Commented out: session middleware disabled
     res.set("Content-Type", "image/svg+xml");
     res.send(captcha.data);
 });
@@ -95,7 +95,7 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
             return res.status(result.statusCode).send(result);
         }
         const token = yield token_service_1.default.generateUserAuthTokens(result.data.user);
-        yield User_modal_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: result.data.user.userId } });
+        yield User_model_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: result.data.user.userId } });
         const cookieNames = getRoleCookieNames(((_a = result.data.user.role) === null || _a === void 0 ? void 0 : _a.role) || "");
         // Set tokens as httpOnly cookies (role-scoped to avoid session collisions)
         res.cookie(cookieNames.access, token.access.token, {
@@ -207,9 +207,9 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 message: "Invalid refresh token payload",
             });
         }
-        const user = yield User_modal_1.default.findOne({
+        const user = yield User_model_1.default.findOne({
             where: { userId },
-            include: [{ model: Role_modal_1.default, as: "role" }],
+            include: [{ model: Role_model_1.default, as: "role" }],
         });
         if (!user) {
             return res.status(http_status_1.default.NOT_FOUND).json({
@@ -232,7 +232,7 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         const token = yield token_service_1.default.generateUserAuthTokens(user);
-        yield User_modal_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: user.userId } });
+        yield User_model_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: user.userId } });
         const cookieNames = getRoleCookieNames(((_h = user.role) === null || _h === void 0 ? void 0 : _h.role) || "");
         res.cookie(cookieNames.access, token.access.token, {
             httpOnly: true,
@@ -321,7 +321,7 @@ const logoutViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
             res.clearCookie("refreshToken", cookieOpts);
         }
         if ((_p = req.viaExamUser) === null || _p === void 0 ? void 0 : _p.userId) {
-            UserPresenceSession_modal_1.default.update({ presenceStatus: "OFFLINE", currentActivity: "Logged Out", lastLogoutAt: new Date() }, { where: { userId: req.viaExamUser.userId } }).catch(() => { });
+            UserPresenceSession_model_1.default.update({ presenceStatus: "OFFLINE", currentActivity: "Logged Out", lastLogoutAt: new Date() }, { where: { userId: req.viaExamUser.userId } }).catch(() => { });
         }
         const result = yield user_service_1.default.viaExamUserLogout(req.viaExamUser.userId);
         return res.status(result.statusCode).send(result);
@@ -354,6 +354,24 @@ const getViaExamProfile = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 });
+/**
+ * PUT /api/viaexam/auth/me
+ * Protected — updates profile for current user
+ */
+const updateViaExamProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const result = yield user_service_1.default.viaExamUpdateProfile(req.viaExamUser.userId, req.body, req.files);
+        return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            data: {},
+            message: "Internal Server Error",
+        });
+    }
+});
 exports.default = {
     getCaptcha,
     loginViaExamUser,
@@ -361,4 +379,5 @@ exports.default = {
     createViaExamUser,
     logoutViaExamUser,
     getViaExamProfile,
+    updateViaExamProfile,
 };

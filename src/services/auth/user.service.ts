@@ -1,13 +1,18 @@
 import httpStatus from "http-status";
-import UserModal from "../../modals/User.modal";
-import Role from "../../modals/Role.modal";
+import UserModal from "../../models/User.model";
+import Role from "../../models/Role.model";
 import EncryptPassword from "../../utils/encryption"; // reuse your existing utility
 import RegHelper from "../../utils/helper"; // reuse your existing utility
 import exclude from "../../utils/exclude"; // reuse your existing utility
 import { Op } from "sequelize";
-import Institute from "../../modals/Institute.modal";
-import UserPresenceSession from "../../modals/UserPresenceSession.modal";
+import Institute from "../../models/Institute.model";
+import UserPresenceSession from "../../models/UserPresenceSession.model";
 import { logActivity } from "../../utils/activityLogger";
+
+import TeacherProfile from "../../models/TeacherProfile.model";
+import StudentProfile from "../../models/Student.model";
+import ScannerProfile from "../../models/ScannerProfile.model";
+import Section from "../../models/Section.model";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -314,7 +319,10 @@ const viaExamUserLogout = async (userId: string): Promise<any> => {
 const viaExamGetProfile = async (userId: string): Promise<any> => {
   try {
     const user = await UserModal.findOne({
-      include: [{ model: Role, as: "role" }],
+      include: [
+        { model: Role, as: "role" },
+        { model: Institute, as: "institute" },
+      ],
       where: { userId },
     });
 
@@ -327,7 +335,55 @@ const viaExamGetProfile = async (userId: string): Promise<any> => {
       };
     }
 
-    const userResponse = exclude(user.toJSON(), ["password", "refreshToken"]);
+    const userResponse: any = exclude(user.toJSON(), ["password", "refreshToken"]);
+
+    // Fetch role-specific details
+    const teacherProfile = await TeacherProfile.findOne({ where: { userId } }).catch(() => null);
+    if (teacherProfile) {
+      userResponse.teacherProfile = teacherProfile.toJSON();
+      userResponse.qualification = teacherProfile.qualification;
+      userResponse.specialization = teacherProfile.specialization;
+      userResponse.specialSubject = teacherProfile.specialization;
+      userResponse.teacherType = teacherProfile.teacherType;
+      userResponse.experience = teacherProfile.experience;
+      userResponse.joiningDate = teacherProfile.joiningDate;
+      userResponse.isExaminer = teacherProfile.isExaminer;
+      userResponse.examinerSince = teacherProfile.examinerSince;
+      if (teacherProfile.dob) userResponse.dob = teacherProfile.dob;
+      if (teacherProfile.address) userResponse.address = teacherProfile.address;
+    }
+
+    const studentProfile = await StudentProfile.findOne({ where: { userId } }).catch(() => null);
+    if (studentProfile) {
+      userResponse.studentProfile = studentProfile.toJSON();
+      userResponse.className = studentProfile.className;
+      userResponse.sectionId = studentProfile.sectionId;
+      userResponse.sectionName = studentProfile.sectionId;
+      if (studentProfile.sectionId) {
+        const sec = await Section.findOne({ where: { sectionId: studentProfile.sectionId } }).catch(() => null);
+        if (sec) {
+          userResponse.sectionName = sec.sectionName;
+          userResponse.section = sec.sectionName;
+        }
+      }
+      userResponse.rollNumber = studentProfile.rollNumber;
+      userResponse.fatherName = studentProfile.fatherName;
+      userResponse.session = studentProfile.session;
+      userResponse.aadhar = studentProfile.aadhar;
+      if (studentProfile.gender) userResponse.gender = studentProfile.gender;
+      if (studentProfile.dob) userResponse.dob = studentProfile.dob;
+      if (studentProfile.address) userResponse.address = studentProfile.address;
+    }
+
+    const scannerProfile = await ScannerProfile.findOne({ where: { userId } }).catch(() => null);
+    if (scannerProfile) {
+      userResponse.scannerProfile = scannerProfile.toJSON();
+      if (scannerProfile.aadhar) userResponse.aadhar = scannerProfile.aadhar;
+      if (scannerProfile.gender) userResponse.gender = scannerProfile.gender;
+      if (scannerProfile.dob) userResponse.dob = scannerProfile.dob;
+      if (scannerProfile.address) userResponse.address = scannerProfile.address;
+    }
+
     return {
       error: false,
       statusCode: httpStatus.OK,
@@ -344,10 +400,190 @@ const viaExamGetProfile = async (userId: string): Promise<any> => {
   }
 };
 
+/**
+ * Update ViaExam user profile by userId (email ID cannot be updated)
+ */
+const viaExamUpdateProfile = async (userId: string, body: any, files: any): Promise<any> => {
+  try {
+    const user = await UserModal.findOne({
+      include: [{ model: Role, as: "role" }],
+      where: { userId },
+    });
+
+    if (!user) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        data: {},
+        message: "User not found.",
+      };
+    }
+
+    const updates: any = {};
+
+    // 1. Name update
+    if (body.userName || body.name || body.firstName || body.lastName) {
+      const first = body.firstName ?? "";
+      const last = body.lastName ?? "";
+      const fullName = (body.userName || body.name || `${first} ${last}`).trim();
+      if (fullName) {
+        updates.userName = fullName;
+      }
+    }
+
+    // 2. Phone update
+    if (body.phoneNumber || body.mobile || body.phone) {
+      const phone = (body.phoneNumber || body.mobile || body.phone).trim();
+      if (phone && phone !== user.phoneNumber) {
+        const phoneExists = await UserModal.findOne({
+          where: {
+            phoneNumber: phone,
+            userId: { [Op.ne]: user.userId },
+          },
+        });
+        if (phoneExists) {
+          return {
+            error: true,
+            statusCode: httpStatus.CONFLICT,
+            data: {},
+            message: "Phone number is already registered to another user.",
+          };
+        }
+        updates.phoneNumber = phone;
+      }
+    }
+
+    // 3. Profile Photo upload
+    const uploadedFile = files?.profilePhoto?.[0] || files?.avatar?.[0];
+    if (uploadedFile) {
+      updates.profileUrl = `/${uploadedFile.path.replace(/\\/g, "/")}`;
+    } else if (body.profileUrl || body.profileImage) {
+      updates.profileUrl = body.profileUrl || body.profileImage;
+    }
+
+    // 4. Update Teacher Profile if provided/applicable
+    const teacherProfile = await TeacherProfile.findOne({ where: { userId } }).catch(() => null);
+    if (teacherProfile || (user as any).role?.role?.toLowerCase() === "teacher") {
+      const teacherUpdates: any = {};
+      if (body.qualification !== undefined) teacherUpdates.qualification = body.qualification;
+      if (body.specialization !== undefined || body.specialSubject !== undefined) {
+        teacherUpdates.specialization = body.specialization || body.specialSubject;
+      }
+      if (body.teacherType !== undefined || body.designation !== undefined) {
+        teacherUpdates.teacherType = body.teacherType || body.designation;
+      }
+      if (body.experience !== undefined) teacherUpdates.experience = body.experience;
+      if (body.joiningDate !== undefined) teacherUpdates.joiningDate = body.joiningDate;
+      if (body.address !== undefined) teacherUpdates.address = body.address;
+      if (body.dob !== undefined) teacherUpdates.dob = body.dob;
+
+      if (Object.keys(teacherUpdates).length > 0) {
+        if (teacherProfile) {
+          await teacherProfile.update(teacherUpdates);
+        } else if (user.instituteId) {
+          await TeacherProfile.create({
+            userId,
+            instituteId: user.instituteId,
+            teacherType: teacherUpdates.teacherType || "Teacher",
+            qualification: teacherUpdates.qualification || "Graduate",
+            specialization: teacherUpdates.specialization || null,
+            experience: teacherUpdates.experience || null,
+            address: teacherUpdates.address || null,
+            joiningDate: teacherUpdates.joiningDate || new Date(),
+            dob: teacherUpdates.dob || new Date(),
+            isExaminer: false,
+          }).catch(() => null);
+        }
+      }
+    }
+
+    // 5. Update Student Profile if provided/applicable
+    const studentProfile = await StudentProfile.findOne({ where: { userId } }).catch(() => null);
+    if (studentProfile || (user as any).role?.role?.toLowerCase() === "student") {
+      const studentUpdates: any = {};
+      if (body.fatherName !== undefined) studentUpdates.fatherName = body.fatherName;
+      if (body.rollNumber !== undefined) studentUpdates.rollNumber = body.rollNumber;
+      if (body.className !== undefined) studentUpdates.className = body.className;
+      if (body.sectionId !== undefined) studentUpdates.sectionId = body.sectionId;
+      if (body.session !== undefined) studentUpdates.session = body.session;
+      if (body.aadhar !== undefined) studentUpdates.aadhar = body.aadhar;
+      if (body.address !== undefined) studentUpdates.address = body.address;
+      if (body.dob !== undefined) studentUpdates.dob = body.dob;
+      if (body.gender !== undefined) studentUpdates.gender = body.gender;
+
+      if (Object.keys(studentUpdates).length > 0) {
+        if (studentProfile) {
+          await studentProfile.update(studentUpdates);
+        } else if (user.instituteId) {
+          await StudentProfile.create({
+            userId,
+            instituteId: user.instituteId,
+            rollNumber: studentUpdates.rollNumber || "STU-001",
+            className: studentUpdates.className || "Standard",
+            sectionId: studentUpdates.sectionId || "A",
+            session: studentUpdates.session || "2024-2025",
+            fatherName: studentUpdates.fatherName || "—",
+            gender: studentUpdates.gender || "—",
+            dob: studentUpdates.dob || new Date(),
+            aadhar: studentUpdates.aadhar || "—",
+            address: studentUpdates.address || "—",
+          }).catch(() => null);
+        }
+      }
+    }
+
+    // 6. Update Scanner Profile if provided/applicable
+    const scannerProfile = await ScannerProfile.findOne({ where: { userId } }).catch(() => null);
+    if (scannerProfile || (user as any).role?.role?.toLowerCase() === "scanner") {
+      const scannerUpdates: any = {};
+      if (body.address !== undefined) scannerUpdates.address = body.address;
+      if (body.dob !== undefined) scannerUpdates.dob = body.dob;
+      if (body.gender !== undefined) scannerUpdates.gender = body.gender;
+      if (body.aadhar !== undefined) scannerUpdates.aadhar = body.aadhar;
+
+      if (Object.keys(scannerUpdates).length > 0) {
+        if (scannerProfile) {
+          await scannerProfile.update(scannerUpdates);
+        } else if (user.instituteId) {
+          await ScannerProfile.create({
+            userId,
+            instituteId: user.instituteId,
+            address: scannerUpdates.address || null,
+            dob: scannerUpdates.dob || null,
+            gender: scannerUpdates.gender || null,
+            aadhar: scannerUpdates.aadhar || null,
+          }).catch(() => null);
+        }
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await user.update(updates);
+    }
+
+    // Re-fetch full enriched profile data
+    const fullProfileRes = await viaExamGetProfile(userId);
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      data: fullProfileRes.data,
+      message: "Profile updated successfully.",
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      data: {},
+      message: e.message,
+    };
+  }
+};
+
 export default {
   viaExamUserCreate,
   viaExamUserLogin,
   viaExamUserLogout,
   viaExamGetProfile,
-  getViaExamUserByEmail, // exported so controller/token service can use it
+  viaExamUpdateProfile,
+  getViaExamUserByEmail,
 };

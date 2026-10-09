@@ -2,18 +2,18 @@ import httpStatus from "http-status";
 import { Request, Response } from "express";
 import svgCaptcha from "svg-captcha"; // same as your boilerplate
 import jwt from "jsonwebtoken";
-import tokenService from "../../services/token.service"; // reuse your existing tokenService
+import tokenService from "../../services/auth/token.service"; // reuse your existing tokenService
 import Service from "../../services/auth/user.service";
 import { sendUserCredentials } from "../../utils/mailHelper"; // reuse your mail helper
 import config from "../../config/config";
-import UserModal from "../../modals/User.modal";
-import UserPresenceSession from "../../modals/UserPresenceSession.modal";
+import UserModal from "../../models/User.model";
+import UserPresenceSession from "../../models/UserPresenceSession.model";
 import logger from "../../config/logger";
-import Role from "../../modals/Role.modal";
+import Role from "../../models/Role.model";
 import { resolveRequestAuthRole } from "../../middlewares/auth";
 
 interface IGetUserInfoRequest extends Request {
-  session: any; // same interface as your boilerplate
+  session?: any; // Optional: express-session middleware is disabled (captcha not in use)
 }
 
 const getCookieValue = (req: Request, name: string): string | undefined => {
@@ -63,7 +63,7 @@ const getRoleCookieNames = (roleStr: string) => {
  */
 const getCaptcha = async (req: IGetUserInfoRequest, res: any) => {
   const captcha = svgCaptcha.create();
-  req.session.captcha = captcha.text;
+  // req.session.captcha = captcha.text; // Commented out: session middleware disabled
   res.set("Content-Type", "image/svg+xml");
   res.send(captcha.data);
 };
@@ -404,6 +404,28 @@ const getViaExamProfile = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+/**
+ * PUT /api/viaexam/auth/me
+ * Protected — updates profile for current user
+ */
+const updateViaExamProfile = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await Service.viaExamUpdateProfile(
+      req.viaExamUser.userId,
+      req.body,
+      req.files
+    );
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      data: {},
+      message: "Internal Server Error",
+    });
+  }
+};
+
 export default {
   getCaptcha,
   loginViaExamUser,
@@ -411,4 +433,5 @@ export default {
   createViaExamUser,
   logoutViaExamUser,
   getViaExamProfile,
+  updateViaExamProfile,
 };

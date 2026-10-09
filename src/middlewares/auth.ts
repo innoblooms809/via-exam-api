@@ -1,5 +1,5 @@
 // import jwt from "jsonwebtoken";
-// import UserModel from "../modals/User.modal";
+// import UserModel from "../models/User.model";
 // import config from "../config/config";
 // import { NextFunction, Request, Response } from "express";
 
@@ -29,10 +29,10 @@
 import jwt from "jsonwebtoken";
 import { NextFunction, Response } from "express";
 import httpStatus from "http-status";
-import UserModal from "../modals/User.modal";
-import Role from "../modals/Role.modal";
-import Institute from "../modals/Institute.modal";
-import UserPresenceSession from "../modals/UserPresenceSession.modal";
+import UserModal from "../models/User.model";
+import Role from "../models/Role.model";
+import Institute from "../models/Institute.model";
+import UserPresenceSession from "../models/UserPresenceSession.model";
 import config from "../config/config";
 import logger from "../config/logger";
 

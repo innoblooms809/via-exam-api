@@ -12,19 +12,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const User_modal_1 = __importDefault(require("../modals/User.modal"));
-const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
+const User_model_1 = __importDefault(require("../models/User.model"));
+const Role_model_1 = __importDefault(require("../models/Role.model"));
 const encryption_1 = __importDefault(require("../utils/encryption"));
 const helper_1 = __importDefault(require("../utils/helper"));
 const initSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let role = yield Role_modal_1.default.findOne({
+        let role = yield Role_model_1.default.findOne({
             where: { role: "SUPER_ADMIN" },
         });
         if (!role) {
-            role = yield Role_modal_1.default.create({ role: "SUPER_ADMIN" });
+            role = yield Role_model_1.default.create({ role: "SUPER_ADMIN" });
         }
-        const existing = yield User_modal_1.default.findOne({
+        const existing = yield User_model_1.default.findOne({
             where: { roleId: role.id },
         });
         if (existing) {
@@ -32,7 +32,7 @@ const initSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
         }
         const encryptedPassword = yield encryption_1.default.encryptPassword("SuperAdmin@123");
         const userId = yield helper_1.default.generateUserId();
-        yield User_modal_1.default.create({
+        yield User_model_1.default.create({
             userId,
             userName: "Super Admin",
             emailId: "superadmin@viaexam.com",

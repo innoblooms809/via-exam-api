@@ -1,5 +1,5 @@
-import User from "../modals/User.modal";
-import Role from "../modals/Role.modal";
+import User from "../models/User.model";
+import Role from "../models/Role.model";
 import EncryptPassword from "../utils/encryption";
 import RegHelper from "../utils/helper";
 
