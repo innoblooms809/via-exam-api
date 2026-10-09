@@ -1,18 +1,18 @@
 import httpStatus from "http-status";
-import UserModal from "../../modals/User.modal";
-import Role from "../../modals/Role.modal";
+import UserModal from "../../models/User.model";
+import Role from "../../models/Role.model";
 import EncryptPassword from "../../utils/encryption"; // reuse your existing utility
 import RegHelper from "../../utils/helper"; // reuse your existing utility
 import exclude from "../../utils/exclude"; // reuse your existing utility
 import { Op } from "sequelize";
-import Institute from "../../modals/Institute.modal";
-import UserPresenceSession from "../../modals/UserPresenceSession.modal";
+import Institute from "../../models/Institute.model";
+import UserPresenceSession from "../../models/UserPresenceSession.model";
 import { logActivity } from "../../utils/activityLogger";
 
-import TeacherProfile from "../../modals/TeacherProfile.modal";
-import StudentProfile from "../../modals/Student.modal";
-import ScannerProfile from "../../modals/ScannerProfile.modal";
-import Section from "../../modals/Section.modal";
+import TeacherProfile from "../../models/TeacherProfile.model";
+import StudentProfile from "../../models/Student.model";
+import ScannerProfile from "../../models/ScannerProfile.model";
+import Section from "../../models/Section.model";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

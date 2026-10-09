@@ -81,3 +81,7 @@ next-env.d.ts
 *.pem
 logs/
 
+
+# Firebase service-account key (secret)
+firebase-service-account*.json
+*-firebase-adminsdk-*.json

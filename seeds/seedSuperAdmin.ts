@@ -4,8 +4,8 @@
 // // Load .env file
 // dotenv.config({ path: path.join(__dirname, '../.env') });
 
-// import User from '../src/modals/User.modal';
-// import Role from '../src/modals/Role.modal';
+// import User from '../src/models/User.model';
+// import Role from '../src/models/Role.model';
 // import { sequelize } from '../src/config/sequelize';
 // import EncryptPassword from '../src/utils/encryption';
 

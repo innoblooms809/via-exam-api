@@ -5,7 +5,7 @@ import logger from "./config/logger";
 import connectDB from "./db/connect"; // Change to sequelize connection
 import initSuperAdmin from "./config/superAdmin";
 import { describePythonServices, checkPythonServices } from "./config/pythonServices";
-import { recoverPipeline6Queue } from "./services/pipeline6.service";
+import { recoverPipeline6Queue } from "./services/evaluation/pipeline6.service";
 let server: Server;
 
 const bootApp = () => {
