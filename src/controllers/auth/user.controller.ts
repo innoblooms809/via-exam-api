@@ -2,14 +2,14 @@ import httpStatus from "http-status";
 import { Request, Response } from "express";
 import svgCaptcha from "svg-captcha"; // same as your boilerplate
 import jwt from "jsonwebtoken";
-import tokenService from "../../services/token.service"; // reuse your existing tokenService
+import tokenService from "../../services/auth/token.service"; // reuse your existing tokenService
 import Service from "../../services/auth/user.service";
 import { sendUserCredentials } from "../../utils/mailHelper"; // reuse your mail helper
 import config from "../../config/config";
-import UserModal from "../../modals/User.modal";
-import UserPresenceSession from "../../modals/UserPresenceSession.modal";
+import UserModal from "../../models/User.model";
+import UserPresenceSession from "../../models/UserPresenceSession.model";
 import logger from "../../config/logger";
-import Role from "../../modals/Role.modal";
+import Role from "../../models/Role.model";
 import { resolveRequestAuthRole } from "../../middlewares/auth";
 
 interface IGetUserInfoRequest extends Request {

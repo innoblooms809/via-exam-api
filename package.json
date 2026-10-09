@@ -40,7 +40,7 @@
     "eslint",
     "prettier"
   ],
-  "author": "Antonio L\u00c3\u00a1zaro",
+  "author": "Antonio LÃ¡zaro",
   "license": "ISC",
   "devDependencies": {
     "@faker-js/faker": "^7.6.0",
@@ -97,6 +97,7 @@
     "express": "^4.18.2",
     "express-rate-limit": "^6.7.0",
     "express-session": "^1.18.1",
+    "firebase-admin": "14.4.0",
     "helmet": "^6.0.1",
     "http-status": "^1.5.3",
     "joi": "^17.13.3",
