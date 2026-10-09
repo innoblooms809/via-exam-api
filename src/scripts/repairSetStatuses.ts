@@ -17,10 +17,10 @@
 
 import "../config/config";
 import { sequelize } from "../config/sequelize";
-import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
-import QuestionPaperAnswer from "../modals/question-paper/stander-answer.model";
-import Exam from "../modals/Exam.modal";
-import { deriveExamStatus, refreshExamStatus } from "../services/exam.service";
+import QuestionPaper from "../models/question-paper/QuestionPaper.model";
+import QuestionPaperAnswer from "../models/question-paper/StandardAnswer.model";
+import Exam from "../models/Exam.model";
+import { deriveExamStatus, refreshExamStatus } from "../services/exam/exam.service";
 
 const args = process.argv.slice(2);
 const APPLY = args.includes("--apply");

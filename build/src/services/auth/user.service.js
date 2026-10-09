@@ -24,19 +24,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
-const User_modal_1 = __importDefault(require("../../modals/User.modal"));
-const Role_modal_1 = __importDefault(require("../../modals/Role.modal"));
+const User_model_1 = __importDefault(require("../../models/User.model"));
+const Role_model_1 = __importDefault(require("../../models/Role.model"));
 const encryption_1 = __importDefault(require("../../utils/encryption")); // reuse your existing utility
 const helper_1 = __importDefault(require("../../utils/helper")); // reuse your existing utility
 const exclude_1 = __importDefault(require("../../utils/exclude")); // reuse your existing utility
 const sequelize_1 = require("sequelize");
-const Institute_modal_1 = __importDefault(require("../../modals/Institute.modal"));
-const UserPresenceSession_modal_1 = __importDefault(require("../../modals/UserPresenceSession.modal"));
+const Institute_model_1 = __importDefault(require("../../models/Institute.model"));
+const UserPresenceSession_model_1 = __importDefault(require("../../models/UserPresenceSession.model"));
 const activityLogger_1 = require("../../utils/activityLogger");
-const TeacherProfile_modal_1 = __importDefault(require("../../modals/TeacherProfile.modal"));
-const Student_modal_1 = __importDefault(require("../../modals/Student.modal"));
-const ScannerProfile_modal_1 = __importDefault(require("../../modals/ScannerProfile.modal"));
-const Section_modal_1 = __importDefault(require("../../modals/Section.modal"));
+const TeacherProfile_model_1 = __importDefault(require("../../models/TeacherProfile.model"));
+const Student_model_1 = __importDefault(require("../../models/Student.model"));
+const ScannerProfile_model_1 = __importDefault(require("../../models/ScannerProfile.model"));
+const Section_model_1 = __importDefault(require("../../models/Section.model"));
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_SECONDS = 5;
@@ -56,10 +56,10 @@ const getViaExamUserByEmail = (emailId, instituteId) => __awaiter(void 0, void 0
     else if (instituteId === null) {
         where.instituteId = { [sequelize_1.Op.is]: null };
     }
-    return User_modal_1.default.findOne({
+    return User_model_1.default.findOne({
         include: [
             {
-                model: Role_modal_1.default,
+                model: Role_model_1.default,
                 as: "role",
             },
         ],
@@ -70,10 +70,10 @@ const getViaExamUserByEmail = (emailId, instituteId) => __awaiter(void 0, void 0
  * Fetch ViaExam user by phoneNumber — mirrors your getUserByMobile() pattern
  */
 const getViaExamUserByMobile = (phoneNumber) => __awaiter(void 0, void 0, void 0, function* () {
-    return User_modal_1.default.findOne({
+    return User_model_1.default.findOne({
         include: [
             {
-                model: Role_modal_1.default,
+                model: Role_model_1.default,
                 as: "role",
             },
         ],
@@ -108,7 +108,7 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
         const userId = yield helper_1.default.generateUserId();
         req.body.password = encryptedPassword;
         req.body.userId = userId;
-        const newUser = yield User_modal_1.default.create(req.body);
+        const newUser = yield User_model_1.default.create(req.body);
         const _a = newUser.toJSON(), { password: _ } = _a, userResponse = __rest(_a, ["password"]);
         return {
             error: false,
@@ -139,7 +139,7 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
         console.log("EMAIL RECEIVED:", emailId);
         let instituteId = null;
         if (slug) {
-            const institute = yield Institute_modal_1.default.findOne({ where: { slug } });
+            const institute = yield Institute_model_1.default.findOne({ where: { slug } });
             if (!institute) {
                 return {
                     error: true,
@@ -213,14 +213,14 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             };
         }
         // Reset lock info after successful login
-        yield User_modal_1.default.update({
+        yield User_model_1.default.update({
             loginAttempts: 0,
             lockedUntil: null,
             lastLoginAt: new Date(),
         }, { where: { userId: user.userId } });
         // Log Activity & Update Presence
         const now = new Date();
-        let presenceSession = yield UserPresenceSession_modal_1.default.findOne({ where: { userId: user.userId } });
+        let presenceSession = yield UserPresenceSession_model_1.default.findOne({ where: { userId: user.userId } });
         if (presenceSession) {
             presenceSession.presenceStatus = "ONLINE";
             presenceSession.lastActivityAt = now;
@@ -229,7 +229,7 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             yield presenceSession.save();
         }
         else {
-            yield UserPresenceSession_modal_1.default.create({
+            yield UserPresenceSession_model_1.default.create({
                 userId: user.userId,
                 role: ((_b = user.role) === null || _b === void 0 ? void 0 : _b.role) || "USER",
                 instituteId: user.instituteId || null,
@@ -269,14 +269,14 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
 const viaExamUserLogout = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     var _d;
     try {
-        const user = yield User_modal_1.default.findOne({
-            include: [{ model: Role_modal_1.default, as: "role" }],
+        const user = yield User_model_1.default.findOne({
+            include: [{ model: Role_model_1.default, as: "role" }],
             where: { userId },
         });
-        yield User_modal_1.default.update({ refreshToken: null }, { where: { userId } });
+        yield User_model_1.default.update({ refreshToken: null }, { where: { userId } });
         // Instantly update active presence session to OFFLINE
         const logoutTime = new Date();
-        const presenceSession = yield UserPresenceSession_modal_1.default.findOne({ where: { userId } });
+        const presenceSession = yield UserPresenceSession_model_1.default.findOne({ where: { userId } });
         if (presenceSession) {
             presenceSession.presenceStatus = "OFFLINE";
             presenceSession.currentActivity = "Logged Out";
@@ -313,10 +313,10 @@ const viaExamUserLogout = (userId) => __awaiter(void 0, void 0, void 0, function
  */
 const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const user = yield User_modal_1.default.findOne({
+        const user = yield User_model_1.default.findOne({
             include: [
-                { model: Role_modal_1.default, as: "role" },
-                { model: Institute_modal_1.default, as: "institute" },
+                { model: Role_model_1.default, as: "role" },
+                { model: Institute_model_1.default, as: "institute" },
             ],
             where: { userId },
         });
@@ -330,7 +330,7 @@ const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function
         }
         const userResponse = (0, exclude_1.default)(user.toJSON(), ["password", "refreshToken"]);
         // Fetch role-specific details
-        const teacherProfile = yield TeacherProfile_modal_1.default.findOne({ where: { userId } }).catch(() => null);
+        const teacherProfile = yield TeacherProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
         if (teacherProfile) {
             userResponse.teacherProfile = teacherProfile.toJSON();
             userResponse.qualification = teacherProfile.qualification;
@@ -346,14 +346,14 @@ const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function
             if (teacherProfile.address)
                 userResponse.address = teacherProfile.address;
         }
-        const studentProfile = yield Student_modal_1.default.findOne({ where: { userId } }).catch(() => null);
+        const studentProfile = yield Student_model_1.default.findOne({ where: { userId } }).catch(() => null);
         if (studentProfile) {
             userResponse.studentProfile = studentProfile.toJSON();
             userResponse.className = studentProfile.className;
             userResponse.sectionId = studentProfile.sectionId;
             userResponse.sectionName = studentProfile.sectionId;
             if (studentProfile.sectionId) {
-                const sec = yield Section_modal_1.default.findOne({ where: { sectionId: studentProfile.sectionId } }).catch(() => null);
+                const sec = yield Section_model_1.default.findOne({ where: { sectionId: studentProfile.sectionId } }).catch(() => null);
                 if (sec) {
                     userResponse.sectionName = sec.sectionName;
                     userResponse.section = sec.sectionName;
@@ -370,7 +370,7 @@ const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function
             if (studentProfile.address)
                 userResponse.address = studentProfile.address;
         }
-        const scannerProfile = yield ScannerProfile_modal_1.default.findOne({ where: { userId } }).catch(() => null);
+        const scannerProfile = yield ScannerProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
         if (scannerProfile) {
             userResponse.scannerProfile = scannerProfile.toJSON();
             if (scannerProfile.aadhar)
@@ -404,8 +404,8 @@ const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function
 const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, void 0, function* () {
     var _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
     try {
-        const user = yield User_modal_1.default.findOne({
-            include: [{ model: Role_modal_1.default, as: "role" }],
+        const user = yield User_model_1.default.findOne({
+            include: [{ model: Role_model_1.default, as: "role" }],
             where: { userId },
         });
         if (!user) {
@@ -430,7 +430,7 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
         if (body.phoneNumber || body.mobile || body.phone) {
             const phone = (body.phoneNumber || body.mobile || body.phone).trim();
             if (phone && phone !== user.phoneNumber) {
-                const phoneExists = yield User_modal_1.default.findOne({
+                const phoneExists = yield User_model_1.default.findOne({
                     where: {
                         phoneNumber: phone,
                         userId: { [sequelize_1.Op.ne]: user.userId },
@@ -456,7 +456,7 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
             updates.profileUrl = body.profileUrl || body.profileImage;
         }
         // 4. Update Teacher Profile if provided/applicable
-        const teacherProfile = yield TeacherProfile_modal_1.default.findOne({ where: { userId } }).catch(() => null);
+        const teacherProfile = yield TeacherProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
         if (teacherProfile || ((_k = (_j = user.role) === null || _j === void 0 ? void 0 : _j.role) === null || _k === void 0 ? void 0 : _k.toLowerCase()) === "teacher") {
             const teacherUpdates = {};
             if (body.qualification !== undefined)
@@ -480,7 +480,7 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
                     yield teacherProfile.update(teacherUpdates);
                 }
                 else if (user.instituteId) {
-                    yield TeacherProfile_modal_1.default.create({
+                    yield TeacherProfile_model_1.default.create({
                         userId,
                         instituteId: user.instituteId,
                         teacherType: teacherUpdates.teacherType || "Teacher",
@@ -496,7 +496,7 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
             }
         }
         // 5. Update Student Profile if provided/applicable
-        const studentProfile = yield Student_modal_1.default.findOne({ where: { userId } }).catch(() => null);
+        const studentProfile = yield Student_model_1.default.findOne({ where: { userId } }).catch(() => null);
         if (studentProfile || ((_m = (_l = user.role) === null || _l === void 0 ? void 0 : _l.role) === null || _m === void 0 ? void 0 : _m.toLowerCase()) === "student") {
             const studentUpdates = {};
             if (body.fatherName !== undefined)
@@ -522,7 +522,7 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
                     yield studentProfile.update(studentUpdates);
                 }
                 else if (user.instituteId) {
-                    yield Student_modal_1.default.create({
+                    yield Student_model_1.default.create({
                         userId,
                         instituteId: user.instituteId,
                         rollNumber: studentUpdates.rollNumber || "STU-001",
@@ -539,7 +539,7 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
             }
         }
         // 6. Update Scanner Profile if provided/applicable
-        const scannerProfile = yield ScannerProfile_modal_1.default.findOne({ where: { userId } }).catch(() => null);
+        const scannerProfile = yield ScannerProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
         if (scannerProfile || ((_p = (_o = user.role) === null || _o === void 0 ? void 0 : _o.role) === null || _p === void 0 ? void 0 : _p.toLowerCase()) === "scanner") {
             const scannerUpdates = {};
             if (body.address !== undefined)
@@ -555,7 +555,7 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
                     yield scannerProfile.update(scannerUpdates);
                 }
                 else if (user.instituteId) {
-                    yield ScannerProfile_modal_1.default.create({
+                    yield ScannerProfile_model_1.default.create({
                         userId,
                         instituteId: user.instituteId,
                         address: scannerUpdates.address || null,

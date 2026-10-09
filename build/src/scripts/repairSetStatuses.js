@@ -30,10 +30,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("../config/config");
 const sequelize_1 = require("../config/sequelize");
-const QuestionPaper_modal_1 = __importDefault(require("../modals/question-paper/QuestionPaper.modal"));
-const stander_answer_model_1 = __importDefault(require("../modals/question-paper/stander-answer.model"));
-const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
-const exam_service_1 = require("../services/exam.service");
+const QuestionPaper_model_1 = __importDefault(require("../models/question-paper/QuestionPaper.model"));
+const StandardAnswer_model_1 = __importDefault(require("../models/question-paper/StandardAnswer.model"));
+const Exam_model_1 = __importDefault(require("../models/Exam.model"));
+const exam_service_1 = require("../services/exam/exam.service");
 const args = process.argv.slice(2);
 const APPLY = args.includes("--apply");
 const manualResets = new Set(args
@@ -54,8 +54,8 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         yield sequelize_1.sequelize.authenticate();
         console.log(APPLY ? "APPLY mode — changes will be written.\n" : "DRY RUN — nothing is written (add --apply).\n");
-        const papers = yield QuestionPaper_modal_1.default.findAll({ order: [["examId", "ASC"], ["paperSet", "ASC"]] });
-        const answers = yield stander_answer_model_1.default.findAll();
+        const papers = yield QuestionPaper_model_1.default.findAll({ order: [["examId", "ASC"], ["paperSet", "ASC"]] });
+        const answers = yield StandardAnswer_model_1.default.findAll();
         const touchedExams = new Set();
         let resetCount = 0;
         const answerFor = (p) => {
@@ -111,7 +111,7 @@ function main() {
         console.log("\nExam status changes:");
         let examChanges = 0;
         for (const examId of examIds) {
-            const exam = yield Exam_modal_1.default.findOne({ where: { examId, isDeleted: false } });
+            const exam = yield Exam_model_1.default.findOne({ where: { examId, isDeleted: false } });
             if (!exam)
                 continue;
             const setStatuses = papers

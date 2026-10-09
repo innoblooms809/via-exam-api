@@ -14,8 +14,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.logActivity = void 0;
 const crypto_1 = __importDefault(require("crypto"));
-const ActivityLog_modal_1 = __importDefault(require("../modals/ActivityLog.modal"));
-const UserPresenceSession_modal_1 = __importDefault(require("../modals/UserPresenceSession.modal"));
+const ActivityLog_model_1 = __importDefault(require("../models/ActivityLog.model"));
+const UserPresenceSession_model_1 = __importDefault(require("../models/UserPresenceSession.model"));
 const logger_1 = __importDefault(require("../config/logger"));
 /**
  * Production-grade helper to record user activity events & update presence session.
@@ -43,7 +43,7 @@ const logActivity = (params) => __awaiter(void 0, void 0, void 0, function* () {
         if (sanitizedMetadata.token)
             delete sanitizedMetadata.token;
         // 1. Create Immutable Activity Log Entry
-        yield ActivityLog_modal_1.default.create({
+        yield ActivityLog_model_1.default.create({
             eventId,
             userId,
             role,
@@ -70,7 +70,7 @@ const logActivity = (params) => __awaiter(void 0, void 0, void 0, function* () {
                 .toLowerCase()
                 .replace(/_/g, " ")
                 .replace(/\b\w/g, (c) => c.toUpperCase());
-        const existingSession = yield UserPresenceSession_modal_1.default.findOne({ where: { userId } });
+        const existingSession = yield UserPresenceSession_model_1.default.findOne({ where: { userId } });
         if (existingSession) {
             existingSession.role = role;
             if (instituteId)
@@ -89,7 +89,7 @@ const logActivity = (params) => __awaiter(void 0, void 0, void 0, function* () {
             yield existingSession.save();
         }
         else {
-            yield UserPresenceSession_modal_1.default.create({
+            yield UserPresenceSession_model_1.default.create({
                 userId,
                 role,
                 instituteId,
