@@ -160,7 +160,7 @@ const getTeacherAnalytics = (instituteId) => __awaiter(void 0, void 0, void 0, f
         const attendance = (0, adminDashboard_helper_1.percentValue)(activeStudents, totalStudents);
         const kpiData = [
             {
-                title: "Total Students",
+                title: "Students",
                 value: (0, adminDashboard_helper_1.formatCount)(totalStudents),
                 icon: "Groups",
                 bg: "#eff6ff",
@@ -506,11 +506,11 @@ const getSuperAdminAnalytics = () => __awaiter(void 0, void 0, void 0, function*
         const prevInstitutes = institutes.filter((row) => row.createdAt < thirtyDaysAgo).length;
         const prevActive = institutes.filter((row) => row.status === 1 && row.createdAt < thirtyDaysAgo).length;
         const kpiData = [
-            Object.assign({ title: "Total Institutes", value: (0, adminDashboard_helper_1.formatCount)(totalInstitutes), description: "Registered organizations", icon: "building", tone: "brand" }, (0, adminDashboard_helper_1.getTrend)(totalInstitutes - prevInstitutes + prevInstitutes, prevInstitutes)),
+            Object.assign({ title: "Institutes", value: (0, adminDashboard_helper_1.formatCount)(totalInstitutes), description: "Registered organizations", icon: "building", tone: "brand" }, (0, adminDashboard_helper_1.getTrend)(totalInstitutes - prevInstitutes + prevInstitutes, prevInstitutes)),
             Object.assign({ title: "Active Institutes", value: (0, adminDashboard_helper_1.formatCount)(activeInstitutes), description: "Currently active", icon: "check", tone: "success" }, (0, adminDashboard_helper_1.getTrend)(activeInstitutes, prevActive)),
-            Object.assign({ title: "Total Students", value: (0, adminDashboard_helper_1.formatCount)(totalStudents), description: "Across platform", icon: "users", tone: "brand" }, (0, adminDashboard_helper_1.getTrend)(totalStudents, prevStudents)),
-            Object.assign({ title: "Total Exams", value: (0, adminDashboard_helper_1.formatCount)(totalExams), description: "Conducted this year", icon: "clipboard", tone: "warning" }, (0, adminDashboard_helper_1.getTrend)(totalExams, prevExams)),
-            Object.assign({ title: "Evaluated", value: (0, adminDashboard_helper_1.formatCount)(evaluatedSheets), description: "AI checked sheets", icon: "cpu", tone: "success" }, (0, adminDashboard_helper_1.getTrend)(evaluatedSheets, prevEvaluated)),
+            Object.assign({ title: "Students", value: (0, adminDashboard_helper_1.formatCount)(totalStudents), description: "Across platform", icon: "users", tone: "brand" }, (0, adminDashboard_helper_1.getTrend)(totalStudents, prevStudents)),
+            Object.assign({ title: "Exams", value: (0, adminDashboard_helper_1.formatCount)(totalExams), description: "Conducted this year", icon: "clipboard", tone: "warning" }, (0, adminDashboard_helper_1.getTrend)(totalExams, prevExams)),
+            Object.assign({ title: "Evaluations", value: (0, adminDashboard_helper_1.formatCount)(evaluatedSheets), description: "AI checked sheets", icon: "cpu", tone: "success" }, (0, adminDashboard_helper_1.getTrend)(evaluatedSheets, prevEvaluated)),
         ];
         const prevYearStart = new Date(thisYear - 1, 0, 1);
         const examsThisYear = yield Exam_modal_1.default.findAll({

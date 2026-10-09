@@ -50,7 +50,7 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGUSR2", () => shutdown("SIGUSR2"));
 
 const unexpectedErrorHandler = (error: unknown) => {
-  logger.error(error);
+  logger.error(error instanceof Error ? error.stack : String(error));
   shutdown("UNCAUGHT_ERROR");
 };
 

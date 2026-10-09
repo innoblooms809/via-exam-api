@@ -35,6 +35,9 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d;
     const instituteId = createdBy.instituteId;
+    const sessionId = body.sessionId;
+    if (!sessionId)
+        return fail(http_status_1.default.BAD_REQUEST, "Session ID is required.");
     const classNames = (0, academicNames_1.uniqueNames)((_a = body.classNames) !== null && _a !== void 0 ? _a : body.className, academicNames_1.normalizeClassName);
     const sectionNames = (0, academicNames_1.uniqueNames)((_b = body.sections) !== null && _b !== void 0 ? _b : [], academicNames_1.normalizeSectionName);
     const subjectNames = (0, academicNames_1.uniqueNames)((_c = body.subjects) !== null && _c !== void 0 ? _c : [], academicNames_1.normalizeSubjectName);
@@ -48,7 +51,7 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
         return fail(http_status_1.default.BAD_REQUEST, `"${tooLong.slice(0, 20)}…" is too long (max ${academicNames_1.MAX_NAME_LENGTH} characters).`);
     const t = yield sequelize_1.sequelize.transaction();
     try {
-        const existing = yield Class_modal_1.default.findAll({ where: { instituteId }, transaction: t });
+        const existing = yield Class_modal_1.default.findAll({ where: { instituteId, sessionId }, transaction: t });
         const byKey = new Map(existing.map((c) => [(0, academicNames_1.nameKey)(c.className), c]));
         const created = [];
         const restored = [];
@@ -66,7 +69,7 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
                 touched.push(found);
                 continue;
             }
-            const row = yield Class_modal_1.default.create({ classId: yield helper_1.default.generateUserId(), instituteId, className }, { transaction: t });
+            const row = yield Class_modal_1.default.create({ classId: yield helper_1.default.generateUserId(), instituteId, sessionId, className }, { transaction: t });
             created.push(className);
             touched.push(row);
         }
@@ -137,11 +140,15 @@ const createClass = (body, createdBy) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 // ─── GET ALL CLASSES ──────────────────────────────────────────────────────────
-const getAllClasses = (createdBy) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllClasses = (createdBy, query) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const instituteId = createdBy.instituteId;
+        const whereClause = { instituteId, isActive: true, isDeleted: false };
+        if (query === null || query === void 0 ? void 0 : query.sessionId) {
+            whereClause.sessionId = query.sessionId;
+        }
         const classes = yield Class_modal_1.default.findAll({
-            where: { instituteId, isActive: true, isDeleted: false },
+            where: whereClause,
             include: [
                 { model: Section_modal_1.default, as: "sections", where: { isDeleted: false }, required: false },
                 {
@@ -282,7 +289,7 @@ const updateClass = (classId, body, createdBy) => __awaiter(void 0, void 0, void
             yield t.rollback();
             return fail(http_status_1.default.BAD_REQUEST, `Class name can be at most ${academicNames_1.MAX_NAME_LENGTH} characters.`);
         }
-        const others = yield Class_modal_1.default.findAll({ where: { instituteId }, transaction: t });
+        const others = yield Class_modal_1.default.findAll({ where: { instituteId, sessionId: classData.sessionId }, transaction: t });
         const clash = others.find((c) => c.classId !== classId && (0, academicNames_1.nameKey)(c.className) === (0, academicNames_1.nameKey)(className));
         if (clash) {
             yield t.rollback();

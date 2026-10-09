@@ -5,6 +5,7 @@ interface ClassAttributes {
   id: number;
   classId: string;
   instituteId: string; // FK → Institute
+  sessionId: string; // FK -> Session
   className: string; // Class 1, Class 2 ... Class 12
   classTeacherId?: string | null; // FK → User (class teacher)
   isActive: boolean;
@@ -14,12 +15,13 @@ interface ClassAttributes {
 }
 
 interface ClassCreationAttributes
-  extends Optional<ClassAttributes, "id" | "classId" | "classTeacherId" | "isActive" | "isDeleted"> {}
+  extends Optional<ClassAttributes, "id" | "classId" | "classTeacherId" | "isActive" | "isDeleted"> { }
 
 class Class extends Model<ClassAttributes, ClassCreationAttributes> {
   public id!: number;
   public classId!: string;
   public instituteId!: string;
+  public sessionId!: string;
   public className!: string;
   public classTeacherId!: string | null;
   public isActive!: boolean;
@@ -41,6 +43,10 @@ Class.init(
       unique: true,
     },
     instituteId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    sessionId: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -71,9 +77,9 @@ Class.init(
     timestamps: true,
     indexes: [
       {
-        // Unique: one section per class per year per institute
+        // Unique: one section per class per session per institute
         unique: true,
-        fields: ["instituteId", "className"],
+        fields: ["instituteId", "sessionId", "className"],
       },
     ],
   },

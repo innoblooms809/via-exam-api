@@ -47634,3 +47634,191 @@
 {"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-01T11:42:09.305Z"}
 {"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-01T11:42:09.308Z"}
 {"level":"info","message":"SIGINT received. Closing server...","timestamp":"2026-10-03T05:01:35.032Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-03T05:31:35.165Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-03T05:31:37.500Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-03T05:31:37.516Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-03T05:31:37.520Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-03T05:31:37.600Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-03T05:31:37.605Z"}
+{"level":"info","message":"[Pipeline6] Sheet AS918058836 queued (ocr, #0).","timestamp":"2026-10-03T05:31:38.591Z"}
+{"level":"info","message":"[Pipeline6] Sheet AS012159631 queued (waiting_for_ocr, #1).","timestamp":"2026-10-03T05:31:39.432Z"}
+{"level":"info","message":"[Pipeline6] [AI pre-scan] Scanning diagrams of sheet AS918058836 while OCR runs","timestamp":"2026-10-03T05:31:39.645Z"}
+{"level":"info","message":"[Pipeline6] [OCR] Reading student sheet AS918058836 (1.pdf, 3762383 bytes)","timestamp":"2026-10-03T05:31:39.743Z"}
+{"level":"info","message":"[Pipeline6] Sheet AS540909833 queued (waiting_for_ocr, #2).","timestamp":"2026-10-03T05:31:39.756Z"}
+{"level":"info","message":"[Pipeline6 Queue] Re-queued 3 evaluation(s) left pending before restart.","timestamp":"2026-10-03T05:31:39.758Z"}
+{"level":"warn","message":"[Pipeline6] [AI pre-scan] Sheet AS918058836 skipped (evaluation will scan diagrams itself): AggregateError","timestamp":"2026-10-03T05:31:39.764Z"}
+{"level":"error","message":"[Pipeline6] OCR failed for sheet AS918058836: Unknown error","timestamp":"2026-10-03T05:31:39.768Z"}
+{"level":"info","message":"[Pipeline6] [AI pre-scan] Scanning diagrams of sheet AS012159631 while OCR runs","timestamp":"2026-10-03T05:31:40.671Z"}
+{"level":"info","message":"[Pipeline6] [OCR] Reading student sheet AS012159631 (3.pdf, 4078464 bytes)","timestamp":"2026-10-03T05:31:40.770Z"}
+{"level":"warn","message":"[Pipeline6] [AI pre-scan] Sheet AS012159631 skipped (evaluation will scan diagrams itself): AggregateError","timestamp":"2026-10-03T05:31:40.781Z"}
+{"level":"error","message":"[Pipeline6] OCR failed for sheet AS012159631: Unknown error","timestamp":"2026-10-03T05:31:40.785Z"}
+{"level":"info","message":"[Pipeline6] [AI pre-scan] Scanning diagrams of sheet AS540909833 while OCR runs","timestamp":"2026-10-03T05:31:45.230Z"}
+{"level":"info","message":"[Pipeline6] [OCR] Reading student sheet AS540909833 (2.pdf, 4552647 bytes)","timestamp":"2026-10-03T05:31:45.319Z"}
+{"level":"warn","message":"[Pipeline6] [AI pre-scan] Sheet AS540909833 skipped (evaluation will scan diagrams itself): AggregateError","timestamp":"2026-10-03T05:31:45.328Z"}
+{"level":"error","message":"[Pipeline6] OCR failed for sheet AS540909833: Unknown error","timestamp":"2026-10-03T05:31:45.331Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-03T11:07:14.010Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-03T11:07:23.694Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-03T11:07:23.705Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-03T11:07:23.707Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-03T11:07:23.775Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-03T11:07:23.777Z"}
+{"level":"info","message":"[Pipeline6] Sheet AS918058836 queued (ocr, #0).","timestamp":"2026-10-03T11:07:30.902Z"}
+{"level":"info","message":"[Pipeline6 Queue] Re-queued 1 evaluation(s) left pending before restart.","timestamp":"2026-10-03T11:07:30.903Z"}
+{"level":"info","message":"[Pipeline6] [AI pre-scan] Scanning diagrams of sheet AS918058836 while OCR runs","timestamp":"2026-10-03T11:07:52.183Z"}
+{"level":"info","message":"[Pipeline6] [OCR] Reading student sheet AS918058836 (1.pdf, 3762383 bytes)","timestamp":"2026-10-03T11:07:52.254Z"}
+{"level":"warn","message":"[Pipeline6] [AI pre-scan] Sheet AS918058836 skipped (evaluation will scan diagrams itself): AggregateError","timestamp":"2026-10-03T11:07:52.266Z"}
+{"level":"error","message":"[Pipeline6] OCR failed for sheet AS918058836: Unknown error","timestamp":"2026-10-03T11:07:52.272Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-03T21:33:33.494Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-03T21:33:35.120Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-03T21:33:35.124Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-03T21:33:35.124Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-03T21:33:35.145Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-03T21:33:35.146Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:09:52.032Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:09:53.586Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-06T06:09:53.590Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-06T06:09:53.592Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-06T06:09:53.639Z"}
+{"level":"info","message":"OCR service reachable: http://localhost:8000/health","timestamp":"2026-10-06T06:09:53.647Z"}
+{"level":"info","message":"[Pipeline6] Sheet AS953913847 queued (ocr, #0).","timestamp":"2026-10-06T06:09:53.926Z"}
+{"level":"info","message":"[Pipeline6 Queue] Re-queued 1 evaluation(s) left pending before restart.","timestamp":"2026-10-06T06:09:53.927Z"}
+{"level":"info","message":"[Pipeline6] [AI pre-scan] Scanning diagrams of sheet AS953913847 while OCR runs","timestamp":"2026-10-06T06:09:54.278Z"}
+{"level":"info","message":"[Pipeline6] [OCR] Reading student sheet AS953913847 (3.pdf, 2306051 bytes)","timestamp":"2026-10-06T06:09:54.311Z"}
+{"level":"error","message":"[Pipeline6] OCR failed for sheet AS953913847: Not Found","timestamp":"2026-10-06T06:09:54.327Z"}
+{"level":"warn","message":"[Pipeline6] [AI pre-scan] Sheet AS953913847 skipped (evaluation will scan diagrams itself): AggregateError","timestamp":"2026-10-06T06:09:54.347Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:31:03.102Z"}
+{"level":"error","message":"Error connecting to PostgreSQL / syncing models","timestamp":"2026-10-06T06:31:04.493Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:35:42.066Z"}
+{"level":"error","message":"Error connecting to PostgreSQL / syncing models","timestamp":"2026-10-06T06:35:42.702Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:42:10.466Z"}
+{"level":"error","message":"Error connecting to PostgreSQL / syncing models","timestamp":"2026-10-06T06:42:11.190Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:42:47.633Z"}
+{"level":"error","message":"Error connecting to PostgreSQL / syncing models","timestamp":"2026-10-06T06:42:48.310Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:44:52.312Z"}
+{"level":"error","message":"Error connecting to PostgreSQL / syncing models","timestamp":"2026-10-06T06:44:52.934Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:45:34.014Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:45:35.886Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-06T06:45:35.894Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-06T06:45:35.895Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-06T06:45:35.925Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-06T06:45:35.926Z"}
+{"level":"info","message":"[Pipeline6] Sheet AS918058836 queued (ocr, #0).","timestamp":"2026-10-06T06:45:36.449Z"}
+{"level":"info","message":"[Pipeline6 Queue] Re-queued 1 evaluation(s) left pending before restart.","timestamp":"2026-10-06T06:45:36.450Z"}
+{"level":"info","message":"[Pipeline6] [AI pre-scan] Scanning diagrams of sheet AS918058836 while OCR runs","timestamp":"2026-10-06T06:45:37.149Z"}
+{"level":"info","message":"[Pipeline6] [OCR] Reading student sheet AS918058836 (1.pdf, 3762383 bytes)","timestamp":"2026-10-06T06:45:37.193Z"}
+{"level":"error","message":"[Pipeline6] OCR failed for sheet AS918058836: Unknown error","timestamp":"2026-10-06T06:45:37.233Z"}
+{"level":"warn","message":"[Pipeline6] [AI pre-scan] Sheet AS918058836 skipped (evaluation will scan diagrams itself): AggregateError","timestamp":"2026-10-06T06:45:37.240Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:49:06.641Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:49:08.266Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:50:14.609Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:50:14.810Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:50:16.264Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-06T06:50:16.269Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-06T06:50:16.270Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-06T06:50:16.295Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-06T06:50:16.299Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:50:16.383Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:50:40.902Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:50:42.469Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:51:22.147Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:51:22.148Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:51:22.162Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:51:23.717Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:51:23.731Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-06T06:51:23.721Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-06T06:51:23.723Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-06T06:51:23.759Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-06T06:51:23.761Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:51:23.945Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:54:02.301Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:54:02.314Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:54:02.324Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:54:03.846Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-06T06:54:03.851Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-06T06:54:03.852Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-06T06:54:03.875Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:54:03.873Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:54:03.869Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-06T06:54:03.876Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:56:29.591Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:56:31.618Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-06T06:56:31.624Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-06T06:56:31.625Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-06T06:56:31.647Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-06T06:56:31.648Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:57:19.419Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:57:19.710Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:57:22.057Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-06T06:57:22.063Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-06T06:57:22.064Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-06T06:57:22.086Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-06T06:57:22.087Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:57:22.298Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-06T06:57:58.984Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-06T06:58:00.610Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-08T05:57:27.392Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-08T06:00:34.111Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-08T06:00:37.111Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-08T06:00:37.115Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-08T06:00:37.117Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-08T06:00:37.141Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-08T06:00:37.143Z"}
+{"level":"info","message":"SIGINT received. Closing server...","timestamp":"2026-10-08T09:21:15.705Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-08T09:33:00.249Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-08T09:33:03.201Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-08T09:33:03.208Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-08T09:33:03.210Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-08T09:33:03.260Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-08T09:33:03.262Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-08T11:55:07.434Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-08T11:56:17.189Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-08T11:56:19.241Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-08T11:56:19.247Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-08T11:56:19.249Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-08T11:56:19.303Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-08T11:56:19.308Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-09T02:34:40.789Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-09T02:34:42.518Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-09T02:34:42.524Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-09T02:34:42.525Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-09T02:34:42.558Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-09T02:34:42.560Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-09T02:35:05.019Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-09T02:35:06.897Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-09T02:35:06.901Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-09T02:35:06.902Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-09T02:35:06.927Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-09T02:35:06.928Z"}
+{"level":"info","message":"SIGINT received. Closing server...","timestamp":"2026-10-09T02:39:30.081Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-09T02:40:12.934Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-09T02:40:14.521Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-09T02:40:14.525Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-09T02:40:14.526Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-09T02:40:14.553Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-09T02:40:14.555Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-09T02:54:10.978Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-09T02:54:12.772Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-09T02:54:12.778Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-09T02:54:12.779Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-09T02:54:12.801Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-09T02:54:12.802Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-09T02:54:41.357Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-09T02:54:43.191Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-09T02:54:43.194Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-09T02:54:43.195Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-09T02:54:43.216Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-09T02:54:43.218Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-09T02:56:27.451Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-09T02:56:29.408Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-09T02:56:29.411Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-09T02:56:29.411Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-09T02:56:29.435Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-09T02:56:29.437Z"}
+{"level":"info","message":"SIGINT received. Closing server...","timestamp":"2026-10-09T02:56:48.176Z"}
+{"level":"info","message":"Connected to PostgreSQL Database","timestamp":"2026-10-09T02:57:56.320Z"}
+{"level":"info","message":"Models synced with PostgreSQL","timestamp":"2026-10-09T02:57:58.454Z"}
+{"level":"info","message":"Listening on port 5020","timestamp":"2026-10-09T02:57:58.563Z"}
+{"level":"info","message":"Python services → OCR http://localhost:8000 | Evaluation http://localhost:8006","timestamp":"2026-10-09T02:57:58.612Z"}
+{"level":"warn","message":"OCR service NOT reachable: http://localhost:8000/health (ECONNREFUSED)","timestamp":"2026-10-09T02:57:59.183Z"}
+{"level":"warn","message":"Evaluation service NOT reachable: http://localhost:8006/health (ECONNREFUSED)","timestamp":"2026-10-09T02:57:59.323Z"}
+{"level":"info","message":"SIGINT received. Closing server...","timestamp":"2026-10-09T07:01:29.590Z"}

@@ -35,7 +35,7 @@ const getAllClasses = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     var _a;
     try {
         logger_1.default.info(`GET /v1/class/getAllClasses - user: ${(_a = req.viaExamUser) === null || _a === void 0 ? void 0 : _a.id}`);
-        const result = yield class_service_1.default.getAllClasses(req.viaExamUser);
+        const result = yield class_service_1.default.getAllClasses(req.viaExamUser, req.query);
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
