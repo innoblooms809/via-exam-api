@@ -10,6 +10,9 @@ import { Op } from "sequelize";
 import { sendAdminCredentials } from "../../utils/mailHelper";
 import config from "../../config/config";
 import { destroyInstituteAsset, uploadInstituteAsset } from "../../utils/instituteStorage";
+import PlanService from "../subscription/plan.service";
+import SubscriptionService from "../subscription/subscription.service";
+import SubscriptionNotifier, { SUBSCRIPTION_NOTIFICATION, formatDate } from "../subscription/subscriptionNotifier";
 
 
 // ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
@@ -113,8 +116,12 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       };
     }
 
-    // 7. Calculate trial end date
-    const trialDays = parseInt(body.trialDays) || 0;
+    // 7. Calculate trial end date (the plan's trial length unless the super admin set one)
+    const selectedPlan = await PlanService.findPlan(String(body.plan || "").toLowerCase());
+    const trialDays =
+      body.trialDays !== undefined && body.trialDays !== ""
+        ? Math.max(0, parseInt(body.trialDays) || 0)
+        : selectedPlan?.trialDays ?? 0;
     const trialEndsAt =
       trialDays > 0
         ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
@@ -151,6 +158,9 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       },
       { transaction: t },
     );
+
+    // 8b. Start the institute's subscription (free trial when the plan has one)
+    await SubscriptionService.createForInstitute(instituteId, String(body.plan || "").toLowerCase(), trialDays, t);
 
     let adminResponse = null;
     const loginUrl = `${config.frontendUrl}/${body.slug}/auth/signin`;
@@ -206,6 +216,14 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
 
     // All good — commit
     await t.commit();
+
+    void SubscriptionNotifier.notifySuperAdmins(instituteId, {
+      type: SUBSCRIPTION_NOTIFICATION.TRIAL_STARTED,
+      title: `New institute: ${body.instituteName}`,
+      message: trialDays > 0
+        ? `${body.instituteName} started a ${trialDays}-day free trial on the ${selectedPlan?.name || body.plan} plan (ends ${formatDate(trialEndsAt)}).`
+        : `${body.instituteName} was registered on the ${selectedPlan?.name || body.plan} plan without a trial; it needs a payment to become active.`,
+    });
 
     return {
       error: false,
@@ -602,6 +620,10 @@ const updateInstitute = async (
       logoPublicId,
       bannerPublicId,
     });
+
+    if (body.plan) {
+      await SubscriptionService.syncPlanFromInstitute(institute.instituteId, body.plan);
+    }
 
     // Update linked admin user if admin fields are sent in body
     const adminRole = await Role.findOne({ where: { role: "ADMIN" } });

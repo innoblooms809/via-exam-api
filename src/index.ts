@@ -6,6 +6,7 @@ import connectDB from "./db/connect"; // Change to sequelize connection
 import initSuperAdmin from "./config/superAdmin";
 import { describePythonServices, checkPythonServices } from "./config/pythonServices";
 import { recoverPipeline6Queue } from "./services/evaluation/pipeline6.service";
+import { startSubscriptionScheduler } from "./services/subscription/subscriptionScheduler";
 let server: Server;
 
 const bootApp = () => {
@@ -14,6 +15,8 @@ const bootApp = () => {
     logger.info(describePythonServices());
     void checkPythonServices(); // logs reachability only; never blocks startup
     await initSuperAdmin();
+    // Default plans, subscriptions for existing institutes, then hourly expiry checks and reminders.
+    void startSubscriptionScheduler();
     // The AI evaluation queue is in memory: put evaluations left "Pending" by a restart back in line.
     void recoverPipeline6Queue();
   });

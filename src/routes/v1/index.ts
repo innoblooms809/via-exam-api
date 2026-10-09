@@ -29,6 +29,7 @@ import scannerDashboardRoutes from "./scanner/scannerDashboard.route";
 import monitoringRoutes from "./monitoring/monitoring.route";
 import recheckRequestRoutes from "./evaluation/recheckRequest.route";
 import evaluationAssignmentRoutes from "./evaluation/evaluationAssignment.route";
+import subscriptionRoutes from "./subscription/subscription.route";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -143,6 +144,10 @@ const defaultRoutes = [
   {
     path: "/evaluation-assignments",
     route: evaluationAssignmentRoutes,
+  },
+  {
+    path: "/subscription",
+    route: subscriptionRoutes,
   },
   
   // {
