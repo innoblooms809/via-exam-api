@@ -10,6 +10,7 @@ import xss from './middlewares/xss';
 import cookieParser from 'cookie-parser';
 import { authLimiter } from './middlewares/rateLimiter';
 import routes from './routes/v1';
+import SubscriptionController from './controllers/subscription/subscription.controller';
 import { errorConverter, errorHandler } from './middlewares/error';
 import ApiError from './utils/ApiError';
 import path from 'path';
@@ -29,6 +30,9 @@ app.use(
     crossOriginResourcePolicy: false,
   })
 );
+
+// Stripe webhook: must see the raw body (signature check), so it is mounted before the JSON parsers.
+app.post('/v1/subscription/webhook', express.raw({ type: 'application/json', limit: '1mb' }), SubscriptionController.stripeWebhook);
 
 // Parse JSON request body.
 // 100MB was needed while answer sheets were base64'd through JSON. They are

@@ -8,11 +8,12 @@ const getNotifications = async (requestedBy: any): Promise<any> => {
     const userId = requestedBy.userId;
     const instituteId = requestedBy.instituteId;
 
+    // Super admins belong to no institute; their notifications are filed under the institute they're about.
     const notifications = await Notification.findAll({
-      where: { 
+      where: {
         userId,
-        instituteId,
-        isDeleted: false 
+        ...(instituteId ? { instituteId } : {}),
+        isDeleted: false
       },
       order: [["createdAt", "DESC"]],
     });
@@ -24,6 +25,7 @@ const getNotifications = async (requestedBy: any): Promise<any> => {
       message: notif.message,
       referenceId: notif.referenceId,
       isRead: notif.isRead,
+      createdAt: notif.createdAt,
     }));
 
     return {
