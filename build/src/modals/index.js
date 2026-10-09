@@ -401,12 +401,18 @@ Student_modal_1.default.belongsTo(Section_modal_1.default, {
 //   sourceKey: "classId",
 //   as: "exams",
 // });
-// // Session → Institute
-// Session.belongsTo(Institute, {
-//   foreignKey: "instituteId",
-//   targetKey: "instituteId",
-//   as: "institute",
-// });
+// SESSION ↔ CLASS
+// ═══════════════════════════════════════
+Session_modal_1.default.hasMany(Class_modal_1.default, {
+    foreignKey: "sessionId",
+    sourceKey: "sessionId",
+    as: "classes",
+});
+Class_modal_1.default.belongsTo(Session_modal_1.default, {
+    foreignKey: "sessionId",
+    targetKey: "sessionId",
+    as: "session",
+});
 // // Subject relations
 // Subject.belongsTo(User, {
 //   foreignKey: "teacherId",

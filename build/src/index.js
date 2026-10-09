@@ -58,7 +58,7 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGUSR2", () => shutdown("SIGUSR2"));
 const unexpectedErrorHandler = (error) => {
-    logger_1.default.error(error);
+    logger_1.default.error(error instanceof Error ? error.stack : String(error));
     shutdown("UNCAUGHT_ERROR");
 };
 process.on("uncaughtException", unexpectedErrorHandler);

@@ -19,6 +19,10 @@ Class.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
     },
+    sessionId: {
+        type: sequelize_1.DataTypes.STRING,
+        allowNull: false,
+    },
     className: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
@@ -45,9 +49,9 @@ Class.init({
     timestamps: true,
     indexes: [
         {
-            // Unique: one section per class per year per institute
+            // Unique: one section per class per session per institute
             unique: true,
-            fields: ["instituteId", "className"],
+            fields: ["instituteId", "sessionId", "className"],
         },
     ],
 });
