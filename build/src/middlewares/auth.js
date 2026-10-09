@@ -1,6 +1,6 @@
 "use strict";
 // import jwt from "jsonwebtoken";
-// import UserModel from "../modals/User.modal";
+// import UserModel from "../models/User.model";
 // import config from "../config/config";
 // import { NextFunction, Request, Response } from "express";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -37,10 +37,10 @@ exports.normalizeRoleKey = exports.resolveRequestAuthRole = exports.verifyTenant
 // export default authenticate;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const http_status_1 = __importDefault(require("http-status"));
-const User_modal_1 = __importDefault(require("../modals/User.modal"));
-const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
-const Institute_modal_1 = __importDefault(require("../modals/Institute.modal"));
-const UserPresenceSession_modal_1 = __importDefault(require("../modals/UserPresenceSession.modal"));
+const User_model_1 = __importDefault(require("../models/User.model"));
+const Role_model_1 = __importDefault(require("../models/Role.model"));
+const Institute_model_1 = __importDefault(require("../models/Institute.model"));
+const UserPresenceSession_model_1 = __importDefault(require("../models/UserPresenceSession.model"));
 const config_1 = __importDefault(require("../config/config"));
 const logger_1 = __importDefault(require("../config/logger"));
 const getCookieValue = (req, name) => {
@@ -178,10 +178,10 @@ const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
                 message: "Invalid token payload.",
             });
         }
-        const user = yield User_modal_1.default.findOne({
+        const user = yield User_model_1.default.findOne({
             include: [
-                { model: Role_modal_1.default, as: "role" },
-                { model: Institute_modal_1.default, as: "institute" },
+                { model: Role_model_1.default, as: "role" },
+                { model: Institute_model_1.default, as: "institute" },
             ],
             where: { userId },
         });
@@ -230,7 +230,7 @@ const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
                 else if (reqPath.includes("/auth/login"))
                     humanActivity = "Logged In";
                 // Async non-blocking presence update
-                UserPresenceSession_modal_1.default.findOne({ where: { userId: user.userId } })
+                UserPresenceSession_model_1.default.findOne({ where: { userId: user.userId } })
                     .then((session) => {
                     const now = new Date();
                     if (session) {
@@ -240,7 +240,7 @@ const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
                         session.save().catch(() => { });
                     }
                     else {
-                        UserPresenceSession_modal_1.default.create({
+                        UserPresenceSession_model_1.default.create({
                             userId: user.userId,
                             role: userRole,
                             instituteId: user.instituteId || null,

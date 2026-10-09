@@ -1,15 +1,15 @@
 import "../config/config";
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../config/sequelize";
-import Access from "../modals/Access.modal";
-import Exam from "../modals/Exam.modal";
-import Institute from "../modals/Institute.modal";
-import QuestionPaper from "../modals/question-paper/QuestionPaper.modal";
-import Role from "../modals/Role.modal";
-import StudentProfile from "../modals/Student.modal";
-import TeacherProfile from "../modals/TeacherProfile.modal";
-import Token from "../modals/Token.modal";
-import User from "../modals/User.modal";
+import Access from "../models/Access.model";
+import Exam from "../models/Exam.model";
+import Institute from "../models/Institute.model";
+import QuestionPaper from "../models/question-paper/QuestionPaper.model";
+import Role from "../models/Role.model";
+import StudentProfile from "../models/Student.model";
+import TeacherProfile from "../models/TeacherProfile.model";
+import Token from "../models/Token.model";
+import User from "../models/User.model";
 import EncryptPassword from "../utils/encryption";
 
 const passwordPlainText = "Password@123";

@@ -16,7 +16,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 // Load .env file
 dotenv_1.default.config({ path: path_1.default.join(__dirname, '../.env') });
-const Role_modal_1 = __importDefault(require("../src/modals/Role.modal"));
+const Role_model_1 = __importDefault(require("../src/models/Role.model"));
 const sequelize_1 = require("../src/config/sequelize");
 const seedRoles = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -55,11 +55,11 @@ const seedRoles = () => __awaiter(void 0, void 0, void 0, function* () {
         ];
         // Check if roles already exist
         for (const roleData of roles) {
-            const existingRole = yield Role_modal_1.default.findOne({
+            const existingRole = yield Role_model_1.default.findOne({
                 where: { role: roleData.role },
             });
             if (!existingRole) {
-                yield Role_modal_1.default.create(roleData);
+                yield Role_model_1.default.create(roleData);
                 console.log(`✓ Role created: ${roleData.role}`);
             }
             else {

@@ -48,6 +48,17 @@ export const studentUpload = multer({
   { name: "profilePhoto", maxCount: 1 },
 ]);
 
+export const profileUpload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+}).fields([
+  { name: "profilePhoto", maxCount: 1 },
+  { name: "avatar", maxCount: 1 },
+]);
+
 export const instituteUpload = multer({
   // Logos/banners go straight to Cloudinary, so they're held in memory only
   // long enough to stream out — never written to local disk.
@@ -91,8 +102,8 @@ export const answerPaperUpload = multer({
   storage: multer.memoryStorage(),
   fileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB max
-    fieldSize: 100 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10MB max
+    fieldSize: 10 * 1024 * 1024,
   },
 }).fields([
   {
@@ -118,7 +129,7 @@ export const answerPdfUpload = multer({
   storage: multer.memoryStorage(),
   fileFilter: pdfFileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB max
-    fieldSize: 100 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10MB max
+    fieldSize: 10 * 1024 * 1024,
   },
 }).any();

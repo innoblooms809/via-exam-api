@@ -1,7 +1,7 @@
 import { Response } from "express";
 import httpStatus from "http-status";
-import ExamService from "../../services/exam.service"
-import EvaluationAssignmentService from "../../services/evaluationAssignment.service";
+import ExamService from "../../services/exam/exam.service"
+import EvaluationAssignmentService from "../../services/evaluation/evaluationAssignment.service";
 
 const createExam = async (req: any, res: Response): Promise<any> => {
   try {

@@ -15,19 +15,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("../config/config");
 const sequelize_1 = require("sequelize");
 const sequelize_2 = require("../config/sequelize");
-const Access_modal_1 = __importDefault(require("../modals/Access.modal"));
-const Exam_modal_1 = __importDefault(require("../modals/Exam.modal"));
-const Institute_modal_1 = __importDefault(require("../modals/Institute.modal"));
-const QuestionPaper_modal_1 = __importDefault(require("../modals/question-paper/QuestionPaper.modal"));
-const Role_modal_1 = __importDefault(require("../modals/Role.modal"));
-const Student_modal_1 = __importDefault(require("../modals/Student.modal"));
-const TeacherProfile_modal_1 = __importDefault(require("../modals/TeacherProfile.modal"));
-const Token_modal_1 = __importDefault(require("../modals/Token.modal"));
-const User_modal_1 = __importDefault(require("../modals/User.modal"));
+const Access_model_1 = __importDefault(require("../models/Access.model"));
+const Exam_model_1 = __importDefault(require("../models/Exam.model"));
+const Institute_model_1 = __importDefault(require("../models/Institute.model"));
+const QuestionPaper_model_1 = __importDefault(require("../models/question-paper/QuestionPaper.model"));
+const Role_model_1 = __importDefault(require("../models/Role.model"));
+const Student_model_1 = __importDefault(require("../models/Student.model"));
+const TeacherProfile_model_1 = __importDefault(require("../models/TeacherProfile.model"));
+const Token_model_1 = __importDefault(require("../models/Token.model"));
+const User_model_1 = __importDefault(require("../models/User.model"));
 const encryption_1 = __importDefault(require("../utils/encryption"));
 const passwordPlainText = "Password@123";
 const findOrCreateRole = (role, roleDescription) => __awaiter(void 0, void 0, void 0, function* () {
-    const [record] = yield Role_modal_1.default.findOrCreate({
+    const [record] = yield Role_model_1.default.findOrCreate({
         where: { role },
         defaults: { role, roleDescription },
     });
@@ -35,7 +35,7 @@ const findOrCreateRole = (role, roleDescription) => __awaiter(void 0, void 0, vo
     return record;
 });
 const findOrCreateAccess = (roleId, moduleName, permissions) => __awaiter(void 0, void 0, void 0, function* () {
-    const [record] = yield Access_modal_1.default.findOrCreate({
+    const [record] = yield Access_model_1.default.findOrCreate({
         where: { roleId, moduleName },
         defaults: Object.assign({ roleId, moduleName }, permissions),
     });
@@ -51,13 +51,13 @@ const upsertById = (model, where, data) => __awaiter(void 0, void 0, void 0, fun
     return model.create(data);
 });
 const removeLegacySuperAdminSeed = () => __awaiter(void 0, void 0, void 0, function* () {
-    const superAdminRole = yield Role_modal_1.default.findOne({ where: { role: "SUPER_ADMIN" } });
-    yield User_modal_1.default.destroy({ where: { userId: "USER-SUPER-001" } });
+    const superAdminRole = yield Role_model_1.default.findOne({ where: { role: "SUPER_ADMIN" } });
+    yield User_model_1.default.destroy({ where: { userId: "USER-SUPER-001" } });
     if (!superAdminRole) {
         return;
     }
-    yield Access_modal_1.default.destroy({ where: { roleId: superAdminRole.id } });
-    const remainingSuperAdminUsers = yield User_modal_1.default.count({
+    yield Access_model_1.default.destroy({ where: { roleId: superAdminRole.id } });
+    const remainingSuperAdminUsers = yield User_model_1.default.count({
         where: { roleId: superAdminRole.id },
     });
     if (remainingSuperAdminUsers === 0) {
@@ -101,7 +101,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
             view: ["exams", "question-papers"].includes(moduleName),
         });
     }
-    yield upsertById(Institute_modal_1.default, { instituteId: "INST-DEMO-001" }, {
+    yield upsertById(Institute_model_1.default, { instituteId: "INST-DEMO-001" }, {
         instituteId: "INST-DEMO-001",
         instituteName: "Via Demo Public School",
         instituteType: "School",
@@ -128,7 +128,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         isDeleted: false,
     });
     const password = yield encryption_1.default.encryptPassword(passwordPlainText);
-    yield upsertById(User_modal_1.default, { userId: "USER-ADMIN-001" }, {
+    yield upsertById(User_model_1.default, { userId: "USER-ADMIN-001" }, {
         userId: "USER-ADMIN-001",
         userName: "Institute Admin",
         emailId: "admin.seed@viaexam.com",
@@ -142,7 +142,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         lastLoginAt: null,
         refreshToken: null,
     });
-    yield upsertById(User_modal_1.default, { userId: "USER-TEACHER-001" }, {
+    yield upsertById(User_model_1.default, { userId: "USER-TEACHER-001" }, {
         userId: "USER-TEACHER-001",
         userName: "Meera Iyer",
         emailId: "teacher.seed@viaexam.com",
@@ -156,7 +156,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         lastLoginAt: null,
         refreshToken: null,
     });
-    yield upsertById(User_modal_1.default, { userId: "USER-EXAMINER-001" }, {
+    yield upsertById(User_model_1.default, { userId: "USER-EXAMINER-001" }, {
         userId: "USER-EXAMINER-001",
         userName: "Rahul Verma",
         emailId: "examiner.seed@viaexam.com",
@@ -170,7 +170,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         lastLoginAt: null,
         refreshToken: null,
     });
-    yield upsertById(User_modal_1.default, { userId: "USER-STUDENT-001" }, {
+    yield upsertById(User_model_1.default, { userId: "USER-STUDENT-001" }, {
         userId: "USER-STUDENT-001",
         userName: "Aarav Patel",
         emailId: "student.seed@viaexam.com",
@@ -184,7 +184,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         lastLoginAt: null,
         refreshToken: null,
     });
-    yield upsertById(TeacherProfile_modal_1.default, { userId: "USER-TEACHER-001" }, {
+    yield upsertById(TeacherProfile_model_1.default, { userId: "USER-TEACHER-001" }, {
         userId: "USER-TEACHER-001",
         instituteId: "INST-DEMO-001",
         teacherType: "Full Time",
@@ -197,7 +197,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         isExaminer: false,
         examinerSince: null,
     });
-    yield upsertById(TeacherProfile_modal_1.default, { userId: "USER-EXAMINER-001" }, {
+    yield upsertById(TeacherProfile_model_1.default, { userId: "USER-EXAMINER-001" }, {
         userId: "USER-EXAMINER-001",
         instituteId: "INST-DEMO-001",
         teacherType: "Full Time",
@@ -210,7 +210,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         isExaminer: true,
         examinerSince: new Date("2024-04-01T00:00:00.000Z"),
     });
-    yield upsertById(Student_modal_1.default, { userId: "USER-STUDENT-001" }, {
+    yield upsertById(Student_model_1.default, { userId: "USER-STUDENT-001" }, {
         userId: "USER-STUDENT-001",
         instituteId: "INST-DEMO-001",
         rollNumber: "10A-001",
@@ -225,7 +225,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         profileUrl: "/v1/uploads/profiles/student-demo.png",
         isActive: true,
     });
-    yield upsertById(Exam_modal_1.default, { examId: "EXAM-DEMO-MATH-001" }, {
+    yield upsertById(Exam_model_1.default, { examId: "EXAM-DEMO-MATH-001" }, {
         examId: "EXAM-DEMO-MATH-001",
         instituteId: "INST-DEMO-001",
         session: "2026-27",
@@ -243,7 +243,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         status: "Draft",
         isDeleted: false,
     });
-    yield upsertById(QuestionPaper_modal_1.default, { paperId: "PAPER-DEMO-MATH-A" }, {
+    yield upsertById(QuestionPaper_model_1.default, { paperId: "PAPER-DEMO-MATH-A" }, {
         paperId: "PAPER-DEMO-MATH-A",
         instituteId: "INST-DEMO-001",
         examId: "EXAM-DEMO-MATH-001",
@@ -289,7 +289,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         approvedAt: null,
         rejectedAt: null,
     });
-    yield upsertById(Token_modal_1.default, { uuid: "USER-STUDENT-001", type: "VERIFY_EMAIL" }, {
+    yield upsertById(Token_model_1.default, { uuid: "USER-STUDENT-001", type: "VERIFY_EMAIL" }, {
         token: "seed-verify-email-token",
         expires: "2026-12-31T23:59:59.000Z",
         type: "VERIFY_EMAIL",

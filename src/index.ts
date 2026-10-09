@@ -5,7 +5,7 @@ import logger from "./config/logger";
 import connectDB from "./db/connect"; // Change to sequelize connection
 import initSuperAdmin from "./config/superAdmin";
 import { describePythonServices, checkPythonServices } from "./config/pythonServices";
-import { recoverPipeline6Queue } from "./services/pipeline6.service";
+import { recoverPipeline6Queue } from "./services/evaluation/pipeline6.service";
 let server: Server;
 
 const bootApp = () => {
@@ -50,8 +50,14 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGUSR2", () => shutdown("SIGUSR2"));
 
 const unexpectedErrorHandler = (error: unknown) => {
-  logger.error(error instanceof Error ? error.stack : String(error));
-  shutdown("UNCAUGHT_ERROR");
+  if (error) {
+    logger.error("Uncaught exception / rejection detected:");
+    if (error instanceof Error) {
+      logger.error(error.stack || error.message);
+    } else {
+      logger.error(String(error));
+    }
+  }
 };
 
 process.on("uncaughtException", unexpectedErrorHandler);

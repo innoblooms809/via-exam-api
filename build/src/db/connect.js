@@ -37,12 +37,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const logger_1 = __importDefault(require("../config/logger"));
 const sequelize_1 = require("../config/sequelize");
-require("../modals/index");
+require("../models/index");
 const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield sequelize_1.sequelize.authenticate();
         logger_1.default.info("Connected to PostgreSQL Database");
-        yield Promise.resolve().then(() => __importStar(require("../modals/index"))); // Ensure all models are imported and registered
+        yield Promise.resolve().then(() => __importStar(require("../models/index"))); // Ensure all models are imported and registered
+        // Ensure newly added columns exist in database
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_users" ADD COLUMN IF NOT EXISTS "profileUrl" VARCHAR(255);`).catch(() => null);
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_evaluation_assignments" ADD COLUMN IF NOT EXISTS "reviewedAt" TIMESTAMP WITH TIME ZONE;`).catch(() => null);
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_evaluation_assignments" ADD COLUMN IF NOT EXISTS "reviewedBy" VARCHAR(255);`).catch(() => null);
         yield sequelize_1.sequelize.sync({ force: false });
         logger_1.default.info("Models synced with PostgreSQL");
         fn();

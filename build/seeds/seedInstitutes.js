@@ -16,9 +16,9 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 // Load .env file
 dotenv_1.default.config({ path: path_1.default.join(__dirname, '../.env') });
-const Institute_modal_1 = __importDefault(require("../src/modals/Institute.modal"));
-const Role_modal_1 = __importDefault(require("../src/modals/Role.modal"));
-const User_modal_1 = __importDefault(require("../src/modals/User.modal"));
+const Institute_model_1 = __importDefault(require("../src/models/Institute.model"));
+const Role_model_1 = __importDefault(require("../src/models/Role.model"));
+const User_model_1 = __importDefault(require("../src/models/User.model"));
 const sequelize_1 = require("../src/config/sequelize");
 const encryption_1 = __importDefault(require("../src/utils/encryption"));
 // Helper function to generate Institute ID
@@ -45,7 +45,7 @@ const seedInstitutes = () => __awaiter(void 0, void 0, void 0, function* () {
         yield sequelize_1.sequelize.sync();
         console.log('Seeding institutes with dummy data...');
         // Get ADMIN role
-        const adminRole = yield Role_modal_1.default.findOne({ where: { role: 'ADMIN' } });
+        const adminRole = yield Role_model_1.default.findOne({ where: { role: 'ADMIN' } });
         if (!adminRole) {
             console.error('ADMIN role not found. Please run role seed first.');
             yield sequelize_1.sequelize.close();
@@ -217,7 +217,7 @@ const seedInstitutes = () => __awaiter(void 0, void 0, void 0, function* () {
         for (const instituteData of dummyInstitutes) {
             const instituteId = generateInstituteId();
             // Create institute
-            const institute = yield Institute_modal_1.default.create({
+            const institute = yield Institute_model_1.default.create({
                 instituteId,
                 instituteName: instituteData.name,
                 instituteType: instituteData.type,
@@ -240,7 +240,7 @@ const seedInstitutes = () => __awaiter(void 0, void 0, void 0, function* () {
             // Create admin user for institute
             const userId = generateUserId();
             const encryptedPassword = yield encryption_1.default.encryptPassword('Password@123');
-            yield User_modal_1.default.create({
+            yield User_model_1.default.create({
                 userId,
                 userName: instituteData.adminName,
                 emailId: instituteData.adminEmail,
