@@ -1,13 +1,13 @@
-// controllers/exam.controller.ts
+// controllers/exam/exam.controller.ts
 
 import { Request, Response } from "express";
 import httpStatus from "http-status";
 
-import Exam from "../../modals/Exam.modal"
-import Subject from "../../modals/Subject.modal"
-import Class from "../../modals/Class.modal"
-import Session from "../../modals/Session.modal"
-import Institute from "../../modals/Institute.modal"
+import Exam from "../../models/Exam.model"
+import Subject from "../../models/Subject.model"
+import Class from "../../models/Class.model"
+import Session from "../../models/Session.model"
+import Institute from "../../models/Institute.model"
 
 
   export const getExamBySelection = async (

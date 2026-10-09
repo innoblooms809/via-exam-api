@@ -31,7 +31,9 @@ const envVarsSchema = Joi.object()
     FRONTEND_URL: Joi.string().default('http://localhost:3000'),
     CLOUDINARY_CLOUD_NAME: Joi.string().description('Cloudinary cloud name'),
     CLOUDINARY_API_KEY: Joi.string().description('Cloudinary API key'),
-    CLOUDINARY_API_SECRET: Joi.string().description('Cloudinary API secret')
+    CLOUDINARY_API_SECRET: Joi.string().description('Cloudinary API secret'),
+    FIREBASE_SERVICE_ACCOUNT_PATH: Joi.string().description('Path to the Firebase service-account JSON (push notifications)'),
+    FIREBASE_SERVICE_ACCOUNT_JSON: Joi.string().description('Firebase service-account JSON, raw or base64 (instead of the path)')
   })
   .unknown();
 
@@ -78,5 +80,9 @@ export default {
     cloudName: envVars.CLOUDINARY_CLOUD_NAME,
     apiKey: envVars.CLOUDINARY_API_KEY,
     apiSecret: envVars.CLOUDINARY_API_SECRET
+  },
+  firebase: {
+    serviceAccountPath: envVars.FIREBASE_SERVICE_ACCOUNT_PATH,
+    serviceAccountJson: envVars.FIREBASE_SERVICE_ACCOUNT_JSON
   }
 };

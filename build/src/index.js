@@ -18,7 +18,7 @@ const logger_1 = __importDefault(require("./config/logger"));
 const connect_1 = __importDefault(require("./db/connect")); // Change to sequelize connection
 const superAdmin_1 = __importDefault(require("./config/superAdmin"));
 const pythonServices_1 = require("./config/pythonServices");
-const pipeline6_service_1 = require("./services/pipeline6.service");
+const pipeline6_service_1 = require("./services/evaluation/pipeline6.service");
 let server;
 const bootApp = () => {
     server = app_1.default.listen(config_1.default.port, () => __awaiter(void 0, void 0, void 0, function* () {

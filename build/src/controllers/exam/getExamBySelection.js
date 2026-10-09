@@ -1,5 +1,5 @@
 "use strict";
-// controllers/exam.controller.ts
+// controllers/exam/exam.controller.ts
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -15,11 +15,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getExamBySelection = void 0;
 const http_status_1 = __importDefault(require("http-status"));
-const Exam_modal_1 = __importDefault(require("../../modals/Exam.modal"));
-const Subject_modal_1 = __importDefault(require("../../modals/Subject.modal"));
-const Class_modal_1 = __importDefault(require("../../modals/Class.modal"));
-const Session_modal_1 = __importDefault(require("../../modals/Session.modal"));
-const Institute_modal_1 = __importDefault(require("../../modals/Institute.modal"));
+const Exam_model_1 = __importDefault(require("../../models/Exam.model"));
+const Subject_model_1 = __importDefault(require("../../models/Subject.model"));
+const Class_model_1 = __importDefault(require("../../models/Class.model"));
+const Session_model_1 = __importDefault(require("../../models/Session.model"));
+const Institute_model_1 = __importDefault(require("../../models/Institute.model"));
 const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -29,14 +29,14 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
         // Find Session + Class Together
         // ─────────────────────────────────────────────
         const [sessionData, classData] = yield Promise.all([
-            Session_modal_1.default.findOne({
+            Session_model_1.default.findOne({
                 where: {
                     sessionName: session,
                     instituteId,
                     isDeleted: false,
                 },
             }),
-            Class_modal_1.default.findOne({
+            Class_model_1.default.findOne({
                 where: {
                     className: classVal,
                     instituteId,
@@ -67,7 +67,7 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
         // ─────────────────────────────────────────────
         // Find Subject
         // ─────────────────────────────────────────────
-        const subjectData = yield Subject_modal_1.default.findOne({
+        const subjectData = yield Subject_model_1.default.findOne({
             where: {
                 subjectName: subject,
                 classId: classData.classId,
@@ -85,7 +85,7 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
         // ─────────────────────────────────────────────
         // Find Exam
         // ─────────────────────────────────────────────
-        const exam = yield Exam_modal_1.default.findOne({
+        const exam = yield Exam_model_1.default.findOne({
             where: {
                 sessionId: sessionData.sessionId,
                 classId: classData.classId,
@@ -108,7 +108,7 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
         // ─────────────────────────────────────────────
         // Fetch Institute Details for auto-fill
         // ─────────────────────────────────────────────
-        const institute = yield Institute_modal_1.default.findOne({
+        const institute = yield Institute_model_1.default.findOne({
             where: {
                 instituteId: exam.instituteId,
                 isDeleted: false,

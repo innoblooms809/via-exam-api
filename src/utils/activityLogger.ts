@@ -1,6 +1,6 @@
 import crypto from "crypto";
-import ActivityLog from "../modals/ActivityLog.modal";
-import UserPresenceSession from "../modals/UserPresenceSession.modal";
+import ActivityLog from "../models/ActivityLog.model";
+import UserPresenceSession from "../models/UserPresenceSession.model";
 import logger from "../config/logger";
 
 export interface LogActivityParams {

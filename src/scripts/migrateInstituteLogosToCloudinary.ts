@@ -15,7 +15,7 @@ import fs from "fs";
 import path from "path";
 
 import { sequelize } from "../config/sequelize";
-import Institute from "../modals/Institute.modal";
+import Institute from "../models/Institute.model";
 import logger from "../config/logger";
 import { uploadInstituteAsset, InstituteAssetKind } from "../utils/instituteStorage";
 
