@@ -11,6 +11,7 @@ import exclude from "../../utils/exclude";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
 import StudentBulkService from "./studentBulk.service";
+import { newId } from "../../utils/idGenerator";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 const resolveClassId = async (inputClass: string, instituteId: string): Promise<string | null> => {
@@ -160,7 +161,7 @@ const createStudent = async (
     const encryptedPassword = await EncryptPassword.encryptPassword(
       plainPassword,
     );
-    const userId = await RegHelper.generateUserId();
+    const userId = newId("user");
 
     const newUser = await UserModal.create(
       {

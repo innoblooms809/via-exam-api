@@ -16,6 +16,7 @@ import exclude from "../../utils/exclude";
 import Section from "../../models/Section.model";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
+import { newId } from "../../utils/idGenerator";
 import {
   formatSpecializations,
   parseSpecializations,
@@ -146,7 +147,7 @@ const createTeacher = async (
     const encryptedPassword = await EncryptPassword.encryptPassword(
       plainPassword,
     );
-    const userId = await RegHelper.generateUserId();
+    const userId = newId("user");
 
     const newUser = await UserModal.create(
       {

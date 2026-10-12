@@ -36,12 +36,6 @@ const EXAM_PALETTE = [
   },
 ];
 
-const PLAN_MONTHLY_INR: Record<string, number> = {
-  starter: 12000,
-  pro: 48000,
-  enterprise: 86000,
-};
-
 export type MonthBucket = {
   key: string;
   month: string;
@@ -66,21 +60,6 @@ export const getMonthBuckets = (count: number, from = new Date()): MonthBucket[]
     });
   }
   return buckets;
-};
-
-export const getYearMonthBuckets = (year: number): MonthBucket[] => {
-  return MONTH_LABELS.map((_, monthIndex) => {
-    const start = new Date(year, monthIndex, 1);
-    const end = new Date(year, monthIndex + 1, 1);
-    return {
-      key: `${year}-${String(monthIndex + 1).padStart(2, "0")}`,
-      month: MONTH_LABELS[monthIndex],
-      year,
-      monthIndex,
-      start,
-      end,
-    };
-  });
 };
 
 export const countInBucket = (dates: Date[], bucket: MonthBucket): number => {
@@ -126,26 +105,6 @@ export const timeAgo = (date?: Date | string | null): string => {
 
 export const formatCount = (value: number): string => {
   return value.toLocaleString("en-IN");
-};
-
-export const formatInrShort = (value: number): string => {
-  if (value >= 100000) {
-    const lakhs = value / 100000;
-    return `₹${lakhs % 1 === 0 ? lakhs.toFixed(0) : lakhs.toFixed(1)}L`;
-  }
-  if (value >= 1000) {
-    return `₹${Math.round(value / 1000)}K`;
-  }
-  return `₹${value}`;
-};
-
-export const toLakhs = (value: number): number => {
-  return Number((value / 100000).toFixed(1));
-};
-
-export const getPlanMonthlyRevenue = (plan?: string | null): number => {
-  const key = String(plan || "starter").toLowerCase();
-  return PLAN_MONTHLY_INR[key] ?? PLAN_MONTHLY_INR.starter;
 };
 
 export const getRoleColor = (role: string, index: number): string => {
@@ -235,21 +194,6 @@ export const mapExamUiStatus = (
   if (value === "live") return "Ongoing";
   if (value === "cancelled") return "Cancelled";
   return "Upcoming";
-};
-
-export const getTrend = (current: number, previous: number): { trend: string; up: boolean } => {
-  if (!previous) {
-    return {
-      trend: current ? "+100%" : "0%",
-      up: current >= previous,
-    };
-  }
-  const change = ((current - previous) / previous) * 100;
-  const rounded = Math.abs(change) >= 10 ? change.toFixed(0) : change.toFixed(1);
-  return {
-    trend: `${change >= 0 ? "+" : ""}${rounded}%`,
-    up: change >= 0,
-  };
 };
 
 export const TEACHER_QUICK_ACTIONS = [

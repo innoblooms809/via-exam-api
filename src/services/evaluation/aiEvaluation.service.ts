@@ -7,13 +7,13 @@ import AIEvaluation from "../../models/AIEvaluation.model";
 import StudentProfile from "../../models/Student.model";
 import User from "../../models/User.model";
 import Class from "../../models/Class.model";
-import RegHelper from "../../utils/helper";
 import logger from "../../config/logger";
 import axios from "axios";
 import { pythonServices } from "../../config/pythonServices";
 import { formatQuestionPaper } from "../../utils/questionPaperText";
 import { getSheetQueueInfo } from "./pipeline6.service";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
+import { newId } from "../../utils/idGenerator";
 
 // ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
 const triggerEvaluation = async (sheetId: string, force: boolean = false): Promise<any> => {
@@ -67,7 +67,7 @@ const triggerEvaluation = async (sheetId: string, force: boolean = false): Promi
     const studentId = student ? student.userId : `STUDENT-${sheet.rollNo}`;
 
     // 3. Find or Create AIEvaluation record as Pending
-    const evaluationId = await RegHelper.generateUserId();
+    const evaluationId = newId("evaluation");
     if (!aiEval) {
       aiEval = await AIEvaluation.create({
         evaluationId,

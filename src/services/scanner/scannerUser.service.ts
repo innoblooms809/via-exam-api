@@ -7,6 +7,7 @@ import EncryptPassword from "../../utils/encryption";
 import RegHelper from "../../utils/helper";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
+import { newId } from "../../utils/idGenerator";
 
 // ─── CREATE SCANNER ───────────────────────────────────────────────────────────
 const createScanner = async (
@@ -86,7 +87,7 @@ const createScanner = async (
     const encryptedPassword = await EncryptPassword.encryptPassword(
       plainPassword,
     );
-    const userId = await RegHelper.generateUserId();
+    const userId = newId("user");
 
     const newUser = await UserModal.create(
       {

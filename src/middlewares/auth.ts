@@ -196,6 +196,25 @@ const authenticate = async (
       });
     }
 
+    // A valid token is not enough: the account (and its school) must still be
+    // active, so deactivating or deleting someone takes effect immediately.
+    if ((user as any).isDeleted || user.status !== 1) {
+      return res.status(httpStatus.UNAUTHORIZED).json({
+        error: true,
+        statusCode: httpStatus.UNAUTHORIZED,
+        message: user.status === 2 ? "Your account is suspended. Contact your administrator." : "Your account is inactive. Contact your administrator.",
+      });
+    }
+    const userInstitute = (user as any).institute;
+    const isSuperAdmin = cleanRole((user as any).role?.role) === "SUPERADMIN";
+    if (!isSuperAdmin && user.instituteId && (!userInstitute || userInstitute.isDeleted || userInstitute.status !== 1)) {
+      return res.status(httpStatus.FORBIDDEN).json({
+        error: true,
+        statusCode: httpStatus.FORBIDDEN,
+        message: "Your institute's account is not active. Contact the ViaExam team.",
+      });
+    }
+
     req.viaExamUser = user;
 
     // ─────────────────────────────────────────────

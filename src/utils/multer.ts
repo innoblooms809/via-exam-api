@@ -1,6 +1,12 @@
 import multer from "multer";
-import path from "path";
 import fs from "fs";
+import { randomUUID } from "crypto";
+import { translateMulterError, verifyUploads } from "../middlewares/verifyUpload";
+import { IMAGE_MIME_TYPES } from "./fileSignature";
+
+// Every export here is [multer, translateMulterError, verifyUploads]: multer receives the bytes and
+// verifyUploads decides what they really are (see middlewares/verifyUpload.ts).
+// Express flattens the array, so routes use these exactly like one middleware.
 
 // Create upload dirs if they don't exist
 const ensureDir = (dir: string) => {
@@ -9,127 +15,89 @@ const ensureDir = (dir: string) => {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let folder = "uploads/institutes/";
-    if (file.fieldname === "logo") folder += "logos/";
-    else if (file.fieldname === "banner") folder += "banners/";
-    else if (file.fieldname === "schoolLogo")
-      folder = "uploads/question-papers/school-logos/";
-    else if (["diagram", "diagramUrls"].includes(file.fieldname))
-      folder = "uploads/question-papers/diagrams/";
-    else if (file.fieldname === "profilePhoto")
-      folder = "uploads/students/";
+    let folder = "uploads/profiles/";
+    if (file.fieldname === "schoolLogo") folder = "uploads/question-papers/school-logos/";
+    else if (["diagram", "diagramUrls"].includes(file.fieldname)) folder = "uploads/question-papers/diagrams/";
 
     ensureDir(folder);
     cb(null, folder);
   },
+  // No client-supplied name or extension ever reaches the disk; verifyUploads
+  // adds the extension of the type it detects.
   filename: (req, file, cb) => {
-    // e.g. logo-1715000000000.png
-    const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${Date.now()}${ext}`);
+    cb(null, `${file.fieldname.replace(/[^A-Za-z0-9_-]/g, "") || "file"}-${randomUUID()}.upload`);
   },
 });
 
-const fileFilter = (req: any, file: any, cb: any) => {
-  const allowed = ["image/jpeg", "image/png", "image/webp"];
-  if (allowed.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only JPG, PNG, WEBP allowed"), false);
-  }
+// Cheap first filter on the declared type; the real check is verifyUploads.
+const imageFilter = (req: any, file: any, cb: any) => {
+  if ((IMAGE_MIME_TYPES as readonly string[]).includes(file.mimetype)) cb(null, true);
+  else cb(new Error("Only JPG, PNG, WEBP allowed"), false);
 };
 
-export const studentUpload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB max
-  },
-}).fields([
-  { name: "profilePhoto", maxCount: 1 },
-]);
+const verifyImages = verifyUploads(IMAGE_MIME_TYPES, { renameOnDisk: true });
 
-export const profileUpload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-}).fields([
-  { name: "profilePhoto", maxCount: 1 },
-  { name: "avatar", maxCount: 1 },
-]);
+export const studentUpload = [
+  multer({ storage, fileFilter: imageFilter, limits: { fileSize: 2 * 1024 * 1024, files: 1 } }).fields([
+    { name: "profilePhoto", maxCount: 1 },
+  ]),
+  translateMulterError,
+  verifyImages,
+];
 
-export const instituteUpload = multer({
-  // Logos/banners go straight to Cloudinary, so they're held in memory only
-  // long enough to stream out — never written to local disk.
-  storage: multer.memoryStorage(),
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max (banner is larger)
-  },
-}).fields([
-  { name: "logo", maxCount: 1 },
-  { name: "banner", maxCount: 1 },
-]);
+export const profileUpload = [
+  multer({ storage, fileFilter: imageFilter, limits: { fileSize: 5 * 1024 * 1024, files: 2 } }).fields([
+    { name: "profilePhoto", maxCount: 1 },
+    { name: "avatar", maxCount: 1 },
+  ]),
+  translateMulterError,
+  verifyImages,
+];
 
+/** Institutes upload a logo only (the banner image was removed). */
+export const instituteUpload = [
+  // Held in memory only long enough to stream to Cloudinary — never written to local disk.
+  multer({ storage: multer.memoryStorage(), fileFilter: imageFilter, limits: { fileSize: 2 * 1024 * 1024, files: 1 } }).fields([
+    { name: "logo", maxCount: 1 },
+  ]),
+  translateMulterError,
+  verifyUploads(IMAGE_MIME_TYPES),
+];
 
-export const questionPaperUpload = multer({
-  storage,
-  fileFilter,
+export const questionPaperUpload = [
+  multer({ storage, fileFilter: imageFilter, limits: { fileSize: 5 * 1024 * 1024, files: 21 } }).fields([
+    { name: "diagram", maxCount: 10 },
+    { name: "diagramUrls", maxCount: 10 },
+    { name: "schoolLogo", maxCount: 1 },
+  ]),
+  translateMulterError,
+  verifyImages,
+];
 
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
+export const answerPaperUpload = [
+  multer({
+    storage: multer.memoryStorage(),
+    fileFilter: imageFilter,
+    limits: { fileSize: 10 * 1024 * 1024, fieldSize: 10 * 1024 * 1024, files: 20 },
+  }).fields([
+    { name: "diagram", maxCount: 10 },
+    { name: "diagramUrls", maxCount: 10 },
+  ]),
+  translateMulterError,
+  verifyUploads(IMAGE_MIME_TYPES),
+];
 
-}).fields([
-  {
-    name: "diagram",
-    maxCount: 10,
-  },
+const PDF_OR_IMAGE = [...IMAGE_MIME_TYPES, "application/pdf"] as const;
 
-  {
-    name: "diagramUrls",
-    maxCount: 10,
-  },
-
-  {
-    name: "schoolLogo",
-    maxCount: 1,
-  },
-]);
-
-export const answerPaperUpload = multer({
-  storage: multer.memoryStorage(),
-  fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB max
-    fieldSize: 10 * 1024 * 1024,
-  },
-}).fields([
-  {
-    name: "diagram",
-    maxCount: 10,
-  },
-  {
-    name: "diagramUrls",
-    maxCount: 10,
-  },
-]);
-
-const pdfFileFilter = (req: any, file: any, cb: any) => {
-  const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-  if (allowed.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only JPG, PNG, WEBP, PDF allowed"), false);
-  }
-};
-
-export const answerPdfUpload = multer({
-  storage: multer.memoryStorage(),
-  fileFilter: pdfFileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB max
-    fieldSize: 10 * 1024 * 1024,
-  },
-}).any();
+export const answerPdfUpload = [
+  multer({
+    storage: multer.memoryStorage(),
+    fileFilter: (req: any, file: any, cb: any) => {
+      if ((PDF_OR_IMAGE as readonly string[]).includes(file.mimetype)) cb(null, true);
+      else cb(new Error("Only JPG, PNG, WEBP, PDF allowed"), false);
+    },
+    limits: { fileSize: 10 * 1024 * 1024, fieldSize: 10 * 1024 * 1024, files: 5 },
+  }).any(),
+  translateMulterError,
+  verifyUploads(PDF_OR_IMAGE),
+];

@@ -20,10 +20,20 @@ import Notification from "../../models/Notification.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import StudentService from "../student/student.service";
-import RegHelper from "../../utils/helper";
 import ApiError from "../../utils/ApiError";
 import { refreshExamStatus } from "../exam/exam.service";
+import { assertReadyForReview } from "../exam/examWorkflow.service";
+import StudentResult from "../../models/StudentResult.model";
+
+/** Once results are out the evaluator can't change; unpublish first. */
+async function assertNotPublished(examId: string) {
+  const published = await StudentResult.count({ where: { examId, isDeleted: false } });
+  if (published) {
+    throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published. Unpublish them before changing the evaluator.");
+  }
+}
 import { specialisesIn } from "../../utils/specialization";
+import { newId } from "../../utils/idGenerator";
 import {
   accessForSheet,
   getTeacherScope,
@@ -78,7 +88,7 @@ async function sheetCounts(exam: any, instituteId: string) {
 async function notify(instituteId: string, userId: string, type: string, title: string, message: string, referenceId: string) {
   try {
     await Notification.create({
-      notificationId: await RegHelper.generateUserId(),
+      notificationId: newId("notification"),
       instituteId,
       userId,
       type,
@@ -296,6 +306,7 @@ const assign = async (admin: any, body: any) => {
   if (!examId || !teacherId) throw new ApiError(httpStatus.BAD_REQUEST, "examId and teacherId are required.");
 
   const { exam, teachers } = await listEligibleTeachers(admin, examId);
+  await assertNotPublished(examId);
   const teacher = teachers.find((t) => t.userId === teacherId);
   if (!teacher) {
     throw new ApiError(httpStatus.BAD_REQUEST, `This teacher does not teach ${exam.subjectName}. Pick one of the ${exam.subjectName} teachers.`);
@@ -316,7 +327,7 @@ const assign = async (admin: any, body: any) => {
       await previous.update({ isActive: false, unassignedAt: new Date() }, { transaction });
     }
     created = await EvaluationAssignment.create(
-      { assignmentId: await RegHelper.generateUserId(), instituteId, examId, teacherId, assignedBy: admin.userId, note },
+      { assignmentId: newId("assignment"), instituteId, examId, teacherId, assignedBy: admin.userId, note },
       { transaction }
     );
     await transaction.commit();
@@ -339,6 +350,7 @@ const unassign = async (admin: any, examId: string) => {
   const instituteId = admin.instituteId;
   const active: any = await EvaluationAssignment.findOne({ where: { instituteId, examId, isActive: true } });
   if (!active) throw new ApiError(httpStatus.NOT_FOUND, "No evaluator is assigned to this exam.");
+  await assertNotPublished(examId);
   await active.update({ isActive: false, unassignedAt: new Date() });
 
   const exam: any = await Exam.findOne({ where: { examId }, include: EXAM_INCLUDES });
@@ -615,6 +627,11 @@ const markReviewed = async (user: any, examId: string, reviewed: boolean = true)
   if (isTeacherRequester(user) && assignment.teacherId !== user.userId) {
     throw new ApiError(httpStatus.FORBIDDEN, "You are not assigned as the evaluator for this exam.");
   }
+
+  // Reviewed means done: every sheet uploaded (or student absent) and evaluated.
+  // Un-reviewing is blocked once results are published.
+  if (reviewed) await assertReadyForReview(instituteId, cleanExamId);
+  else await assertNotPublished(cleanExamId);
 
   const updatedReviewedAt = reviewed ? new Date() : null;
   const updatedReviewedBy = reviewed ? user.userId : null;

@@ -21,131 +21,37 @@ import {
 import { authenticate, authorize } from "../../../middlewares/auth";
 import { questionPaperUpload } from "../../../utils/multer";
 import { getExamBySelection } from "../../../controllers/exam/getExamBySelection";
+import { ACADEMIC, ADMINS } from "../../../config/roles";
 
 const router = Router();
 
-router.post(
-  "/getExamBySelection",
-  authenticate,
-  getExamBySelection
-);
+// Teachers write and submit papers; only the school admin approves, rejects or publishes.
+const academic = [authenticate, authorize(ACADEMIC)];
+const adminOnly = [authenticate, authorize(ADMINS)];
 
-router.post(
-  "/createQuestionPaper",
-  authenticate,
-  createQuestionPaper
-);
+router.post("/getExamBySelection", ...academic, getExamBySelection);
+router.post("/createQuestionPaper", ...academic, createQuestionPaper);
+router.put("/updateQuestionPaper/:paperId", ...academic, updateQuestionPaper);
+router.delete("/deleteQuestionPaper/:paperId", ...academic, deleteQuestionPaper);
 
-// Edit / delete an existing paper (only while DRAFT or REJECTED)
-router.put(
-  "/updateQuestionPaper/:paperId",
-  authenticate,
-  updateQuestionPaper
-);
+// Diagram / school-logo images (bytes checked, server-named; see utils/multer)
+router.post("/image", ...academic, questionPaperUpload, uploadImageController);
+// Lists every stored question-paper image on the server, so admin only.
+router.get("/uploads", ...adminOnly, getQuestionPaperUploads);
 
-router.delete(
-  "/deleteQuestionPaper/:paperId",
-  authenticate,
-  deleteQuestionPaper
-);
+router.post("/getQuestionPaperBySet", ...academic, getQuestionPaperBySelection);
 
-router.post(
-  "/image",
-  questionPaperUpload,
-  uploadImageController
-);
-
-router.get("/uploads", getQuestionPaperUploads);
-
-router.post(
-  "/getQuestionPaperBySet",
-  authenticate,
-  getQuestionPaperBySelection
-);
-
-// ─── APPROVAL WORKFLOW ROUTES ──────────────────────────────────────────────
-
-// Single-click submit both Question Paper & Answer Sheet by examId
-router.patch(
-  "/submitExamForApproval/:examId/submit",
-  authenticate,
-  submitExamForApproval
-);
-
-// Admin approve both Question Paper & Answer Sheet by examId
-router.patch(
-  "/approveExamPair/:examId/approve",
-  authenticate,
-  approveExamPair
-);
-
-// Admin reject both Question Paper & Answer Sheet by examId
-router.patch(
-  "/rejectExamPair/:examId/reject",
-  authenticate,
-  rejectExamPair
-);
-
-// Teacher submits paper for review
-router.patch(
-  "/submitQuestionPaper/:paperId/submit",
-  authenticate,
-  submitQuestionPaper
-);
-
-// Admin/Examiner approve
-router.patch(
-  "/approveQuestionPaper/:paperId/approve",
-  authenticate,
-  // authorize(["ADMIN", "EXAMINER"]),
-  approveQuestionPaper
-);
-
-// Admin/Examiner reject
-router.patch(
-  "/rejectQuestionPaper/:paperId/reject",
-  authenticate,
-  // authorize(["ADMIN", "EXAMINER"]),
-  rejectQuestionPaper
-);
-
-// Admin publish
-router.patch(
-  "/publishQuestionPaper/:paperId/publish",
-  authenticate,
-  // authorize(["ADMIN"]),
-  publishQuestionPaper
-);
-
-// Get pending papers (for admin/examiner review dashboard)
-router.get(
-  "/pending",
-  authenticate,
-  // authorize(["ADMIN", "EXAMINER"]),
-  getPendingQuestionPapers
-);
-
-// Get all papers with optional filters (status, examId, teacherId)
-router.get(
-  "/getAllQuestionPapers",
-  authenticate,
-  getAllQuestionPapers
-);
-
-// ─── REMARKS / CHAT ROUTES ─────────────────────────────────────────────────
-
-// Get remarks/chat history for an exam
-router.get(
-  "/remarks/:examId",
-  authenticate,
-  getExamRemarksController
-);
-
-// Add a remark/chat message to an exam
-router.post(
-  "/remarks/:examId",
-  authenticate,
-  addExamRemarkController
-);
+// ─── APPROVAL WORKFLOW ──────────────────────────────────────────────────────
+router.patch("/submitExamForApproval/:examId/submit", ...academic, submitExamForApproval);
+router.patch("/approveExamPair/:examId/approve", ...adminOnly, approveExamPair);
+router.patch("/rejectExamPair/:examId/reject", ...adminOnly, rejectExamPair);
+router.patch("/submitQuestionPaper/:paperId/submit", ...academic, submitQuestionPaper);
+router.patch("/approveQuestionPaper/:paperId/approve", ...adminOnly, approveQuestionPaper);
+router.patch("/rejectQuestionPaper/:paperId/reject", ...adminOnly, rejectQuestionPaper);
+router.patch("/publishQuestionPaper/:paperId/publish", ...adminOnly, publishQuestionPaper);
+router.get("/pending", ...academic, getPendingQuestionPapers);
+router.get("/getAllQuestionPapers", ...academic, getAllQuestionPapers);
+router.get("/remarks/:examId", ...academic, getExamRemarksController);
+router.post("/remarks/:examId", ...academic, addExamRemarkController);
 
 export default router;

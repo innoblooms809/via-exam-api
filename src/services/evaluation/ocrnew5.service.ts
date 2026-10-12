@@ -7,13 +7,13 @@ import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.mode
 import AIEvaluation from "../../models/AIEvaluation.model";
 import StudentProfile from "../../models/Student.model";
 import ApiError from "../../utils/ApiError";
-import RegHelper from "../../utils/helper";
 import logger from "../../config/logger";
 import axios from "axios";
 import FormData from "form-data";
 import { pythonServices } from "../../config/pythonServices";
 import { formatQuestionPaper } from "../../utils/questionPaperText";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
+import { newId } from "../../utils/idGenerator";
 
 export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   logger.info(`[OCRNew5 Service] Initiating AI evaluation for sheet: ${sheetId}`);
@@ -152,7 +152,7 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
     };
 
     if (!aiEval) {
-      const evaluationId = await RegHelper.generateUserId();
+      const evaluationId = newId("evaluation");
       await AIEvaluation.create({ evaluationId, ...evalPayload });
     } else {
       await aiEval.update(evalPayload);
