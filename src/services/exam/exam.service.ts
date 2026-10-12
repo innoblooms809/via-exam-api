@@ -9,10 +9,14 @@ import Session from "../../models/Session.model";
 import Notification from "../../models/Notification.model";
 import StudentProfile from "../../models/Student.model";
 import Scanner from "../../models/Scanner.model";
-import RegHelper from "../../utils/helper";
+import StudentResult from "../../models/StudentResult.model";
+import EvaluationAssignment from "../../models/EvaluationAssignment.model";
+import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
+import { sequelize } from "../../config/sequelize";
 import StudentService from "../student/student.service";
 import { Op } from "sequelize";
 import { checkTeacherForSubject } from "../teacher/teacherSubject.service";
+import { newId } from "../../utils/idGenerator";
 
 /** Single exam-table status that drives Manage Exams + approval. */
 export const EXAM_WORKFLOW_STATUSES = [
@@ -144,7 +148,7 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       }
 
       // 4. Generate exam ID
-      const examId = await RegHelper.generateUserId();
+      const examId = newId("exam");
 
       // 5. Create exam
       const exam = await Exam.create({
@@ -167,7 +171,7 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       });
 
       // 6. Send notification to assigned teacher
-      const notificationId = await RegHelper.generateUserId();
+      const notificationId = newId("notification");
       await Notification.create({
         notificationId,
         instituteId,
@@ -553,7 +557,7 @@ const updateExam = async (
     // Tell the newly assigned teacher, like on create.
     if (teacherChanged) {
       await Notification.create({
-        notificationId: await RegHelper.generateUserId(),
+        notificationId: newId("notification"),
         instituteId,
         userId: nextTeacherId,
         type: "EXAM_ASSIGNED",
@@ -600,7 +604,28 @@ const deleteExam = async (examId: string, requestedBy: any): Promise<any> => {
       };
     }
 
-    await exam.update({ isDeleted: true });
+    // An exam with scanned sheets or published results is a record; it can't
+    // just disappear. Without them it is soft-deleted together with its
+    // scanner / evaluator assignments, all or nothing.
+    const [sheets, results] = await Promise.all([
+      Scanner.count({ where: { instituteId: exam.instituteId, examId, isDeleted: false } }),
+      StudentResult.count({ where: { examId, isDeleted: false } }),
+    ]);
+    if (sheets || results) {
+      const used = [sheets && `${sheets} answer sheet${sheets === 1 ? "" : "s"}`, results && "published results"].filter(Boolean).join(" and ");
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message: `This exam can't be deleted because it has ${used}.`,
+      };
+    }
+
+    await sequelize.transaction(async (t) => {
+      await exam.update({ isDeleted: true }, { transaction: t });
+      const unassignedAt = new Date();
+      await EvaluationAssignment.update({ isActive: false, unassignedAt }, { where: { examId, isActive: true }, transaction: t });
+      await ExamScannerAssignment.update({ isActive: false, unassignedAt }, { where: { examId, isActive: true }, transaction: t });
+    });
 
     return {
       error: false,

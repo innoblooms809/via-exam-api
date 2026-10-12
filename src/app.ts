@@ -51,10 +51,32 @@ app.use(xss());
 app.use(compression());
 
 // enable cors
+// Auth also accepts cookies, so a credentialed request may only come from the
+// app's own front ends (CORS_ORIGIN, comma separated; "*.example.com" allows
+// subdomains). Requests without an Origin (same-origin, curl, servers) pass.
+const allowedOrigins = String(config.corsOrigin || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+const isAllowedOrigin = (origin: string) =>
+  allowedOrigins.some((allowed) => {
+    if (allowed === '*') return true;
+    if (allowed.startsWith('*.')) {
+      try {
+        const host = new URL(origin).hostname;
+        return host.endsWith(allowed.slice(1)) || host === allowed.slice(2);
+      } catch {
+        return false;
+      }
+    }
+    return allowed === origin;
+  });
+
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    // Allow all origins (including localhost, subdomains, and live tunnels)
-    callback(null, true);
+    if (!origin || isAllowedOrigin(origin.replace(/\/+$/, ''))) return callback(null, true);
+    logger.warn(`CORS: blocked origin ${origin}`);
+    return callback(null, false);
   },
   credentials: true,
 };
@@ -85,28 +107,38 @@ const allowCrossOriginUploads = (
 
 const uploadsPath = path.resolve(process.cwd(), 'uploads');
 
-app.use(
-  '/uploads',
+// Uploaded files are data, never pages: only image/PDF extensions (and the
+// extension-less files older uploads left behind) are served, the browser may
+// not sniff them into another type, and the sandbox CSP stops anything that
+// slips through from running script on this origin.
+const SERVABLE_UPLOAD = /(^[^.]*$)|\.(png|jpe?g|webp|pdf)$/i;
+const uploadsStatic = [
   allowCrossOriginUploads,
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    let name = '';
+    try {
+      name = path.basename(decodeURIComponent(req.path || ''));
+    } catch {
+      return res.status(httpStatus.BAD_REQUEST).end();
+    }
+    if (!name || !SERVABLE_UPLOAD.test(name)) return res.status(httpStatus.NOT_FOUND).end();
+    return next();
+  },
   express.static(uploadsPath, {
+    dotfiles: 'deny',
+    index: false,
+    redirect: false,
     setHeaders: (res) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
     },
-  })
-);
+  }),
+];
 
-
-app.use(
-  '/v1/uploads',
-  allowCrossOriginUploads,
-  express.static(uploadsPath, {
-    setHeaders: (res) => {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    },
-  })
-);
+app.use('/uploads', ...uploadsStatic);
+app.use('/v1/uploads', ...uploadsStatic);
 
 
 // v1 api routes

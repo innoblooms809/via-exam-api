@@ -1,6 +1,5 @@
 import httpStatus from "http-status";
 import Class from "../../models/Class.model";
-import RegHelper from "../../utils/helper";
 import Section from "../../models/Section.model";
 import Subject from "../../models/Subject.model";
 import User from "../../models/User.model";
@@ -8,6 +7,7 @@ import Exam from "../../models/Exam.model";
 import StudentProfile from "../../models/Student.model";
 import TeacherProfile from "../../models/TeacherProfile.model";
 import { sequelize } from "../../config/sequelize";
+import { newId } from "../../utils/idGenerator";
 import {
   MAX_BULK_ITEMS,
   MAX_NAME_LENGTH,
@@ -65,7 +65,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
         continue;
       }
       const row = await Class.create(
-        { classId: await RegHelper.generateUserId(), instituteId, className },
+        { classId: newId("class"), instituteId, className },
         { transaction: t },
       );
       created.push(className);
@@ -87,7 +87,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
             continue;
           }
           const newSec = await Section.create(
-            { sectionId: await RegHelper.generateUserId(), classId: cls.classId, instituteId, sectionName },
+            { sectionId: newId("section"), classId: cls.classId, instituteId, sectionName },
             { transaction: t },
           );
           createdSectionMap.set(nameKey(sectionName), newSec.sectionId);
@@ -111,7 +111,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
           }
           await Subject.create(
             {
-              subjectId: await RegHelper.generateUserId(),
+              subjectId: newId("subject"),
               instituteId,
               classId: cls.classId,
               sectionId: targetSectionId,

@@ -17,100 +17,27 @@ import {
 } from "../../../controllers/question-paper/standardAnswer.controller";
 import { answerPaperUpload, answerPdfUpload } from "../../../utils/multer";
 import { authenticate, authorize } from "../../../middlewares/auth";
+import { ACADEMIC, ADMINS } from "../../../config/roles";
 
 const router = express.Router();
 
-router.post(
-  "/create",
-  authenticate,
-  createQuestionPaperAnswer
-);
+// Model answers: teachers write and submit; only the school admin approves, rejects or publishes.
+const academic = [authenticate, authorize(ACADEMIC)];
+const adminOnly = [authenticate, authorize(ADMINS)];
 
-// Edit / delete an existing answer sheet (only while DRAFT or REJECTED)
-router.put(
-  "/update/:answerId",
-  authenticate,
-  updateQuestionPaperAnswer
-);
+router.post("/create", ...academic, createQuestionPaperAnswer);
+router.put("/update/:answerId", ...academic, updateQuestionPaperAnswer);
+router.delete("/delete/:answerId", ...academic, deleteQuestionPaperAnswer);
+router.post("/image", ...academic, answerPaperUpload, uploadImageController);
+router.post("/upload-pdf", ...academic, answerPdfUpload, uploadPdfController);
+router.post("/getQuestionPaperAnswerBySet", ...academic, getQuestionPaperAnswerBySelection);
+router.get("/uploads", ...adminOnly, getQuestionPaperAnswerUploads);
 
-router.delete(
-  "/delete/:answerId",
-  authenticate,
-  deleteQuestionPaperAnswer
-);
-
-router.post(
-  "/image",
-  authenticate,
-  answerPaperUpload,
-  uploadImageController
-);
-
-router.post(
-  "/upload-pdf",
-  authenticate,
-  answerPdfUpload,
-  uploadPdfController
-);
-
-router.post(
-  "/getQuestionPaperAnswerBySet",
-  authenticate,
-  getQuestionPaperAnswerBySelection
-);
-
-router.get(
-  "/uploads",
-  authenticate,
-  getQuestionPaperAnswerUploads
-);
-
-// ─── APPROVAL WORKFLOW ROUTES ──────────────────────────────────────────────
-
-// Teacher submits answer sheet for review
-router.patch(
-  "/submitAnswerSheet/:answerId/submit",
-  authenticate,
-  submitAnswerSheet
-);
-
-// Admin/Examiner approve
-router.patch(
-  "/approveAnswerSheet/:answerId/approve",
-  authenticate,
-  // authorize(["ADMIN", "EXAMINER"]),
-  approveAnswerSheet
-);
-
-// Admin/Examiner reject
-router.patch(
-  "/rejectAnswerSheet/:answerId/reject",
-  authenticate,
-  // authorize(["ADMIN", "EXAMINER"]),
-  rejectAnswerSheet
-);
-
-// Admin publish
-router.patch(
-  "/publishAnswerSheet/:answerId/publish",
-  authenticate,
-  // authorize(["ADMIN"]),
-  publishAnswerSheet
-);
-
-// Get pending answer sheets (for admin/examiner review dashboard)
-router.get(
-  "/pending",
-  authenticate,
-  // authorize(["ADMIN", "EXAMINER"]),
-  getPendingAnswerSheets
-);
-
-// Get all answer sheets with optional filters
-router.get(
-  "/",
-  authenticate,
-  getAllAnswerSheets
-);
+router.patch("/submitAnswerSheet/:answerId/submit", ...academic, submitAnswerSheet);
+router.patch("/approveAnswerSheet/:answerId/approve", ...adminOnly, approveAnswerSheet);
+router.patch("/rejectAnswerSheet/:answerId/reject", ...adminOnly, rejectAnswerSheet);
+router.patch("/publishAnswerSheet/:answerId/publish", ...adminOnly, publishAnswerSheet);
+router.get("/pending", ...academic, getPendingAnswerSheets);
+router.get("/", ...academic, getAllAnswerSheets);
 
 export default router;

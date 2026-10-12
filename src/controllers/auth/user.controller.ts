@@ -249,6 +249,15 @@ const refreshAccessToken = async (
       });
     }
 
+    // Deactivated or deleted accounts can't mint new tokens.
+    if ((user as any).isDeleted || user.status !== 1) {
+      return res.status(httpStatus.FORBIDDEN).json({
+        error: true,
+        statusCode: httpStatus.FORBIDDEN,
+        message: "This account is no longer active.",
+      });
+    }
+
     const matchingStored = candidates.find((candidate) => candidate === user.refreshToken);
     if (matchingStored) {
       refreshToken = matchingStored;

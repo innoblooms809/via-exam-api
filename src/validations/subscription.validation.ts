@@ -57,6 +57,9 @@ const listTransactions = {
     status: Joi.string().valid("pending", "paid", "failed", "expired").allow(""),
     provider: Joi.string().valid("stripe", "manual", "system").allow(""),
     instituteId: Joi.string().trim().max(64).allow(""),
+    kind: Joi.string().valid("purchase", "renewal", "upgrade", "downgrade", "manual").allow(""),
+    from: Joi.date().iso(),
+    to: Joi.date().iso(),
   }),
 };
 

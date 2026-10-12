@@ -4,8 +4,9 @@ import User from "../../models/User.model";
 import Role from "../../models/Role.model";
 import Subscription from "../../models/Subscription.model";
 import type Plan from "../../models/Plan.model";
-import RegHelper from "../../utils/helper";
 import logger from "../../config/logger";
+import { invalidate } from "../../utils/memoCache";
+import { newId } from "../../utils/idGenerator";
 
 // Notification types the UI uses to route a click to the billing pages.
 export const SUBSCRIPTION_NOTIFICATION = {
@@ -65,7 +66,7 @@ const createFor = async (userIds: string[], instituteId: string, payload: Notifi
   for (const userId of userIds) {
     try {
       await Notification.create({
-        notificationId: await RegHelper.generateUserId(),
+        notificationId: newId("notification"),
         instituteId,
         userId,
         type: payload.type,
@@ -89,6 +90,8 @@ const notifyInstituteAdmins = async (instituteId: string, payload: NotificationP
 
 // Super admins have no institute; the notification is filed under the institute it is about.
 const notifySuperAdmins = async (instituteId: string, payload: NotificationPayload) => {
+  // Every event worth telling super admins about (new institute, payment, expiry) changes their dashboard.
+  invalidate("sa-dash:");
   try {
     await createFor(await findUserIds(SUPER_ADMIN_ROLES), instituteId, payload);
   } catch (e: any) {

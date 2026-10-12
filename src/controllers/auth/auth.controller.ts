@@ -45,8 +45,22 @@ const resetPassword = async (req: Request, res: Response): Promise<any> => {
 
 const resendCredentials = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { email, password } = req.body;
-    const result = await AuthService.resendCredentials(email, password);
+    // A password in the body is ignored: the public resend always generates one.
+    const result = await AuthService.resendCredentials(req.body?.email);
+    return res.status(result.statusCode).send(result);
+  } catch {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+// School admin: reset a user's password (optionally to a typed one) and email it.
+const adminResetCredentials = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await AuthService.adminResetCredentials(req.viaExamUser, req.body?.email, req.body?.password);
     return res.status(result.statusCode).send(result);
   } catch {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -72,4 +86,4 @@ const changePassword = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-export default { forgotPassword, verifyOtp, resetPassword, resendCredentials, changePassword };
+export default { forgotPassword, verifyOtp, resetPassword, resendCredentials, adminResetCredentials, changePassword };
