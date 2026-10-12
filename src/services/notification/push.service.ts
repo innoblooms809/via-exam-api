@@ -33,8 +33,9 @@ const registerToken = async (body: any, requestedBy: any, userAgent?: string): P
       lastSeenAt: new Date(),
     };
 
-    // A token belongs to one browser. If another user logged in there before, hand it over.
-    const existing = await PushToken.findOne({ where: { token } });
+    // One row per browser and user: several users logged in on one browser each keep their pushes.
+    // Logging out removes only that user's row.
+    const existing = await PushToken.findOne({ where: { token, userId: requestedBy.userId } });
     if (existing) {
       await existing.update(values);
     } else {
@@ -81,6 +82,8 @@ const sendToUser = async (notification: PushNotification): Promise<void> => {
       token: t.token,
       data: {
         notificationId: notification.notificationId,
+        // Lets an open tab ignore pushes meant for another user logged in on the same browser.
+        userId: notification.userId,
         type: notification.type,
         title: notification.title,
         body: notification.message,

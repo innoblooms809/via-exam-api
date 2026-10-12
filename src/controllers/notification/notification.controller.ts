@@ -5,7 +5,33 @@ import PushService from "../../services/notification/push.service";
 
 const getNotifications = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await NotificationService.getNotifications(req.viaExamUser);
+    const result = await NotificationService.getNotifications(req.viaExamUser, req.query);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const listNotifications = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await NotificationService.listNotifications(req.viaExamUser, req.query);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const markAllAsRead = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await NotificationService.markAllAsRead(req.viaExamUser);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -57,7 +83,9 @@ const removePushToken = async (req: any, res: Response): Promise<any> => {
 
 export default {
   getNotifications,
+  listNotifications,
   markAsRead,
+  markAllAsRead,
   registerPushToken,
   removePushToken,
 };

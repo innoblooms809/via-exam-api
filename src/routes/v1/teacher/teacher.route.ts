@@ -1,117 +1,27 @@
 import { Router } from "express";
 import Controller from "../../../controllers/teacher/teacher.controller";
 import { authenticate, authorize } from "../../../middlewares/auth";
-// import { handleUploadFile } from "../../../utils/multer";
+import { profileUpload } from "../../../utils/multer";
+import { ACADEMIC, ADMINS } from "../../../config/roles";
 
-import { handleUploadFile } from "../../../utils/uploadSingleFile";
 const router = Router();
 
-// All routes are admin only
-// POST   /v1/teachers
-router.post(
-  "/createTeacher",
-  authenticate,
-  // authorize(["ADMIN"]),
-  handleUploadFile.fields([{ name: "profilePhoto", maxCount: 1 }]),
-  Controller.createTeacher
-);
+// Teacher management is admin only; teachers read their own work below.
+router.post("/createTeacher", authenticate, authorize(ADMINS), profileUpload, Controller.createTeacher);
+router.get("/getAllTeachers", authenticate, authorize(ACADEMIC), Controller.getAllTeachers);
+router.get("/getDeactivatedTeachers", authenticate, authorize(ADMINS), Controller.getDeactivatedTeachers);
+router.get("/getOneTeacher/:userId", authenticate, authorize(ACADEMIC), Controller.getTeacherById);
+router.put("/updateTeacher/:userId", authenticate, authorize(ADMINS), profileUpload, Controller.updateTeacher);
+router.patch("/specializations/:userId", authenticate, authorize(ADMINS), Controller.updateSpecializations);
+router.delete("/deleteTeacher/:userId", authenticate, authorize(ADMINS), Controller.deleteTeacher);
+router.patch("/reactivateTeacher/:userId", authenticate, authorize(ADMINS), Controller.reactivateTeacher);
+router.patch("/updateTeacherToExaminer/:userId/assign-examiner", authenticate, authorize(ADMINS), Controller.assignExaminer);
+router.patch("/updateTeacherToRemoveExaminer/:userId/remove-examiner", authenticate, authorize(ADMINS), Controller.removeExaminer);
 
-// GET    /v1/teachers
-// ?search=john&isExaminer=true
-router.get(
-  "/getAllTeachers",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.getAllTeachers
-);
-
-router.get(
-  "/getDeactivatedTeachers",
-  authenticate,
-  Controller.getDeactivatedTeachers
-);
-
-// GET    /v1/teachers/:userId
-router.get(
-  "/getOneTeacher/:userId",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.getTeacherById
-);
-
-// PUT    /v1/teachers/:userId
-router.put(
-  "/updateTeacher/:userId",
-  authenticate,
-//   authorize(["ADMIN"]),
-  handleUploadFile.fields([{ name: "profilePhoto", maxCount: 1 }]),
-  Controller.updateTeacher
-);
-
-// PATCH  /v1/teacher/specializations/:userId  { specializations: string[] }
-router.patch(
-  "/specializations/:userId",
-  authenticate,
-  Controller.updateSpecializations
-);
-
-// DELETE /v1/teachers/:userId
-router.delete(
-  "/deleteTeacher/:userId",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.deleteTeacher
-);
-
-// PATCH  /v1/teachers/reactivateTeacher/:userId
-router.patch(
-  "/reactivateTeacher/:userId",
-  authenticate,
-  Controller.reactivateTeacher
-);
-
-// PATCH  /v1/teachers/:userId/assign-examiner
-router.patch(
-  "/updateTeacherToExaminer/:userId/assign-examiner",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.assignExaminer
-);
-
-// PATCH  /v1/teachers/:userId/remove-examiner
-router.patch(
-  "/updateTeacherToRemoveExaminer/:userId/remove-examiner",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.removeExaminer
-);
-
-// GET /v1/teachers/my-assignments
-router.get(
-  "/my-assignments",
-  authenticate,
-  Controller.getMyAssignments
-);
-
-// GET /v1/teacher/approval-workflow-exams
-router.get(
-  "/approval-workflow-exams",
-  authenticate,
-  Controller.getTeacherExamsWithApprovalStatus
-);
-
-// GET /v1/teacher/my-question-papers
-router.get(
-  "/my-question-papers",
-  authenticate,
-  Controller.getTeacherQuestionPapers
-);
-
-// GET /v1/teacher/:userId/question-papers
-router.get(
-  "/:userId/question-papers",
-  authenticate,
-  Controller.getTeacherQuestionPapers
-);
+// The signed-in teacher's own work.
+router.get("/my-assignments", authenticate, authorize(ACADEMIC), Controller.getMyAssignments);
+router.get("/approval-workflow-exams", authenticate, authorize(ACADEMIC), Controller.getTeacherExamsWithApprovalStatus);
+router.get("/my-question-papers", authenticate, authorize(ACADEMIC), Controller.getTeacherQuestionPapers);
+router.get("/:userId/question-papers", authenticate, authorize(ADMINS), Controller.getTeacherQuestionPapers);
 
 export default router;

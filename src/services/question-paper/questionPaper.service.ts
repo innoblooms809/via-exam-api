@@ -1,7 +1,6 @@
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import Exam from "../../models/Exam.model";
 import Notification from "../../models/Notification.model";
-import RegHelper from "../../utils/helper";
 import ApiError from "../../utils/ApiError";
 import { sequelize } from "../../config/sequelize";
 import httpStatus from "http-status";
@@ -13,6 +12,7 @@ import {
 import { cleanupUploadsInBackground, collectUploadRefs } from "../answer-sheet/uploadedFiles.service";
 import { countUnlinkedAnswers, reconcileTypedAnswers } from "../../utils/answerSheetReconcile";
 import logger from "../../config/logger";
+import { newId } from "../../utils/idGenerator";
 
 /** What happened to the set's typed answers when its paper changed. */
 export interface AnswerSheetLinkSummary {
@@ -106,7 +106,7 @@ export class QuestionPaperService {
     }
 
     const resolvedPaperId =
-      await RegHelper.generateUserId();
+      newId("questionPaper");
 
     const paper = await QuestionPaper.create({
       paperId: resolvedPaperId,
@@ -368,7 +368,7 @@ export class QuestionPaperService {
   private static async notifyTeacher(paper: QuestionPaper, type: string, title: string, message: string) {
     try {
       await Notification.create({
-        notificationId: await RegHelper.generateUserId(),
+        notificationId: newId("notification"),
         instituteId: paper.instituteId,
         userId: paper.teacherId,
         type,

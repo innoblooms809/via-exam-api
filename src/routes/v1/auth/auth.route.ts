@@ -3,7 +3,8 @@
 import { Router } from "express";
 import Controller from "../../../controllers/auth/auth.controller";
 import userController from "../../../controllers/auth/user.controller";
-import { authenticate } from "../../../middlewares/auth";
+import { authenticate, authorize } from "../../../middlewares/auth";
+import { ADMINS } from "../../../config/roles";
 import { profileUpload } from "../../../utils/multer";
 // No authenticate middleware — user is logged out at this point
 
@@ -32,6 +33,9 @@ router.post(
   "/resendCredentials",
   Controller.resendCredentials
 );
+
+// Admin resets a user of their institute (teacher / scanner / student)
+router.post("/admin/reset-credentials", authenticate, authorize(ADMINS), Controller.adminResetCredentials);
 
 // Change Password - Authenticated user
 router.post(

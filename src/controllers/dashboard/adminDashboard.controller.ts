@@ -47,23 +47,9 @@ const getStudentAnalytics = async (req: any, res: Response): Promise<any> => {
   return handleResult(req, res, AdmindashboardService.getStudentAnalytics);
 };
 
-const getSuperAdminAnalytics = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await AdmindashboardService.getSuperAdminAnalytics();
-    return res.status(result.statusCode).send(result);
-  } catch (error) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
-    });
-  }
-};
-
 export default {
   getOverview,
   getTeacherAnalytics,
   getScannerAnalytics,
   getStudentAnalytics,
-  getSuperAdminAnalytics,
 };

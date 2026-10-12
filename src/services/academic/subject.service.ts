@@ -1,7 +1,6 @@
 import httpStatus from "http-status";
 import { Op } from "sequelize";
 import Subject from "../../models/Subject.model";
-import RegHelper from "../../utils/helper";
 import Class from "../../models/Class.model";
 import User from "../../models/User.model";
 import Exam from "../../models/Exam.model";
@@ -19,6 +18,7 @@ import {
 } from "../../utils/academicNames";
 
 import Section from "../../models/Section.model";
+import { newId } from "../../utils/idGenerator";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -134,7 +134,7 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
             } else {
               const newSec = await Section.create(
                 {
-                  sectionId: await RegHelper.generateUserId(),
+                  sectionId: newId("section"),
                   classId: cls.classId,
                   instituteId,
                   sectionName: normalizeSectionName(secSearch),
@@ -171,7 +171,7 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
         } else {
           await Subject.create(
             {
-              subjectId: await RegHelper.generateUserId(),
+              subjectId: newId("subject"),
               instituteId,
               classId: cls.classId,
               sectionId: targetSectionId,

@@ -1,7 +1,6 @@
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import Notification from "../../models/Notification.model";
-import RegHelper from "../../utils/helper";
 import ApiError from "../../utils/ApiError";
 import httpStatus from "http-status";
 import {
@@ -11,6 +10,7 @@ import {
 import { QuestionPaperService, assertEditableStatus, isTeacherUser } from "./questionPaper.service";
 import { cleanupUploadsInBackground, collectUploadRefs } from "../answer-sheet/uploadedFiles.service";
 import { reconcileTypedAnswers } from "../../utils/answerSheetReconcile";
+import { newId } from "../../utils/idGenerator";
 
 /**
  * Stores on every typed answer which question it answers (text, marks, number), so
@@ -43,7 +43,7 @@ class QuestionPaperAnswerService {
         );
       }
 
-      const answerId = await RegHelper.generateUserId();
+      const answerId = newId("answerKey");
 
       const result = await QuestionPaperAnswer.create({
         answerId,
@@ -103,7 +103,7 @@ class QuestionPaperAnswerService {
         cleanupUploadsInBackground(filesBefore, `replacing answer sheet ${existing.answerId}`);
         return existing;
       } else {
-        const answerId = await RegHelper.generateUserId();
+        const answerId = newId("answerKey");
         const result = await QuestionPaperAnswer.create({
           answerId,
           instituteId: data.instituteId,
@@ -237,7 +237,7 @@ class QuestionPaperAnswerService {
 
     try {
       await Notification.create({
-        notificationId: await RegHelper.generateUserId(),
+        notificationId: newId("notification"),
         instituteId: answer.instituteId,
         userId: answer.teacherId,
         type: "ANSWER_PUBLISHED",

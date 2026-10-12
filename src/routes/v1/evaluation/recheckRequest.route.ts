@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Controller from "../../../controllers/evaluation/recheckRequest.controller";
 import { authenticate, authorize } from "../../../middlewares/auth";
+import { ADMINS, MEMBERS } from "../../../config/roles";
 
 const router = Router();
 
@@ -22,14 +23,15 @@ router.get(
 router.get(
   "/:requestId",
   authenticate,
+  authorize(MEMBERS),
   Controller.getRecheckRequestById
 );
 
-// Admin/Teacher routes for reviewing recheck requests
+// Admin only: teachers complete rechecks through /exam-workflow/teacher/rechecks
 router.patch(
   "/:requestId/status",
   authenticate,
-  authorize(["ADMIN", "TEACHER", "EXAMINER"]),
+  authorize(ADMINS),
   Controller.updateRecheckRequestStatus
 );
 

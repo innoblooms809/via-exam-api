@@ -1,70 +1,27 @@
 import { Router } from "express";
 import Controller from "../../../controllers/academic/session.controller";
 import { authenticate, authorize } from "../../../middlewares/auth";
+import { ADMINS, MEMBERS } from "../../../config/roles";
 
 const router = Router();
 
-// ─── Admin only ───────────────────────────────────────────────────────────────
-
-// POST /v1/sessions
 // Body: { sessionName, startDate, endDate, isActive }
-router.post(
-  "/createSession",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.createSession
-);
+router.post("/createSession", authenticate, authorize(ADMINS), Controller.createSession);
 
-// GET  /v1/sessions
 // Query: ?isActive=true
-router.get(
-  "/getAllSessions",
-  authenticate,
-//   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
-  Controller.getAllSessions
-);
+router.get("/getAllSessions", authenticate, authorize(MEMBERS), Controller.getAllSessions);
 
-// GET  /v1/sessions/active
 // Returns current active session
-router.get(
-  "/active",
-  authenticate,
-//   authorize(["ADMIN", "TEACHER", "EXAMINER", "STUDENT"]),
-  Controller.getActiveSession
-);
+router.get("/active", authenticate, authorize(MEMBERS), Controller.getActiveSession);
 
-// GET  /v1/sessions/:sessionId
-router.get(
-  "/getOneSession/:sessionId",
-  authenticate,
-//   authorize(["ADMIN", "TEACHER", "EXAMINER"]),
-  Controller.getSessionById
-);
+router.get("/getOneSession/:sessionId", authenticate, authorize(MEMBERS), Controller.getSessionById);
 
-// PATCH /v1/sessions/:sessionId/activate
 // Makes this session active, deactivates all others
-router.patch(
-  "/:sessionId/activate",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.activateSession
-);
+router.patch("/:sessionId/activate", authenticate, authorize(ADMINS), Controller.activateSession);
 
-// PUT /v1/sessions/:sessionId
-router.put(
-  "/updateSession/:sessionId",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.updateSession
-);
+router.put("/updateSession/:sessionId", authenticate, authorize(ADMINS), Controller.updateSession);
 
-// DELETE /v1/sessions/:sessionId
 // Cannot delete active session
-router.delete(
-  "/deleteSession/:sessionId",
-  authenticate,
-//   authorize(["ADMIN"]),
-  Controller.deleteSession
-);
+router.delete("/deleteSession/:sessionId", authenticate, authorize(ADMINS), Controller.deleteSession);
 
 export default router;

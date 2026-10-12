@@ -1,61 +1,54 @@
+import { randomInt } from "crypto";
 import { v4 as uuidv4 } from "uuid";
-const generatePassword = async () => {
-    const randomNum = Math.floor(Math.random() * 10000);
-    const prefix = 'RSP';
-    const timestamp = Date.now().toString().slice(-6);
-    const randomNumStr = randomNum.toString().padStart(4, '0'); 
+import { newId } from "./idGenerator";
 
-    const id = prefix + timestamp + randomNumStr;
+// Passwords are drawn from crypto.randomInt. The old generator was "RSP" + the
+// clock's last six digits + four random digits, so anyone who knew roughly when
+// an account was created could guess its first password.
+const UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+const LOWER = "abcdefghijkmnpqrstuvwxyz";
+const DIGITS = "23456789";
+const SPECIAL = "@#$!";
 
-    return id.length === 10 ? id : id.slice(0, 10);
+const pick = (chars: string) => chars[randomInt(chars.length)];
+
+const shuffle = (chars: string[]) => {
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars;
 };
 
-// Produces something like: aB3$xK9!
-const generateTempPassword = (): string => {
-  const upper  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const lower  = "abcdefghijklmnopqrstuvwxyz";
-  const digits = "0123456789";
-  const special = "@#$!";
-  const all = upper + lower + digits + special;
-
-  const rand = (str: string) => str[Math.floor(Math.random() * str.length)];
-
-  // Guarantee at least one of each required character type
-  const password = [
-    rand(upper),
-    rand(lower),
-    rand(digits),
-    rand(special),
-    ...Array.from({ length: 4 }, () => rand(all)),
-  ];
-
-  // Shuffle so the guaranteed chars aren't always at the start
-  return password.sort(() => Math.random() - 0.5).join("");
+const strongPassword = (length: number): string => {
+  const all = UPPER + LOWER + DIGITS + SPECIAL;
+  // At least one of each class, the rest from the whole set, then shuffled.
+  const chars = [pick(UPPER), pick(LOWER), pick(DIGITS), pick(SPECIAL)];
+  while (chars.length < length) chars.push(pick(all));
+  return shuffle(chars).join("");
 };
 
-const generateUserId = async () => {
-    const randomNum = Math.floor(Math.random() * 10000);
-    const prefix = 'IB';
-    const timestamp = Date.now().toString().slice(-4);
-    const randomNumStr = randomNum.toString().padStart(4, '0');
+/** Initial password for a new account (emailed to the user). */
+const generatePassword = async (): Promise<string> => strongPassword(12);
 
-    const id = prefix + timestamp + randomNumStr;
-    return id.length === 8 ? id : id.slice(0, 8);
+/** Temporary password for credential resets, e.g. aB3$xK9!mQ2p */
+const generateTempPassword = (): string => strongPassword(12);
+
+/** @deprecated use newId(kind) from utils/idGenerator — kept for old callers. */
+const generateUserId = async (): Promise<string> => newId("user");
+
+const generateCustomerId = async (name: string) => {
+  const uuid = uuidv4().replace(/-/g, "");
+  const p1 = name[0].toUpperCase();
+  const p2 = name[name.length - 1].toUpperCase();
+  return `${p1}${p2}${uuid}`.slice(0, 12).toUpperCase();
 };
 
-const generateCustomerId = async(name: string, ) => {
-    const uuid = uuidv4().replace(/-/g, '');
-    const p1 = name[0].toUpperCase();
-    const p2 = name[name.length-1].toUpperCase();
-    const customerId = `${p1}${p2}${uuid}`.slice(0, 12);
-    return customerId.toUpperCase();
+const generateEnquiryId = async (productName: string, productCategory: string) => {
+  const uuid = uuidv4().replace(/-/g, "");
+  const p1 = productName.toUpperCase().slice(0, 2);
+  const p2 = productCategory.toUpperCase().slice(0, 2);
+  return `${p1}-${p2}-${uuid}`.slice(0, 14).toUpperCase();
 };
 
-const generateEnquiryId = async(productName: string, productCategory: string) => {
-    const uuid = uuidv4().replace(/-/g, '')
-    const p1 = productName.toUpperCase().slice(0, 2);
-    const p2 = productCategory.toUpperCase().slice(0, 2);
-    const id = `${p1}-${p2}-${uuid}`.slice(0, 14);
-    return id.toUpperCase();
-};
-export default { generatePassword ,generateUserId, generateCustomerId, generateEnquiryId,generateTempPassword};
+export default { generatePassword, generateUserId, generateCustomerId, generateEnquiryId, generateTempPassword };

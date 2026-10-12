@@ -5,10 +5,10 @@ import Class from "../../models/Class.model";
 import User from "../../models/User.model";
 import Exam from "../../models/Exam.model";
 import StudentProfile from "../../models/Student.model";
-import RegHelper from "../../utils/helper";
 import { sequelize } from "../../config/sequelize";
 import { compareClassNames } from "./class.service";
 import { MAX_NAME_LENGTH, nameKey, normalizeSectionName, uniqueNames } from "../../utils/academicNames";
+import { newId } from "../../utils/idGenerator";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -72,7 +72,7 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
         } else {
           await Section.create(
             {
-              sectionId: await RegHelper.generateUserId(),
+              sectionId: newId("section"),
               classId: cls.classId,
               instituteId,
               sectionName,

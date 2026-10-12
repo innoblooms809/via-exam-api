@@ -13,6 +13,9 @@ import UserModal from "../../models/User.model";
 import RegHelper from "../../utils/helper";
 import { isTeacherRequester, requireSheetAccess, scopeSheetRows } from "../evaluation/evaluationAccess.service";
 import AnswerSheetStorage from "../answer-sheet/answerSheetStorage.service";
+import { newId } from "../../utils/idGenerator";
+import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
+import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 import {
   destroyAnswerSheet,
   removeTempFile,
@@ -296,6 +299,21 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
 
     if (approvedList.length === 0) return empty;
 
+    // Exams the admin gave to a scanner are that scanner's alone.
+    const assignments = await ExamScannerAssignment.findAll({
+      where: { examId: { [Op.in]: Array.from(new Set(approvedList.map((a) => a.exam.examId))) }, isActive: true },
+      attributes: ["examId", "scannerId", "status", "completedAt"],
+    });
+    const assignmentByExam = new Map(assignments.map((a) => [a.examId, a]));
+    const isScannerRole = String(requestedBy?.role?.role ?? "").toUpperCase() === "SCANNER";
+    if (isScannerRole) {
+      for (let i = approvedList.length - 1; i >= 0; i--) {
+        const assignment = assignmentByExam.get(approvedList[i].exam.examId);
+        if (assignment && assignment.scannerId !== requestedBy.userId) approvedList.splice(i, 1);
+      }
+      if (approvedList.length === 0) return empty;
+    }
+
     const exams = approvedList.map((a) => a.exam);
     const unique = (ids: (string | null | undefined)[]) =>
       Array.from(new Set(ids.filter(Boolean))) as string[];
@@ -382,6 +400,8 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
         answerKeyStatus: ans?.status || null,
         approvedAt: qp?.approvedAt || ans?.approvedAt || exam.updatedAt,
         createdAt: exam.createdAt,
+        scanStatus: assignmentByExam.get(exam.examId)?.status ?? null,
+        assignedToMe: assignmentByExam.get(exam.examId)?.scannerId === requestedBy.userId,
       };
     });
 
@@ -446,8 +466,16 @@ const uploadStudentAnswerPaper = async (
       };
     }
 
+    // Only the assigned scanner (or an admin) may add sheets, and not after
+    // the upload is marked complete or results are published.
+    try {
+      await assertSheetWritable(uploadedBy, exam.examId);
+    } catch (err: any) {
+      return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
+    }
+
     const classId = body.classId || exam.classId || "ALL";
-    const section = body.section || "A";
+    const section = body.section || exam.sectionId || "A";
 
     // Check duplicate
     const existing = await Scanner.findOne({
@@ -467,7 +495,7 @@ const uploadStudentAnswerPaper = async (
       };
     }
 
-    const sheetId = `AS${String(Math.floor(Math.random() * 1_000_000_000)).padStart(9, "0")}`;
+    const sheetId = newId("answerSheet");
 
     // Same storage path as the batch upload: bytes go to Cloudinary, the row
     // keeps a URL. Multer wrote the file to disk, so nothing is held in memory.
@@ -504,6 +532,7 @@ const uploadStudentAnswerPaper = async (
       await destroyAnswerSheet(stored.publicId, stored.resourceType, `rollback ${sheetId}`);
       throw err;
     }
+    await clearAbsentForRoll(body.examId, body.rollNumber, uploadedBy.userId);
 
     return {
       error: false,
