@@ -1,5 +1,6 @@
 import httpStatus from "http-status";
 import { Response } from "express";
+import { normalizeRoleKey } from "../../middlewares/auth";
 import InstituteService from "../../services/institute/institute.service";
 
 const registerInstitute = async (req: any, res: Response): Promise<any> => {
@@ -23,11 +24,8 @@ const registerInstitute = async (req: any, res: Response): Promise<any> => {
 // RESEND ADMIN CREDENTIALS
 const resendAdminCredentials = async (req: any, res: Response): Promise<any> => {
   try {
-    const { password } = req.body;
-    const result = await InstituteService.resendAdminCredentials(
-      req.params.instituteId,
-      password,
-    );
+    // The password is always generated on the server; a client-chosen one is never accepted.
+    const result = await InstituteService.resendAdminCredentials(req.params.instituteId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -41,7 +39,10 @@ const resendAdminCredentials = async (req: any, res: Response): Promise<any> => 
 // ─── Get All ──────────────────────────────────────────────────────────────────
 const getAllInstitutes = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await InstituteService.getAllInstitutes(req.query);
+    // Only super admins may list every institute; anyone else gets their own.
+    const isSuperAdmin = normalizeRoleKey(req.viaExamUser?.role?.role) === "superadmin";
+    const query = isSuperAdmin ? req.query : { ...req.query, onlyInstituteId: req.viaExamUser?.instituteId || "__none__" };
+    const result = await InstituteService.getAllInstitutes(query);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -71,11 +72,13 @@ const getInstituteById = async (req: any, res: Response): Promise<any> => {
 // ─── Update ───────────────────────────────────────────────────────────────────
 const updateInstitute = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await InstituteService.updateInstitute(
-      req.params.instituteId,
-      req.body,
-      req.files,
-    );
+    // Plan (billing) and slug (every login URL) are changed by super admins only.
+    const body = { ...req.body };
+    if (normalizeRoleKey(req.viaExamUser?.role?.role) !== "superadmin") {
+      delete body.plan;
+      delete body.slug;
+    }
+    const result = await InstituteService.updateInstitute(req.params.instituteId, body, req.files);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

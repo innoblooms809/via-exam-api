@@ -27,13 +27,13 @@ import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import StudentProfile from "../../models/Student.model";
-import RegHelper from "../../utils/helper";
 import logger from "../../config/logger";
 import axios from "axios";
 import { pythonServices } from "../../config/pythonServices";
 import { formatQuestionPaper } from "../../utils/questionPaperText";
 import { getAnswerKeyText, ocrDocument } from "./answerKeyOcr.service";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
+import { newId } from "../../utils/idGenerator";
 
 const EVAL_TIMEOUT_MS = 3600000; // 1 hour — CPU inference on long papers is slow
 
@@ -422,7 +422,7 @@ export const triggerPipeline6Evaluation = async (
     // ── Evaluation record → Pending (the queue page polls this) ──
     if (!aiEval) {
       aiEval = await AIEvaluation.create({
-        evaluationId: await RegHelper.generateUserId(),
+        evaluationId: newId("evaluation"),
         sheetId,
         studentId,
         examId,

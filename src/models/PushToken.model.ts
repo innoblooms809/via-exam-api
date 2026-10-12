@@ -1,7 +1,8 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
 
-// One row per browser/device that accepted push notifications (Firebase Cloud Messaging).
+// One row per (browser, user) that accepted push notifications (Firebase Cloud Messaging).
+// A browser where several users are logged in (e.g. super admin and admin tabs) gets each one's pushes.
 interface PushTokenAttributes {
   id: number;
   token: string;
@@ -34,7 +35,7 @@ class PushToken extends Model<PushTokenAttributes, PushTokenCreationAttributes> 
 PushToken.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    token: { type: DataTypes.TEXT, allowNull: false, unique: true },
+    token: { type: DataTypes.TEXT, allowNull: false },
     userId: { type: DataTypes.STRING, allowNull: false },
     instituteId: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
     role: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
@@ -48,7 +49,10 @@ PushToken.init(
     tableName: "viaexam_push_tokens",
     modelName: "PushToken",
     timestamps: true,
-    indexes: [{ fields: ["userId"] }],
+    indexes: [
+      { fields: ["userId"] },
+      { name: "viaexam_push_tokens_token_user_id", unique: true, fields: ["token", "userId"] },
+    ],
   }
 );
 

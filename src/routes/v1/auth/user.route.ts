@@ -32,13 +32,13 @@ router.post("/refresh-token", userController.refreshAccessToken);
 // ─── Protected Routes ─────────────────────────────────────────────────────────
 
 /**
- * POST /api/viaexam/auth/create-user
- * Only super_admin can create ViaExam users
+ * POST /v1/user/create-user — super admins only (it can create an account with any role).
+ * Institute users are created through the teacher / student / scanner endpoints instead.
  */
 router.post(
   "/create-user",
   authenticate,
-//   authorize(["super_admin","admin"]), // ← only super_admin and admin can create users
+  authorize(["SUPER_ADMIN"]),
   userController.createViaExamUser
 );
 

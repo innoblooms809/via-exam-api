@@ -5,13 +5,13 @@ import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import StudentProfile from "../../models/Student.model";
-import RegHelper from "../../utils/helper";
 import logger from "../../config/logger";
 import axios from "axios";
 import FormData from "form-data";
 import { pythonServices } from "../../config/pythonServices";
 import { formatQuestionPaper } from "../../utils/questionPaperText";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
+import { newId } from "../../utils/idGenerator";
 
 // ─── TRIGGER EVALUATION V2 (OCR Pipeline on port 8002) ──────────────────────
 const triggerEvaluationV2 = async (
@@ -72,7 +72,7 @@ const triggerEvaluationV2 = async (
     const studentId = student ? student.userId : `STUDENT-${sheet.rollNo}`;
 
     // 3. Find or Create AIEvaluation record as Pending
-    const evaluationId = await RegHelper.generateUserId();
+    const evaluationId = newId("evaluation");
     if (!aiEval) {
       aiEval = await AIEvaluation.create({
         evaluationId,

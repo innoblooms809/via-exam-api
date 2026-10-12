@@ -14,6 +14,7 @@ import StudentProfile from "../../models/Student.model";
 import TeacherProfile from "../../models/TeacherProfile.model";
 import PlanService, { minChargeFor } from "./plan.service";
 import SubscriptionNotifier, { SUBSCRIPTION_NOTIFICATION, formatDate, formatMoney } from "./subscriptionNotifier";
+import { invalidate } from "../../utils/memoCache";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 // Institutes that existed before billing was introduced get this long to choose a plan.
@@ -654,6 +655,8 @@ const updateInstituteSubscription = async (instituteId: string, body: any, reque
       );
     });
 
+    invalidate("sa-dash:");
+
     const statusText: Record<SubscriptionStatus, string> = {
       active: `active until ${formatDate(periodEnd)}`,
       trialing: `on a free trial until ${formatDate(periodEnd)}`,
@@ -684,6 +687,14 @@ const listTransactions = async (query: any): Promise<any> => {
     if (query.status) Object.assign(where, { status: query.status });
     if (query.provider) Object.assign(where, { provider: query.provider });
     if (query.instituteId) Object.assign(where, { instituteId: query.instituteId });
+    if (query.kind) Object.assign(where, { kind: query.kind });
+    // Date range on when the transaction was started ([from, to)).
+    const from = query.from ? new Date(query.from) : null;
+    const to = query.to ? new Date(query.to) : null;
+    const range: Record<symbol, Date> = {};
+    if (from && !Number.isNaN(from.getTime())) range[Op.gte] = from;
+    if (to && !Number.isNaN(to.getTime())) range[Op.lt] = to;
+    if (Object.getOwnPropertySymbols(range).length) Object.assign(where, { createdAt: range });
 
     const instituteWhere: WhereOptions = {};
     if (query.search) {

@@ -6,6 +6,7 @@ import docsRoute from "./system/docs.route";
 import instituteRoutes from "./institute/institute.route";
 import teacherRoutes from "./teacher/teacher.route";
 import examRoutes from "./exam/exam.route";
+import examWorkflowRoutes from "./exam/examWorkflow.route";
 import questionPaperRoutes from "./question-paper/questionPaper.route";
 import sessionRoutes from "./academic/session.route";
 import classRoutes from "./academic/class.route";
@@ -88,6 +89,10 @@ const defaultRoutes = [
   {
     path: "/exam",
     route: examRoutes,
+  },
+  {
+    path: "/exam-workflow",
+    route: examWorkflowRoutes,
   },
   {
     path: "/question-papers",
