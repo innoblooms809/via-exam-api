@@ -52,10 +52,12 @@ export const formatDate = (date: Date | string | null | undefined): string => {
   });
 };
 
+// Only active accounts: users of a suspended institute (status 2) can't sign in, so
+// "renew now" reminders and pushes would only reach people who can't act on them.
 const findUserIds = async (roles: string[], instituteId?: string): Promise<string[]> => {
   const users = await User.findAll({
     attributes: ["userId"],
-    where: instituteId ? { instituteId } : {},
+    where: { status: 1, isDeleted: false, ...(instituteId ? { instituteId } : {}) },
     include: [{ model: Role, as: "role", attributes: [], where: { role: { [Op.in]: roles } } }],
   });
   return users.map((u: any) => u.userId);

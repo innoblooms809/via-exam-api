@@ -57,6 +57,16 @@ const listResults = {
   }),
 };
 
+const classResults = {
+  query: Joi.object({
+    classId: id.required(),
+    sectionId: id.allow(""),
+    sessionId: id.allow(""),
+    examType: text(60),
+    _t: cacheBuster,
+  }),
+};
+
 const myResults = {
   query: Joi.object({ examType: text(60), sessionId: id.allow(""), _t: cacheBuster }),
 };
@@ -93,6 +103,7 @@ const completeRecheck = {
 };
 
 export default {
+  classResults,
   examParam,
   listPipeline,
   assignScanner,

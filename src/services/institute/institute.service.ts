@@ -11,7 +11,8 @@ import { sendAdminCredentials } from "../../utils/mailHelper";
 import config from "../../config/config";
 import { destroyInstituteAsset, uploadInstituteAsset } from "../../utils/instituteStorage";
 import PlanService from "../subscription/plan.service";
-import SubscriptionService from "../subscription/subscription.service";
+import SubscriptionService, { accessEndsAt, effectiveStatus } from "../subscription/subscription.service";
+import Subscription from "../../models/Subscription.model";
 import SubscriptionNotifier, { SUBSCRIPTION_NOTIFICATION, formatDate } from "../subscription/subscriptionNotifier";
 import { newId } from "../../utils/idGenerator";
 import logger from "../../config/logger";
@@ -31,6 +32,31 @@ import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 
 
 // ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
+/**
+ * Each institute's subscription as of now, keyed by instituteId. It sits beside the
+ * institute's own status (suspended or not): the two are independent, and the super
+ * admin needs both to decide on suspending or reactivating.
+ */
+const subscriptionSummaries = async (instituteIds: string[]) => {
+  const now = new Date();
+  const subs = instituteIds.length ? await Subscription.findAll({ where: { instituteId: { [Op.in]: instituteIds } } }) : [];
+  return new Map(
+    subs.map((sub) => {
+      const status = effectiveStatus(sub, now);
+      const live = status === "active" || status === "trialing";
+      // When access ends (live) or ended (expired / cancelled).
+      const latestEnd = [sub.currentPeriodEnd, sub.trialEndsAt].filter(Boolean).map((d) => new Date(d as Date).getTime());
+      const endsAt =
+        status === "cancelled"
+          ? sub.cancelledAt
+          : accessEndsAt(sub) ?? (latestEnd.length ? new Date(Math.max(...latestEnd)) : null);
+      return [sub.instituteId, { status, live, planKey: sub.planKey, endsAt }] as const;
+    })
+  );
+};
+
+const subscriptionSummary = async (instituteId: string) => (await subscriptionSummaries([instituteId])).get(instituteId) ?? null;
+
 const registerInstitute = async (body: any, files: any): Promise<any> => {
   // Use a transaction — if admin user creation fails, institute also rolls back
   const t = await sequelize.transaction();
@@ -267,7 +293,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
 
 
 // ----------RESEND ADMIN CREDENTIALS EMAIL (IF NOT RECEIVED)----------------
-const resendAdminCredentials = async (instituteId: string): Promise<any> => {
+const resendAdminCredentials = async (instituteId: string, password?: string): Promise<any> => {
   try {
     // 1. Find institute
     const whereCondition: any = {
@@ -301,8 +327,8 @@ const resendAdminCredentials = async (instituteId: string): Promise<any> => {
       };
     }
 
-    // 3. Fresh temporary password (generated here, emailed, never returned)
-    const newPassword = RegHelper.generateTempPassword();
+    // 3. The super admin's chosen password, or a fresh generated one (emailed, never returned)
+    const newPassword = password || RegHelper.generateTempPassword();
     const encrypted = await EncryptPassword.encryptPassword(newPassword);
 
     // 4. Update password in DB
@@ -413,6 +439,9 @@ const getAllInstitutes = async (query: any): Promise<any> => {
         admin: adminMap[inst.instituteId] || null,
       }));
     }
+
+    const subscriptions = await subscriptionSummaries(rows.map((inst) => inst.instituteId));
+    institutesWithAdmin = institutesWithAdmin.map((inst: any) => ({ ...inst, subscription: subscriptions.get(inst.instituteId) ?? null }));
 
     return {
       error: false,
@@ -823,6 +852,24 @@ const toggleInstituteStatus = async (
       };
     }
 
+    // Suspension and the subscription are separate. Suspending never touches the
+    // subscription (its paid time keeps running), and reactivating never extends it:
+    // an institute with an ended subscription gets sign-in back and its admin is asked
+    // to renew in Billing (which they couldn't do while suspended). Payments never
+    // reactivate a suspended institute; only a super admin does.
+    const subscription = await subscriptionSummary(institute.instituteId);
+
+    // Already in that state: change nothing. (Re-running reactivation could otherwise
+    // hit the fallback below and switch on users the admin had turned off.)
+    if (Number(institute.status) === status) {
+      return {
+        error: false,
+        statusCode: httpStatus.OK,
+        message: status === 1 ? "Institute is already active." : "Institute is already suspended.",
+        data: { institute, subscription },
+      };
+    }
+
     // Suspending an institute marks its active users 2 (suspended); re-activating
     // restores only those, so users an admin had switched off (0) stay off.
     // Institutes suspended before this rule zeroed everyone; for those (no user
@@ -844,9 +891,8 @@ const toggleInstituteStatus = async (
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `Institute ${status === 1 ? "activated" : "deactivated"
-        } successfully.`,
-      data: institute,
+      message: status === 1 ? "Institute reactivated." : "Institute suspended.",
+      data: { institute, subscription },
     };
   } catch (e: any) {
     return {
@@ -968,18 +1014,20 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
       };
     }
 
-    // Passwords are never chosen in the browser: a temporary one is generated here and emailed.
-    // A new one is issued when the admin is created, when their email changes (the old
-    // credentials went to the old address) or when `resetPassword` is set.
+    // The super admin either types the password (`password`, validated by the route) or
+    // leaves it out and one is generated here. A new password is saved and emailed when the
+    // admin is created, when their email changes (the old credentials went to the old
+    // address), when `resetPassword` is set or when a password is given.
     const { adminFirstName, adminLastName, adminEmail, adminPhone } = body;
-    const resetPassword = body.resetPassword === true || body.resetPassword === "true";
+    const chosenPassword = typeof body.password === "string" ? body.password : "";
+    const resetPassword = body.resetPassword === true || body.resetPassword === "true" || Boolean(chosenPassword);
 
     // Find existing admin for this institute
     let adminUser = await UserModal.findOne({
       where: { instituteId: institute.instituteId, roleId: adminRole.id, isDeleted: false },
     });
 
-    const plainPassword = RegHelper.generateTempPassword();
+    const plainPassword = chosenPassword || RegHelper.generateTempPassword();
     const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
 
     let sendMailNeeded = false;

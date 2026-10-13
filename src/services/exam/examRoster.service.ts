@@ -125,6 +125,13 @@ export const studentsForExam = async (exam: any) => {
   return profiles.map((p) => ({ studentId: p.userId as string, name: p.user?.userName ?? "", rollNo: clean(p.rollNumber) }));
 };
 
+/** Roll numbers of the students who sit this exam (uploads for anyone else are refused). */
+export const rosterRolls = async (instituteId: string, examId: string): Promise<Set<string> | null> => {
+  const exam = await loadExam(instituteId, examId);
+  if (!exam) return null;
+  return new Set((await studentsForExam(exam)).map((s) => s.rollNo).filter(Boolean));
+};
+
 export const buildRoster = async (exam: any): Promise<Roster> => {
   const [students, sheets, absentRows] = await Promise.all([
     studentsForExam(exam),

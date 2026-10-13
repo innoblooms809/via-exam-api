@@ -27,6 +27,7 @@ import adminDashboardRoutes from "./dashboard/adminDashboard.route";
 import teacherDashboardRoutes from "./teacher/teacherDashboard.route";
 import studentDashboardRoutes from "./student/studentDashboard.route";
 import scannerDashboardRoutes from "./scanner/scannerDashboard.route";
+import homeRoutes from "./dashboard/home.route";
 import monitoringRoutes from "./monitoring/monitoring.route";
 import recheckRequestRoutes from "./evaluation/recheckRequest.route";
 import evaluationAssignmentRoutes from "./evaluation/evaluationAssignment.route";
@@ -65,6 +66,10 @@ const defaultRoutes = [
   {
     path: "/scanner-dashboard",
     route: scannerDashboardRoutes,
+  },
+  {
+    path: "/home",
+    route: homeRoutes,
   },
   {
     path: "/sessions",

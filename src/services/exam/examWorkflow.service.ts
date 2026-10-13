@@ -198,7 +198,17 @@ const listPipeline = async (admin: any, query: any) => {
         examId: exam.examId,
         examType: exam.examType,
         examDate: exam.examDate,
+        examTime: exam.examTime ?? null,
         status: exam.status,
+        sessionId: exam.sessionId,
+        classId: exam.classId,
+        sectionId: exam.sectionId ?? null,
+        subjectId: exam.subjectId,
+        teacherId: exam.teacherId,
+        totalMarks: exam.totalMarks,
+        passingMarks: exam.passingMarks,
+        duration: exam.duration ?? null,
+        instructions: exam.instructions ?? null,
         className: exam.class?.className ?? "",
         sectionName: exam.section?.sectionName ?? "",
         subjectName: exam.subject?.subjectName ?? "",
@@ -488,6 +498,8 @@ const scanRoster = async (user: any, examId: string) => {
       fileName: r.fileName,
       uploadedAt: r.uploadedAt,
       absentMarkedAt: r.absentMarkedAt,
+      // Marks are for the admin; the scanner only needs to know a sheet is in.
+      ...(isAdmin(user) ? { evaluationId: r.evaluationId, evaluationStatus: r.evaluationStatus, score: r.score } : {}),
     })),
     counts: roster.counts,
   };
@@ -599,8 +611,12 @@ const completeScan = async (user: any, examId: string) => {
  */
 export const assertSheetWritable = async (user: any, examId: string | null | undefined) => {
   if (!examId) return;
-  const exam = await Exam.findOne({ where: { examId, instituteId: user.instituteId, isDeleted: false }, attributes: ["examId"] });
+  const exam = await Exam.findOne({ where: { examId, instituteId: user.instituteId, isDeleted: false }, attributes: ["examId", "status"] });
   if (!exam) return;
+  // Students write the paper only after it is approved, so there is nothing to scan before.
+  if (!(await isPaperApproved(exam))) {
+    throw new ApiError(httpStatus.CONFLICT, "The question paper of this exam isn't approved yet, so answer sheets can't be uploaded.");
+  }
   const assignment = await activeScanner(exam.examId);
   if (assignment) {
     if (!isAdmin(user) && assignment.scannerId !== user.userId) {
@@ -609,6 +625,8 @@ export const assertSheetWritable = async (user: any, examId: string | null | und
     if (assignment.status === SCAN_STATUS.COMPLETED) {
       throw new ApiError(httpStatus.CONFLICT, "Uploading for this exam is marked complete. Ask the admin to re-open it.");
     }
+  } else if (!isAdmin(user)) {
+    throw new ApiError(httpStatus.FORBIDDEN, "This exam isn't assigned to you. Ask the admin to assign it to you under Exam Workflow.");
   }
   if (await publishedCount(exam.examId)) {
     throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published, so its sheets can't change.");

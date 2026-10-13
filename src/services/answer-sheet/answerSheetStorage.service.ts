@@ -37,6 +37,7 @@ import { inspectDiskFile } from "../../middlewares/verifyUpload";
 import { ANSWER_SHEET_DETECTED_TYPES } from "../../utils/fileSignature";
 import { newId } from "../../utils/idGenerator";
 import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
+import { rosterRolls } from "../exam/examRoster.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -199,6 +200,14 @@ export const uploadSheets = async (
         message: "This exam doesn't match the class, subject and exam type you picked.",
       };
     }
+    if (!matchingExam) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "There is no exam for this class, subject and exam type. Create the exam first, then upload its sheets.",
+      };
+    }
+    const examRolls = await rosterRolls(instituteId, matchingExam.examId);
 
     // Only the scanner the admin assigned (or an admin) may add sheets, and not
     // after the upload is marked complete or results are published.
@@ -250,6 +259,9 @@ export const uploadSheets = async (
           ...base,
           reason: `"${fileName}" is not named after a roll number. Rename it to the student's roll number, for example 101.pdf.`,
         };
+      }
+      if (examRolls && !examRolls.has(rollNo)) {
+        return { ...base, reason: `Roll number ${rollNo} is not on this exam's roster.` };
       }
 
       // The file's bytes decide its type; a PDF carrying scripts never reaches storage.

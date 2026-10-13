@@ -19,6 +19,7 @@ import {
 
 import Section from "../../models/Section.model";
 import { newId } from "../../utils/idGenerator";
+import { examCountsBy, examsUsing } from "./academicGuards.service";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -88,8 +89,8 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
   // Code and teacher only make sense for one subject in one class.
   const subjectCode = single && classIds.length === 1 ? normalizeSubjectCode(body.subjectCode) : null;
   const teacherId = single && classIds.length === 1 && !isBlankId(body.teacherId) ? String(body.teacherId) : null;
-  if (teacherId && !(await User.findOne({ where: { userId: teacherId, instituteId, isDeleted: false } }))) {
-    return fail(httpStatus.NOT_FOUND, "Teacher not found.");
+  if (teacherId && !(await User.findOne({ where: { userId: teacherId, instituteId, isDeleted: false, status: 1 } }))) {
+    return fail(httpStatus.NOT_FOUND, "That teacher was not found or is deactivated.");
   }
   if (subjectCode && (await Subject.findOne({ where: { subjectCode } }))) {
     return fail(httpStatus.CONFLICT, `Subject code ${subjectCode} is already in use.`);
@@ -228,6 +229,8 @@ const getAllSubjects = async (query: any, createdBy: any): Promise<any> => {
       ],
     });
 
+    const exams = await examCountsBy(createdBy.instituteId, "subjectId");
+    subjects.forEach((s: any) => s.setDataValue("examCount", exams.get(s.subjectId) ?? 0));
     const sorted = subjects.sort(
       (a: any, b: any) =>
         compareClassNames(a.class?.className ?? "", b.class?.className ?? "") ||
@@ -291,6 +294,14 @@ const updateSubject = async (subjectId: string, body: any, createdBy: any): Prom
     }
 
     if (subjectName !== subject.subjectName || sectionId !== subject.sectionId) {
+      const exams = await examsUsing(instituteId, { subjectId });
+      if (exams) {
+        return fail(
+          httpStatus.CONFLICT,
+          `${subject.subjectName} is used by ${exams} ${exams === 1 ? "exam" : "exams"}, so its name and section can't change. ` +
+            `Marks, code and teacher can still be edited.`,
+        );
+      }
       const siblings = await Subject.findAll({ where: { classId: subject.classId, subjectId: { [Op.ne]: subjectId } } });
       const clash = siblings.find((s) => (s.sectionId ?? null) === sectionId && nameKey(s.subjectName) === nameKey(subjectName));
       if (clash) {
@@ -315,8 +326,8 @@ const updateSubject = async (subjectId: string, body: any, createdBy: any): Prom
     let teacherId = subject.teacherId;
     if (body.teacherId !== undefined) {
       teacherId = isBlankId(body.teacherId) ? null : String(body.teacherId);
-      if (teacherId && !(await User.findOne({ where: { userId: teacherId, instituteId, isDeleted: false } }))) {
-        return fail(httpStatus.NOT_FOUND, "Teacher not found.");
+      if (teacherId && !(await User.findOne({ where: { userId: teacherId, instituteId, isDeleted: false, status: 1 } }))) {
+        return fail(httpStatus.NOT_FOUND, "That teacher was not found or is deactivated.");
       }
     }
 

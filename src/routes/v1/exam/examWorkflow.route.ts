@@ -30,6 +30,8 @@ router.post("/scanner/exams/:examId/complete", authorize(UPLOADERS), validate(Va
 router.post("/exams/:examId/publish", admin, validate(Validation.examParam), Controller.publishResults);
 router.post("/exams/:examId/unpublish", admin, validate(Validation.examParam), Controller.unpublishResults);
 router.get("/results", admin, validate(Validation.listResults), Controller.listResults);
+// Class result sheet: students × subjects for one exam type (Mid Term / Final) of a session.
+router.get("/results/class", admin, validate(Validation.classResults), Controller.classResults);
 
 // ── Student: own results and one recheck per exam ────────────────────────────
 router.get("/student/results", authorize(["STUDENT"]), validate(Validation.myResults), Controller.myResults);

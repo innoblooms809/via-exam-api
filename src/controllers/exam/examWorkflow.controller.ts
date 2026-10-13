@@ -1,6 +1,7 @@
 import { Response } from "express";
 import httpStatus from "http-status";
 import ExamWorkflowService from "../../services/exam/examWorkflow.service";
+import ClassResultsService from "../../services/exam/classResults.service";
 import logger from "../../config/logger";
 import { logActivity } from "../../utils/activityLogger";
 
@@ -70,6 +71,7 @@ export default {
   publishResults: handle("Results published.", (req) => ExamWorkflowService.publishResults(user(req), req.params.examId), httpStatus.OK, exam("RESULTS_PUBLISHED")),
   unpublishResults: handle("Results withdrawn.", (req) => ExamWorkflowService.unpublishResults(user(req), req.params.examId), httpStatus.OK, exam("RESULTS_UNPUBLISHED")),
   listResults: handle("Results fetched.", (req) => ExamWorkflowService.listResults(user(req), req.query)),
+  classResults: handle("Class results fetched.", (req) => ClassResultsService.classResults(user(req), req.query)),
 
   // Student
   myResults: handle("Results fetched.", (req) => ExamWorkflowService.myResults(user(req), req.query)),

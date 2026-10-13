@@ -18,7 +18,7 @@ const createScanner = async (req: any, res: Response): Promise<any> => {
         ? `${config.frontendUrl}/${slug}/auth/signin`
         : `${config.frontendUrl}/auth/signin`;
 
-      const recipientEmail = req.body.emailId || req.body.email;
+      const recipientEmail = result.data?.email || req.body.emailId || req.body.email;
       const recipientPhone = req.body.phoneNumber || req.body.mobile || req.body.phone;
 
       if (recipientEmail) {
