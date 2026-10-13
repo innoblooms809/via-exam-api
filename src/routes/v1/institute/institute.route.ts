@@ -50,8 +50,8 @@ router.post("/register", authenticate, superAdminOnly, instituteUpload, Controll
 // POST /v1/institute/addAdmin/:instituteId
 router.post("/addAdmin/:instituteId", authenticate, superAdminOnly, validate(InstituteValidation.addAdmin), Controller.addInstituteAdmin);
 
-// POST /v1/institute/resendCredentials/:instituteId — new password is generated on the server and emailed
-router.post("/resendCredentials/:instituteId", authenticate, superAdminOnly, Controller.resendAdminCredentials);
+// POST /v1/institute/resendCredentials/:instituteId — sets the super admin's password (or a generated one) and emails it
+router.post("/resendCredentials/:instituteId", authenticate, superAdminOnly, validate(InstituteValidation.resendCredentials), Controller.resendAdminCredentials);
 
 // GET /v1/institute/getAllInstitutes?page=1&limit=10&search=delhi&plan=pro&status=1
 // Super admins see every institute; other users only their own.

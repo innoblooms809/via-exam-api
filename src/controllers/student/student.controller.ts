@@ -89,6 +89,15 @@ const deleteStudent = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const promoteStudents = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await StudentService.promoteStudents(req.body, req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
 const bulkCreateStudents = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await StudentService.bulkCreateStudents(
@@ -143,5 +152,6 @@ export default {
   getStudentById,
   updateStudent,
   deleteStudent,
+  promoteStudents,
   bulkCreateStudents,
 };

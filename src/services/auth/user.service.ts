@@ -155,23 +155,6 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       };
     }
 
-    // Account status checks
-    if (user.status === 0) {
-      return {
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "Your account is inactive.",
-      };
-    }
-
-    if (user.status === 2) {
-      return {
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "Account suspended.",
-      };
-    }
-
     // Lock check (DISABLED)
     /*
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
@@ -211,6 +194,36 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
         message: "Invalid credentials.",
+      };
+    }
+
+    // Status checks come after the password, so they don't reveal which accounts exist.
+    // A suspended institute blocks all of its users (suspension marks them 2), so say
+    // that rather than blaming the person's own account.
+    if (user.instituteId) {
+      const userInstitute = await Institute.findOne({ where: { instituteId: user.instituteId }, attributes: ["status", "isDeleted"] });
+      if (!userInstitute || userInstitute.isDeleted || Number(userInstitute.status) !== 1) {
+        return {
+          error: true,
+          statusCode: httpStatus.FORBIDDEN,
+          message: "Your institute's ViaExam access is suspended. Contact the ViaExam team.",
+        };
+      }
+    }
+
+    if (user.status === 0) {
+      return {
+        error: true,
+        statusCode: httpStatus.UNAUTHORIZED,
+        message: "Your account is inactive.",
+      };
+    }
+
+    if (user.status === 2) {
+      return {
+        error: true,
+        statusCode: httpStatus.UNAUTHORIZED,
+        message: "Account suspended.",
       };
     }
 

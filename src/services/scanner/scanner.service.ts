@@ -15,6 +15,7 @@ import { isTeacherRequester, requireSheetAccess, scopeSheetRows } from "../evalu
 import AnswerSheetStorage from "../answer-sheet/answerSheetStorage.service";
 import { newId } from "../../utils/idGenerator";
 import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
+import { rosterRolls } from "../exam/examRoster.service";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 import {
   destroyAnswerSheet,
@@ -472,6 +473,15 @@ const uploadStudentAnswerPaper = async (
       await assertSheetWritable(uploadedBy, exam.examId);
     } catch (err: any) {
       return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
+    }
+
+    const rolls = await rosterRolls(instituteId, exam.examId);
+    if (rolls && !rolls.has(String(body.rollNumber).trim())) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: `Roll number ${body.rollNumber} is not on this exam's roster. Check the roll number, or add the student to the class first.`,
+      };
     }
 
     const classId = body.classId || exam.classId || "ALL";
