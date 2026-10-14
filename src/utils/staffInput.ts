@@ -55,6 +55,10 @@ export const staffInputProblem = (
   if (joining === undefined) return "Enter a valid joining date.";
   if (!joining && opts.requireJoining) return "Joining date is required.";
   if (joining && dob && joining < dob) return "The joining date is before the date of birth.";
+
+  const password = body.password == null ? "" : String(body.password);
+  if (password && password.length < 6) return "Password must be at least 6 characters.";
+  if (password.length > 128) return "Password must not exceed 128 characters.";
   return null;
 };
 
