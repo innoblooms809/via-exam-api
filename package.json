@@ -18,7 +18,9 @@
     "build": "rimraf build && tsc -p tsconfig.json",
     "seed": "cross-env NODE_ENV=development ts-node src/seed/sampleData.ts",
     "migrate:answer-sheets": "cross-env NODE_ENV=development ts-node src/scripts/migrateAnswerSheetsToCloudinary.ts",
-    "migrate:institute-logos": "cross-env NODE_ENV=development ts-node src/scripts/migrateInstituteLogosToCloudinary.ts"
+    "migrate:institute-logos": "cross-env NODE_ENV=development ts-node src/scripts/migrateInstituteLogosToCloudinary.ts",
+    "db:migrate:workflow": "sequelize-cli db:migrate --name 20261010000000-exam-workflow-and-indexes.js",
+    "db:migrate:status": "sequelize-cli db:migrate:status"
   },
   "keywords": [
     "node",
@@ -113,6 +115,7 @@
     "pg-hstore": "^2.3.4",
     "pm2": "^5.4.2",
     "sequelize": "^6.37.5",
+    "stripe": "22.6.2",
     "svg-captcha": "^1.4.0",
     "uuid": "^10.0.0",
     "winston": "^3.8.2",

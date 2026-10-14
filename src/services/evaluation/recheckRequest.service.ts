@@ -1,96 +1,33 @@
 import httpStatus from "http-status";
 import RecheckRequest from "../../models/RecheckRequest.model";
-import AIEvaluation from "../../models/AIEvaluation.model";
 import Exam from "../../models/Exam.model";
 import Subject from "../../models/Subject.model";
 import UserModal from "../../models/User.model";
-import RegHelper from "../../utils/helper";
-import { Op } from "sequelize";
+import ExamWorkflowService from "../exam/examWorkflow.service";
 
+// Same rules as POST /exam-workflow/student/rechecks: only on a published
+// result, and only one request per exam, ever.
 const createRecheckRequest = async (body: any, requestedBy: any): Promise<any> => {
   try {
-    const studentId = requestedBy.userId;
-    const instituteId = requestedBy.instituteId;
-    const { evaluationId, reason } = body;
-
-    if (!evaluationId) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Evaluation ID is required.",
-      };
-    }
-
-    const evaluation = await AIEvaluation.findOne({
-      where: { evaluationId, studentId },
+    const reason = String(body?.reason ?? "").trim();
+    const data = await ExamWorkflowService.createRecheck(requestedBy, {
+      examId: body?.examId,
+      evaluationId: body?.evaluationId,
+      reason: reason || "Recheck requested by the student.",
     });
-
-    if (!evaluation) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Evaluation not found or does not belong to you.",
-      };
-    }
-
-    if (evaluation.status !== "Success" && evaluation.status !== "Failed") {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Recheck can only be requested for completed evaluations.",
-      };
-    }
-
-    const existingRequest = await RecheckRequest.findOne({
-      where: {
-        studentId,
-        evaluationId,
-        status: { [Op.in]: ["Pending", "Under Review"] },
-      },
-    });
-
-    if (existingRequest) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "A recheck request for this evaluation is already pending or under review.",
-      };
-    }
-
-    const exam = await Exam.findOne({ where: { examId: evaluation.examId, isDeleted: false } });
-    if (!exam) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Associated exam not found.",
-      };
-    }
-
-    const requestId = await RegHelper.generateUserId();
-
-    const recheckRequest = await RecheckRequest.create({
-      requestId,
-      studentId,
-      instituteId,
-      examId: evaluation.examId,
-      evaluationId,
-      subjectId: evaluation.subjectId,
-      reason: reason || null,
-      status: "Pending",
-    });
-
     return {
       error: false,
       statusCode: httpStatus.CREATED,
       message: "Recheck request submitted successfully.",
-      data: recheckRequest,
+      data,
     };
   } catch (error: any) {
-    console.error("createRecheckRequest error:", error);
+    const statusCode = error?.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
+    if (statusCode >= 500) console.error("createRecheckRequest error:", error);
     return {
       error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${error.message}`,
+      statusCode,
+      message: statusCode >= 500 ? "Something went wrong. Please try again." : error.message,
     };
   }
 };
@@ -165,7 +102,9 @@ const getRecheckRequestById = async (requestId: string, requestedBy: any): Promi
       };
     }
 
-    if (recheckRequest.instituteId !== requestedBy.instituteId) {
+    // Same institute, and a student only ever sees their own request.
+    const isStudent = String(requestedBy?.role?.role ?? "").toUpperCase() === "STUDENT";
+    if (recheckRequest.instituteId !== requestedBy.instituteId || (isStudent && recheckRequest.studentId !== requestedBy.userId)) {
       return {
         error: true,
         statusCode: httpStatus.FORBIDDEN,

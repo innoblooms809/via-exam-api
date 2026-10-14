@@ -5,6 +5,8 @@ import Role from "../../models/Role.model";
 import EncryptPassword from "../../utils/encryption"
 import { sendOtpEmail } from "../../utils/mailHelper" // your existing mailer
 import config from "../../config/config"
+import Helper from "../../utils/helper"
+import { sequelize } from "../../config/sequelize"
 
 // ─── Helper to get role name from roleId ───────────────────────────────────────
 const getRoleName = async (roleId: number): Promise<string> => {
@@ -16,94 +18,145 @@ const getRoleName = async (roleId: number): Promise<string> => {
   }
 };
 
-// ─── Helper to generate temporary password ────────────────────────────────────
-const generateTempPassword = (): string => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-  let password = "";
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+// ─── Credentials (new password + email) ──────────────────────────────────────
+
+const genericResendMessage = "If an active account uses this email, new login details have been sent to it.";
+
+// One public resend per account every 10 minutes, so nobody can keep resetting
+// someone else's password. In-memory is enough: the window is short and a
+// restart only re-opens one resend.
+const RESEND_COOLDOWN_MS = 10 * 60 * 1000;
+const lastResendAt = new Map<string, number>();
+
+/**
+ * Saves a new password for the user and emails it to the account's own address.
+ * Both happen in one transaction: if the email can't be sent the password change
+ * is rolled back, so nobody is left locked out with a password they never got.
+ */
+const issueCredentials = async (user: any, password: string): Promise<void> => {
+  const roleName = String(await getRoleName(user.roleId)).toLowerCase();
+
+  let loginUrl = `${config.frontendUrl}/auth/superadmin/signin`;
+  let instituteName = "ViaExam Platform";
+  if (user.instituteId) {
+    const Institute = require("../../models/Institute.model").default;
+    const institute = await Institute.findOne({ where: { instituteId: user.instituteId } });
+    if (institute) {
+      loginUrl = `${config.frontendUrl}/${institute.slug}/auth/signin`;
+      instituteName = institute.instituteName;
+    }
   }
-  return password;
-};
+  const encrypted = await EncryptPassword.encryptPassword(password);
 
-// ─── Resend Credentials for any user role ───────────────────────────────────────
-const resendCredentials = async (email: string, customPassword?: string): Promise<any> => {
-  try {
-    // 1. Find user
-    const user = await UserModal.findOne({
-      where: { emailId: email, status: 1 },
-    });
-
-    if (!user) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "No active account found with this email.",
-      };
-    }
-
-    // 2. Get user role
-    const roleName = await getRoleName(user.roleId);
-
-    // 3. Password to use
-    const tempPassword = customPassword && customPassword.trim() ? customPassword.trim() : generateTempPassword();
-    const encrypted = await EncryptPassword.encryptPassword(tempPassword);
-
-    // 4. Update password in DB
-    await user.update({ password: encrypted });
-
-    // 5. Get institute info for login URL (if not super_admin)
-    let loginUrl = `${config.frontendUrl}/auth/superadmin/signin`;
-    let instituteName = "ViaExam Platform";
-
-    if (user.instituteId) {
-      const Institute = require("../../models/Institute.model").default;
-      const institute = await Institute.findOne({
-        where: { instituteId: user.instituteId }
-      });
-      if (institute) {
-        loginUrl = `${config.frontendUrl}/${institute.slug}/auth/signin`;
-        instituteName = institute.instituteName;
-      }
-    }
-
-    // 6. Send role-specific credentials email
+  await sequelize.transaction(async (t) => {
+    await user.update({ password: encrypted }, { transaction: t });
+    // The mail helpers report failure by returning false instead of throwing.
+    let sent: unknown;
     if (roleName === "admin" || roleName === "super_admin") {
       const { sendAdminCredentials } = require("../../utils/mailHelper");
-      await sendAdminCredentials({
+      sent = await sendAdminCredentials({
         adminName: user.userName,
         adminEmail: user.emailId,
-        adminPassword: tempPassword,
+        adminPassword: password,
         instituteName: roleName === "super_admin" ? "ViaExam Platform" : instituteName,
         loginUrl,
         plan: roleName === "super_admin" ? "PLATFORM" : "PREMIUM",
       });
     } else {
       const { sendUserCredentials } = require("../../utils/mailHelper");
-      await sendUserCredentials({
+      sent = await sendUserCredentials({
         userName: user.userName,
         email: user.emailId,
         phone: user.phoneNumber,
-        password: tempPassword,
-        role: roleName.charAt(0).toUpperCase() + roleName.slice(1), // Capitalize
+        password,
+        role: roleName.charAt(0).toUpperCase() + roleName.slice(1),
         loginUrl,
       });
     }
+    if (sent === false) throw new Error("The login details email could not be sent.");
+  });
+};
 
+/**
+ * Public "resend my login details" (sign-in page). The password is always
+ * generated here — a caller can never choose it — and goes only to the
+ * account's own inbox. The reply is the same whether or not the email exists,
+ * so the form can't be used to discover who has an account.
+ */
+const resendCredentials = async (email: string): Promise<any> => {
+  try {
+    const cleanEmail = String(email ?? "").trim().toLowerCase();
+    if (!cleanEmail || cleanEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a valid email address." };
+    }
+
+    const user = await UserModal.findOne({ where: { emailId: cleanEmail, status: 1, isDeleted: false } });
+    if (!user) return { error: false, statusCode: httpStatus.OK, message: genericResendMessage, data: {} };
+
+    const last = lastResendAt.get(user.userId) ?? 0;
+    if (Date.now() - last < RESEND_COOLDOWN_MS) {
+      return {
+        error: true,
+        statusCode: httpStatus.TOO_MANY_REQUESTS,
+        message: "New login details were sent a few minutes ago. Check your inbox (and spam) or try again in 10 minutes.",
+      };
+    }
+    lastResendAt.set(user.userId, Date.now());
+
+    await issueCredentials(user, Helper.generateTempPassword());
+    return { error: false, statusCode: httpStatus.OK, message: genericResendMessage, data: {} };
+  } catch (e: any) {
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: "Could not send login details. Please try again." };
+  }
+};
+
+/**
+ * School admin resets a teacher's / scanner's / student's password (optionally
+ * to one they typed) and emails it to that user. Only users of the admin's own
+ * institute, and never another admin.
+ */
+const adminResetCredentials = async (admin: any, email: string, password?: string): Promise<any> => {
+  try {
+    const cleanEmail = String(email ?? "").trim().toLowerCase();
+    const user: any = await UserModal.findOne({
+      where: { emailId: cleanEmail, isDeleted: false },
+      include: [{ model: Role, as: "role" }],
+    });
+    if (!user || !admin?.instituteId || user.instituteId !== admin.instituteId) {
+      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "No user with this email in your institute." };
+    }
+    const targetRole = String(user.role?.role ?? "").toUpperCase();
+    if (["ADMIN", "INSTITUTE_ADMIN", "SUPER_ADMIN"].includes(targetRole)) {
+      return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Admin passwords can't be reset from here." };
+    }
+
+    let nextPassword = Helper.generateTempPassword();
+    if (password !== undefined && String(password).trim() !== "") {
+      nextPassword = String(password).trim();
+      const strong =
+        nextPassword.length >= 8 &&
+        nextPassword.length <= 64 &&
+        /[A-Z]/.test(nextPassword) &&
+        /[a-z]/.test(nextPassword) &&
+        /\d/.test(nextPassword);
+      if (!strong) {
+        return {
+          error: true,
+          statusCode: httpStatus.BAD_REQUEST,
+          message: "Password must be 8–64 characters with an uppercase letter, a lowercase letter and a number.",
+        };
+      }
+    }
+
+    await issueCredentials(user, nextPassword);
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: customPassword
-        ? `Password updated and credentials sent to ${email} successfully.`
-        : `Credentials resent to ${email} successfully.`,
+      message: `Password updated and login details sent to ${user.emailId}.`,
       data: { email: user.emailId },
     };
   } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: "Could not reset the password. Please try again." };
   }
 };
 
@@ -343,4 +396,4 @@ const changePassword = async (
   }
 };
 
-export default { forgotPassword, verifyOtp, resetPassword, resendCredentials, changePassword };
+export default { forgotPassword, verifyOtp, resetPassword, resendCredentials, adminResetCredentials, changePassword };

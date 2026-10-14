@@ -18,6 +18,9 @@ import Class from "../../models/Class.model";
 import Exam from "../../models/Exam.model";
 import Scanner from "../../models/Scanner.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
+import RecheckAssignment from "../../models/RecheckAssignment.model";
+import RecheckRequest from "../../models/RecheckRequest.model";
+import AIEvaluation from "../../models/AIEvaluation.model";
 import ApiError from "../../utils/ApiError";
 
 export type SheetAccess = "full" | "masked" | "none";
@@ -100,13 +103,34 @@ export interface TeacherScope {
   ownClassKeys: Set<string>;
   /** Exams this teacher was assigned to evaluate → masked data. */
   assignedExams: AssignedExamScope[];
+  /** Sheets of open recheck requests the admin gave this teacher → masked data. */
+  recheckSheetIds: Set<string>;
+}
+
+/** Sheet ids behind the recheck requests assigned to this teacher and not yet completed. */
+async function openRecheckSheetIds(instituteId: string, teacherId: string): Promise<Set<string>> {
+  const open = await RecheckAssignment.findAll({
+    where: { instituteId, teacherId, completedAt: null },
+    attributes: ["requestId"],
+  });
+  if (!open.length) return new Set();
+  const requests = await RecheckRequest.findAll({
+    where: { requestId: { [Op.in]: open.map((a) => a.requestId) } },
+    attributes: ["evaluationId"],
+  });
+  if (!requests.length) return new Set();
+  const evaluations = await AIEvaluation.findAll({
+    where: { evaluationId: { [Op.in]: requests.map((r) => r.evaluationId) } },
+    attributes: ["sheetId"],
+  });
+  return new Set(evaluations.map((e) => String(e.sheetId)));
 }
 
 export async function getTeacherScope(user: any): Promise<TeacherScope> {
   const userId = String(user?.userId ?? "");
   const instituteId = String(user?.instituteId ?? "");
 
-  const [subjects, assignments] = await Promise.all([
+  const [subjects, assignments, recheckSheetIds] = await Promise.all([
     Subject.findAll({
       where: { instituteId, teacherId: userId, isDeleted: false },
       attributes: ["subjectId", "classId"],
@@ -116,6 +140,7 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
       where: { instituteId, teacherId: userId, isActive: true },
       attributes: ["examId"],
     }),
+    openRecheckSheetIds(instituteId, userId),
   ]);
 
   const exams = assignments.length
@@ -137,6 +162,7 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
     instituteId,
     ownSubjectIds: new Set(subjects.map((s: any) => String(s.subjectId))),
     ownClassKeys,
+    recheckSheetIds,
     assignedExams: exams.map((e: any) => ({
       examId: String(e.examId),
       subjectId: String(e.subjectId),
@@ -146,7 +172,10 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
   };
 }
 
-type SheetLike = { subjectId?: unknown; classId?: unknown; examType?: unknown; examId?: unknown };
+type SheetLike = { subjectId?: unknown; classId?: unknown; examType?: unknown; examId?: unknown; sheetId?: unknown };
+
+const isRecheckSheet = (scope: TeacherScope, sheet: SheetLike) =>
+  Boolean(sheet.sheetId) && scope.recheckSheetIds.has(String(sheet.sheetId));
 
 export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAccess {
   if (scope.ownSubjectIds.has(String(sheet.subjectId ?? ""))) return "full";
@@ -157,11 +186,12 @@ export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAcce
         a.examType === String(sheet.examType ?? "") &&
         a.classKeys.has(String(sheet.classId ?? "")))
   );
-  return assigned ? "masked" : "none";
+  return assigned || isRecheckSheet(scope, sheet) ? "masked" : "none";
 }
 
 /** Is this teacher the admin-assigned evaluator of the sheet's exam? */
 export function isAssignedEvaluator(scope: TeacherScope, sheet: SheetLike): boolean {
+  if (isRecheckSheet(scope, sheet)) return true;
   return scope.assignedExams.some(
     (a) =>
       (sheet.examId && a.examId === String(sheet.examId)) ||
@@ -213,7 +243,16 @@ export async function requireSheetAccess(
   if (user?.instituteId && sheet.instituteId !== user.instituteId) {
     throw new ApiError(httpStatus.FORBIDDEN, "Access denied.");
   }
-  if (!isTeacherRequester(user)) return { access: "full", sheet, canEvaluate: true };
+  if (!isTeacherRequester(user)) {
+    if (isAdminRequester(user)) return { access: "full", sheet, canEvaluate: true };
+    // Scanners may open the scans they handle; nobody but an admin or the
+    // assigned evaluator may evaluate or change marks (students least of all).
+    const role = String(user?.role?.role ?? user?.role ?? "").toUpperCase();
+    if (role !== "SCANNER" || options.evaluate) {
+      throw new ApiError(httpStatus.FORBIDDEN, "You do not have access to evaluate this answer sheet.");
+    }
+    return { access: "full", sheet, canEvaluate: false };
+  }
 
   const scope = await getTeacherScope(user);
   const access = accessForSheet(scope, sheet);

@@ -16,6 +16,10 @@ import exclude from "../../utils/exclude";
 import Section from "../../models/Section.model";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
+import { findStaff, teacherOpenWork } from "../academic/academicGuards.service";
+import { newId } from "../../utils/idGenerator";
+import { cleanEmail, contactTakenMessage, staffInputProblem } from "../../utils/staffInput";
+import { TEACHER_TYPES, checkClassTeacherPost, isTeacherType, syncTeacherType } from "./classTeacher.service";
 import {
   formatSpecializations,
   parseSpecializations,
@@ -28,114 +32,34 @@ const createTeacher = async (
   files: any,
   createdBy: any,
 ): Promise<any> => {
+  // Checks run before the transaction opens, so they never wait on its connection.
+  const instituteId = createdBy.instituteId;
+  if (!instituteId) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Institute not found for this admin." };
+  const problem = staffInputProblem(body, { requireDob: true, requireJoining: true, requireQualification: true });
+  if (problem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: problem };
+  body.emailId = cleanEmail(body.emailId);
+  body.phoneNumber = String(body.phoneNumber).trim();
+
+  const institute = await Institute.findOne({ where: { instituteId, isDeleted: false, status: 1 } });
+  if (!institute) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Institute not found or inactive." };
+  const taken = await contactTakenMessage(body.emailId, body.phoneNumber, instituteId);
+  if (taken) return { error: true, statusCode: httpStatus.CONFLICT, message: taken };
+  const teacherRole = await Role.findOne({ where: { role: "TEACHER" } });
+  if (!teacherRole) return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: "TEACHER role not found. Please seed roles." };
+
+  const teacherType = body.teacherType || "Subject Teacher";
+  if (!isTeacherType(teacherType)) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `Teacher type must be one of: ${TEACHER_TYPES.join(", ")}.` };
+  // A class teacher is created with the section they look after.
+  let post: Section | null = null;
+  if (teacherType === "Class Teacher") {
+    if (!body.sectionId) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Choose the section this class teacher looks after." };
+    const check = await checkClassTeacherPost(null, String(body.sectionId), instituteId);
+    if ("message" in check) return { error: true, statusCode: check.status, message: check.message };
+    post = check.section;
+  }
+
   const t = await sequelize.transaction();
   try {
-
-    // 1. Get instituteId from admin token
-    const instituteId = createdBy.instituteId;
-    if (!instituteId) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Institute not found for this admin.",
-      };
-    }
-
-    // 2. Check institute active
-    const institute = await Institute.findOne({
-      where: { instituteId, isDeleted: false, status: 1 },
-    });
-    if (!institute) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Institute not found or inactive.",
-      };
-    }
-
-    // 3. Check email unique
-    const emailExists = await UserModal.findOne({
-      where: { emailId: body.emailId },
-    });
-    if (emailExists) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Email is already registered.",
-      };
-    }
-
-    // 4. Check phone unique
-    const phoneExists = await UserModal.findOne({
-      where: { phoneNumber: body.phoneNumber },
-    });
-    if (phoneExists) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Phone number is already registered.",
-      };
-    }
-
-
-
-    // 6. Find TEACHER role
-    const teacherRole = await Role.findOne({ where: { role: "TEACHER" } });
-    if (!teacherRole) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-        message: "TEACHER role not found. Please seed roles.",
-      };
-    }
-
-    // Validate class / section assignment: ensure section/class does not already have a class teacher
-    if (body.teacherType === "Class Teacher") {
-      if (body.sectionId) {
-        const sec = await Section.findOne({
-          where: { sectionId: body.sectionId, instituteId, isDeleted: false },
-          include: [{ model: Class, as: "class" }],
-          transaction: t,
-        });
-        if (sec && sec.classTeacherId) {
-          const existingTeacher = await UserModal.findOne({
-            where: { userId: sec.classTeacherId, instituteId },
-            transaction: t,
-          });
-          const teacherName = existingTeacher ? existingTeacher.userName : "another teacher";
-          await t.rollback();
-          return {
-            error: true,
-            statusCode: httpStatus.BAD_REQUEST,
-            message: `Section "${(sec as any).class?.className || ""} - ${sec.sectionName}" already has a Class Teacher assigned: ${teacherName}. Please choose a different section.`,
-          };
-        }
-      } else if (body.classId) {
-        const cls = await Class.findOne({
-          where: { classId: body.classId, instituteId, isDeleted: false },
-          transaction: t,
-        });
-        if (cls && cls.classTeacherId) {
-          const existingTeacher = await UserModal.findOne({
-            where: { userId: cls.classTeacherId, instituteId },
-            transaction: t,
-          });
-          const teacherName = existingTeacher ? existingTeacher.userName : "another teacher";
-          await t.rollback();
-          return {
-            error: true,
-            statusCode: httpStatus.BAD_REQUEST,
-            message: `Class "${cls.className}" already has a Class Teacher assigned: ${teacherName}. Please choose a different class.`,
-          };
-        }
-      }
-    }
-
     // 7. Profile photo
     const profileUrl = files?.profilePhoto?.[0]
       ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
@@ -146,12 +70,12 @@ const createTeacher = async (
     const encryptedPassword = await EncryptPassword.encryptPassword(
       plainPassword,
     );
-    const userId = await RegHelper.generateUserId();
+    const userId = newId("user");
 
     const newUser = await UserModal.create(
       {
         userId,
-        userName: `${body.firstName} ${body.lastName}`,
+        userName: `${String(body.firstName).trim()} ${String(body.lastName).trim()}`,
         emailId: body.emailId,
         phoneNumber: body.phoneNumber,
         password: encryptedPassword,
@@ -169,8 +93,8 @@ const createTeacher = async (
         userId: newUser.userId,
         instituteId,
 
-        teacherType: body.teacherType,
-        qualification: body.qualification,
+        teacherType,
+        qualification: String(body.qualification).trim(),
         specialization: formatSpecializations(parseSpecializations(body.specialization)) || null,
         experience: body.experience || null,
         address: body.address || null,
@@ -184,26 +108,7 @@ const createTeacher = async (
     );
 
 
-    // Assign teacher to Section or Class if they are a Class Teacher
-    if (body.teacherType === "Class Teacher") {
-      if (body.sectionId) {
-        const sec = await Section.findOne({
-          where: { sectionId: body.sectionId, instituteId },
-          transaction: t,
-        });
-        if (sec) {
-          await sec.update({ classTeacherId: newUser.userId }, { transaction: t });
-        }
-      } else if (body.classId) {
-        const cls = await Class.findOne({
-          where: { classId: body.classId, instituteId },
-          transaction: t,
-        });
-        if (cls) {
-          await cls.update({ classTeacherId: newUser.userId }, { transaction: t });
-        }
-      }
-    }
+    if (post) await Section.update({ classTeacherId: newUser.userId }, { where: { sectionId: post.sectionId }, transaction: t });
 
     // 10. Commit
     await t.commit();
@@ -317,6 +222,10 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
         instituteId: createdBy.instituteId,
         isDeleted: false,
       },
+      include: [
+        { model: Class, as: "class", attributes: ["classId", "className"], required: false },
+        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
+      ],
     });
 
     const result = teachers.map((u: any) => {
@@ -360,7 +269,22 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
         isExaminer: u.teacherProfile?.isExaminer ?? false,
         examinerSince: u.teacherProfile?.examinerSince ?? null,
         assignedClass,
-        assignedSubjects: subs.map((s: any) => ({ subjectId: s.subjectId, subjectName: s.subjectName })),
+        assignedSubjects: subs.map((s: any) => ({
+          subjectId: s.subjectId,
+          subjectName: s.subjectName,
+          classId: s.classId,
+          className: s.class?.className ?? null,
+          sectionName: s.section?.sectionName ?? null,
+        })),
+        // Every section (or class) they are class teacher of.
+        classTeacherOf: [
+          ...assignedSections
+            .filter((x: any) => x.classTeacherId === u.userId)
+            .map((x: any) => ({ classId: x.classId, className: x.class?.className || "", sectionId: x.sectionId, sectionName: x.sectionName })),
+          ...assignedClasses
+            .filter((c: any) => c.classTeacherId === u.userId)
+            .map((c: any) => ({ classId: c.classId, className: c.className, sectionId: null, sectionName: null })),
+        ],
       };
     });
 
@@ -460,31 +384,57 @@ const updateTeacher = async (
   files: any,
   createdBy: any,
 ): Promise<any> => {
+  // Lookups and checks run before the transaction opens.
+  const instituteId = createdBy.instituteId;
+  const user = await findStaff(userId, instituteId, "TEACHER");
+  if (!user) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Teacher not found." };
+  const profile = await TeacherProfile.findOne({ where: { userId } });
+
+  const first = String(body.firstName ?? "").trim();
+  const last = String(body.lastName ?? "").trim();
+  const nameRule = /^[A-Za-z][A-Za-z.'’ -]{0,49}$/;
+  if ((first || last) && (!nameRule.test(first) || !nameRule.test(last))) {
+    return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "First and last name can only have letters, spaces, dots, apostrophes and hyphens." };
+  }
+  const phone = body.phoneNumber !== undefined ? String(body.phoneNumber).trim() : undefined;
+  if (phone !== undefined && phone !== user.phoneNumber) {
+    if (!/^[6-9]\d{9}$/.test(phone)) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a 10-digit mobile number starting with 6, 7, 8 or 9." };
+    const taken = await contactTakenMessage("", phone, instituteId, userId);
+    if (taken) return { error: true, statusCode: httpStatus.CONFLICT, message: taken };
+  }
+  if (body.specialization !== undefined) {
+    const specProblem = validateSpecializations(parseSpecializations(body.specialization));
+    if (specProblem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: specProblem };
+  }
+  // Type and class-teacher post.
+  if (body.teacherType !== undefined && !isTeacherType(body.teacherType)) {
+    return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `Teacher type must be one of: ${TEACHER_TYPES.join(", ")}.` };
+  }
+  const nextType = body.teacherType ?? profile?.teacherType ?? "Subject Teacher";
+  let post: Section | null = null;
+  if (nextType === "Class Teacher" && body.sectionId) {
+    // Moving to another section frees the current one below, in the same transaction.
+    const check = await checkClassTeacherPost(userId, String(body.sectionId), instituteId, { teacherType: nextType, moving: true });
+    if ("message" in check) return { error: true, statusCode: check.status, message: check.message };
+    post = check.section;
+  } else if (nextType === "Class Teacher" && body.teacherType === "Class Teacher" && profile?.teacherType !== "Class Teacher") {
+    const holds = await Section.count({ where: { instituteId, classTeacherId: userId, isDeleted: false } });
+    if (!holds) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Choose the section this class teacher looks after." };
+  }
+  const dates: { dob?: Date; joiningDate?: Date } = {};
+  for (const k of ["dob", "joiningDate"] as const) {
+    if (body[k] === undefined || body[k] === "") continue;
+    const d = new Date(body[k]);
+    if (Number.isNaN(d.getTime())) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `Enter a valid ${k === "dob" ? "date of birth" : "joining date"}.` };
+    dates[k] = d;
+  }
+
   const t = await sequelize.transaction();
   try {
-    const user = await UserModal.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-    });
-
-    if (!user) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Teacher not found.",
-      };
-    }
-
-    const profile = await TeacherProfile.findOne({ where: { userId } });
-
-    // Update user
     await user.update(
       {
-        userName:
-          body.firstName && body.lastName
-            ? `${body.firstName} ${body.lastName}`
-            : user.userName,
-        phoneNumber: body.phoneNumber ?? user.phoneNumber,
+        userName: first && last ? `${first} ${last}` : user.userName,
+        phoneNumber: phone ?? user.phoneNumber,
       },
       { transaction: t },
     );
@@ -497,7 +447,7 @@ const updateTeacher = async (
 
       await profile.update(
         {
-          teacherType: body.teacherType ?? profile.teacherType,
+          teacherType: nextType,
           qualification: body.qualification ?? profile.qualification,
           specialization:
             body.specialization !== undefined
@@ -505,65 +455,21 @@ const updateTeacher = async (
               : profile.specialization,
           experience: body.experience ?? profile.experience,
           address: body.address ?? profile.address,
+          ...(dates.dob ? { dob: dates.dob } : {}),
+          ...(dates.joiningDate ? { joiningDate: dates.joiningDate } : {}),
           profileUrl,
         },
         { transaction: t },
       );
 
-      // If teacherType is updated to something other than "Class Teacher",
-      // remove them as class teacher from any class or section they were assigned to.
-      const newTeacherType = body.teacherType ?? profile.teacherType;
-      if (newTeacherType !== "Class Teacher") {
-        const cls = await Class.findOne({
-          where: { classTeacherId: userId, instituteId: createdBy.instituteId },
-          transaction: t,
-        });
-        if (cls) {
-          await cls.update({ classTeacherId: null }, { transaction: t });
-        }
-        const sec = await Section.findOne({
-          where: { classTeacherId: userId, instituteId: createdBy.instituteId },
-          transaction: t,
-        });
-        if (sec) {
-          await sec.update({ classTeacherId: null }, { transaction: t });
-        }
-      } else {
-        // If teacher is a Class Teacher and classId or sectionId is updated
-        if (body.classId !== undefined || body.sectionId !== undefined) {
-          // 1. Clear this teacher from any class or section they are currently assigned to
-          await Class.update(
-            { classTeacherId: null },
-            { where: { classTeacherId: userId, instituteId: createdBy.instituteId }, transaction: t }
-          );
-          await Section.update(
-            { classTeacherId: null },
-            { where: { classTeacherId: userId, instituteId: createdBy.instituteId }, transaction: t }
-          );
-
-          // 2. If a sectionId is specified, assign it
-          if (body.sectionId) {
-            const newSection = await Section.findOne({
-              where: { sectionId: body.sectionId, instituteId: createdBy.instituteId, isDeleted: false },
-              transaction: t,
-            });
-
-            if (newSection) {
-              await newSection.update({ classTeacherId: userId }, { transaction: t });
-            }
-          } else if (body.classId) {
-            // If classId is specified without sectionId, assign to class
-            const newClass = await Class.findOne({
-              where: { classId: body.classId, instituteId: createdBy.instituteId, isDeleted: false },
-              transaction: t,
-            });
-
-            if (newClass) {
-              await newClass.update({ classTeacherId: userId }, { transaction: t });
-            }
-          }
-        }
+      // Only a Class Teacher holds a section: changing to another type gives it up, and a
+      // new section replaces the old one. (Older records may hold a section under another
+      // stored type; an edit that doesn't change the type leaves that alone.)
+      if ((body.teacherType !== undefined && nextType !== "Class Teacher") || post) {
+        await Class.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
+        await Section.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
       }
+      if (post) await Section.update({ classTeacherId: userId }, { where: { sectionId: post.sectionId }, transaction: t });
     }
 
     await t.commit();
@@ -585,51 +491,38 @@ const updateTeacher = async (
 };
 
 // ─── SOFT DELETE TEACHER ──────────────────────────────────────────────────────
+// Refused while the teacher still has papers to set, exams to evaluate or rechecks
+// to finish. Their subjects and class-teacher posts are freed, so the setup
+// checklist shows what needs a new teacher.
 const deleteTeacher = async (userId: string, createdBy: any): Promise<any> => {
   try {
-    const user = await UserModal.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-    });
+    const instituteId = createdBy.instituteId;
+    const user = await findStaff(userId, instituteId, "TEACHER");
+    if (!user) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Teacher not found." };
 
-    if (!user) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Teacher not found.",
-      };
-    }
+    const work = await teacherOpenWork(userId, instituteId);
+    if (work.total) return { error: true, statusCode: httpStatus.CONFLICT, message: work.message };
 
-    console.log("Before deactivation - User status:", user.status);
-    await user.update({ status: 0 });
-    console.log("After deactivation - User status:", user.status);
-
-    // Unassign teacher from any class or section they were teaching
-    const assignedClass = await Class.findOne({
-      where: { classTeacherId: userId, instituteId: createdBy.instituteId },
+    const freed = await sequelize.transaction(async (t) => {
+      await user.update({ status: 0, refreshToken: null }, { transaction: t });
+      await Class.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
+      await Section.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
+      await syncTeacherType(userId, instituteId, t);
+      const [subjects] = await Subject.update({ teacherId: null }, { where: { teacherId: userId, instituteId, isDeleted: false }, transaction: t });
+      return subjects;
     });
-    if (assignedClass) {
-      await assignedClass.update({ classTeacherId: null });
-    }
-    const assignedSection = await Section.findOne({
-      where: { classTeacherId: userId, instituteId: createdBy.instituteId },
-    });
-    if (assignedSection) {
-      await assignedSection.update({ classTeacherId: null });
-    }
 
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: "Teacher deactivated successfully.",
-      data: {},
+      message: freed
+        ? `${user.userName} deactivated. ${freed} ${freed === 1 ? "subject now needs" : "subjects now need"} a new teacher.`
+        : `${user.userName} deactivated.`,
+      data: { subjectsFreed: freed },
     };
   } catch (e: any) {
     console.error("Delete teacher error:", e);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Something went wrong: ${e.message}` };
   }
 };
 
@@ -789,35 +682,13 @@ const getDeactivatedTeachers = async (createdBy: any, query: any): Promise<any> 
 // ─── REACTIVATE TEACHER ──────────────────────────────────────────────────────
 const reactivateTeacher = async (userId: string, createdBy: any): Promise<any> => {
   try {
-    const user = await UserModal.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-    });
-
-    if (!user) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Teacher not found.",
-      };
-    }
-
-    console.log("Before reactivation - User status:", user.status);
+    const user = await findStaff(userId, createdBy.instituteId, "TEACHER");
+    if (!user) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Teacher not found." };
     await user.update({ status: 1 });
-    console.log("After reactivation - User status:", user.status);
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Teacher reactivated successfully.",
-      data: {},
-    };
+    return { error: false, statusCode: httpStatus.OK, message: `${user.userName} reactivated. Assign their subjects again under Subject Teachers.`, data: {} };
   } catch (e: any) {
     console.error("Reactivate teacher error:", e);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Something went wrong: ${e.message}` };
   }
 };
 

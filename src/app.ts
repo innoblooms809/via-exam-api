@@ -10,6 +10,7 @@ import xss from './middlewares/xss';
 import cookieParser from 'cookie-parser';
 import { authLimiter } from './middlewares/rateLimiter';
 import routes from './routes/v1';
+import SubscriptionController from './controllers/subscription/subscription.controller';
 import { errorConverter, errorHandler } from './middlewares/error';
 import ApiError from './utils/ApiError';
 import path from 'path';
@@ -30,6 +31,9 @@ app.use(
   })
 );
 
+// Stripe webhook: must see the raw body (signature check), so it is mounted before the JSON parsers.
+app.post('/v1/subscription/webhook', express.raw({ type: 'application/json', limit: '1mb' }), SubscriptionController.stripeWebhook);
+
 // Parse JSON request body.
 // 100MB was needed while answer sheets were base64'd through JSON. They are
 // multipart now and handled by their own middleware, so this only has to cover
@@ -47,10 +51,32 @@ app.use(xss());
 app.use(compression());
 
 // enable cors
+// Auth also accepts cookies, so a credentialed request may only come from the
+// app's own front ends (CORS_ORIGIN, comma separated; "*.example.com" allows
+// subdomains). Requests without an Origin (same-origin, curl, servers) pass.
+const allowedOrigins = String(config.corsOrigin || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+const isAllowedOrigin = (origin: string) =>
+  allowedOrigins.some((allowed) => {
+    if (allowed === '*') return true;
+    if (allowed.startsWith('*.')) {
+      try {
+        const host = new URL(origin).hostname;
+        return host.endsWith(allowed.slice(1)) || host === allowed.slice(2);
+      } catch {
+        return false;
+      }
+    }
+    return allowed === origin;
+  });
+
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    // Allow all origins (including localhost, subdomains, and live tunnels)
-    callback(null, true);
+    if (!origin || isAllowedOrigin(origin.replace(/\/+$/, ''))) return callback(null, true);
+    logger.warn(`CORS: blocked origin ${origin}`);
+    return callback(null, false);
   },
   credentials: true,
 };
@@ -81,28 +107,49 @@ const allowCrossOriginUploads = (
 
 const uploadsPath = path.resolve(process.cwd(), 'uploads');
 
-app.use(
-  '/uploads',
+// Uploaded files are data, never pages: only image/PDF extensions (and the
+// extension-less files older uploads left behind) are served, the browser may
+// not sniff them into another type, and the sandbox CSP stops anything that
+// slips through from running script on this origin.
+const SERVABLE_UPLOAD = /(^[^.]*$)|\.(png|jpe?g|webp|pdf)$/i;
+// The app's own front ends preview uploads (PDFs) in iframes; no other site may frame them.
+const uploadFrameAncestors = ["'self'", ...allowedOrigins].join(' ');
+const uploadsStatic = [
   allowCrossOriginUploads,
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    let name = '';
+    try {
+      name = path.basename(decodeURIComponent(req.path || ''));
+    } catch {
+      return res.status(httpStatus.BAD_REQUEST).end();
+    }
+    if (!name || !SERVABLE_UPLOAD.test(name)) return res.status(httpStatus.NOT_FOUND).end();
+    return next();
+  },
   express.static(uploadsPath, {
-    setHeaders: (res) => {
+    dotfiles: 'deny',
+    index: false,
+    redirect: false,
+    setHeaders: (res, filePath) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      // frame-ancestors below decides who may frame it (helmet's SAMEORIGIN would block the app).
+      res.removeHeader('X-Frame-Options');
+      // Chrome won't render a PDF in a sandboxed or 'none'-restricted document ("This content
+      // is blocked"), so PDFs only limit framing; every other file keeps the strict sandbox.
+      res.setHeader(
+        'Content-Security-Policy',
+        /\.pdf$/i.test(filePath)
+          ? `frame-ancestors ${uploadFrameAncestors}`
+          : `default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors ${uploadFrameAncestors}; sandbox`,
+      );
     },
-  })
-);
+  }),
+];
 
-
-app.use(
-  '/v1/uploads',
-  allowCrossOriginUploads,
-  express.static(uploadsPath, {
-    setHeaders: (res) => {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    },
-  })
-);
+app.use('/uploads', ...uploadsStatic);
+app.use('/v1/uploads', ...uploadsStatic);
 
 
 // v1 api routes

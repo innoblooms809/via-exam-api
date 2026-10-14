@@ -19,6 +19,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import multer from "multer";
+import { randomUUID } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 
@@ -31,6 +32,8 @@ import {
 } from "../config/uploadLimits";
 import { removeTempFile } from "../utils/answerSheetStorage";
 import logger from "../config/logger";
+import { ANSWER_SHEET_DETECTED_TYPES } from "../utils/fileSignature";
+import { verifyUploads } from "./verifyUpload";
 
 const TEMP_DIR = path.join(os.tmpdir(), "viaexam-answer-sheets");
 
@@ -47,10 +50,9 @@ const storage = multer.diskStorage({
       cb(err, TEMP_DIR);
     }
   },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname || "").toLowerCase();
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `sheet-${unique}${ext}`);
+  // Temp names never carry the client's file name or extension.
+  filename: (_req, _file, cb) => {
+    cb(null, `sheet-${randomUUID()}.upload`);
   },
 });
 
@@ -168,6 +170,9 @@ export const answerSheetSingleUpload = (fieldName: string) => [
   requestSizeGuard,
   uploader.single(fieldName),
   translateUploadError,
+  // Batches check each file in the service (one bad file must not sink the
+  // batch); a single upload is simply refused here.
+  verifyUploads(ANSWER_SHEET_DETECTED_TYPES),
 ];
 
 export const ANSWER_SHEET_TEMP_DIR = TEMP_DIR;

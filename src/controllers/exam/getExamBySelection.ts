@@ -129,7 +129,8 @@ import Institute from "../../models/Institute.model"
 
         examType,
 
-      
+        // A class can have one exam per section; the exam id picks the exact one.
+        ...(req.body.examId ? { examId: String(req.body.examId) } : {}),
 
         instituteId,
 

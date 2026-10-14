@@ -6,6 +6,7 @@ import docsRoute from "./system/docs.route";
 import instituteRoutes from "./institute/institute.route";
 import teacherRoutes from "./teacher/teacher.route";
 import examRoutes from "./exam/exam.route";
+import examWorkflowRoutes from "./exam/examWorkflow.route";
 import questionPaperRoutes from "./question-paper/questionPaper.route";
 import sessionRoutes from "./academic/session.route";
 import classRoutes from "./academic/class.route";
@@ -26,9 +27,11 @@ import adminDashboardRoutes from "./dashboard/adminDashboard.route";
 import teacherDashboardRoutes from "./teacher/teacherDashboard.route";
 import studentDashboardRoutes from "./student/studentDashboard.route";
 import scannerDashboardRoutes from "./scanner/scannerDashboard.route";
+import homeRoutes from "./dashboard/home.route";
 import monitoringRoutes from "./monitoring/monitoring.route";
 import recheckRequestRoutes from "./evaluation/recheckRequest.route";
 import evaluationAssignmentRoutes from "./evaluation/evaluationAssignment.route";
+import subscriptionRoutes from "./subscription/subscription.route";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -65,6 +68,10 @@ const defaultRoutes = [
     route: scannerDashboardRoutes,
   },
   {
+    path: "/home",
+    route: homeRoutes,
+  },
+  {
     path: "/sessions",
     route: sessionRoutes,
   },
@@ -87,6 +94,10 @@ const defaultRoutes = [
   {
     path: "/exam",
     route: examRoutes,
+  },
+  {
+    path: "/exam-workflow",
+    route: examWorkflowRoutes,
   },
   {
     path: "/question-papers",
@@ -143,6 +154,10 @@ const defaultRoutes = [
   {
     path: "/evaluation-assignments",
     route: evaluationAssignmentRoutes,
+  },
+  {
+    path: "/subscription",
+    route: subscriptionRoutes,
   },
   
   // {

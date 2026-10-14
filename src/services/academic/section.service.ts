@@ -5,17 +5,22 @@ import Class from "../../models/Class.model";
 import User from "../../models/User.model";
 import Exam from "../../models/Exam.model";
 import StudentProfile from "../../models/Student.model";
-import RegHelper from "../../utils/helper";
 import { sequelize } from "../../config/sequelize";
 import { compareClassNames } from "./class.service";
 import { MAX_NAME_LENGTH, nameKey, normalizeSectionName, uniqueNames } from "../../utils/academicNames";
+import { newId } from "../../utils/idGenerator";
+import { examCountsBy, examsUsing, findStaff, renameLockMessage } from "./academicGuards.service";
+import { checkClassTeacherPost, classTeacherPostOf, isHeadTeacher, syncTeacherType } from "../teacher/classTeacher.service";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
 const MAX_SECTIONS_PER_REQUEST = 26;
 
-const findTeacher = (userId: string, instituteId: string) =>
-  User.findOne({ where: { userId, instituteId, isDeleted: false } });
+/** An active teacher of this institute (not a student or another role). */
+const findTeacher = async (userId: string, instituteId: string) => {
+  const teacher = await findStaff(userId, instituteId, "TEACHER");
+  return teacher && teacher.status === 1 && !teacher.isDeleted ? teacher : null;
+};
 
 // ─── CREATE SECTION(S) ────────────────────────────────────────────────────────
 // Accepts { classId | classIds[], sectionName | sectionNames[] } — every section
@@ -37,7 +42,20 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
 
   const classTeacherId = body.classTeacherId ? String(body.classTeacherId) : null;
   if (classTeacherId && !(await findTeacher(classTeacherId, instituteId))) {
-    return fail(httpStatus.NOT_FOUND, "Teacher not found.");
+    return fail(httpStatus.NOT_FOUND, "That teacher was not found or is deactivated.");
+  }
+  if (classTeacherId) {
+    // A class teacher looks after one section.
+    if (classIds.length * sectionNames.length > 1) {
+      return fail(httpStatus.BAD_REQUEST, "A class teacher looks after one section. Add the sections first, then choose a class teacher for each.");
+    }
+    const other = await classTeacherPostOf(classTeacherId, instituteId);
+    if (other) {
+      return fail(httpStatus.CONFLICT, `${(await findTeacher(classTeacherId, instituteId))?.userName ?? "This teacher"} is already class teacher of ${(other as any).class?.className ?? ""}-${other.sectionName}. A teacher looks after one section.`);
+    }
+    if (await isHeadTeacher(classTeacherId, instituteId)) {
+      return fail(httpStatus.BAD_REQUEST, "The head teacher isn't a class teacher. Choose another teacher.");
+    }
   }
 
   const t = await sequelize.transaction();
@@ -66,13 +84,14 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
         }
         if (found) {
           await found.update(
-            { isDeleted: false, isActive: true, classTeacherId: classTeacherId ?? found.classTeacherId },
+            // Its old class teacher may look after another section by now, so it comes back without one.
+            { isDeleted: false, isActive: true, classTeacherId },
             { transaction: t },
           );
         } else {
           await Section.create(
             {
-              sectionId: await RegHelper.generateUserId(),
+              sectionId: newId("section"),
               classId: cls.classId,
               instituteId,
               sectionName,
@@ -92,6 +111,7 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
         skipped.length === 1 ? `Section ${skipped[0]} already exists.` : `These sections already exist: ${skipped.join(", ")}.`,
       );
     }
+    await syncTeacherType(classTeacherId, instituteId, t);
     await t.commit();
 
     const parts = [`${added} ${added === 1 ? "section" : "sections"} added`];
@@ -130,9 +150,16 @@ const getAllSections = async (query: any, createdBy: any): Promise<any> => {
       raw: true,
     })) as any[];
     const students = new Map<string, number>(studentRows.map((r) => [r.sectionId, Number(r.count)]));
+    const [ownExams, classExams] = await Promise.all([examCountsBy(instituteId, "sectionId"), examCountsBy(instituteId, "classId")]);
 
     const rows = sections
-      .map((s) => ({ ...(s.toJSON() as any), studentCount: students.get(s.sectionId) ?? 0 }))
+      .map((s) => ({
+        ...(s.toJSON() as any),
+        studentCount: students.get(s.sectionId) ?? 0,
+        // Exams of this section (block delete) and of its class (block rename).
+        examCount: ownExams.get(s.sectionId) ?? 0,
+        classExamCount: classExams.get(s.classId) ?? 0,
+      }))
       .sort(
         (a, b) =>
           compareClassNames(a.class?.className ?? "", b.class?.className ?? "") ||
@@ -187,6 +214,9 @@ const updateSection = async (sectionId: string, body: any, createdBy: any): Prom
     if (sectionName.length > 20) return fail(httpStatus.BAD_REQUEST, "Section name can be at most 20 characters.");
 
     if (sectionName !== section.sectionName) {
+      // Older answer sheets store the section by name, for section and whole-class exams alike.
+      const exams = await examsUsing(instituteId, { classId: section.classId });
+      if (exams) return fail(httpStatus.CONFLICT, renameLockMessage(`Section ${section.sectionName}`, exams));
       const siblings = await Section.findAll({ where: { classId: section.classId, sectionId: { [Op.ne]: sectionId } } });
       const clash = siblings.find((s) => nameKey(s.sectionName) === nameKey(sectionName));
       if (clash) {
@@ -199,15 +229,25 @@ const updateSection = async (sectionId: string, body: any, createdBy: any): Prom
       }
     }
 
+    const previousTeacherId = section.classTeacherId;
     let classTeacherId = section.classTeacherId;
     if (body.classTeacherId !== undefined) {
       classTeacherId = body.classTeacherId ? String(body.classTeacherId) : null;
       if (classTeacherId && !(await findTeacher(classTeacherId, instituteId))) {
-        return fail(httpStatus.NOT_FOUND, "Teacher not found.");
+        return fail(httpStatus.NOT_FOUND, "That teacher was not found or is deactivated.");
+      }
+      if (classTeacherId && classTeacherId !== previousTeacherId) {
+        // This is the section's own form, so its current class teacher may be replaced.
+        const check = await checkClassTeacherPost(classTeacherId, sectionId, instituteId, { replace: true });
+        if ("message" in check) return fail(check.status, check.message);
       }
     }
 
     await section.update({ sectionName, classTeacherId });
+    if (classTeacherId !== previousTeacherId) {
+      await syncTeacherType(classTeacherId, instituteId);
+      await syncTeacherType(previousTeacherId, instituteId);
+    }
     await section.reload({
       include: [
         { model: Class, as: "class", attributes: ["classId", "className"] },
@@ -246,7 +286,10 @@ const deleteSection = async (sectionId: string, createdBy: any): Promise<any> =>
       return fail(httpStatus.CONFLICT, `Section ${label} can't be deleted because it has ${used}.`);
     }
 
-    await section.update({ isDeleted: true, isActive: false });
+    // A deleted section has no class teacher; theirs goes back to being a subject teacher.
+    const freedTeacherId = section.classTeacherId;
+    await section.update({ isDeleted: true, isActive: false, classTeacherId: null });
+    await syncTeacherType(freedTeacherId, instituteId);
     return { error: false, statusCode: 200, message: `Section ${label} deleted.`, data: {} };
   } catch (e: any) {
     return fail(500, e.message);
