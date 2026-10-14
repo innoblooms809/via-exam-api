@@ -413,7 +413,8 @@ const updateTeacher = async (
   const nextType = body.teacherType ?? profile?.teacherType ?? "Subject Teacher";
   let post: Section | null = null;
   if (nextType === "Class Teacher" && body.sectionId) {
-    const check = await checkClassTeacherPost(userId, String(body.sectionId), instituteId, { teacherType: nextType });
+    // Moving to another section frees the current one below, in the same transaction.
+    const check = await checkClassTeacherPost(userId, String(body.sectionId), instituteId, { teacherType: nextType, moving: true });
     if ("message" in check) return { error: true, statusCode: check.status, message: check.message };
     post = check.section;
   } else if (nextType === "Class Teacher" && body.teacherType === "Class Teacher" && profile?.teacherType !== "Class Teacher") {

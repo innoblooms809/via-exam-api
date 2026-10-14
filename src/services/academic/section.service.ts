@@ -84,7 +84,8 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
         }
         if (found) {
           await found.update(
-            { isDeleted: false, isActive: true, classTeacherId: classTeacherId ?? found.classTeacherId },
+            // Its old class teacher may look after another section by now, so it comes back without one.
+            { isDeleted: false, isActive: true, classTeacherId },
             { transaction: t },
           );
         } else {

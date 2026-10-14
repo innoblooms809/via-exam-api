@@ -46,8 +46,11 @@ export const checkClassTeacherPost = async (
   teacherId: string | null,
   sectionId: string,
   instituteId: string,
-  /** replace: the section's current class teacher may be swapped out (the section's own form). */
-  opts: { teacherType?: string | null; replace?: boolean } = {}
+  /**
+   * replace: the section's current class teacher may be swapped out (the section's own form).
+   * moving: the teacher's current section is given up in the same save (the teacher's own form).
+   */
+  opts: { teacherType?: string | null; replace?: boolean; moving?: boolean } = {}
 ): Promise<{ section: Section } | { message: string; status: number }> => {
   const section = await Section.findOne({
     where: { sectionId, instituteId, isDeleted: false },
@@ -68,7 +71,7 @@ export const checkClassTeacherPost = async (
   if (type === "Head Teacher") {
     return { status: 400, message: "The head teacher isn't a class teacher. Change their type to Class Teacher first, or choose another teacher." };
   }
-  const other = await classTeacherPostOf(teacherId, instituteId, sectionId);
+  const other = opts.moving ? null : await classTeacherPostOf(teacherId, instituteId, sectionId);
   if (other) {
     const name = (await UserModal.findOne({ where: { userId: teacherId }, attributes: ["userName"] }))?.userName ?? "This teacher";
     return { status: 409, message: `${name} is already class teacher of ${label(other)}. A teacher looks after one section; free ${label(other)} first.` };
