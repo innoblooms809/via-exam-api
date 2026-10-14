@@ -18,6 +18,7 @@ import { Op } from "sequelize";
 import Scanner from "../../models/Scanner.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import Exam from "../../models/Exam.model";
+import Section from "../../models/Section.model";
 import logger from "../../config/logger";
 import { sequelize } from "../../config/sequelize";
 import {
@@ -32,6 +33,11 @@ import {
   uploadAnswerSheet,
 } from "../../utils/answerSheetStorage";
 import { requireSheetAccess } from "../evaluation/evaluationAccess.service";
+import { inspectDiskFile } from "../../middlewares/verifyUpload";
+import { ANSWER_SHEET_DETECTED_TYPES } from "../../utils/fileSignature";
+import { newId } from "../../utils/idGenerator";
+import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
+import { rosterRolls } from "../exam/examRoster.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,7 +66,7 @@ const rollNoFromFileName = (fileName: string): string =>
 /** sheetId collisions are cheap to avoid and expensive to debug. */
 const generateSheetId = async (taken: Set<string>): Promise<string> => {
   for (let attempt = 0; attempt < 25; attempt++) {
-    const candidate = `AS${String(Math.floor(Math.random() * 1_000_000_000)).padStart(9, "0")}`;
+    const candidate = newId("answerSheet");
     if (taken.has(candidate)) continue;
     const exists = await Scanner.findOne({
       where: { sheetId: candidate },
@@ -165,6 +171,15 @@ export const uploadSheets = async (
 
     const replaceExisting = isTruthyFlag(body.replace) || isTruthyFlag(body.overwrite);
 
+    // The exam these sheets belong to: the one the client names, else the newest
+    // exam of this class / subject / type that covers the section.
+    const requestedExamId = String((body as any)?.examId ?? "").trim();
+    // Sheets carry the section as a name or an id; exams store the id.
+    const sectionRow = await Section.findOne({
+      where: { instituteId, classId: body.classId, isDeleted: false, [Op.or]: [{ sectionId: body.section }, { sectionName: body.section }] },
+      attributes: ["sectionId"],
+    });
+    const sectionKeys = Array.from(new Set([body.section, sectionRow?.sectionId].filter(Boolean))) as string[];
     const matchingExam = await Exam.findOne({
       where: {
         instituteId,
@@ -172,8 +187,35 @@ export const uploadSheets = async (
         subjectId: body.subjectId,
         examType: body.examType,
         isDeleted: false,
+        ...(requestedExamId
+          ? { examId: requestedExamId }
+          : { [Op.or]: [{ sectionId: null }, { sectionId: { [Op.in]: sectionKeys } }] }),
       },
+      order: [["createdAt", "DESC"]],
     });
+    if (requestedExamId && !matchingExam) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "This exam doesn't match the class, subject and exam type you picked.",
+      };
+    }
+    if (!matchingExam) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "There is no exam for this class, subject and exam type. Create the exam first, then upload its sheets.",
+      };
+    }
+    const examRolls = await rosterRolls(instituteId, matchingExam.examId);
+
+    // Only the scanner the admin assigned (or an admin) may add sheets, and not
+    // after the upload is marked complete or results are published.
+    try {
+      await assertSheetWritable(uploadedBy, matchingExam?.examId);
+    } catch (err: any) {
+      return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
+    }
 
     // One query instead of one per file.
     const rollNos = files.map((f) => rollNoFromFileName(f.originalname)).filter(Boolean);
@@ -218,6 +260,16 @@ export const uploadSheets = async (
           reason: `"${fileName}" is not named after a roll number. Rename it to the student's roll number, for example 101.pdf.`,
         };
       }
+      if (examRolls && !examRolls.has(rollNo)) {
+        return { ...base, reason: `Roll number ${rollNo} is not on this exam's roster.` };
+      }
+
+      // The file's bytes decide its type; a PDF carrying scripts never reaches storage.
+      const inspected = inspectDiskFile(file.path, ANSWER_SHEET_DETECTED_TYPES);
+      if (!inspected.ok) {
+        return { ...base, reason: `${fileName}: ${inspected.reason}` };
+      }
+      file.mimetype = inspected.mime;
 
       const duplicateOf = seenInBatch.get(rollNo);
       if (duplicateOf) {
@@ -305,6 +357,7 @@ export const uploadSheets = async (
           uploadedBy: uploadedBy.userId,
           status: "Pending",
         });
+        await clearAbsentForRoll(matchingExam?.examId, rollNo, uploadedBy.userId);
 
         return { ...base, outcome: "saved", sheetId };
       } catch (err: any) {
@@ -386,6 +439,11 @@ export const replaceSheet = async (
     if (sheet.instituteId !== requestedBy?.instituteId) {
       return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Access denied." };
     }
+    try {
+      await assertSheetWritable(requestedBy, sheet.examId);
+    } catch (err: any) {
+      return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
+    }
 
     const previous = {
       publicId: sheet.filePublicId,
@@ -457,6 +515,11 @@ export const deleteSheet = async (sheetId: string, requestedBy: any): Promise<an
     }
     if (sheet.instituteId !== requestedBy?.instituteId) {
       return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Access denied." };
+    }
+    try {
+      await assertSheetWritable(requestedBy, sheet.examId);
+    } catch (err: any) {
+      return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
     }
 
     const asset = { publicId: sheet.filePublicId, resourceType: sheet.fileResourceType };

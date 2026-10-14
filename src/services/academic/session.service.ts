@@ -4,8 +4,8 @@ import Session from "../../models/Session.model";
 import Institute from "../../models/Institute.model";
 import Exam from "../../models/Exam.model";
 import StudentProfile from "../../models/Student.model";
-import RegHelper from "../../utils/helper";
 import { sequelize } from "../../config/sequelize";
+import { newId } from "../../utils/idGenerator";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -106,7 +106,7 @@ const createSession = async (body: any, createdBy: any): Promise<any> => {
     } else {
       session = await Session.create(
         {
-          sessionId: await RegHelper.generateUserId(),
+          sessionId: newId("session"),
           instituteId,
           sessionName,
           startDate,

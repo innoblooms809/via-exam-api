@@ -1,0 +1,8 @@
+// sequelize-cli settings: the DB comes from .env (same variables as the API).
+const path = require("path");
+
+module.exports = {
+  config: path.resolve("db", "sequelize-cli.config.js"),
+  "migrations-path": path.resolve("migrations"),
+  "seeders-path": path.resolve("seeds"),
+};

@@ -10,7 +10,6 @@ import Scanner from "../../models/Scanner.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import User from "../../models/User.model";
-import Institute from "../../models/Institute.model";
 import ActivityLog from "../../models/ActivityLog.model";
 import {
   DASHBOARD_COLORS,
@@ -19,20 +18,15 @@ import {
   countInBucket,
   formatCount,
   formatDate,
-  formatInrShort,
   getExamStyle,
   getMonthBuckets,
-  getPlanMonthlyRevenue,
   getRoleColor,
   getSubjectIcon,
-  getTrend,
-  getYearMonthBuckets,
   mapExamUiStatus,
   mapSheetStatus,
   percentLabel,
   percentValue,
   timeAgo,
-  toLakhs,
 } from "../../utils/adminDashboard.helper";
 
 const errorResult = (message = "Something went wrong.") => ({
@@ -552,178 +546,9 @@ const getStudentAnalytics = async (instituteId: string) => {
   }
 };
 
-const getSuperAdminAnalytics = async () => {
-  try {
-    const now = new Date();
-    const thisYear = now.getFullYear();
-    const yearBuckets = getYearMonthBuckets(thisYear);
-    const prevYearBuckets = getYearMonthBuckets(thisYear - 1);
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    const [
-      institutes,
-      totalStudents,
-      prevStudents,
-      totalExams,
-      prevExams,
-      evaluatedSheets,
-      prevEvaluated,
-      recentInstitutes,
-    ] = await Promise.all([
-      Institute.findAll({
-        where: { isDeleted: false },
-        attributes: ["id", "instituteId", "instituteName", "city", "contactPersonName", "plan", "status", "createdAt"],
-        order: [["createdAt", "DESC"]],
-      }),
-      Student.count(),
-      Student.count({ where: { createdAt: { [Op.lt]: thirtyDaysAgo } } }),
-      Exam.count({ where: { isDeleted: false } }),
-      Exam.count({ where: { isDeleted: false, createdAt: { [Op.lt]: thirtyDaysAgo } } }),
-      Scanner.count({ where: { isDeleted: false, status: { [Op.in]: ["Evaluated", "Processed"] } } }),
-      Scanner.count({
-        where: {
-          isDeleted: false,
-          status: { [Op.in]: ["Evaluated", "Processed"] },
-          createdAt: { [Op.lt]: thirtyDaysAgo },
-        },
-      }),
-      Institute.findAll({
-        where: { isDeleted: false },
-        order: [["createdAt", "DESC"]],
-        limit: 8,
-      }),
-    ]);
-
-    const totalInstitutes = institutes.length;
-    const activeInstitutes = institutes.filter((row) => row.status === 1).length;
-    const prevInstitutes = institutes.filter((row) => row.createdAt < thirtyDaysAgo).length;
-    const prevActive = institutes.filter((row) => row.status === 1 && row.createdAt < thirtyDaysAgo).length;
-
-    const kpiData = [
-      {
-        title: "Institutes",
-        value: formatCount(totalInstitutes),
-        description: "Registered organizations",
-        icon: "building",
-        tone: "brand",
-        ...getTrend(totalInstitutes - prevInstitutes + prevInstitutes, prevInstitutes),
-      },
-      {
-        title: "Active Institutes",
-        value: formatCount(activeInstitutes),
-        description: "Currently active",
-        icon: "check",
-        tone: "success",
-        ...getTrend(activeInstitutes, prevActive),
-      },
-      {
-        title: "Students",
-        value: formatCount(totalStudents),
-        description: "Across platform",
-        icon: "users",
-        tone: "brand",
-        ...getTrend(totalStudents, prevStudents),
-      },
-      {
-        title: "Exams",
-        value: formatCount(totalExams),
-        description: "Conducted this year",
-        icon: "clipboard",
-        tone: "warning",
-        ...getTrend(totalExams, prevExams),
-      },
-      {
-        title: "Evaluations",
-        value: formatCount(evaluatedSheets),
-        description: "AI checked sheets",
-        icon: "cpu",
-        tone: "success",
-        ...getTrend(evaluatedSheets, prevEvaluated),
-      },
-    ];
-
-    const prevYearStart = new Date(thisYear - 1, 0, 1);
-    const examsThisYear = await Exam.findAll({
-      where: { isDeleted: false, createdAt: { [Op.gte]: prevYearStart } },
-      attributes: ["createdAt"],
-      raw: true,
-    });
-
-    const examDates = examsThisYear.map((row: any) => new Date(row.createdAt));
-    const monthlyExamsData = yearBuckets.map((bucket) => ({
-      month: bucket.month,
-      exams: countInBucket(examDates, bucket),
-    }));
-
-    const revenueData = yearBuckets.map((bucket, index) => {
-      const currentInstitutes = institutes.filter((row) => row.createdAt < bucket.end);
-      const prevBucket = prevYearBuckets[index];
-      const revenue = currentInstitutes.reduce((sum, row) => sum + getPlanMonthlyRevenue(row.plan), 0);
-      const prev = institutes
-        .filter((row) => row.createdAt < prevBucket.end)
-        .reduce((sum, row) => sum + getPlanMonthlyRevenue(row.plan), 0);
-      return {
-        month: bucket.month,
-        revenue: toLakhs(revenue),
-        prev: toLakhs(prev),
-      };
-    });
-
-    const instituteIds = recentInstitutes.map((row) => row.instituteId);
-    const [examCounts, studentCounts] = await Promise.all([
-      Promise.all(
-        instituteIds.map((instituteId) =>
-          Exam.count({ where: { instituteId, isDeleted: false } }).then((count) => [instituteId, count] as const)
-        )
-      ),
-      Promise.all(
-        instituteIds.map((instituteId) =>
-          Student.count({ where: { instituteId } }).then((count) => [instituteId, count] as const)
-        )
-      ),
-    ]);
-
-    const examCountMap = Object.fromEntries(examCounts);
-    const studentCountMap = Object.fromEntries(studentCounts);
-
-    const recentInstituteRows = recentInstitutes.map((row) => ({
-      id: row.id,
-      name: row.instituteName,
-      city: row.city,
-      admin: row.contactPersonName,
-      exams: examCountMap[row.instituteId] || 0,
-      students: studentCountMap[row.instituteId] || 0,
-      status: row.status === 1 ? "Active" : "Pending",
-      plan: row.plan || "Starter",
-      revenue: formatInrShort(getPlanMonthlyRevenue(row.plan)),
-    }));
-
-    const ytdRevenue = revenueData.reduce((sum, row) => sum + row.revenue, 0);
-    const ytdExams = monthlyExamsData.reduce((sum, row) => sum + row.exams, 0);
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Super admin analytics fetched successfully.",
-      data: {
-        kpiData,
-        revenueData,
-        monthlyExamsData,
-        recentInstitutes: recentInstituteRows,
-        ytdRevenue: Number(ytdRevenue.toFixed(1)),
-        ytdExams,
-      },
-    };
-  } catch (error: any) {
-    console.error("getSuperAdminAnalytics error:", error);
-    return errorResult();
-  }
-};
-
 export default {
   getOverview,
   getTeacherAnalytics,
   getScannerAnalytics,
   getStudentAnalytics,
-  getSuperAdminAnalytics,
 };

@@ -11,6 +11,7 @@ import Session from "../../models/Session.model";
 
 import EncryptPassword from "../../utils/encryption";
 import RegHelper from "../../utils/helper";
+import { newId } from "../../utils/idGenerator";
 import { sequelize } from "../../config/sequelize";
 import {
   MAX_BULK_ROWS,
@@ -112,17 +113,10 @@ const buildError = (
 };
 
 /**
- * User ids in this system are "IB" followed by six digits.
- *
- * RegHelper.generateUserId() fills those six digits from the current
- * millisecond plus two random ones, which is fine one student at a time but
- * collapses in a loop: a synchronous burst sees the same millisecond and can
- * therefore only produce a hundred distinct values. The same six-digit shape
- * is kept here, drawn uniformly so a thousand-row upload has a pool to work
- * from, and every candidate is still cleared against the database.
+ * New student ids come from the shared "VI" generator (crypto-random, safe to
+ * draw in a loop); every candidate is still cleared against the database.
  */
-const drawUserId = (): string =>
-  `IB${String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0")}`;
+const drawUserId = (): string => newId("user");
 
 const allocateUserIds = async (count: number): Promise<string[]> => {
   const free: string[] = [];

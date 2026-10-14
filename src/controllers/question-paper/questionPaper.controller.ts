@@ -95,6 +95,7 @@ export const createQuestionPaper = async (
       teacherId,
       paperSet,
       content,
+      user: req.viaExamUser,
     });
 
     return res.status(201).json({
@@ -109,7 +110,7 @@ export const createQuestionPaper = async (
     });
 
   } catch (error: any) {
-    return res.status(400).json({
+    return res.status(error?.statusCode || 400).json({
       message: getQuestionPaperErrorMessage(error),
     });
   }

@@ -1,6 +1,5 @@
 import httpStatus from "http-status";
 import Class from "../../models/Class.model";
-import RegHelper from "../../utils/helper";
 import Section from "../../models/Section.model";
 import Subject from "../../models/Subject.model";
 import User from "../../models/User.model";
@@ -8,6 +7,8 @@ import Exam from "../../models/Exam.model";
 import StudentProfile from "../../models/Student.model";
 import TeacherProfile from "../../models/TeacherProfile.model";
 import { sequelize } from "../../config/sequelize";
+import { newId } from "../../utils/idGenerator";
+import { examCountsBy, examsUsing, renameLockMessage } from "./academicGuards.service";
 import {
   MAX_BULK_ITEMS,
   MAX_NAME_LENGTH,
@@ -67,7 +68,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
         continue;
       }
       const row = await Class.create(
-        { classId: await RegHelper.generateUserId(), instituteId, sessionId, className },
+        { classId: newId("class"), instituteId, sessionId, className },
         { transaction: t },
       );
       created.push(className);
@@ -89,7 +90,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
             continue;
           }
           const newSec = await Section.create(
-            { sectionId: await RegHelper.generateUserId(), classId: cls.classId, instituteId, sectionName },
+            { sectionId: newId("section"), classId: cls.classId, instituteId, sectionName },
             { transaction: t },
           );
           createdSectionMap.set(nameKey(sectionName), newSec.sectionId);
@@ -113,7 +114,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
           }
           await Subject.create(
             {
-              subjectId: await RegHelper.generateUserId(),
+              subjectId: newId("subject"),
               instituteId,
               classId: cls.classId,
               sectionId: targetSectionId,
@@ -184,6 +185,7 @@ const getAllClasses = async (createdBy: any, query?: any): Promise<any> => {
       raw: true,
     })) as any[];
     const students = new Map<string, number>(studentRows.map((r) => [r.classId, Number(r.count)]));
+    const exams = await examCountsBy(instituteId, "classId");
 
     const rows = classes
       .map((c) => {
@@ -191,6 +193,7 @@ const getAllClasses = async (createdBy: any, query?: any): Promise<any> => {
         json.sections = [...(json.sections ?? [])].sort((a: any, b: any) => compareClassNames(a.sectionName, b.sectionName));
         json.subjects = [...(json.subjects ?? [])].sort((a: any, b: any) => a.subjectName.localeCompare(b.subjectName));
         json.studentCount = students.get(c.classId) ?? 0;
+        json.examCount = exams.get(c.classId) ?? 0;
         return json;
       })
       .sort((a, b) => compareClassNames(a.className, b.className));
@@ -320,6 +323,13 @@ const updateClass = async (classId: string, body: any, createdBy: any): Promise<
     }
 
     const oldName = classData.className;
+    if (className !== oldName) {
+      const exams = await examsUsing(instituteId, { classId }, t);
+      if (exams) {
+        await t.rollback();
+        return fail(httpStatus.CONFLICT, renameLockMessage(`Class ${oldName}`, exams));
+      }
+    }
     await classData.update({ className }, { transaction: t });
     // Student profiles keep a copy of the class name.
     if (oldName !== className) {

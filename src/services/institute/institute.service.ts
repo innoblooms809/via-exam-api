@@ -10,19 +10,62 @@ import { Op } from "sequelize";
 import { sendAdminCredentials } from "../../utils/mailHelper";
 import config from "../../config/config";
 import { destroyInstituteAsset, uploadInstituteAsset } from "../../utils/instituteStorage";
+import PlanService from "../subscription/plan.service";
+import SubscriptionService, { accessEndsAt, effectiveStatus } from "../subscription/subscription.service";
+import Subscription from "../../models/Subscription.model";
+import SubscriptionNotifier, { SUBSCRIPTION_NOTIFICATION, formatDate } from "../subscription/subscriptionNotifier";
+import { newId } from "../../utils/idGenerator";
+import logger from "../../config/logger";
+import StudentProfile from "../../models/Student.model";
+import PushToken from "../../models/PushToken.model";
+import Session from "../../models/Session.model";
+import Class from "../../models/Class.model";
+import Section from "../../models/Section.model";
+import Subject from "../../models/Subject.model";
+import Exam from "../../models/Exam.model";
+import Scanner from "../../models/Scanner.model";
+import AcademicCalendar from "../../models/AcademicCalendar.model";
+import Notification from "../../models/Notification.model";
+import StudentResult from "../../models/StudentResult.model";
+import EvaluationAssignment from "../../models/EvaluationAssignment.model";
+import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 
 
 // ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
+/**
+ * Each institute's subscription as of now, keyed by instituteId. It sits beside the
+ * institute's own status (suspended or not): the two are independent, and the super
+ * admin needs both to decide on suspending or reactivating.
+ */
+const subscriptionSummaries = async (instituteIds: string[]) => {
+  const now = new Date();
+  const subs = instituteIds.length ? await Subscription.findAll({ where: { instituteId: { [Op.in]: instituteIds } } }) : [];
+  return new Map(
+    subs.map((sub) => {
+      const status = effectiveStatus(sub, now);
+      const live = status === "active" || status === "trialing";
+      // When access ends (live) or ended (expired / cancelled).
+      const latestEnd = [sub.currentPeriodEnd, sub.trialEndsAt].filter(Boolean).map((d) => new Date(d as Date).getTime());
+      const endsAt =
+        status === "cancelled"
+          ? sub.cancelledAt
+          : accessEndsAt(sub) ?? (latestEnd.length ? new Date(Math.max(...latestEnd)) : null);
+      return [sub.instituteId, { status, live, planKey: sub.planKey, endsAt }] as const;
+    })
+  );
+};
+
+const subscriptionSummary = async (instituteId: string) => (await subscriptionSummaries([instituteId])).get(instituteId) ?? null;
+
 const registerInstitute = async (body: any, files: any): Promise<any> => {
   // Use a transaction — if admin user creation fails, institute also rolls back
   const t = await sequelize.transaction();
 
   // Declared outside the try so the catch block can clean up an uploaded
-  // logo/banner if a later step (e.g. admin creation) fails.
+  // logo if a later step (e.g. admin creation) fails. (Institutes have a logo
+  // only; the banner image was removed.)
   let logoUrl: string | null = null;
   let logoPublicId: string | null = null;
-  let bannerUrl: string | null = null;
-  let bannerPublicId: string | null = null;
 
   try {
     // 1. Check slug uniqueness
@@ -80,9 +123,9 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     }
 
     // 5. Generate institute ID (needed up front so uploads can be scoped by it)
-    const instituteId = await RegHelper.generateUserId();
+    const instituteId = newId("institute");
 
-    // 6. Upload logo/banner to Cloudinary, if provided
+    // 6. Upload the logo to Cloudinary, if provided (bytes already checked by verifyUploads)
     try {
       if (files?.logo?.[0]) {
         const stored = await uploadInstituteAsset({
@@ -93,28 +136,22 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         logoUrl = stored.url;
         logoPublicId = stored.publicId;
       }
-      if (files?.banner?.[0]) {
-        const stored = await uploadInstituteAsset({
-          buffer: files.banner[0].buffer,
-          instituteId,
-          kind: "banner",
-        });
-        bannerUrl = stored.url;
-        bannerPublicId = stored.publicId;
-      }
     } catch (uploadErr: any) {
       await t.rollback();
       if (logoPublicId) await destroyInstituteAsset(logoPublicId, "register rollback");
-      if (bannerPublicId) await destroyInstituteAsset(bannerPublicId, "register rollback");
       return {
         error: true,
         statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-        message: `Could not store logo/banner: ${uploadErr?.message ?? uploadErr}`,
+        message: `Could not store the logo: ${uploadErr?.message ?? uploadErr}`,
       };
     }
 
-    // 7. Calculate trial end date
-    const trialDays = parseInt(body.trialDays) || 0;
+    // 7. Calculate trial end date (the plan's trial length unless the super admin set one)
+    const selectedPlan = await PlanService.findPlan(String(body.plan || "").toLowerCase());
+    const trialDays =
+      body.trialDays !== undefined && body.trialDays !== ""
+        ? Math.max(0, parseInt(body.trialDays) || 0)
+        : selectedPlan?.trialDays ?? 0;
     const trialEndsAt =
       trialDays > 0
         ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
@@ -144,13 +181,14 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         trialDays,
         trialEndsAt,
         logoUrl,
-        bannerUrl,
         logoPublicId,
-        bannerPublicId,
         status: 1,
       },
       { transaction: t },
     );
+
+    // 8b. Start the institute's subscription (free trial when the plan has one)
+    await SubscriptionService.createForInstitute(instituteId, String(body.plan || "").toLowerCase(), trialDays, t);
 
     let adminResponse = null;
     const loginUrl = `${config.frontendUrl}/${body.slug}/auth/signin`;
@@ -161,7 +199,6 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       if (!adminRole) {
         await t.rollback();
         if (logoPublicId) await destroyInstituteAsset(logoPublicId, "register rollback");
-        if (bannerPublicId) await destroyInstituteAsset(bannerPublicId, "register rollback");
         return {
           error: true,
           statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -172,7 +209,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
       const encryptedPassword = await EncryptPassword.encryptPassword(
         body.adminPassword,
       );
-      const adminUserId = await RegHelper.generateUserId();
+      const adminUserId = newId("user");
 
       const adminUser = await UserModal.create(
         {
@@ -207,6 +244,14 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     // All good — commit
     await t.commit();
 
+    void SubscriptionNotifier.notifySuperAdmins(instituteId, {
+      type: SUBSCRIPTION_NOTIFICATION.TRIAL_STARTED,
+      title: `New institute: ${body.instituteName}`,
+      message: trialDays > 0
+        ? `${body.instituteName} started a ${trialDays}-day free trial on the ${selectedPlan?.name || body.plan} plan (ends ${formatDate(trialEndsAt)}).`
+        : `${body.instituteName} was registered on the ${selectedPlan?.name || body.plan} plan without a trial; it needs a payment to become active.`,
+    });
+
     return {
       error: false,
       statusCode: httpStatus.CREATED,
@@ -224,7 +269,6 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     await t.rollback();
     console.error(e);
     if (logoPublicId) await destroyInstituteAsset(logoPublicId, "register rollback");
-    if (bannerPublicId) await destroyInstituteAsset(bannerPublicId, "register rollback");
 
     if (e.name === "SequelizeUniqueConstraintError") {
       const field = e.errors?.[0]?.path;
@@ -249,7 +293,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
 
 
 // ----------RESEND ADMIN CREDENTIALS EMAIL (IF NOT RECEIVED)----------------
-const resendAdminCredentials = async (instituteId: string, password: string): Promise<any> => {
+const resendAdminCredentials = async (instituteId: string, password?: string): Promise<any> => {
   try {
     // 1. Find institute
     const whereCondition: any = {
@@ -283,7 +327,7 @@ const resendAdminCredentials = async (instituteId: string, password: string): Pr
       };
     }
 
-    // 3. Use the provided password
+    // 3. The super admin's chosen password, or a fresh generated one (emailed, never returned)
     const newPassword = password || RegHelper.generateTempPassword();
     const encrypted = await EncryptPassword.encryptPassword(newPassword);
 
@@ -325,9 +369,10 @@ const resendAdminCredentials = async (instituteId: string, password: string): Pr
 
 const getAllInstitutes = async (query: any): Promise<any> => {
   try {
-    const { page = 1, limit = 10, search = "", plan = "", status = "" } = query;
-
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const { search = "", plan = "", status = "" } = query;
+    const page = Math.max(1, parseInt(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit) || 10));
+    const offset = (page - 1) * limit;
 
     // Build where clause dynamically
     const where: any = {
@@ -335,21 +380,35 @@ const getAllInstitutes = async (query: any): Promise<any> => {
     };
 
     if (search) {
+      // LIKE wildcards typed by the user are matched literally.
+      const term = `%${String(search).trim().slice(0, 100).replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
       where[Op.or] = [
-        { instituteName: { [Op.iLike]: `%${search}%` } }, // iLike = case insensitive (postgres)
-        { slug: { [Op.iLike]: `%${search}%` } },
-        { city: { [Op.iLike]: `%${search}%` } },
-        { contactEmail: { [Op.iLike]: `%${search}%` } },
+        { instituteName: { [Op.iLike]: term } }, // iLike = case insensitive (postgres)
+        { slug: { [Op.iLike]: term } },
+        { city: { [Op.iLike]: term } },
+        { contactEmail: { [Op.iLike]: term } },
+        { contactPersonName: { [Op.iLike]: term } },
       ];
     }
 
     if (plan) where.plan = plan;
     if (status) where.status = parseInt(status);
+    const idFilters: any[] = [];
+    if (query.onlyInstituteId) idFilters.push({ instituteId: String(query.onlyInstituteId) });
+    // ?hasAdmin=true|false — institutes with / without an institute admin account
+    if (query.hasAdmin === "true" || query.hasAdmin === "false") {
+      const role = await Role.findOne({ where: { role: "ADMIN" }, attributes: ["id"] });
+      const admins = sequelize.literal(
+        `(SELECT "instituteId" FROM viaexam_users WHERE "roleId" = ${Number(role?.id) || 0} AND "isDeleted" = false AND "instituteId" IS NOT NULL)`
+      );
+      idFilters.push({ instituteId: { [query.hasAdmin === "true" ? Op.in : Op.notIn]: admins } });
+    }
+    if (idFilters.length) where[Op.and] = idFilters;
 
     const { count, rows } = await Institute.findAndCountAll({
       where,
       order: [["createdAt", "DESC"]],
-      limit: parseInt(limit),
+      limit,
       offset,
     });
 
@@ -381,6 +440,9 @@ const getAllInstitutes = async (query: any): Promise<any> => {
       }));
     }
 
+    const subscriptions = await subscriptionSummaries(rows.map((inst) => inst.instituteId));
+    institutesWithAdmin = institutesWithAdmin.map((inst: any) => ({ ...inst, subscription: subscriptions.get(inst.instituteId) ?? null }));
+
     return {
       error: false,
       statusCode: httpStatus.OK,
@@ -389,9 +451,9 @@ const getAllInstitutes = async (query: any): Promise<any> => {
         institutes: institutesWithAdmin,
         pagination: {
           total: count,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(count / parseInt(limit)),
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil(count / limit),
         },
       },
     };
@@ -466,7 +528,7 @@ const getInstituteById = async (identifier: string): Promise<any> => {
 };
 
 // // ─── UPDATE ───────────────────────────────────────────────────────────────────
-// Update institute details + optionally update logo/banner
+// Update institute details + optionally replace the logo
 // Does NOT update admin credentials here (separate API for that)
 
 const updateInstitute = async (
@@ -547,8 +609,6 @@ const updateInstitute = async (
     // no separate asset to clean up here.
     let logoUrl = institute.logoUrl;
     let logoPublicId = institute.logoPublicId;
-    let bannerUrl = institute.bannerUrl;
-    let bannerPublicId = institute.bannerPublicId;
 
     try {
       if (files?.logo?.[0]) {
@@ -560,20 +620,11 @@ const updateInstitute = async (
         logoUrl = stored.url;
         logoPublicId = stored.publicId;
       }
-      if (files?.banner?.[0]) {
-        const stored = await uploadInstituteAsset({
-          buffer: files.banner[0].buffer,
-          instituteId: institute.instituteId,
-          kind: "banner",
-        });
-        bannerUrl = stored.url;
-        bannerPublicId = stored.publicId;
-      }
     } catch (uploadErr: any) {
       return {
         error: true,
         statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-        message: `Could not store logo/banner: ${uploadErr?.message ?? uploadErr}`,
+        message: `Could not store the logo: ${uploadErr?.message ?? uploadErr}`,
       };
     }
 
@@ -598,10 +649,12 @@ const updateInstitute = async (
       pincode: body.pincode ?? institute.pincode,
       plan: body.plan ?? institute.plan,
       logoUrl,
-      bannerUrl,
       logoPublicId,
-      bannerPublicId,
     });
+
+    if (body.plan) {
+      await SubscriptionService.syncPlanFromInstitute(institute.instituteId, body.plan);
+    }
 
     // Update linked admin user if admin fields are sent in body
     const adminRole = await Role.findOne({ where: { role: "ADMIN" } });
@@ -696,8 +749,12 @@ const updateInstitute = async (
 };
 
 // ─── SOFT DELETE ──────────────────────────────────────────────────────────────
-// Sets isDeleted = true instead of removing from DB
-// Also deactivates the linked admin user
+// Super admin only. Nothing is removed from the DB: the institute and every
+// record that belongs to it — users, master data (sessions, classes, sections,
+// subjects), exams, answer sheets, calendar, notifications — are flagged
+// deleted in ONE transaction, so it is all or nothing. Assignments are closed,
+// sign-ins are revoked (refresh tokens cleared, push tokens dropped) and the
+// auth middleware refuses any token of a deleted institute from now on.
 
 const softDeleteInstitute = async (instituteId: string): Promise<any> => {
   const t = await sequelize.transaction();
@@ -709,7 +766,7 @@ const softDeleteInstitute = async (instituteId: string): Promise<any> => {
         ...(isNaN(Number(instituteId)) ? [] : [{ id: Number(instituteId) }]),
       ],
     };
-    const institute = await Institute.findOne({ where: whereCondition });
+    const institute = await Institute.findOne({ where: whereCondition, transaction: t, lock: t.LOCK.UPDATE });
 
     if (!institute) {
       await t.rollback();
@@ -720,16 +777,34 @@ const softDeleteInstitute = async (instituteId: string): Promise<any> => {
       };
     }
 
-    // Soft delete institute
+    const scope = { where: { instituteId: institute.instituteId }, transaction: t };
+    const notDeleted = { where: { instituteId: institute.instituteId, isDeleted: false }, transaction: t };
+    const now = new Date();
+
     await institute.update({ isDeleted: true, status: 0 }, { transaction: t });
 
-    // Also deactivate all users of this institute
-    await UserModal.update(
-      { status: 0 },
-      { where: { instituteId: institute.instituteId }, transaction: t },
-    );
+    // People: deleted and signed out everywhere.
+    await UserModal.update({ status: 0, isDeleted: true, refreshToken: null } as any, notDeleted);
+    await StudentProfile.update({ isActive: false }, scope);
+    await PushToken.destroy(scope);
+
+    // Master data and exam records.
+    await Session.update({ isDeleted: true, isActive: false }, notDeleted);
+    await Class.update({ isDeleted: true, isActive: false }, notDeleted);
+    await Section.update({ isDeleted: true, isActive: false }, notDeleted);
+    await Subject.update({ isDeleted: true, isActive: false }, notDeleted);
+    await Exam.update({ isDeleted: true }, notDeleted);
+    await Scanner.update({ isDeleted: true }, notDeleted);
+    await AcademicCalendar.update({ isDeleted: true } as any, notDeleted);
+    await Notification.update({ isDeleted: true }, notDeleted);
+    await StudentResult.update({ isDeleted: true }, notDeleted);
+
+    // Open work is closed, with the time it was closed.
+    await EvaluationAssignment.update({ isActive: false, unassignedAt: now }, { where: { instituteId: institute.instituteId, isActive: true }, transaction: t });
+    await ExamScannerAssignment.update({ isActive: false, unassignedAt: now }, { where: { instituteId: institute.instituteId, isActive: true }, transaction: t });
 
     await t.commit();
+    logger.info(`[Institute] ${institute.instituteId} soft-deleted with all its records.`);
 
     // Committed — the row is kept for audit, but the storage bytes can go.
     if (institute.logoPublicId) await destroyInstituteAsset(institute.logoPublicId, "deleted institute");
@@ -777,17 +852,47 @@ const toggleInstituteStatus = async (
       };
     }
 
-    await institute.update({ status });
+    // Suspension and the subscription are separate. Suspending never touches the
+    // subscription (its paid time keeps running), and reactivating never extends it:
+    // an institute with an ended subscription gets sign-in back and its admin is asked
+    // to renew in Billing (which they couldn't do while suspended). Payments never
+    // reactivate a suspended institute; only a super admin does.
+    const subscription = await subscriptionSummary(institute.instituteId);
 
-    // Also update all users of this institute
-    await UserModal.update({ status }, { where: { instituteId: institute.instituteId } });
+    // Already in that state: change nothing. (Re-running reactivation could otherwise
+    // hit the fallback below and switch on users the admin had turned off.)
+    if (Number(institute.status) === status) {
+      return {
+        error: false,
+        statusCode: httpStatus.OK,
+        message: status === 1 ? "Institute is already active." : "Institute is already suspended.",
+        data: { institute, subscription },
+      };
+    }
+
+    // Suspending an institute marks its active users 2 (suspended); re-activating
+    // restores only those, so users an admin had switched off (0) stay off.
+    // Institutes suspended before this rule zeroed everyone; for those (no user
+    // left at 1 or 2) re-activation falls back to restoring all of them.
+    await sequelize.transaction(async (t) => {
+      await institute.update({ status }, { transaction: t });
+      const users = { instituteId: institute.instituteId, isDeleted: false };
+      if (status === 1) {
+        const [restored] = await UserModal.update({ status: 1 }, { where: { ...users, status: 2 }, transaction: t });
+        if (!restored) {
+          const stillActive = await UserModal.count({ where: { ...users, status: 1 }, transaction: t });
+          if (!stillActive) await UserModal.update({ status: 1 }, { where: { ...users, status: 0 }, transaction: t });
+        }
+      } else {
+        await UserModal.update({ status: 2, refreshToken: null } as any, { where: { ...users, status: 1 }, transaction: t });
+      }
+    });
 
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `Institute ${status === 1 ? "activated" : "deactivated"
-        } successfully.`,
-      data: institute,
+      message: status === 1 ? "Institute reactivated." : "Institute suspended.",
+      data: { institute, subscription },
     };
   } catch (e: any) {
     return {
@@ -805,7 +910,7 @@ const getInstituteBySlug = async (slug: string): Promise<any> => {
         slug,
         isDeleted: false,
       },
-      attributes: ["instituteName", "logoUrl", "bannerUrl", "slug", "status", "city"],
+      attributes: ["instituteName", "logoUrl", "slug", "status", "city"],
     });
 
     if (!institute) {
@@ -909,14 +1014,20 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
       };
     }
 
-    const { adminFirstName, adminLastName, adminEmail, adminPhone, adminPassword } = body;
+    // The super admin either types the password (`password`, validated by the route) or
+    // leaves it out and one is generated here. A new password is saved and emailed when the
+    // admin is created, when their email changes (the old credentials went to the old
+    // address), when `resetPassword` is set or when a password is given.
+    const { adminFirstName, adminLastName, adminEmail, adminPhone } = body;
+    const chosenPassword = typeof body.password === "string" ? body.password : "";
+    const resetPassword = body.resetPassword === true || body.resetPassword === "true" || Boolean(chosenPassword);
 
     // Find existing admin for this institute
     let adminUser = await UserModal.findOne({
       where: { instituteId: institute.instituteId, roleId: adminRole.id, isDeleted: false },
     });
 
-    const plainPassword = adminPassword || RegHelper.generateTempPassword();
+    const plainPassword = chosenPassword || RegHelper.generateTempPassword();
     const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
 
     let sendMailNeeded = false;
@@ -924,8 +1035,9 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
     if (adminUser) {
       // Check if email changed and is taken by another user
       if (adminEmail && adminEmail !== adminUser.emailId) {
+        // Emails are compared case-insensitively (validation lower-cases the new one).
         const emailTaken = await UserModal.findOne({
-          where: { emailId: adminEmail, userId: { [Op.ne]: adminUser.userId } },
+          where: { [Op.and]: [sequelize.where(sequelize.fn("lower", sequelize.col("emailId")), adminEmail.toLowerCase()), { userId: { [Op.ne]: adminUser.userId } }] },
         });
         if (emailTaken) {
           return {
@@ -949,16 +1061,14 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
         }
       }
 
-      // If password or email changed, send email
-      if (adminPassword || (adminEmail && adminEmail !== adminUser.emailId)) {
-        sendMailNeeded = true;
-      }
+      // New email or explicit reset: issue (save + email) a new password, so the email always works.
+      sendMailNeeded = resetPassword || Boolean(adminEmail && adminEmail !== adminUser.emailId);
 
       await adminUser.update({
         userName: `${adminFirstName ?? ""} ${adminLastName ?? ""}`.trim() || adminUser.userName,
         emailId: adminEmail ?? adminUser.emailId,
         phoneNumber: adminPhone ?? adminUser.phoneNumber,
-        ...(adminPassword ? { password: encryptedPassword } : {}),
+        ...(sendMailNeeded ? { password: encryptedPassword } : {}),
       });
     } else {
       // Create new admin
@@ -970,7 +1080,9 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
         };
       }
 
-      const emailTaken = await UserModal.findOne({ where: { emailId: adminEmail } });
+      const emailTaken = await UserModal.findOne({
+        where: sequelize.where(sequelize.fn("lower", sequelize.col("emailId")), String(adminEmail).toLowerCase()),
+      });
       if (emailTaken) {
         return {
           error: true,
@@ -996,7 +1108,7 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
         };
       }
 
-      const adminUserId = await RegHelper.generateUserId();
+      const adminUserId = newId("user");
       adminUser = await UserModal.create({
         userId: adminUserId,
         userName: `${adminFirstName ?? ""} ${adminLastName ?? ""}`.trim(),
@@ -1031,7 +1143,7 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: "Admin created/updated successfully and credentials emailed.",
+      message: sendMailNeeded ? "Admin saved and login details emailed." : "Admin details saved.",
       data: {
         admin: exclude(adminUser.toJSON(), ["password", "refreshToken"]),
       },

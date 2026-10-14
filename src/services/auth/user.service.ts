@@ -13,6 +13,7 @@ import TeacherProfile from "../../models/TeacherProfile.model";
 import StudentProfile from "../../models/Student.model";
 import ScannerProfile from "../../models/ScannerProfile.model";
 import Section from "../../models/Section.model";
+import { newId } from "../../utils/idGenerator";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -88,12 +89,20 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
     // Reuse your existing helpers
     const password = await RegHelper.generatePassword();
     const encryptedPassword = await EncryptPassword.encryptPassword(password);
-    const userId = await RegHelper.generateUserId();
+    const userId = newId("user");
 
-    req.body.password = encryptedPassword;
-    req.body.userId = userId;
-
-    const newUser = await UserModal.create(req.body);
+    // Only these fields come from the request; password, ids and lockout state never do.
+    const { userName, emailId, phoneNumber, roleId, instituteId } = req.body;
+    const newUser = await UserModal.create({
+      userId,
+      userName,
+      emailId,
+      phoneNumber,
+      roleId,
+      instituteId: instituteId || null,
+      password: encryptedPassword,
+      status: 1,
+    } as any);
     const { password: _, ...userResponse } = newUser.toJSON();
 
     return {
@@ -146,23 +155,6 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       };
     }
 
-    // Account status checks
-    if (user.status === 0) {
-      return {
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "Your account is inactive.",
-      };
-    }
-
-    if (user.status === 2) {
-      return {
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "Account suspended.",
-      };
-    }
-
     // Lock check (DISABLED)
     /*
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
@@ -202,6 +194,36 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
         message: "Invalid credentials.",
+      };
+    }
+
+    // Status checks come after the password, so they don't reveal which accounts exist.
+    // A suspended institute blocks all of its users (suspension marks them 2), so say
+    // that rather than blaming the person's own account.
+    if (user.instituteId) {
+      const userInstitute = await Institute.findOne({ where: { instituteId: user.instituteId }, attributes: ["status", "isDeleted"] });
+      if (!userInstitute || userInstitute.isDeleted || Number(userInstitute.status) !== 1) {
+        return {
+          error: true,
+          statusCode: httpStatus.FORBIDDEN,
+          message: "Your institute's ViaExam access is suspended. Contact the ViaExam team.",
+        };
+      }
+    }
+
+    if (user.status === 0) {
+      return {
+        error: true,
+        statusCode: httpStatus.UNAUTHORIZED,
+        message: "Your account is inactive.",
+      };
+    }
+
+    if (user.status === 2) {
+      return {
+        error: true,
+        statusCode: httpStatus.UNAUTHORIZED,
+        message: "Account suspended.",
       };
     }
 
@@ -458,7 +480,14 @@ const viaExamUpdateProfile = async (userId: string, body: any, files: any): Prom
     if (uploadedFile) {
       updates.profileUrl = `/${uploadedFile.path.replace(/\\/g, "/")}`;
     } else if (body.profileUrl || body.profileImage) {
-      updates.profileUrl = body.profileUrl || body.profileImage;
+      // Only an https image URL or a path we serve ourselves — never javascript:/data: URLs.
+      const candidate = String(body.profileUrl || body.profileImage).trim();
+      const isOwnUpload = /^\/(v1\/)?uploads\/[A-Za-z0-9/_.-]+$/.test(candidate) && !candidate.includes("..");
+      const isHttpsUrl = /^https:\/\/[^\s"'<>]+$/i.test(candidate) && candidate.length <= 2048;
+      if (!isOwnUpload && !isHttpsUrl) {
+        return { error: true, statusCode: httpStatus.BAD_REQUEST, data: {}, message: "Profile photo must be an uploaded image or an https link." };
+      }
+      updates.profileUrl = candidate;
     }
 
     // 4. Update Teacher Profile if provided/applicable

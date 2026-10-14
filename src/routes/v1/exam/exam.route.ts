@@ -1,73 +1,19 @@
 import { Router } from "express";
 import Controller from "../../../controllers/exam/exam.controller";
-import { authenticate } from "../../../middlewares/auth"
-// import { getExamBySelection }      from "../../../controllers/exam/getExamBySelection";
-// import { authenticate, authorize } from "../middlewares/auth";
-
+import { authenticate, authorize } from "../../../middlewares/auth";
+import { ACADEMIC, ADMINS, STAFF } from "../../../config/roles";
 
 const router = Router();
 
-// Admin and Examiner can create/manage exams
-router.post(
-  "/createExam",
-  authenticate,
-//   authorize(["ADMIN", "EXAMINER"]),
-  Controller.createExam,
-);
-router.get(
-  "/getAllExams",
-  authenticate,
-//   authorize(["ADMIN", "EXAMINER", "TEACHER"]),
-  Controller.getAllExams,
-);
-
-router.get(
-  "/assigned",
-  authenticate,
-  Controller.getAssignedExams,
-);
-
-router.get(
-  "/assigned-summary",
-  authenticate,
-  Controller.getAssignedExamsSummary,
-);
-
-router.get(
-  "/getOneExam/:examId",
-  authenticate,
-//   authorize(["ADMIN", "EXAMINER", "TEACHER"]),
-  Controller.getExamById,
-);
-router.patch(
-  "/updateExamStatus/:examId",
-  authenticate,
-//   authorize(["ADMIN", "EXAMINER"]),
-  Controller.updateExamStatus,
-);
-
-router.put(
-  "/updateExam/:examId",
-    authenticate,
-  Controller.updateExam
-);
-router.delete(
-  "/deleteExam/:examId",
-  authenticate,
-//   authorize(["ADMIN", "EXAMINER"]),
-  Controller.deleteExam,
-)
-
-
-
-
-
-
-
-router.get(
-  "/progress/:examId",
-  authenticate,
-  Controller.getExamProgress,
-);
+// The school admin creates and manages exams; staff read them.
+router.post("/createExam", authenticate, authorize(ADMINS), Controller.createExam);
+router.get("/getAllExams", authenticate, authorize(STAFF), Controller.getAllExams);
+router.get("/assigned", authenticate, authorize(ACADEMIC), Controller.getAssignedExams);
+router.get("/assigned-summary", authenticate, authorize(ACADEMIC), Controller.getAssignedExamsSummary);
+router.get("/getOneExam/:examId", authenticate, authorize(STAFF), Controller.getExamById);
+router.patch("/updateExamStatus/:examId", authenticate, authorize(ADMINS), Controller.updateExamStatus);
+router.put("/updateExam/:examId", authenticate, authorize(ADMINS), Controller.updateExam);
+router.delete("/deleteExam/:examId", authenticate, authorize(ADMINS), Controller.deleteExam);
+router.get("/progress/:examId", authenticate, authorize(STAFF), Controller.getExamProgress);
 
 export default router;

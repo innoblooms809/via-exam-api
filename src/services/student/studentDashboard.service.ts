@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
 import Exam from "../../models/Exam.model";
-import AIEvaluation from "../../models/AIEvaluation.model";
+import StudentResult, { RESULT_STATUS } from "../../models/StudentResult.model";
 import StudentProfile from "../../models/Student.model";
 import RecheckRequest from "../../models/RecheckRequest.model";
 import Subject from "../../models/Subject.model";
@@ -48,24 +48,13 @@ const getStudentDashboardOverview = async (studentId: string, instituteId: strin
       },
     });
 
-    // Get completed exams for the student - exams where student has successful evaluation
-    const studentSuccessfulEvals = await AIEvaluation.findAll({
-      where: {
-        studentId,
-        status: "Success",
-      },
-      attributes: ["examId"],
-      group: ["examId"],
-    });
-    const completedExams = studentSuccessfulEvals.length;
-
-    // Get published results (evaluations with 'Success' status for this student)
-    const publishedResults = await AIEvaluation.count({
-      where: {
-        studentId,
-        status: "Success",
-      },
-    });
+    // Students only ever see results the admin has published.
+    const [completedExams, publishedResults] = await Promise.all([
+      StudentResult.count({
+        where: { studentId, instituteId, isDeleted: false, resultStatus: { [Op.ne]: RESULT_STATUS.ABSENT } },
+      }),
+      StudentResult.count({ where: { studentId, instituteId, isDeleted: false } }),
+    ]);
 
     // Get pending rechecks - using RecheckRequest model
     const pendingRechecks = await RecheckRequest.count({
@@ -197,16 +186,12 @@ const getExamProgress = async (studentId: string, instituteId: string, query: an
       where: { instituteId, classId, isDeleted: false, status: "Live", examDate: { [Op.gte]: new Date() } },
     });
 
-    const studentEvals = await AIEvaluation.findAll({
-      where: { studentId, status: "Success", createdAt: dateFilter },
-      attributes: ["examId"],
-      group: ["examId"],
-    });
-    const completed = studentEvals.length;
-
-    const published = await AIEvaluation.count({
-      where: { studentId, status: "Success", createdAt: dateFilter },
-    });
+    const [completed, published] = await Promise.all([
+      StudentResult.count({
+        where: { studentId, instituteId, isDeleted: false, resultStatus: { [Op.ne]: RESULT_STATUS.ABSENT }, publishedAt: dateFilter },
+      }),
+      StudentResult.count({ where: { studentId, instituteId, isDeleted: false, publishedAt: dateFilter } }),
+    ]);
 
     const rechecks = await RecheckRequest.count({
       where: { studentId, instituteId, status: { [Op.in]: ["Pending", "Under Review"] }, createdAt: dateFilter },
@@ -245,18 +230,22 @@ const getPerformanceOverview = async (studentId: string, instituteId: string, qu
       startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     }
 
-    const evaluations = await AIEvaluation.findAll({
+    // Monthly average percentage of published results (marks out of different
+    // totals can't be averaged directly).
+    const evaluations = await StudentResult.findAll({
       where: {
         studentId,
-        status: "Success",
-        createdAt: { [Op.gte]: startDate },
+        instituteId,
+        isDeleted: false,
+        percentage: { [Op.ne]: null },
+        publishedAt: { [Op.gte]: startDate },
       },
       attributes: [
-        [fn("DATE_TRUNC", "month", col("createdAt")), "month"],
-        [fn("AVG", col("totalScore")), "avgScore"],
+        [fn("DATE_TRUNC", "month", col("publishedAt")), "month"],
+        [fn("AVG", col("percentage")), "avgScore"],
       ],
-      group: [fn("DATE_TRUNC", "month", col("createdAt"))],
-      order: [[fn("DATE_TRUNC", "month", col("createdAt")), "ASC"]],
+      group: [fn("DATE_TRUNC", "month", col("publishedAt"))],
+      order: [[fn("DATE_TRUNC", "month", col("publishedAt")), "ASC"]],
       raw: true,
     });
 
@@ -299,9 +288,10 @@ const getSubjectComparison = async (studentId: string, instituteId: string, quer
       dateFilter = { [Op.gte]: now.getMonth() < 6 ? new Date(now.getFullYear(), 0, 1) : new Date(now.getFullYear(), 6, 1) };
     }
 
-    const yourScores = await AIEvaluation.findAll({
-      where: { studentId, status: "Success", createdAt: dateFilter },
-      attributes: ["subjectId", [fn("AVG", col("totalScore")), "avgScore"]],
+    // Published results only, compared as percentages.
+    const yourScores = await StudentResult.findAll({
+      where: { studentId, instituteId, isDeleted: false, percentage: { [Op.ne]: null }, publishedAt: dateFilter },
+      attributes: ["subjectId", [fn("AVG", col("percentage")), "avgScore"]],
       group: ["subjectId"],
       raw: true,
     });
@@ -312,12 +302,14 @@ const getSubjectComparison = async (studentId: string, instituteId: string, quer
     });
     const classmateIds = classmates.map((s) => s.userId);
 
-    const classAverages = await AIEvaluation.findAll({
-      where: { studentId: { [Op.in]: classmateIds }, status: "Success", createdAt: dateFilter },
-      attributes: ["subjectId", [fn("AVG", col("totalScore")), "avgScore"]],
-      group: ["subjectId"],
-      raw: true,
-    });
+    const classAverages = classmateIds.length
+      ? await StudentResult.findAll({
+          where: { studentId: { [Op.in]: classmateIds }, instituteId, isDeleted: false, percentage: { [Op.ne]: null }, publishedAt: dateFilter },
+          attributes: ["subjectId", [fn("AVG", col("percentage")), "avgScore"]],
+          group: ["subjectId"],
+          raw: true,
+        })
+      : [];
 
     const subjectIds = [...new Set([...yourScores.map((s: any) => s.subjectId), ...classAverages.map((s: any) => s.subjectId)])];
     const subjects = await Subject.findAll({ where: { subjectId: { [Op.in]: subjectIds } }, attributes: ["subjectId", "subjectName"] });
@@ -350,29 +342,24 @@ const getLatestResults = async (studentId: string, instituteId: string, query: a
     const limit = Math.min(100, Math.max(1, parseInt(query.limit || "10", 10)));
     const offset = (page - 1) * limit;
 
-    const { count, rows } = await AIEvaluation.findAndCountAll({
-      where: { studentId, status: "Success" },
-      include: [
-        { model: Exam, as: "exam", attributes: ["examId", "examType", "totalMarks"], required: false },
-        { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
-      ],
-      order: [["createdAt", "DESC"]],
+    const { count, rows } = await StudentResult.findAndCountAll({
+      where: { studentId, instituteId, isDeleted: false },
+      include: [{ model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: false }],
+      order: [["publishedAt", "DESC"]],
       limit,
       offset,
     });
 
-    const results = rows.map((evaluation: any) => {
-      const totalMarks = evaluation.exam?.totalMarks || 100;
-      const percentage = Math.round((Number(evaluation.totalScore) / totalMarks) * 100);
-      const { grade, status } = getGradeFromPercentage(percentage);
-
+    const results = rows.map((result: any) => {
+      const absent = result.resultStatus === RESULT_STATUS.ABSENT;
+      const percentage = result.percentage == null ? null : Math.round(Number(result.percentage));
       return {
-        subject: evaluation.subject?.subjectName || evaluation.subjectId,
-        exam: evaluation.exam?.examType || evaluation.examId,
-        score: `${evaluation.totalScore}/${totalMarks}`,
-        percentage: `${percentage}%`,
-        grade,
-        status,
+        subject: result.subject?.subjectName || result.subjectId,
+        exam: result.examType,
+        score: absent ? "Absent" : `${Number(result.marksObtained ?? 0)}/${result.totalMarks}`,
+        percentage: percentage == null ? "—" : `${percentage}%`,
+        grade: result.grade ?? "—",
+        status: absent ? "Absent" : result.resultStatus === RESULT_STATUS.PASS ? "Passed" : "Failed",
       };
     });
 
@@ -393,32 +380,20 @@ const getLatestResults = async (studentId: string, instituteId: string, query: a
 
 const getSubjectPerformance = async (studentId: string, instituteId: string): Promise<any> => {
   try {
-    const evaluations = await AIEvaluation.findAll({
-      where: { studentId, status: "Success" },
-      include: [{ model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: true }],
-      raw: false,
+    const results: any[] = await StudentResult.findAll({
+      where: { studentId, instituteId, isDeleted: false, percentage: { [Op.ne]: null } },
+      include: [{ model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: false }],
     });
 
-    const examIds = [...new Set(evaluations.map((e: any) => e.examId).filter(Boolean))];
-    const exams = examIds.length
-      ? await Exam.findAll({ where: { examId: { [Op.in]: examIds } }, attributes: ["examId", "totalMarks"], raw: true })
-      : [];
-    const examTotalMarksMap = new Map(exams.map((e: any) => [e.examId, e.totalMarks]));
-
-    const subjectMap = new Map<string, { scores: number[]; totalMarks: number; subjectName: string }>();
-
-    for (const evaluation of evaluations) {
-      const sid = evaluation.subjectId;
-      const totalMarks = examTotalMarksMap.get(evaluation.examId) || 100;
-      if (!subjectMap.has(sid)) {
-        subjectMap.set(sid, { scores: [], totalMarks, subjectName: evaluation.subject?.subjectName || sid });
-      }
-      subjectMap.get(sid)!.scores.push(Number(evaluation.totalScore));
+    const subjectMap = new Map<string, { percentages: number[]; subjectName: string }>();
+    for (const result of results) {
+      const sid = result.subjectId;
+      if (!subjectMap.has(sid)) subjectMap.set(sid, { percentages: [], subjectName: result.subject?.subjectName || sid });
+      subjectMap.get(sid)!.percentages.push(Number(result.percentage));
     }
 
-    const performance = Array.from(subjectMap.entries()).map(([subjectId, data], index) => {
-      const avgScore = data.scores.reduce((a, b) => a + b, 0) / data.scores.length;
-      const percentage = Math.round((avgScore / data.totalMarks) * 100);
+    const performance = Array.from(subjectMap.entries()).map(([, data], index) => {
+      const percentage = Math.round(data.percentages.reduce((a, b) => a + b, 0) / data.percentages.length);
       const { grade } = getGradeFromPercentage(percentage);
 
       return {

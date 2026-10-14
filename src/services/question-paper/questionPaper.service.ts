@@ -1,7 +1,6 @@
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import Exam from "../../models/Exam.model";
 import Notification from "../../models/Notification.model";
-import RegHelper from "../../utils/helper";
 import ApiError from "../../utils/ApiError";
 import { sequelize } from "../../config/sequelize";
 import httpStatus from "http-status";
@@ -13,6 +12,8 @@ import {
 import { cleanupUploadsInBackground, collectUploadRefs } from "../answer-sheet/uploadedFiles.service";
 import { countUnlinkedAnswers, reconcileTypedAnswers } from "../../utils/answerSheetReconcile";
 import logger from "../../config/logger";
+import { newId } from "../../utils/idGenerator";
+import { examUsage } from "../academic/academicGuards.service";
 
 /** What happened to the set's typed answers when its paper changed. */
 export interface AnswerSheetLinkSummary {
@@ -28,6 +29,8 @@ interface CreateQuestionPaperDTO {
   teacherId?: string;
   paperSet: "A" | "B" | "C" | "D";
   content: object;
+  /** The signed-in user creating the paper (decides who owns it). */
+  user?: any;
 }
 
 type PaperSet = "A" | "B" | "C" | "D";
@@ -80,16 +83,30 @@ export class QuestionPaperService {
       content,
     } = data;
 
-    if (!teacherId) {
-      throw new Error("teacherId is required");
-    }
-
+    const { user } = data;
     const exam = await Exam.findOne({
-      where: { examId },
+      where: { examId, isDeleted: false, ...(instituteId ? { instituteId } : {}) },
     });
 
     if (!exam) {
-      throw new Error("Exam not found");
+      throw new ApiError(httpStatus.NOT_FOUND, "Exam not found");
+    }
+
+    // Only the exam's assigned teacher sets its paper (an admin may set it on their behalf).
+    if (isTeacherUser(user) && exam.teacherId !== user.userId) {
+      throw new ApiError(httpStatus.FORBIDDEN, "Only the teacher assigned to this exam can set its question paper.");
+    }
+    // An admin writes on the assigned teacher's behalf: the paper stays the teacher's, so they
+    // can still edit and submit it. (The UI sends the signed-in user as teacherId.)
+    const ownerId = isTeacherUser(user) ? user.userId : exam.teacherId || teacherId;
+    if (!ownerId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "teacherId is required");
+    }
+
+    // Once students have written the exam, its papers are fixed.
+    const usage = await examUsage(examId);
+    if (usage.sheets || usage.results) {
+      throw new ApiError(httpStatus.CONFLICT, "Answer sheets are already uploaded for this exam, so no new paper set can be added.");
     }
 
     const resolvedInstituteId =
@@ -106,13 +123,13 @@ export class QuestionPaperService {
     }
 
     const resolvedPaperId =
-      await RegHelper.generateUserId();
+      newId("questionPaper");
 
     const paper = await QuestionPaper.create({
       paperId: resolvedPaperId,
       instituteId: resolvedInstituteId,
       examId,
-      teacherId,
+      teacherId: ownerId,
       paperSet,
       content,
       status: "DRAFT",
@@ -368,7 +385,7 @@ export class QuestionPaperService {
   private static async notifyTeacher(paper: QuestionPaper, type: string, title: string, message: string) {
     try {
       await Notification.create({
-        notificationId: await RegHelper.generateUserId(),
+        notificationId: newId("notification"),
         instituteId: paper.instituteId,
         userId: paper.teacherId,
         type,

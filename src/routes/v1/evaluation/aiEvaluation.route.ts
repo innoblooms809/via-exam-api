@@ -3,7 +3,8 @@ import Controller from "../../../controllers/evaluation/aiEvaluation.controller"
 import NewController from "../../../controllers/evaluation/aiEvaluationNew.controller";
 import OCRNew5Controller from "../../../controllers/evaluation/ocrnew5.controller";
 import Pipeline6Controller from "../../../controllers/evaluation/pipeline6.controller";
-import { authenticate } from "../../../middlewares/auth";
+import { authenticate, authorize } from "../../../middlewares/auth";
+import { ACADEMIC } from "../../../config/roles";
 import { requireSheetAccessMiddleware, requireSheetEvaluateMiddleware } from "../../../services/evaluation/evaluationAccess.service";
 
 const router = Router();
@@ -12,6 +13,7 @@ const router = Router();
 router.post(
   "/evaluate",
   authenticate,
+  authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
   Controller.evaluateSheet
 );
@@ -20,6 +22,7 @@ router.post(
 router.post(
   "/evaluate2",
   authenticate,
+  authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
   NewController.evaluateSheet2
 );
@@ -28,6 +31,7 @@ router.post(
 router.post(
   "/evaluate-ocrnew5",
   authenticate,
+  authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
   OCRNew5Controller.evaluateSheetOCRNew5
 );
@@ -36,6 +40,7 @@ router.post(
 router.post(
   "/evaluate-pipeline6",
   authenticate,
+  authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
   Pipeline6Controller.evaluateSheetPipeline6
 );
@@ -43,6 +48,7 @@ router.post(
 router.post(
   "/evaluate6",
   authenticate,
+  authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
   Pipeline6Controller.evaluateSheetPipeline6
 );
@@ -51,6 +57,7 @@ router.post(
 router.get(
   "/queue",
   authenticate,
+  authorize(ACADEMIC),
   Pipeline6Controller.getQueueStatus
 );
 
@@ -59,6 +66,7 @@ router.get(
 router.get(
   "/sheet/:sheetId",
   authenticate,
+  authorize(ACADEMIC),
   requireSheetAccessMiddleware,
   Controller.getEvaluation
 );
@@ -67,6 +75,7 @@ router.get(
 router.put(
   "/sheet/:sheetId",
   authenticate,
+  authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
   Controller.updateEvaluation
 );
@@ -75,6 +84,7 @@ router.put(
 router.get(
   "/list",
   authenticate,
+  authorize(ACADEMIC),
   Controller.getAllEvaluations
 );
 

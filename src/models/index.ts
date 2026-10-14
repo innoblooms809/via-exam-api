@@ -19,8 +19,19 @@ import UserPresenceSession from "./UserPresenceSession.model";
 import RecheckRequest from "./RecheckRequest.model";
 import EvaluationAssignment from "./EvaluationAssignment.model";
 import PushToken from "./PushToken.model";
+import Plan from "./Plan.model";
+import Subscription from "./Subscription.model";
+import SubscriptionTransaction from "./SubscriptionTransaction.model";
+import ExamScannerAssignment from "./ExamScannerAssignment.model";
+import ExamAttendance from "./ExamAttendance.model";
+import StudentResult from "./StudentResult.model";
+import RecheckAssignment from "./RecheckAssignment.model";
 
 export {
+  ExamScannerAssignment,
+  ExamAttendance,
+  StudentResult,
+  RecheckAssignment,
   User,
   Role,
   Access,
@@ -42,6 +53,9 @@ export {
   RecheckRequest,
   EvaluationAssignment,
   PushToken,
+  Plan,
+  Subscription,
+  SubscriptionTransaction,
 };
 
 // ROLE ↔ ACCESS
@@ -669,3 +683,45 @@ AIEvaluation.belongsTo(Exam, {
   targetKey: "examId",
   as: "exam",
 });
+
+// ═══════════════════════════════════════════════════════════════
+// INSTITUTE ↔ SUBSCRIPTION / BILLING TRANSACTIONS
+// ═══════════════════════════════════════════════════════════════
+Institute.hasOne(Subscription, {
+  foreignKey: "instituteId",
+  sourceKey: "instituteId",
+  as: "subscription",
+  constraints: false,
+});
+Subscription.belongsTo(Institute, {
+  foreignKey: "instituteId",
+  targetKey: "instituteId",
+  as: "institute",
+  constraints: false,
+});
+Subscription.belongsTo(Plan, {
+  foreignKey: "planKey",
+  targetKey: "planKey",
+  as: "plan",
+  constraints: false,
+});
+SubscriptionTransaction.belongsTo(Institute, {
+  foreignKey: "instituteId",
+  targetKey: "instituteId",
+  as: "institute",
+  constraints: false,
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+// EXAM WORKFLOW: scanner assignment, attendance, published results, rechecks
+// (constraints: false — ids are business keys; integrity is kept in the services)
+// ═══════════════════════════════════════════════════════════════
+ExamScannerAssignment.belongsTo(Exam, { foreignKey: "examId", targetKey: "examId", as: "exam", constraints: false });
+ExamScannerAssignment.belongsTo(User, { foreignKey: "scannerId", targetKey: "userId", as: "scanner", constraints: false });
+ExamAttendance.belongsTo(Exam, { foreignKey: "examId", targetKey: "examId", as: "exam", constraints: false });
+StudentResult.belongsTo(Exam, { foreignKey: "examId", targetKey: "examId", as: "exam", constraints: false });
+StudentResult.belongsTo(Subject, { foreignKey: "subjectId", targetKey: "subjectId", as: "subject", constraints: false });
+StudentResult.belongsTo(User, { foreignKey: "studentId", targetKey: "userId", as: "student", constraints: false });
+RecheckRequest.hasOne(RecheckAssignment, { foreignKey: "requestId", sourceKey: "requestId", as: "assignment", constraints: false });
+RecheckAssignment.belongsTo(User, { foreignKey: "teacherId", targetKey: "userId", as: "teacher", constraints: false });

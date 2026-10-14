@@ -1,7 +1,6 @@
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import Notification from "../../models/Notification.model";
-import RegHelper from "../../utils/helper";
 import ApiError from "../../utils/ApiError";
 import httpStatus from "http-status";
 import {
@@ -11,6 +10,7 @@ import {
 import { QuestionPaperService, assertEditableStatus, isTeacherUser } from "./questionPaper.service";
 import { cleanupUploadsInBackground, collectUploadRefs } from "../answer-sheet/uploadedFiles.service";
 import { reconcileTypedAnswers } from "../../utils/answerSheetReconcile";
+import { newId } from "../../utils/idGenerator";
 
 /**
  * Stores on every typed answer which question it answers (text, marks, number), so
@@ -28,8 +28,23 @@ class QuestionPaperAnswerService {
   // CREATE ANSWER KEY
   // ─────────────────────────────────────────────
 
-  static async createQuestionPaperAnswer(data: any) {
-    try {
+  static async createQuestionPaperAnswer(data: any, user?: any) {
+    const paper = await QuestionPaper.findOne({ where: { paperId: data.paperId } });
+    if (!paper || (data.instituteId && paper.instituteId !== data.instituteId)) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Question paper not found");
+    }
+    if (data.examId && paper.examId !== data.examId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "This question paper belongs to a different exam.");
+    }
+    if (String(data.paperSet ?? "").toUpperCase() !== paper.paperSet) {
+      throw new ApiError(httpStatus.BAD_REQUEST, `This question paper is Set ${paper.paperSet}.`);
+    }
+    if (isTeacherUser(user) && paper.teacherId !== user.userId) {
+      throw new ApiError(httpStatus.FORBIDDEN, "You can only add the model answer to your own question paper");
+    }
+    assertEditableStatus(paper.status, "question paper", "edited");
+
+    {
       const existing = await QuestionPaperAnswer.findOne({
         where: {
           paperId: data.paperId,
@@ -38,31 +53,25 @@ class QuestionPaperAnswerService {
       });
 
       if (existing) {
-        throw new Error(
-          "Answer key already exists for this paper set"
-        );
+        throw new ApiError(httpStatus.CONFLICT, "Answer key already exists for this paper set");
       }
 
-      const answerId = await RegHelper.generateUserId();
+      const answerId = newId("answerKey");
 
       const result = await QuestionPaperAnswer.create({
         answerId,
         instituteId: data.instituteId,
         paperId: data.paperId,
-        examId: data.examId,
-        teacherId: data.teacherId,
-        paperSet: data.paperSet,
+        examId: paper.examId,
+        teacherId: paper.teacherId,
+        paperSet: paper.paperSet,
         answers: await withQuestionSnapshots(data.answers, data.paperId),
-        status: data.status || "DRAFT",
+        status: "DRAFT",
       });
 
-      if (data.examId) {
-        await markExamPaperCreated(data.examId);
-      }
+      await markExamPaperCreated(paper.examId);
 
       return result;
-    } catch (error: any) {
-      throw new Error(error.message);
     }
   }
 
@@ -103,7 +112,7 @@ class QuestionPaperAnswerService {
         cleanupUploadsInBackground(filesBefore, `replacing answer sheet ${existing.answerId}`);
         return existing;
       } else {
-        const answerId = await RegHelper.generateUserId();
+        const answerId = newId("answerKey");
         const result = await QuestionPaperAnswer.create({
           answerId,
           instituteId: data.instituteId,
@@ -237,7 +246,7 @@ class QuestionPaperAnswerService {
 
     try {
       await Notification.create({
-        notificationId: await RegHelper.generateUserId(),
+        notificationId: newId("notification"),
         instituteId: answer.instituteId,
         userId: answer.teacherId,
         type: "ANSWER_PUBLISHED",
