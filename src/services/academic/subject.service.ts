@@ -20,30 +20,17 @@ import {
 import Section from "../../models/Section.model";
 import { newId } from "../../utils/idGenerator";
 import { examCountsBy, examsUsing } from "./academicGuards.service";
+import { addToCurrentSession, forgetMasterRows, syncCurrentMirrors } from "./sessionSetup.service";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
 const isBlankId = (value: unknown) => value === undefined || value === null || value === "" || value === "null";
 
-/** Validates marks; returns cleaned numbers or an error message. */
-const checkMarks = (total: unknown, passing: unknown, label = "") => {
-  const totalMarks = total === undefined || total === null || total === "" ? 100 : Number(total);
-  if (!Number.isInteger(totalMarks) || totalMarks < 1 || totalMarks > 1000) {
-    return { message: `${label}Total marks must be a whole number from 1 to 1000.` };
-  }
-  const passingMarks =
-    passing === undefined || passing === null || passing === "" ? Math.ceil(totalMarks * 0.35) : Number(passing);
-  if (!Number.isInteger(passingMarks) || passingMarks < 0) {
-    return { message: `${label}Passing marks must be a whole number.` };
-  }
-  if (passingMarks > totalMarks) return { message: `${label}Passing marks can't be more than total marks.` };
-  return { totalMarks, passingMarks };
-};
-
 // ─── CREATE SUBJECT(S) ──────────────────────────────────────────
 // Accepts { classId | classIds[] } with either
-//   subjects: [{ subjectName, totalMarks?, passingMarks?, sectionId? }]   (many at once)
-// or the single fields { subjectName, subjectCode?, teacherId?, sectionId?, totalMarks?, passingMarks? }.
+//   subjects: [{ subjectName, sectionId? }]   (many at once)
+// or the single fields { subjectName, subjectCode?, teacherId?, sectionId? }.
+// A subject's marks aren't set here: they are per session and exam, on Marks & grading.
 const createSubject = async (body: any, createdBy: any): Promise<any> => {
   const instituteId = createdBy.instituteId;
   const classIds: string[] = Array.from(
@@ -59,29 +46,20 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
   const sectionNameDefault = body.sectionName ? normalizeSectionName(body.sectionName) : null;
 
   // Clean and de-duplicate the requested subjects.
-  const subjects: { subjectName: string; sectionId: string | null; sectionName: string | null; totalMarks: number; passingMarks: number }[] = [];
+  const subjects: { subjectName: string; sectionId: string | null; sectionName: string | null }[] = [];
   const seen = new Set<string>();
   for (const [i, item] of input.entries()) {
     const subjectName = normalizeSubjectName(item?.subjectName);
     if (!subjectName) continue;
     const itemSecId = isBlankId(item?.sectionId) ? sectionIdDefault : String(item.sectionId);
     const itemSecName = item?.sectionName ? normalizeSectionName(item.sectionName) : sectionNameDefault;
-    const label = single ? "" : `${subjectName}: `;
     if (subjectName.length > MAX_NAME_LENGTH) {
       return fail(httpStatus.BAD_REQUEST, `Subject ${i + 1} is too long (max ${MAX_NAME_LENGTH} characters).`);
     }
-    const marks = checkMarks(item?.totalMarks, item?.passingMarks, label);
-    if (!("totalMarks" in marks)) return fail(httpStatus.BAD_REQUEST, marks.message!);
     const key = `${itemSecId || itemSecName || ""}_${nameKey(subjectName)}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    subjects.push({
-      subjectName,
-      sectionId: itemSecId,
-      sectionName: itemSecName,
-      totalMarks: marks.totalMarks!,
-      passingMarks: marks.passingMarks!,
-    });
+    subjects.push({ subjectName, sectionId: itemSecId, sectionName: itemSecName });
   }
   if (subjects.length === 0) return fail(httpStatus.BAD_REQUEST, "Enter at least one subject.");
   if (subjects.length > MAX_BULK_ITEMS) return fail(httpStatus.BAD_REQUEST, `You can add up to ${MAX_BULK_ITEMS} subjects at a time.`);
@@ -109,6 +87,8 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
 
     let added = 0;
     const skipped: string[] = [];
+    // New subjects (and sections made for them) are taught from the current session on.
+    const forSession: { sections: { classId: string; sectionId: string }[]; subjects: { classId: string; subjectId: string; teacherId?: string | null }[] } = { sections: [], subjects: [] };
 
     for (const cls of classes.sort((a, b) => compareClassNames(a.className, b.className))) {
       const current = await Subject.findAll({ where: { classId: cls.classId }, transaction: t });
@@ -144,6 +124,7 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
               );
               targetSectionId = newSec.sectionId;
               currentSections.push(newSec);
+              forSession.sections.push({ classId: cls.classId, sectionId: newSec.sectionId });
             }
           }
         }
@@ -162,25 +143,25 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
               isActive: true,
               sectionId: targetSectionId,
               subjectName: subject.subjectName,
-              totalMarks: subject.totalMarks,
-              passingMarks: subject.passingMarks,
               ...(subjectCode ? { subjectCode } : {}),
-              ...(teacherId ? { teacherId } : {}),
             },
             { transaction: t },
           );
+          forSession.subjects.push({ classId: cls.classId, subjectId: found.subjectId, ...(teacherId ? { teacherId } : {}) });
+          if (targetSectionId) forSession.sections.push({ classId: cls.classId, sectionId: targetSectionId });
         } else {
+          const subjectId = newId("subject");
+          forSession.subjects.push({ classId: cls.classId, subjectId, ...(teacherId ? { teacherId } : {}) });
+          if (targetSectionId) forSession.sections.push({ classId: cls.classId, sectionId: targetSectionId });
           await Subject.create(
             {
-              subjectId: newId("subject"),
+              subjectId,
               instituteId,
               classId: cls.classId,
               sectionId: targetSectionId,
               subjectName: subject.subjectName,
               subjectCode,
               teacherId,
-              totalMarks: subject.totalMarks,
-              passingMarks: subject.passingMarks,
             },
             { transaction: t },
           );
@@ -196,6 +177,7 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
         skipped.length === 1 ? `${skipped[0]} already exists in this class.` : `Already added: ${skipped.join(", ")}.`,
       );
     }
+    await addToCurrentSession(instituteId, forSession, t);
     await t.commit();
 
     const parts = [`${added} ${added === 1 ? "subject" : "subjects"} added`];
@@ -299,7 +281,7 @@ const updateSubject = async (subjectId: string, body: any, createdBy: any): Prom
         return fail(
           httpStatus.CONFLICT,
           `${subject.subjectName} is used by ${exams} ${exams === 1 ? "exam" : "exams"}, so its name and section can't change. ` +
-            `Marks, code and teacher can still be edited.`,
+            `Its code can still change.`,
         );
       }
       const siblings = await Subject.findAll({ where: { classId: subject.classId, subjectId: { [Op.ne]: subjectId } } });
@@ -320,9 +302,6 @@ const updateSubject = async (subjectId: string, body: any, createdBy: any): Prom
       if (taken) return fail(httpStatus.CONFLICT, `Subject code ${subjectCode} is already in use.`);
     }
 
-    const marks = checkMarks(body.totalMarks ?? subject.totalMarks, body.passingMarks ?? subject.passingMarks);
-    if (!("totalMarks" in marks)) return fail(httpStatus.BAD_REQUEST, marks.message!);
-
     let teacherId = subject.teacherId;
     if (body.teacherId !== undefined) {
       teacherId = isBlankId(body.teacherId) ? null : String(body.teacherId);
@@ -342,14 +321,11 @@ const updateSubject = async (subjectId: string, body: any, createdBy: any): Prom
       }
     }
 
-    await subject.update({
-      subjectName,
-      sectionId,
-      subjectCode,
-      teacherId,
-      totalMarks: marks.totalMarks,
-      passingMarks: marks.passingMarks,
-    });
+    await subject.update({ subjectName, sectionId, subjectCode });
+    if (body.teacherId !== undefined) {
+      await addToCurrentSession(instituteId, { subjects: [{ classId: subject.classId, subjectId, teacherId }] });
+      await subject.reload();
+    }
 
     return { error: false, statusCode: httpStatus.OK, message: `${subjectName} updated.`, data: subject };
   } catch (e: any) {
@@ -373,6 +349,8 @@ const deleteSubject = async (subjectId: string, createdBy: any): Promise<any> =>
     }
 
     await subject.update({ isDeleted: true, isActive: false });
+    await forgetMasterRows({ subjectId });
+    await syncCurrentMirrors(instituteId);
     return { error: false, statusCode: httpStatus.OK, message: `${subject.subjectName} deleted.`, data: {} };
   } catch (e: any) {
     return fail(httpStatus.INTERNAL_SERVER_ERROR, e.message);

@@ -1,3 +1,4 @@
+import { settingsOf } from "../academic/instituteSettings.service";
 import httpStatus from "http-status";
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/sequelize";
@@ -13,7 +14,8 @@ import ExamWorkflowService, { PAPER_APPROVED_STATUSES } from "../exam/examWorkfl
 //
 // Exam stages follow examWorkflow.stageOf(); the only approximation is that an exam
 // without a scanner counts as "scanning" once any sheet tagged with it is uploaded
-// (the workflow page decides "scan finished" from the full roster).
+// (the workflow page decides "scan finished" from the full roster). When the school
+// cross-checks, a reviewed exam waits in CROSS_CHECK until its round is done.
 
 const TZ = "Asia/Kolkata";
 const ADMIN_CACHE_MS = 30_000;
@@ -38,6 +40,16 @@ const TODAY = `(now() AT TIME ZONE :tz)::date`;
 // First instant of the day (DAYS - 1) days ago, in the institute's time zone.
 const SERIES_START = `((date_trunc('day', now() AT TIME ZONE :tz) - (:days - 1) * interval '1 day') AT TIME ZONE :tz)`;
 const DAY_SERIES = `SELECT generate_series(${TODAY} - (:days - 1), ${TODAY}, interval '1 day')::date AS day`;
+
+/** Exam statuses while its paper is with the setter: not started, being written, sent back. */
+const PAPER_WITH_SETTER = ["Draft", "Paper Created", "Rejected"];
+
+/** The current session (none when no session is marked current). */
+const CURRENT_SESSION = `SELECT "sessionId" FROM viaexam_sessions
+  WHERE "instituteId" = :inst AND "isDeleted" = false AND "isActive" = true
+  ORDER BY "startDate" DESC NULLS LAST LIMIT 1`;
+/** Exam `e` is in the current session (every exam counts when none is current). Needs `cur`. */
+const IN_CURRENT_SESSION = `(NOT EXISTS (SELECT 1 FROM cur) OR e."sessionId" = (SELECT "sessionId" FROM cur))`;
 
 /** Joins that turn an exam row `e` into display names. */
 const EXAM_NAMES = `
@@ -71,11 +83,19 @@ pub AS (SELECT DISTINCT "examId" FROM viaexam_student_results WHERE "instituteId
 sc AS (SELECT "examId", status FROM viaexam_exam_scanner_assignments WHERE "instituteId" = :inst AND "isActive" = true),
 ev AS (SELECT "examId", "reviewedAt" FROM viaexam_evaluation_assignments WHERE "instituteId" = :inst AND "isActive" = true),
 up AS (SELECT DISTINCT "examId" FROM viaexam_answer_sheets WHERE "instituteId" = :inst AND "isDeleted" = false AND "examId" IS NOT NULL),
+xr AS (
+  SELECT r."examId", COUNT(i."id") FILTER (WHERE i.status = 'pending')::int AS pending
+  FROM viaexam_cross_check_rounds r
+  LEFT JOIN viaexam_cross_check_items i ON i."roundId" = r."roundId"
+  WHERE r."instituteId" = :inst AND r."isActive" = true
+  GROUP BY r."examId"
+),
 st AS (
   SELECT ex."examId", ex."examDate",
          CASE
            WHEN pub."examId" IS NOT NULL THEN 'PUBLISHED'
            WHEN ex.status NOT IN (:approved) THEN 'PAPER_PENDING'
+           WHEN ev."reviewedAt" IS NOT NULL AND :crossCheck AND (xr."examId" IS NULL OR xr.pending > 0) THEN 'CROSS_CHECK'
            WHEN ev."reviewedAt" IS NOT NULL THEN 'REVIEWED'
            WHEN sc.status = 'COMPLETED' THEN 'EVALUATING'
            WHEN sc."examId" IS NOT NULL OR up."examId" IS NOT NULL THEN 'SCANNING'
@@ -88,6 +108,7 @@ st AS (
   LEFT JOIN sc ON sc."examId" = ex."examId"
   LEFT JOIN ev ON ev."examId" = ex."examId"
   LEFT JOIN up ON up."examId" = ex."examId"
+  LEFT JOIN xr ON xr."examId" = ex."examId"
 ),
 stage AS (
   SELECT COUNT(*)::int AS total,
@@ -97,6 +118,7 @@ stage AS (
          COUNT(*) FILTER (WHERE stage = 'READY_TO_SCAN')::int AS ready_to_scan,
          COUNT(*) FILTER (WHERE stage = 'SCANNING')::int AS scanning,
          COUNT(*) FILTER (WHERE stage = 'EVALUATING')::int AS evaluating,
+         COUNT(*) FILTER (WHERE stage = 'CROSS_CHECK')::int AS cross_check,
          COUNT(*) FILTER (WHERE stage = 'REVIEWED')::int AS reviewed,
          COUNT(*) FILTER (WHERE stage = 'PUBLISHED')::int AS published,
          COUNT(*) FILTER (WHERE stage IN ('READY_TO_SCAN', 'SCANNING', 'EVALUATING') AND NOT has_evaluator)::int AS needs_evaluator
@@ -130,10 +152,19 @@ evf AS (
   FROM viaexam_ai_evaluations e
   JOIN viaexam_answer_sheets s ON s."sheetId" = e."sheetId"
   WHERE s."instituteId" = :inst AND s."isDeleted" = false AND e.status = 'Failed'
+),
+cur AS (${CURRENT_SESSION}),
+-- Papers still with their setters this session; "late" when the exam is a week away or past.
+pw AS (
+  SELECT COUNT(*)::int AS open_count,
+         COUNT(*) FILTER (WHERE e."examDate" <= ${TODAY} + 7)::int AS late_count
+  FROM viaexam_exams e
+  WHERE e."instituteId" = :inst AND e."isDeleted" = false AND e.status IN (:withSetter) AND ${IN_CURRENT_SESSION}
 )
 SELECT stage.*, ppl.*, aca.*,
        sht.total AS sheets_total, sht.evaluated AS sheets_evaluated, sht.pending AS sheets_pending, sht.today AS sheets_today,
        evf.failed AS evaluations_failed,
+       pw.open_count AS papers_open, pw.late_count AS papers_late,
        (SELECT COUNT(*) FROM viaexam_question_papers q
          WHERE q."instituteId" = :inst AND q.status = 'PENDING_APPROVAL' AND q."deletedAt" IS NULL)::int AS papers_pending,
        (SELECT COUNT(*) FROM viaexam_recheck_requests rr
@@ -141,7 +172,7 @@ SELECT stage.*, ppl.*, aca.*,
        (SELECT "sessionName" FROM viaexam_sessions
          WHERE "instituteId" = :inst AND "isDeleted" = false AND "isActive" = true
          ORDER BY "startDate" DESC NULLS LAST LIMIT 1) AS session_name
-FROM stage, ppl, aca, sht, evf`;
+FROM stage, ppl, aca, sht, evf, pw`;
 
 const ADMIN_DAILY_SQL = `
 WITH days AS (${DAY_SERIES}),
@@ -183,6 +214,17 @@ WHERE q."instituteId" = :inst AND q.status = 'PENDING_APPROVAL' AND q."deletedAt
 ORDER BY q."submittedAt" NULLS LAST, q."createdAt"
 LIMIT 5`;
 
+// Papers still with their setters this session, nearest exam first (late ones on top).
+const ADMIN_PAPER_SETTING_SQL = `
+WITH cur AS (${CURRENT_SESSION})
+SELECT ${EXAM_COLUMNS}, e."teacherId", u."userName" AS "teacherName"
+FROM viaexam_exams e
+${EXAM_NAMES}
+LEFT JOIN viaexam_users u ON u."userId" = e."teacherId"
+WHERE e."instituteId" = :inst AND e."isDeleted" = false AND e.status IN (:withSetter) AND ${IN_CURRENT_SESSION}
+ORDER BY e."examDate" NULLS LAST, e."examTime" NULLS LAST, e."createdAt"
+LIMIT 6`;
+
 const ADMIN_RECHECKS_SQL = `
 SELECT rr."requestId", rr."createdAt", u."userName" AS "studentName", ${EXAM_COLUMNS}
 FROM viaexam_recheck_requests rr
@@ -193,22 +235,52 @@ WHERE rr."instituteId" = :inst AND rr.status = 'Pending'
 ORDER BY rr."createdAt"
 LIMIT 5`;
 
-// Open work per person: evaluations not yet reviewed, scans not yet completed.
+// Open work per person. Teachers: papers to set (this session), exams to evaluate,
+// cross-checks and rechecks; scanner staff: exams to scan.
 const ADMIN_WORKLOAD_SQL = `
-SELECT w.kind, w."userId", u."userName" AS name, w."openCount"
-FROM (
-  SELECT 'evaluator' AS kind, a."teacherId" AS "userId", COUNT(*)::int AS "openCount"
-  FROM viaexam_evaluation_assignments a
-  WHERE a."instituteId" = :inst AND a."isActive" = true AND a."reviewedAt" IS NULL
-  GROUP BY a."teacherId"
+WITH cur AS (${CURRENT_SESSION}),
+w AS (
+  SELECT e."teacherId" AS "userId", 'papers' AS kind, COUNT(*)::int AS n
+  FROM viaexam_exams e
+  WHERE e."instituteId" = :inst AND e."isDeleted" = false AND e."teacherId" IS NOT NULL
+    AND e.status IN (:withSetter) AND ${IN_CURRENT_SESSION}
+  GROUP BY 1
   UNION ALL
-  SELECT 'scanner', a."scannerId", COUNT(*)::int
+  SELECT a."teacherId", 'evaluations', COUNT(*)::int
+  FROM viaexam_evaluation_assignments a
+  JOIN viaexam_exams e ON e."examId" = a."examId" AND e."isDeleted" = false
+  WHERE a."instituteId" = :inst AND a."isActive" = true AND a."reviewedAt" IS NULL
+  GROUP BY 1
+  UNION ALL
+  SELECT r."checkerId", 'crossChecks', COUNT(*)::int
+  FROM viaexam_cross_check_rounds r
+  JOIN viaexam_exams e ON e."examId" = r."examId" AND e."isDeleted" = false
+  WHERE r."instituteId" = :inst AND r."isActive" = true AND r.status = 'open'
+  GROUP BY 1
+  UNION ALL
+  SELECT ra."teacherId", 'rechecks', COUNT(*)::int
+  FROM viaexam_recheck_assignments ra
+  WHERE ra."instituteId" = :inst AND ra."completedAt" IS NULL
+  GROUP BY 1
+  UNION ALL
+  SELECT a."scannerId", 'scans', COUNT(*)::int
   FROM viaexam_exam_scanner_assignments a
+  JOIN viaexam_exams e ON e."examId" = a."examId" AND e."isDeleted" = false
   WHERE a."instituteId" = :inst AND a."isActive" = true AND a.status = 'ASSIGNED'
-  GROUP BY a."scannerId"
-) w
+  GROUP BY 1
+)
+SELECT u."userId", u."userName" AS name, ro.role,
+       COALESCE(SUM(w.n) FILTER (WHERE w.kind = 'papers'), 0)::int AS papers,
+       COALESCE(SUM(w.n) FILTER (WHERE w.kind = 'evaluations'), 0)::int AS evaluations,
+       COALESCE(SUM(w.n) FILTER (WHERE w.kind = 'crossChecks'), 0)::int AS "crossChecks",
+       COALESCE(SUM(w.n) FILTER (WHERE w.kind = 'rechecks'), 0)::int AS rechecks,
+       COALESCE(SUM(w.n) FILTER (WHERE w.kind = 'scans'), 0)::int AS scans,
+       SUM(w.n)::int AS total
+FROM w
 JOIN viaexam_users u ON u."userId" = w."userId"
-ORDER BY w."openCount" DESC, u."userName"
+JOIN roles ro ON ro.id = u."roleId"
+GROUP BY u."userId", u."userName", ro.role
+ORDER BY total DESC, u."userName"
 LIMIT 8`;
 
 // What was added each month over the last 12 months (the lines on the number cards).
@@ -282,12 +354,14 @@ const personRow = (x: any) => ({
 });
 
 const loadAdminHome = async (instituteId: string) => {
-  const r = { inst: instituteId, days: DAYS, approved: PAPER_APPROVED_STATUSES };
-  const [[s], daily, upcoming, approvals, rechecks, workload, trends, people] = await Promise.all([
+  const crossCheck = (await settingsOf(instituteId)).crossCheck.mode !== "off";
+  const r = { inst: instituteId, days: DAYS, approved: PAPER_APPROVED_STATUSES, withSetter: PAPER_WITH_SETTER, crossCheck };
+  const [[s], daily, upcoming, approvals, paperSetting, rechecks, workload, trends, people] = await Promise.all([
     select(ADMIN_SUMMARY_SQL, r),
     select(ADMIN_DAILY_SQL, r),
     select(ADMIN_UPCOMING_SQL, r),
     select(ADMIN_APPROVALS_SQL, r),
+    select(ADMIN_PAPER_SETTING_SQL, r),
     select(ADMIN_RECHECKS_SQL, r),
     select(ADMIN_WORKLOAD_SQL, r),
     select(ADMIN_TRENDS_SQL, r),
@@ -313,6 +387,7 @@ const loadAdminHome = async (instituteId: string) => {
       READY_TO_SCAN: num(s?.ready_to_scan),
       SCANNING: num(s?.scanning),
       EVALUATING: num(s?.evaluating),
+      CROSS_CHECK: num(s?.cross_check),
       REVIEWED: num(s?.reviewed),
       PUBLISHED: num(s?.published),
     },
@@ -327,8 +402,10 @@ const loadAdminHome = async (instituteId: string) => {
       needsScanner: num(s?.ready_to_scan),
       needsEvaluator: num(s?.needs_evaluator),
       readyToPublish: num(s?.reviewed),
+      crossCheckWaiting: num(s?.cross_check),
       rechecksPending: num(s?.rechecks_pending),
       failedEvaluations: num(s?.evaluations_failed),
+      papersLate: num(s?.papers_late),
     },
     daily: series(daily),
     upcoming: upcoming.map((x: any) => ({ ...examRow(x), teacherName: x.teacherName ?? "" })),
@@ -339,8 +416,22 @@ const loadAdminHome = async (instituteId: string) => {
       teacherName: x.teacherName ?? "",
       submittedAt: x.submittedAt ?? null,
     })),
+    paperSetting: {
+      open: num(s?.papers_open),
+      items: paperSetting.map((x: any) => ({ ...examRow(x), teacherId: x.teacherId ?? null, teacherName: x.teacherName ?? "" })),
+    },
     rechecks: rechecks.map((x: any) => ({ ...examRow(x), requestId: x.requestId, studentName: x.studentName ?? "", requestedAt: x.createdAt })),
-    workload: workload.map((x: any) => ({ kind: x.kind, userId: x.userId, name: x.name ?? "", open: num(x.openCount) })),
+    workload: workload.map((x: any) => ({
+      userId: x.userId,
+      name: x.name ?? "",
+      role: x.role === "SCANNER" ? "scanner" : x.role === "TEACHER" ? "teacher" : "staff",
+      papers: num(x.papers),
+      evaluations: num(x.evaluations),
+      crossChecks: num(x.crossChecks),
+      rechecks: num(x.rechecks),
+      scans: num(x.scans),
+      total: num(x.total),
+    })),
     trends: trends.map((x: any) => ({
       month: x.month,
       students: num(x.students),
@@ -381,13 +472,16 @@ SELECT
   (SELECT COUNT(*) FROM viaexam_classes c WHERE c."instituteId" = :inst AND c."isDeleted" = false
      AND NOT EXISTS (SELECT 1 FROM viaexam_subjects s WHERE s."classId" = c."classId" AND s."isDeleted" = false))::int AS classes_without_subjects,
   (SELECT COUNT(*) FROM viaexam_subjects WHERE "instituteId" = :inst AND "isDeleted" = false)::int AS subjects,
-  (SELECT COUNT(*) FROM viaexam_subjects WHERE "instituteId" = :inst AND "isDeleted" = false AND "teacherId" IS NULL)::int AS subjects_without_teacher,
+  (SELECT COUNT(DISTINCT ss."classId") FROM viaexam_session_sections ss WHERE ss."sessionId" = (SELECT "sessionId" FROM cur))::int AS classes_running,
+  (SELECT COUNT(*) FROM viaexam_session_sections ss WHERE ss."sessionId" = (SELECT "sessionId" FROM cur) AND ss."classTeacherId" IS NULL)::int AS sections_without_teacher,
+  (SELECT COUNT(*) FROM viaexam_session_subjects ss WHERE ss."sessionId" = (SELECT "sessionId" FROM cur))::int AS subjects_running,
+  (SELECT COUNT(*) FROM viaexam_session_subjects ss WHERE ss."sessionId" = (SELECT "sessionId" FROM cur) AND ss."teacherId" IS NULL)::int AS subjects_without_teacher,
   (SELECT COUNT(*) FROM viaexam_users u JOIN roles r ON r.id = u."roleId"
      WHERE u."instituteId" = :inst AND u."isDeleted" = false AND u.status = 1 AND r.role = 'TEACHER')::int AS teachers,
   (SELECT COUNT(*) FROM viaexam_users u JOIN roles r ON r.id = u."roleId"
      WHERE u."instituteId" = :inst AND u."isDeleted" = false AND u.status = 1 AND r.role = 'SCANNER')::int AS scanners,
-  (SELECT COUNT(*) FROM viaexam_student_profiles p JOIN viaexam_users u ON u."userId" = p."userId" AND u.status = 1
-     WHERE p."instituteId" = :inst AND p."isActive" = true AND p.session = (SELECT "sessionName" FROM cur))::int AS students_current,
+  (SELECT COUNT(*) FROM viaexam_student_enrollments e JOIN viaexam_users u ON u."userId" = e."studentId" AND u.status = 1
+     WHERE e."sessionId" = (SELECT "sessionId" FROM cur) AND e."isActive" = true)::int AS students_current,
   (SELECT COUNT(*) FROM viaexam_exams WHERE "instituteId" = :inst AND "isDeleted" = false
      AND "sessionId" = (SELECT "sessionId" FROM cur))::int AS exams_current`;
 
@@ -399,8 +493,25 @@ const loadSetup = async (instituteId: string) => {
     { key: "classes", label: "Classes", done: n("classes") > 0, count: n("classes"), detail: n("classes") ? `${n("classes")} classes` : "Add the classes you teach" },
     { key: "sections", label: "Sections", done: n("classes") > 0 && n("classes_without_sections") === 0, count: n("sections"), detail: n("classes_without_sections") ? `${n("classes_without_sections")} classes have no sections` : `${n("sections")} sections` },
     { key: "subjects", label: "Subjects", done: n("classes") > 0 && n("classes_without_subjects") === 0, count: n("subjects"), detail: n("classes_without_subjects") ? `${n("classes_without_subjects")} classes have no subjects` : `${n("subjects")} subjects` },
+    {
+      key: "setup",
+      label: "Session setup",
+      done: n("classes_running") > 0,
+      count: n("classes_running"),
+      detail: !s?.current_session
+        ? "Set a current session first"
+        : n("classes_running")
+          ? `${n("classes_running")} classes in ${s.current_session}${n("sections_without_teacher") ? ` · ${n("sections_without_teacher")} sections without a class teacher` : ""}`
+          : `Choose the classes and subjects of ${s.current_session}`,
+    },
     { key: "teachers", label: "Teachers", done: n("teachers") > 0, count: n("teachers"), detail: n("teachers") ? `${n("teachers")} teachers` : "Add teachers with their subjects" },
-    { key: "subjectTeachers", label: "Subject teachers", done: n("subjects") > 0 && n("subjects_without_teacher") === 0, count: n("subjects") - n("subjects_without_teacher"), detail: n("subjects_without_teacher") ? `${n("subjects_without_teacher")} subjects have no teacher` : "Every subject has a teacher" },
+    {
+      key: "subjectTeachers",
+      label: "Subject teachers",
+      done: n("subjects_running") > 0 && n("subjects_without_teacher") === 0,
+      count: n("subjects_running") - n("subjects_without_teacher"),
+      detail: n("subjects_without_teacher") ? `${n("subjects_without_teacher")} subjects have no teacher this session` : n("subjects_running") ? "Every subject has a teacher" : "No subjects in this session yet",
+    },
     { key: "students", label: "Students", done: n("students_current") > 0, count: n("students_current"), detail: s?.current_session ? `${n("students_current")} in ${s.current_session}` : "Set a current session first" },
     { key: "scanners", label: "Scanner staff", done: n("scanners") > 0, count: n("scanners"), detail: n("scanners") ? `${n("scanners")} scanner staff` : "Add staff who upload answer sheets" },
     { key: "exams", label: "First exam", done: n("exams_current") > 0, count: n("exams_current"), detail: n("exams_current") ? `${n("exams_current")} exams this session` : "Create a Mid Term or Final exam" },
@@ -418,7 +529,7 @@ const getSetupStatus = async (user: any) => {
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
-// TEACHER — papers to set, evaluations, rechecks
+// TEACHER — papers to set, evaluations, cross-checks, rechecks
 // ═════════════════════════════════════════════════════════════════════════════
 
 const TEACHER_SUMMARY_SQL = `
@@ -435,6 +546,8 @@ SELECT
   (SELECT COUNT(*) FROM ev WHERE "reviewedAt" IS NOT NULL)::int AS eval_reviewed,
   (SELECT COUNT(*) FROM rc WHERE "completedAt" IS NULL)::int AS recheck_open,
   (SELECT COUNT(*) FROM rc WHERE "completedAt" IS NOT NULL)::int AS recheck_done,
+  (SELECT COUNT(*) FROM viaexam_cross_check_rounds
+    WHERE "instituteId" = :inst AND "checkerId" = :uid AND "isActive" = true AND status = 'open')::int AS cross_check_open,
   (SELECT COUNT(*) FROM viaexam_subjects WHERE "instituteId" = :inst AND "teacherId" = :uid AND "isDeleted" = false)::int AS subjects,
   (SELECT COUNT(DISTINCT "classId") FROM viaexam_subjects WHERE "instituteId" = :inst AND "teacherId" = :uid AND "isDeleted" = false)::int AS classes`;
 
@@ -459,8 +572,14 @@ SELECT t.* FROM (
   JOIN viaexam_exams e ON e."examId" = ra."examId"
   ${EXAM_NAMES}
   WHERE ra."instituteId" = :inst AND ra."teacherId" = :uid AND ra."completedAt" IS NULL
+  UNION ALL
+  SELECT 'CROSS_CHECK', NULL, r."createdAt", ${EXAM_COLUMNS}
+  FROM viaexam_cross_check_rounds r
+  JOIN viaexam_exams e ON e."examId" = r."examId" AND e."isDeleted" = false
+  ${EXAM_NAMES}
+  WHERE r."instituteId" = :inst AND r."checkerId" = :uid AND r."isActive" = true AND r.status = 'open'
 ) t
-ORDER BY CASE t.kind WHEN 'FIX_PAPER' THEN 0 WHEN 'RECHECK' THEN 1 WHEN 'EVALUATE' THEN 2 ELSE 3 END,
+ORDER BY CASE t.kind WHEN 'FIX_PAPER' THEN 0 WHEN 'RECHECK' THEN 1 WHEN 'CROSS_CHECK' THEN 2 WHEN 'EVALUATE' THEN 3 ELSE 4 END,
          t."examDate" NULLS LAST, t."assignedAt" NULLS LAST
 LIMIT 10`;
 
@@ -527,6 +646,7 @@ const loadTeacherHome = async (instituteId: string, userId: string) => {
     },
     evaluations: { open: num(s?.eval_open), reviewed: num(s?.eval_reviewed) },
     rechecks: { open: num(s?.recheck_open), done: num(s?.recheck_done) },
+    crossChecks: { open: num(s?.cross_check_open) },
     teaching: { subjects: num(s?.subjects), classes: num(s?.classes) },
     tasks: tasks.map((x: any) => ({ ...examRow(x), kind: x.kind, requestId: x.requestId ?? null, assignedAt: x.assignedAt ?? null })),
     evaluationProgress: progress.map((p) => ({ ...p, assignedAt: assignedAt.get(p.examId) ?? null })),
@@ -635,19 +755,16 @@ const getScannerHome = async (user: any) => {
 // STUDENT — timetable, published results, rechecks
 // ═════════════════════════════════════════════════════════════════════════════
 
-// Older profiles carry the class / section name instead of the id; both are matched.
+// The student's current enrolment: the current session's, else their latest.
 const STUDENT_PROFILE_SQL = `
-SELECT p."rollNumber", p.session AS "sessionName",
-       COALESCE(c."classId", c2."classId") AS "classId",
-       COALESCE(c."className", c2."className", p."className") AS "className",
-       COALESCE(sec."sectionName", p."sectionId") AS "sectionName",
-       sec."sectionId"
-FROM viaexam_student_profiles p
-LEFT JOIN viaexam_classes c ON c."classId" = p."classId"
-LEFT JOIN viaexam_classes c2 ON c."classId" IS NULL AND c2."instituteId" = p."instituteId"
-     AND c2."className" = p."className" AND c2."isDeleted" = false
-LEFT JOIN viaexam_sections sec ON sec."sectionId" = p."sectionId"
-WHERE p."userId" = :uid AND p."instituteId" = :inst
+SELECT e."rollNumber", se."sessionName", e."sessionId", e."classId",
+       COALESCE(c."className", '') AS "className", sec."sectionName", e."sectionId"
+FROM viaexam_student_enrollments e
+JOIN viaexam_sessions se ON se."sessionId" = e."sessionId"
+LEFT JOIN viaexam_classes c ON c."classId" = e."classId"
+LEFT JOIN viaexam_sections sec ON sec."sectionId" = e."sectionId"
+WHERE e."studentId" = :uid AND e."instituteId" = :inst
+ORDER BY se."isActive" DESC, se."startDate" DESC
 LIMIT 1`;
 
 const STUDENT_UPCOMING_SQL = `
@@ -655,7 +772,7 @@ SELECT ${EXAM_COLUMNS}, e.duration, e."totalMarks"
 FROM viaexam_exams e
 ${EXAM_NAMES}
 WHERE e."instituteId" = :inst AND e."isDeleted" = false AND e."examDate" >= ${TODAY}
-  AND e."classId" = :classId
+  AND e."classId" = :classId AND e."sessionId" = :sessionId
   AND (e."sectionId" IS NULL OR e."sectionId" = '' OR e."sectionId" IN (:sectionKeys) OR sec."sectionName" IN (:sectionKeys))
 ORDER BY e."examDate", e."examTime" NULLS LAST
 LIMIT 6`;
@@ -715,7 +832,7 @@ const loadStudentHome = async (instituteId: string, userId: string) => {
   // Section keys: the id and the name, since older exams / profiles store either one.
   const sectionKeys = [profile?.sectionId, profile?.sectionName].filter(Boolean);
   const upcoming = profile?.classId
-    ? await select(STUDENT_UPCOMING_SQL, { ...r, classId: profile.classId, sectionKeys: sectionKeys.length ? sectionKeys : [""] })
+    ? await select(STUDENT_UPCOMING_SQL, { ...r, classId: profile.classId, sessionId: profile.sessionId, sectionKeys: sectionKeys.length ? sectionKeys : [""] })
     : [];
 
   return {

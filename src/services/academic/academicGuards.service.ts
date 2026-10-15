@@ -1,15 +1,12 @@
 /**
  * Rules that keep the exam process consistent once real work exists.
  *
- * An exam's roster is computed from the students' current profiles (class, section,
- * session, roll number) and answer sheets are matched by roll number. So once a
- * student sits an exam, or an exam has papers / sheets / results, the fields those
- * matches depend on must not change underneath them:
+ * An exam's roster is the students enrolled in its class (and section) in its session,
+ * and answer sheets are matched by roll number. So once an exam has papers / sheets /
+ * results, the fields those matches depend on must not change underneath them:
  *
- *   student  — class, section, session and roll number are locked while they are on
- *              the roster of any exam in their session. To move a student, delete and
- *              add them again (their published results stay), or promote them at the
- *              end of the year.
+ *   student  — a session's class, section and roll number are locked while the student
+ *              is on the roster of an exam of that session (services/student/enrollment).
  *   exam     — session, class, section, subject and type are locked once a question
  *              paper, model answer, scanner / evaluator, sheet or result exists; marks
  *              once a sheet or result exists.
@@ -21,105 +18,14 @@ import Exam from "../../models/Exam.model";
 import UserModal from "../../models/User.model";
 import Role from "../../models/Role.model";
 import RecheckAssignment from "../../models/RecheckAssignment.model";
-import Session from "../../models/Session.model";
-import Section from "../../models/Section.model";
 import Scanner from "../../models/Scanner.model";
 import StudentResult from "../../models/StudentResult.model";
-import ExamAttendance from "../../models/ExamAttendance.model";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import StandardAnswer from "../../models/question-paper/StandardAnswer.model";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-
-// ─── Students ─────────────────────────────────────────────────────────────────
-
-export interface StudentPlacement {
-  classId?: string | null;
-  sectionId?: string | null;
-  session?: string | null;
-  rollNumber?: string | null;
-  userId: string;
-}
-
-/** Exams of the student's current session whose roster includes them (same rule as examRoster). */
-export const rosterExamsFor = async (profile: StudentPlacement, instituteId: string, transaction?: Transaction) => {
-  if (!profile.classId || !profile.session) return [];
-  const session = await Session.findOne({
-    where: { instituteId, sessionName: profile.session, isDeleted: false },
-    attributes: ["sessionId"],
-    transaction,
-  });
-  if (!session) return [];
-
-  // Older profiles store the section name in sectionId; match either form.
-  const section = profile.sectionId
-    ? await Section.findOne({ where: { sectionId: profile.sectionId }, attributes: ["sectionId", "sectionName"], transaction })
-    : null;
-  const sectionKeys = [profile.sectionId, section?.sectionName].filter(Boolean) as string[];
-
-  return Exam.findAll({
-    where: {
-      instituteId,
-      isDeleted: false,
-      sessionId: session.sessionId,
-      classId: profile.classId,
-      [Op.or]: [{ sectionId: null }, { sectionId: "" }, ...(sectionKeys.length ? [{ sectionId: { [Op.in]: sectionKeys } }] : [])],
-    },
-    attributes: ["examId", "examType", "subjectId", "sessionId"],
-    transaction,
-  });
-};
-
-/** Whether class / section / session / roll number may still change, and why not. */
-export const studentPlacementLock = async (profile: StudentPlacement, instituteId: string) => {
-  const exams = await rosterExamsFor(profile, instituteId);
-  if (!exams.length) return { locked: false as const, exams: 0, reason: null };
-  return {
-    locked: true as const,
-    exams: exams.length,
-    reason:
-      `This student is on the roster of ${plural(exams.length, "exam")} in session ${profile.session}, so class, section, ` +
-      `session and roll number can't be changed. To move them, delete the student and add them again in the new class — ` +
-      `published results are kept.`,
-  };
-};
-
-/**
- * Exams of the current session that still need this student's data: not published yet,
- * and the student already has an answer sheet or an absent mark in them. Moving the
- * student (promotion) would drop that work from the exam's roster.
- */
-export const unfinishedExamsFor = async (profile: StudentPlacement, instituteId: string) => {
-  const exams = await rosterExamsFor(profile, instituteId);
-  if (!exams.length) return 0;
-  const examIds = exams.map((e) => e.examId);
-  const published = new Set(
-    (
-      await StudentResult.findAll({
-        where: { examId: { [Op.in]: examIds }, isDeleted: false },
-        attributes: ["examId"],
-        group: ["examId"],
-        raw: true,
-      })
-    ).map((r: any) => r.examId)
-  );
-  const open = examIds.filter((id) => !published.has(id));
-  if (!open.length) return 0;
-
-  const [sheets, absent] = await Promise.all([
-    profile.rollNumber
-      ? Scanner.findAll({
-          where: { instituteId, examId: { [Op.in]: open }, rollNo: String(profile.rollNumber), isDeleted: false },
-          attributes: ["examId"],
-          raw: true,
-        })
-      : [],
-    ExamAttendance.findAll({ where: { examId: { [Op.in]: open }, studentId: profile.userId }, attributes: ["examId"], raw: true }),
-  ]);
-  return new Set([...sheets, ...absent].map((r: any) => r.examId)).size;
-};
 
 // ─── Exams ────────────────────────────────────────────────────────────────────
 

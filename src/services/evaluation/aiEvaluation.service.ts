@@ -4,7 +4,7 @@ import Exam from "../../models/Exam.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
-import StudentProfile from "../../models/Student.model";
+import { studentForSheet } from "../student/enrollment.service";
 import User from "../../models/User.model";
 import Class from "../../models/Class.model";
 import logger from "../../config/logger";
@@ -14,6 +14,11 @@ import { formatQuestionPaper } from "../../utils/questionPaperText";
 import { getSheetQueueInfo } from "./pipeline6.service";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
+import StudentResult from "../../models/StudentResult.model";
+import { sequelize } from "../../config/sequelize";
+import { logMarksChange } from "../academic/marks.service";
+import { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
+import { sheetHeldForCrossCheck } from "../exam/crossCheck.service";
 
 // ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
 const triggerEvaluation = async (sheetId: string, force: boolean = false): Promise<any> => {
@@ -56,15 +61,9 @@ const triggerEvaluation = async (sheetId: string, force: boolean = false): Promi
     }
 
     // Lookup Student
-    const student = await StudentProfile.findOne({
-      where: {
-        rollNumber: sheet.rollNo,
-        instituteId: sheet.instituteId,
-        classId: sheet.classId,
-      },
-    });
-
-    const studentId = student ? student.userId : `STUDENT-${sheet.rollNo}`;
+    // The student with this roll number in the sheet's class and section, in its exam's session.
+    const ownerId = await studentForSheet(sheet);
+    const studentId = ownerId ?? `STUDENT-${sheet.rollNo}`;
 
     // 3. Find or Create AIEvaluation record as Pending
     const evaluationId = newId("evaluation");
@@ -375,9 +374,13 @@ const getAllEvaluations = async (query: any, requestedBy: any): Promise<any> => 
 };
 
 // ─── UPDATE EVALUATION BY SHEET ID ────────────────────────────────────────────
+// An evaluator corrects the AI's marks. The marks stay within the exam's maximum, every
+// change is logged with who made it, and once results are published marks only change
+// through a recheck (so what students see always has a trail).
 const updateEvaluationBySheetId = async (
   sheetId: string,
-  data: { totalScore: number; evaluations: any; feedback?: string }
+  data: { totalScore: number; evaluations: any; feedback?: string; reason?: string },
+  user?: any
 ): Promise<any> => {
   try {
     const aiEval = await AIEvaluation.findOne({ where: { sheetId } });
@@ -389,10 +392,59 @@ const updateEvaluationBySheetId = async (
       };
     }
 
-    await aiEval.update({
-      totalScore: data.totalScore,
-      evaluations: data.evaluations,
-      feedback: data.feedback !== undefined ? data.feedback : aiEval.feedback,
+    const sheet = await Scanner.findOne({ where: { sheetId }, attributes: ["examId", "instituteId"] });
+    const exam = sheet?.examId ? await Exam.findOne({ where: { examId: sheet.examId } }) : null;
+    const score = data.totalScore === undefined || data.totalScore === null ? null : Number(data.totalScore);
+    if (score !== null && (!Number.isFinite(score) || score < 0 || (exam && score > exam.totalMarks))) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `Marks must be between 0 and ${exam?.totalMarks ?? "the paper's maximum"}.` };
+    }
+    if (exam && (await StudentResult.count({ where: { examId: exam.examId, isDeleted: false } }))) {
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message: "This exam's results are published, so marks change only through a recheck (Results → Recheck requests).",
+      };
+    }
+
+    const held = await sheetHeldForCrossCheck(sheetId);
+    if (held && String(user?.role?.role ?? user?.role ?? "").toUpperCase().includes("TEACH")) {
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message: "This sheet is being cross-checked. Its marks change only through the cross-checker's verdict until that's done.",
+      };
+    }
+
+    const before = aiEval.totalScore == null ? null : Number(aiEval.totalScore);
+    await sequelize.transaction(async (t) => {
+      await aiEval.update(
+        {
+          ...(score !== null ? { totalScore: score } : {}),
+          evaluations: data.evaluations,
+          feedback: data.feedback !== undefined ? data.feedback : aiEval.feedback,
+        },
+        { transaction: t }
+      );
+      if (score !== null && (before === null || Math.abs(before - score) >= 0.005) && user?.userId) {
+        await logMarksChange(
+          {
+            instituteId: sheet?.instituteId ?? exam?.instituteId ?? user.instituteId,
+            what: MARKS_CHANGE.STUDENT,
+            source: MARKS_SOURCE.EVALUATION,
+            changedBy: user.userId,
+            oldValue: before,
+            newValue: score,
+            reason: data.reason ?? null,
+            sessionId: exam?.sessionId ?? null,
+            examType: exam?.examType ?? null,
+            examId: exam?.examId ?? null,
+            subjectId: exam?.subjectId ?? null,
+            studentId: aiEval.studentId?.startsWith("STUDENT-") ? null : aiEval.studentId,
+            sheetId,
+          },
+          t
+        );
+      }
     });
 
     return {

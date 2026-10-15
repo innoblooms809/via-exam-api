@@ -12,13 +12,16 @@
  * transaction; their push is sent after commit (see Notification.afterCreate).
  */
 
+import { gradeOn, settingsOf } from "../academic/instituteSettings.service";
+import type { GradeBand } from "../../models/InstituteSettings.model";
+import { logMarksChange } from "../academic/marks.service";
+import { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
 import httpStatus from "http-status";
 import { Op, Transaction } from "sequelize";
 import { sequelize } from "../../config/sequelize";
 import Exam from "../../models/Exam.model";
 import UserModal from "../../models/User.model";
 import Role from "../../models/Role.model";
-import Notification from "../../models/Notification.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import RecheckRequest from "../../models/RecheckRequest.model";
@@ -31,8 +34,14 @@ import StudentResult, { RESULT_STATUS } from "../../models/StudentResult.model";
 import ApiError from "../../utils/ApiError";
 import { newId } from "../../utils/idGenerator";
 import { refreshExamStatus } from "./exam.service";
-import { EXAM_INCLUDES, buildRoster, gradeFor, loadExam } from "./examRoster.service";
+import { EXAM_INCLUDES, buildRoster, loadExam } from "./examRoster.service";
 import { maskName } from "../evaluation/evaluationAccess.service";
+import { examLabel, instituteAdminIds, notifyAll, preview } from "../notification/notifyPeople";
+import TeacherProfile from "../../models/TeacherProfile.model";
+import { specialisesIn } from "../../utils/specialization";
+import { subjectTeacherIn } from "../academic/sessionSetup.service";
+import { checkExamEvaluated } from "./examProgress";
+import { assertCrossCheckDone, crossCheckStates } from "./crossCheck.service";
 
 // ─── Small helpers ───────────────────────────────────────────────────────────
 
@@ -49,34 +58,6 @@ const paging = (query: any, defaultLimit = 10) => {
   return { page, limit, offset: (page - 1) * limit };
 };
 const pageInfo = (total: number, page: number, limit: number) => ({ total, page, limit, totalPages: Math.ceil(total / limit) });
-
-const examLabel = (exam: any) =>
-  `${exam.subject?.subjectName ?? "Subject"} · ${exam.examType} · Class ${exam.class?.className ?? exam.classId ?? ""}${
-    exam.section?.sectionName ? `-${exam.section.sectionName}` : ""
-  }`;
-
-type NotificationInput = { instituteId: string; userId: string; type: string; title: string; message: string; referenceId: string };
-
-/** Writes notifications in the caller's transaction; pushes go out after commit. */
-const notifyAll = async (items: NotificationInput[], transaction?: Transaction) => {
-  const unique = new Map(items.filter((n) => n.userId).map((n) => [`${n.userId}|${n.type}`, n]));
-  if (!unique.size) return;
-  await Notification.bulkCreate(
-    [...unique.values()].map((n) => ({ ...n, notificationId: newId("notification") })),
-    { transaction, individualHooks: true }
-  );
-};
-
-/** Pass the open transaction when called inside one, so it reuses that connection. */
-const instituteAdminIds = async (instituteId: string, transaction?: Transaction): Promise<string[]> => {
-  const roles = await Role.findAll({ where: { role: { [Op.in]: ["ADMIN", "INSTITUTE_ADMIN"] } }, attributes: ["id"], transaction });
-  const admins = await UserModal.findAll({
-    where: { instituteId, roleId: { [Op.in]: roles.map((r) => r.id) }, status: 1, isDeleted: false },
-    attributes: ["userId"],
-    transaction,
-  });
-  return admins.map((a) => a.userId);
-};
 
 const requireExam = async (instituteId: string, examId: string) => {
   const exam = await loadExam(instituteId, examId);
@@ -107,6 +88,7 @@ export type ExamStage =
   | "READY_TO_SCAN"
   | "SCANNING"
   | "EVALUATING"
+  | "CROSS_CHECK"
   | "REVIEWED"
   | "PUBLISHED";
 
@@ -116,10 +98,12 @@ const stageOf = (args: {
   evaluator: EvaluationAssignment | null;
   published: boolean;
   scanDone: boolean;
+  /** The school cross-checks, and this exam's cross-check isn't done. */
+  crossCheckWaiting?: boolean;
 }): ExamStage => {
   if (args.published) return "PUBLISHED";
   if (!args.paperApproved) return "PAPER_PENDING";
-  if (args.evaluator?.reviewedAt) return "REVIEWED";
+  if (args.evaluator?.reviewedAt) return args.crossCheckWaiting ? "CROSS_CHECK" : "REVIEWED";
   if (args.scanDone) return "EVALUATING";
   if (args.scanner) return "SCANNING";
   return "READY_TO_SCAN";
@@ -180,6 +164,7 @@ const listPipeline = async (admin: any, query: any) => {
   const scannerByExam = new Map(scanners.map((s) => [s.examId, s]));
   const evaluatorByExam = new Map(evaluators.map((e) => [e.examId, e]));
   const publishedByExam = new Map(published.map((p) => [p.examId, p.publishedAt]));
+  const crossCheck = await crossCheckStates(instituteId, examIds);
 
   const people = Array.from(new Set([...scanners.map((s) => s.scannerId), ...evaluators.map((e) => e.teacherId)]));
   const names = people.length
@@ -194,6 +179,8 @@ const listPipeline = async (admin: any, query: any) => {
       const paperApproved = PAPER_APPROVED_STATUSES.includes(exam.status);
       const publishedAt = publishedByExam.get(exam.examId) ?? null;
       const scanDone = scanFinished(scanner, roster.counts.pending, roster.counts.total);
+      const check = crossCheck.byExam.get(exam.examId);
+      const crossCheckWaiting = crossCheck.required && Boolean(evaluator?.reviewedAt) && !publishedAt && (!check || check.pending > 0);
       return {
         examId: exam.examId,
         examType: exam.examType,
@@ -214,7 +201,11 @@ const listPipeline = async (admin: any, query: any) => {
         subjectName: exam.subject?.subjectName ?? "",
         sessionName: exam.session?.sessionName ?? "",
         paperSetter: exam.teacher?.userName ?? "",
-        stage: stageOf({ paperApproved, scanner, evaluator, published: Boolean(publishedAt), scanDone }),
+        stage: stageOf({ paperApproved, scanner, evaluator, published: Boolean(publishedAt), scanDone, crossCheckWaiting }),
+        // The school cross-checks: this exam's round (null until it starts).
+        crossCheck: crossCheck.required
+          ? { started: Boolean(check), total: check?.total ?? 0, pending: check?.pending ?? 0, changed: check?.changed ?? 0, checkerId: check?.checkerId ?? null }
+          : null,
         counts: roster.counts,
         scanner: scanner
           ? { scannerId: scanner.scannerId, name: names.get(scanner.scannerId) ?? "", status: scanner.status, assignedAt: scanner.createdAt, completedAt: scanner.completedAt }
@@ -600,6 +591,8 @@ const completeScan = async (user: any, examId: string) => {
       t
     );
   });
+  // Sheets may all have their marks already (marked as they arrived): then that's 100% evaluated too.
+  void checkExamEvaluated(exam.examId).catch(() => undefined);
   return { examId: exam.examId, scanStatus: SCAN_STATUS.COMPLETED, completedAt, counts: roster.counts };
 };
 
@@ -677,14 +670,15 @@ export const assertReadyForReview = async (instituteId: string, examId: string) 
 // ADMIN — publish / unpublish results
 // ═════════════════════════════════════════════════════════════════════════════
 
-const resultFor = (marks: number | null, totalMarks: number, passingMarks: number) => {
+/** A student's result from their marks; the grade comes from the school's bands (Marks & grading). */
+const resultFor = (marks: number | null, totalMarks: number, passingMarks: number, scale: GradeBand[]) => {
   if (marks == null) return { percentage: null, grade: null, resultStatus: RESULT_STATUS.NOT_EVALUATED };
   const bounded = Math.max(0, Math.min(Number(marks), totalMarks));
   const percentage = totalMarks > 0 ? round2((bounded / totalMarks) * 100) : 0;
   return {
     marksObtained: round2(bounded),
     percentage,
-    grade: gradeFor(percentage),
+    grade: gradeOn(scale, percentage),
     resultStatus: bounded >= passingMarks ? RESULT_STATUS.PASS : RESULT_STATUS.FAIL,
   };
 };
@@ -695,6 +689,7 @@ const publishResults = async (admin: any, examId: string) => {
   const evaluator = await activeEvaluator(exam.examId);
   if (!evaluator) throw new ApiError(httpStatus.CONFLICT, "Assign an evaluator first.");
   if (!evaluator.reviewedAt) throw new ApiError(httpStatus.CONFLICT, "The evaluator hasn't marked this exam as reviewed yet.");
+  await assertCrossCheckDone(exam);
 
   const roster = await buildRoster(exam);
   const scanner = await activeScanner(exam.examId);
@@ -709,6 +704,7 @@ const publishResults = async (admin: any, examId: string) => {
   if (!students.length) throw new ApiError(httpStatus.BAD_REQUEST, "No enrolled students to publish results for.");
 
   const publishedAt = new Date();
+  const { gradingScale } = await settingsOf(instituteId);
   const summary = await sequelize.transaction(async (t) => {
     await Exam.findOne({ where: { examId: exam.examId }, transaction: t, lock: t.LOCK.UPDATE });
     if (await publishedCount(exam.examId, t)) {
@@ -737,7 +733,7 @@ const publishResults = async (admin: any, examId: string) => {
       if (r.state !== "UPLOADED") {
         return { ...base, marksObtained: null, percentage: null, grade: null, resultStatus: RESULT_STATUS.ABSENT };
       }
-      return { ...base, ...resultFor(r.score, exam.totalMarks, exam.passingMarks) };
+      return { ...base, ...resultFor(r.score, exam.totalMarks, exam.passingMarks, gradingScale) };
     });
     await StudentResult.bulkCreate(rows as any[], { transaction: t });
     await Exam.update({ status: "Completed" }, { where: { examId: exam.examId }, transaction: t });
@@ -913,6 +909,7 @@ const myResults = async (student: any, query: any) => {
     });
   }
 
+  const { gradingScale } = await settingsOf(student.instituteId);
   const summarise = (subjects: any[]) => {
     const sat = subjects.filter((s) => s.resultStatus !== RESULT_STATUS.ABSENT);
     const obtained = sat.reduce((sum, s) => sum + (s.marksObtained ?? 0), 0);
@@ -923,7 +920,7 @@ const myResults = async (student: any, query: any) => {
       obtained: round2(obtained),
       total,
       percentage,
-      grade: gradeFor(percentage),
+      grade: gradeOn(gradingScale, percentage),
       passed: sat.every((s) => s.resultStatus === RESULT_STATUS.PASS) && sat.length > 0,
     };
   };
@@ -1068,6 +1065,16 @@ const assignRecheck = async (admin: any, requestId: string, body: any) => {
     attributes: ["userId", "userName"],
   });
   if (!teacher) throw new ApiError(httpStatus.BAD_REQUEST, "That teacher is not active in your institute.");
+  // Someone who knows the subject: the exam's evaluator, its subject teacher this session, or a teacher of it.
+  const subjectName = exam.subject?.subjectName ?? "";
+  const knowsSubject =
+    teacher.userId === evaluator?.teacherId ||
+    teacher.userId === (await subjectTeacherIn(exam.sessionId, exam.subjectId)) ||
+    specialisesIn((await TeacherProfile.findOne({ where: { userId: teacher.userId, instituteId }, attributes: ["specialization"] }))?.specialization, subjectName) ||
+    (await Subject.count({ where: { instituteId, teacherId: teacher.userId, isDeleted: false, subjectName: { [Op.iLike]: subjectName.replace(/[\\%_]/g, (ch: string) => `\\${ch}`) } } })) > 0;
+  if (!knowsSubject) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `${teacher.userName} doesn't teach ${subjectName}. Choose the exam's evaluator or another ${subjectName} teacher.`);
+  }
   const evaluation = await AIEvaluation.findOne({ where: { evaluationId: request.evaluationId }, attributes: ["totalScore"] });
 
   const previousTeacher = await sequelize.transaction(async (t) => {
@@ -1095,7 +1102,15 @@ const assignRecheck = async (admin: any, requestId: string, body: any) => {
     const label = examLabel(exam);
     await notifyAll(
       [
-        { instituteId, userId: teacherId, type: "RECHECK_ASSIGNED", title: "Recheck assigned", message: `Re-evaluate one answer sheet of ${label}. The student's identity is hidden.`, referenceId: request.requestId },
+        {
+          instituteId,
+          userId: teacherId,
+          type: "RECHECK_ASSIGNED",
+          title: "Recheck assigned",
+          // The student's comment comes with it, so the teacher knows what to look at.
+          message: `Re-evaluate one answer sheet of ${label}. The student's identity is hidden.${request.reason ? ` They wrote: “${preview(request.reason, 200)}”` : ""}`,
+          referenceId: request.requestId,
+        },
         { instituteId, userId: request.studentId, type: "RECHECK_UNDER_REVIEW", title: "Recheck under review", message: `Your recheck for ${label} is being reviewed.`, referenceId: request.requestId },
         ...(before && before !== teacherId
           ? [{ instituteId, userId: before, type: "RECHECK_UNASSIGNED", title: "Recheck reassigned", message: `A recheck of ${label} was given to another teacher.`, referenceId: request.requestId }]
@@ -1168,6 +1183,7 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
     throw new ApiError(httpStatus.BAD_REQUEST, `Marks must be between 0 and ${exam.totalMarks}.`);
   }
 
+  const { gradingScale } = await settingsOf(instituteId);
   const outcome = await sequelize.transaction(async (t) => {
     const locked = await RecheckRequest.findOne({ where: { id: request.id }, transaction: t, lock: t.LOCK.UPDATE });
     if (!locked || locked.status !== "Under Review") throw new ApiError(httpStatus.CONFLICT, "This recheck is not open for review.");
@@ -1180,13 +1196,36 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
     const previous = evaluation?.totalScore == null ? null : Number(evaluation.totalScore);
     const marks = round2(revised);
     const changed = previous == null || Math.abs(previous - marks) >= 0.005;
+    // Every change of a published mark says why (Marks & grading → Changes).
+    if (changed && (note ?? "").length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Say why the marks change; the admin sees it with the change.");
     if (evaluation && changed) await evaluation.update({ totalScore: marks }, { transaction: t });
 
     const result = await StudentResult.findOne({ where: { examId: request.examId, studentId: request.studentId, isDeleted: false }, transaction: t, lock: t.LOCK.UPDATE });
     if (result && changed) {
       await result.update(
-        { ...resultFor(marks, result.totalMarks, result.passingMarks), revisedAt: new Date(), revisionCount: result.revisionCount + 1 },
+        { ...resultFor(marks, result.totalMarks, result.passingMarks, gradingScale), revisedAt: new Date(), revisionCount: result.revisionCount + 1 },
         { transaction: t }
+      );
+    }
+    // Who changed the student's marks, from what, and why (Marks & grading → Changes).
+    if (changed) {
+      await logMarksChange(
+        {
+          instituteId,
+          what: MARKS_CHANGE.STUDENT,
+          source: MARKS_SOURCE.RECHECK,
+          changedBy: teacher.userId,
+          oldValue: previous,
+          newValue: marks,
+          reason: note ?? "Recheck",
+          sessionId: exam.sessionId,
+          examType: exam.examType,
+          examId: exam.examId,
+          subjectId: exam.subjectId,
+          studentId: request.studentId,
+          sheetId: evaluation?.sheetId ?? null,
+        },
+        t
       );
     }
     await assignment.update({ previousScore: assignment.previousScore ?? previous, revisedScore: marks, teacherNote: note, completedAt: new Date() }, { transaction: t });
