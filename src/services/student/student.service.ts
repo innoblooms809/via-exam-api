@@ -1,141 +1,45 @@
 import httpStatus from "http-status";
+import { Op, QueryTypes } from "sequelize";
 import UserModal from "../../models/User.model";
 import StudentProfile from "../../models/Student.model";
 import Role from "../../models/Role.model";
 import Institute from "../../models/Institute.model";
 import Class from "../../models/Class.model";
-import Section from "../../models/Section.model";
+import Session from "../../models/Session.model";
+import Exam from "../../models/Exam.model";
 import EncryptPassword from "../../utils/encryption";
 import RegHelper from "../../utils/helper";
 import exclude from "../../utils/exclude";
 import { sequelize } from "../../config/sequelize";
-import { Op } from "sequelize";
 import StudentBulkService from "./studentBulk.service";
 import { newId } from "../../utils/idGenerator";
-import Session from "../../models/Session.model";
-import Exam from "../../models/Exam.model";
 import { nameKey } from "../../utils/academicNames";
-import { studentPlacementLock, unfinishedExamsFor } from "../academic/academicGuards.service";
 import { bulkStudentRowSchema } from "../../validations/student.validation";
+import { findSession } from "../academic/sessionSetup.service";
+import {
+  currentEnrollment,
+  enrollmentIn,
+  enrollmentLock,
+  enrollmentsOf,
+  leaveOpenSessions,
+  placeLabel,
+  placeStudent,
+  resolvePlace,
+  rollTaken,
+  syncStudentProfiles,
+  type Place,
+} from "./enrollment.service";
+
+// A student is a person (account + profile) who is enrolled in a class, section and roll
+// number for each session they study in (services/student/enrollment.service). Personal
+// details live on the profile; where they study lives on the enrolment of each session.
 
 // A single student has the same rules as a bulk row, except that the section may be
 // empty (a class without sections) and the session defaults to the current one.
 const singleStudentSchema = bulkStudentRowSchema.fork(["sectionId", "session", "className"], (f) => f.allow("", null).optional());
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-const resolveClassId = async (inputClass: string, instituteId: string): Promise<string | null> => {
-  if (!inputClass) return null;
-  const candidates = [inputClass];
-  // Try stripping "Class " prefix (e.g. "Class 10" → "10")
-  if (inputClass.startsWith("Class ")) candidates.push(inputClass.slice(6));
-  // Try adding "Class " prefix (e.g. "10" → "Class 10")
-  if (!inputClass.startsWith("Class ")) candidates.push(`Class ${inputClass}`);
-
-  const byId = await Class.findOne({
-    where: { classId: inputClass, instituteId, isDeleted: false },
-  });
-  if (byId) return byId.classId;
-
-  for (const name of candidates) {
-    const byName = await Class.findOne({
-      where: { className: name, instituteId, isDeleted: false },
-    });
-    if (byName) return byName.classId;
-  }
-
-  return null;
-};
-
-const resolveSectionId = async (inputSection: string, classId: string, instituteId: string): Promise<string> => {
-  if (!inputSection) return "";
-  const byId = await Section.findOne({
-    where: { sectionId: inputSection, instituteId, isDeleted: false },
-  });
-  if (byId) return byId.sectionId;
-
-  const byName = await Section.findOne({
-    where: { sectionName: inputSection, classId, instituteId, isDeleted: false },
-  });
-  if (byName) return byName.sectionId;
-
-  return inputSection;
-};
-
-// ─── PLACEMENT (class · section · session) ────────────────────────────────────
-
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 const clean = (v: unknown) => String(v ?? "").trim();
-
-interface Placement {
-  classId: string;
-  className: string;
-  /** Always a real section: a class without sections can't take students yet. */
-  sectionId: string;
-  sectionName: string;
-  session: string;
-}
-
-/**
- * Resolves and checks where a student sits: the class must exist, the section must be
- * one of that class's sections (required when the class has any), and the session must
- * exist (defaults to the current one). Accepts ids or names, like the forms send.
- */
-const resolvePlacement = async (
-  input: { classId?: unknown; className?: unknown; sectionId?: unknown; session?: unknown },
-  instituteId: string
-): Promise<Placement | { message: string }> => {
-  const classId = await resolveClassId(clean(input.classId) || clean(input.className), instituteId);
-  if (!classId) return { message: "Choose a class that exists (Master Data → Classes)." };
-  const cls = await Class.findOne({ where: { classId, instituteId, isDeleted: false } });
-  if (!cls) return { message: "Choose a class that exists (Master Data → Classes)." };
-
-  const sections = await Section.findAll({ where: { classId, instituteId, isDeleted: false } });
-  const sectionInput = clean(input.sectionId);
-  let section: Section | undefined;
-  if (sectionInput) {
-    section =
-      sections.find((s) => s.sectionId === sectionInput) ??
-      sections.find((s) => nameKey(s.sectionName) === nameKey(sectionInput));
-    if (!section) return { message: `Section ${sectionInput} is not part of Class ${cls.className}.` };
-  } else if (sections.length) {
-    return { message: `Choose a section of Class ${cls.className}.` };
-  } else {
-    // A student's section is a reference to a real section, so a class needs one first.
-    return { message: `Class ${cls.className} has no sections yet. Add one (for example A) in Master Data → Sections first.` };
-  }
-
-  const sessionInput = clean(input.session);
-  const session = await Session.findOne({
-    where: sessionInput
-      ? { instituteId, isDeleted: false, [Op.or]: [{ sessionName: sessionInput }, { sessionId: sessionInput }] }
-      : { instituteId, isDeleted: false, isActive: true },
-  });
-  if (!session) return { message: "Choose a session that exists (Master Data → Sessions)." };
-
-  return {
-    classId,
-    className: cls.className,
-    sectionId: section?.sectionId ?? "",
-    sectionName: section?.sectionName ?? "",
-    session: session.sessionName,
-  };
-};
-
-const placementLabel = (p: Placement) => `Class ${p.className}${p.sectionName ? `-${p.sectionName}` : ""} (${p.session})`;
-
-/** Another active student already has this roll number in the same class, section and session. */
-const rollTaken = (instituteId: string, rollNumber: string, p: Placement, exceptUserId?: string) =>
-  StudentProfile.findOne({
-    where: {
-      instituteId,
-      rollNumber,
-      classId: p.classId,
-      sectionId: p.sectionId,
-      session: p.session,
-      isActive: true,
-      ...(exceptUserId ? { userId: { [Op.ne]: exceptUserId } } : {}),
-    },
-  });
 
 // ─── CREATE STUDENT ───────────────────────────────────────────────────────────
 // Adding a student whose email belongs to a deleted student of this institute brings
@@ -154,8 +58,8 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
     body = { ...body, ...checked, gender: checked.gender, email: checked.email, mobile: checked.mobile };
     const rollNumber = clean(body.rollNumber);
     if (!rollNumber) return fail(httpStatus.BAD_REQUEST, "Roll number is required.");
-    const placement = await resolvePlacement(body, instituteId);
-    if ("message" in placement) return fail(httpStatus.BAD_REQUEST, placement.message);
+    const place = await resolvePlace(body, instituteId);
+    if ("message" in place) return fail(httpStatus.BAD_REQUEST, place.message);
 
     const studentRole = await Role.findOne({ where: { role: "STUDENT" } });
     if (!studentRole) return fail(httpStatus.INTERNAL_SERVER_ERROR, "STUDENT role not found. Please seed roles.");
@@ -171,18 +75,19 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
     const phoneOwner = await UserModal.findOne({ where: { phoneNumber: body.mobile } });
     if (phoneOwner && phoneOwner.userId !== restoring?.userId) return fail(httpStatus.CONFLICT, "Phone number is already registered.");
 
-    if (await rollTaken(instituteId, rollNumber, placement, restoring?.userId)) {
-      return fail(httpStatus.CONFLICT, `Roll number ${rollNumber} is already used in ${placementLabel(placement)}.`);
+    if (await rollTaken(place.sessionId, place.sectionId, rollNumber, restoring?.userId)) {
+      return fail(httpStatus.CONFLICT, `Roll number ${rollNumber} is already used in ${placeLabel(place)}.`);
     }
 
     const profileUrl = files?.profilePhoto?.[0] ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}` : null;
     const plainPassword = body.password || (await RegHelper.generatePassword());
     const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
     const profileFields = {
-      classId: placement.classId,
-      className: placement.className,
-      sectionId: placement.sectionId,
-      session: placement.session,
+      // The profile keeps a copy of the current enrolment; it is brought in line below.
+      classId: place.classId,
+      className: place.className,
+      sectionId: place.sectionId,
+      session: place.sessionName,
       rollNumber,
       // Optional on the form, but NOT NULL columns: an empty value is stored as "".
       fatherName: clean(body.fatherName),
@@ -194,6 +99,7 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
     };
 
     const user = await sequelize.transaction(async (t) => {
+      let account: UserModal;
       if (restoring) {
         await restoring.update(
           { userName: `${body.firstName} ${body.lastName}`, phoneNumber: body.mobile, password: encryptedPassword, status: 1, isDeleted: false },
@@ -202,31 +108,34 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
         const profile = await StudentProfile.findOne({ where: { userId: restoring.userId }, transaction: t });
         if (profile) await profile.update({ ...profileFields, ...(profileUrl ? { profileUrl } : {}) }, { transaction: t });
         else await StudentProfile.create({ userId: restoring.userId, instituteId, ...profileFields, profileUrl }, { transaction: t });
-        return restoring;
+        account = restoring;
+      } else {
+        account = await UserModal.create(
+          {
+            userId: newId("user"),
+            userName: `${body.firstName} ${body.lastName}`,
+            emailId: body.email,
+            phoneNumber: body.mobile,
+            password: encryptedPassword,
+            roleId: studentRole.id,
+            instituteId,
+            status: 1,
+          },
+          { transaction: t }
+        );
+        await StudentProfile.create({ userId: account.userId, instituteId, ...profileFields, profileUrl }, { transaction: t });
       }
-      const created = await UserModal.create(
-        {
-          userId: newId("user"),
-          userName: `${body.firstName} ${body.lastName}`,
-          emailId: body.email,
-          phoneNumber: body.mobile,
-          password: encryptedPassword,
-          roleId: studentRole.id,
-          instituteId,
-          status: 1,
-        },
-        { transaction: t }
-      );
-      await StudentProfile.create({ userId: created.userId, instituteId, ...profileFields, profileUrl }, { transaction: t });
-      return created;
+      await placeStudent({ instituteId, studentId: account.userId, place, rollNumber }, t);
+      await syncStudentProfiles(instituteId, [account.userId], t);
+      return account;
     });
 
     return {
       error: false,
       statusCode: httpStatus.CREATED,
       message: restoring
-        ? `${user.userName} was a deleted student; their account is restored in ${placementLabel(placement)} with their old results.`
-        : `Student added to ${placementLabel(placement)}.`,
+        ? `${user.userName} was a deleted student; their account is restored in ${placeLabel(place)} with their old results.`
+        : `Student added to ${placeLabel(place)}.`,
       data: {
         user: exclude(user.toJSON(), ["password", "refreshToken"]),
         plainPassword,
@@ -241,233 +150,216 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
 };
 
 // ─── GET ALL STUDENTS ─────────────────────────────────────────────────────────
+// The students of one session (?sessionId= or ?session=, by id or name; the current one
+// when blank), with the class, section and roll number they have in that session.
+// ?session=all lists every student once, at their current class.
+// Also: how many active students aren't in this session at all, and how many of the
+// previous session's students haven't been promoted into it yet.
+
+const STUDENT_ROWS = (all: boolean) => `
+SELECT ${all ? `DISTINCT ON (e."studentId")` : ""}
+       u."userId", u."userName", u."emailId", u."phoneNumber", u.status, u."instituteId",
+       e."enrollmentId", e."sessionId", se."sessionName", e."classId", c."className",
+       e."sectionId", sec."sectionName", e."rollNumber",
+       p."fatherName", p.gender, p.dob, p.aadhar, p.address, p."profileUrl"
+FROM viaexam_student_enrollments e
+JOIN viaexam_users u ON u."userId" = e."studentId" AND u.status = 1
+JOIN viaexam_sessions se ON se."sessionId" = e."sessionId"
+LEFT JOIN viaexam_student_profiles p ON p."userId" = e."studentId"
+LEFT JOIN viaexam_classes c ON c."classId" = e."classId"
+LEFT JOIN viaexam_sections sec ON sec."sectionId" = e."sectionId"
+WHERE e."instituteId" = :inst AND e."isActive" = true
+  ${all ? "" : `AND e."sessionId" = :ses`}
+  AND (:classIds IS NULL OR e."classId" IN (:classList))
+  AND (:section = '' OR e."sectionId" = :section OR lower(sec."sectionName") = lower(:section))
+  AND (:q = '' OR u."userName" ILIKE :like OR u."emailId" ILIKE :like OR e."rollNumber" ILIKE :like)
+ORDER BY ${all ? `e."studentId", se."isActive" DESC, se."startDate" DESC` : `u."userName"`}`;
+
 const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
   try {
-    const {
-      search = "",
-      className = "",
-      sectionId = "",
-      session = "",
-
-    } = query;
-
-    const studentRole = await Role.findOne({ where: { role: "STUDENT" } });
-
-    const where: any = {
-      instituteId: createdBy.instituteId,
-      roleId: studentRole?.id,
-      status: 1,
-    };
-
-    if (search) {
-      where[Op.or] = [
-        { userName: { [Op.iLike]: `%${search}%` } },
-        { emailId: { [Op.iLike]: `%${search}%` } },
-      ];
+    const instituteId = createdBy.instituteId;
+    const sessionParam = clean(query?.sessionId) || clean(query?.session);
+    const all = sessionParam.toLowerCase() === "all";
+    const session = all ? null : await findSession(instituteId, sessionParam);
+    if (!all && !session) {
+      return {
+        error: false,
+        statusCode: httpStatus.OK,
+        message: sessionParam ? "Session not found." : "No current session yet.",
+        data: { students: [], total: 0, session: null, notEnrolled: 0, previous: null },
+      };
     }
 
-    // Profile filters
-    const profileWhere: any = {};
-    if (className) profileWhere.className = className;
-    if (session) profileWhere.session = session;
-
-    if (sectionId) {
-      const resolvedClassId = await resolveClassId(className, createdBy.instituteId);
-      const resolvedSectionId = await resolveSectionId(sectionId, resolvedClassId || "", createdBy.instituteId);
-      profileWhere.sectionId = resolvedSectionId;
+    // Class filter by id or name ("10", "Class 10").
+    const className = clean(query?.className);
+    let classList: string[] | null = null;
+    if (className) {
+      const bare = className.replace(/^class\s+/i, "");
+      const classes = await Class.findAll({ where: { instituteId }, attributes: ["classId", "className"] });
+      classList = classes.filter((c) => c.classId === className || nameKey(c.className) === nameKey(className) || nameKey(c.className) === nameKey(bare)).map((c) => c.classId);
+      if (!classList.length) classList = ["-"];
     }
+    const search = clean(query?.search);
+    const rows = (await sequelize.query(STUDENT_ROWS(all), {
+      replacements: {
+        inst: instituteId,
+        ses: session?.sessionId ?? "",
+        classIds: classList ? "x" : null,
+        classList: classList ?? ["-"],
+        section: clean(query?.sectionId),
+        q: search,
+        like: `%${search}%`,
+      },
+      type: QueryTypes.SELECT,
+    })) as any[];
 
-    const students = await UserModal.findAll({
-      where,
-      include: [
-        { model: Role, as: "role" },
-        {
-          model: StudentProfile,
-          as: "studentProfile",
-          required: Object.keys(profileWhere).length > 0,
-          where:
-            Object.keys(profileWhere).length > 0 ? profileWhere : undefined,
-          include: [
-            {
-              model: Class,
-              as: "class",
-              required: false,
-            },
-            {
-              model: Section,
-              as: "section",
-              required: false,
-            },
-          ],
-        },
-      ],
-      attributes: { exclude: ["password", "refreshToken"] },
-      order: [["userName", "ASC"]],
-    });
-
-    // Exams whose roster includes each student (same rule as rosterExamsFor), counted in
+    // Exams whose roster includes each row (same rule as the exam roster), counted in
     // memory so the list can show which placements are locked without a query per row.
-    const [sessions, exams] = await Promise.all([
-      Session.findAll({ where: { instituteId: createdBy.instituteId, isDeleted: false }, attributes: ["sessionId", "sessionName"], raw: true }),
-      Exam.findAll({ where: { instituteId: createdBy.instituteId, isDeleted: false }, attributes: ["classId", "sectionId", "sessionId"], raw: true }),
-    ]);
-    const sessionIdByName = new Map(sessions.map((s: any) => [s.sessionName, s.sessionId]));
-    const lockCache = new Map<string, number>();
-    const rosterExams = (p: any) => {
-      if (!p?.classId || !p?.session) return 0;
-      const key = `${p.classId}|${p.sectionId ?? ""}|${p.session}`;
-      if (!lockCache.has(key)) {
-        const sessionId = sessionIdByName.get(p.session);
-        const sectionKeys = [p.sectionId, p.section?.sectionName].filter(Boolean);
-        lockCache.set(
-          key,
-          sessionId
-            ? exams.filter((e: any) => e.sessionId === sessionId && e.classId === p.classId && (!e.sectionId || sectionKeys.includes(e.sectionId))).length
-            : 0
-        );
-      }
-      return lockCache.get(key)!;
-    };
+    const sessionIds = [...new Set(rows.map((r) => r.sessionId))];
+    const exams = sessionIds.length
+      ? ((await Exam.findAll({ where: { instituteId, isDeleted: false, sessionId: { [Op.in]: sessionIds } }, attributes: ["classId", "sectionId", "sessionId"], raw: true })) as any[])
+      : [];
+    const rosterExams = (r: any) =>
+      exams.filter((e) => e.sessionId === r.sessionId && e.classId === r.classId && (!e.sectionId || e.sectionId === r.sectionId || e.sectionId === r.sectionName)).length;
 
-    const result = students.map((u: any) => ({
-      userId: u.userId,
-      userName: u.userName,
-      emailId: u.emailId,
-      phoneNumber: u.phoneNumber,
-      status: u.status,
-      instituteId: u.instituteId,
-      rollNumber: u.studentProfile?.rollNumber ?? null,
-      classId: u.studentProfile?.classId ?? null,
-      /** Exams this student is on the roster of: class, section, session and roll are locked while > 0. */
-      examCount: rosterExams(u.studentProfile),
-      className: u.studentProfile?.className ?? null,
-      sectionId: u.studentProfile?.sectionId ?? null,
-      sectionName: u.studentProfile?.section?.sectionName ?? null,
-      session: u.studentProfile?.session ?? null,
-      fatherName: u.studentProfile?.fatherName ?? null,
-      gender: u.studentProfile?.gender ?? null,
-      dob: u.studentProfile?.dob ?? null,
-      aadhar: u.studentProfile?.aadhar ?? null,
-      address: u.studentProfile?.address ?? null,
-      profileUrl: u.studentProfile?.profileUrl ?? null,
-    }));
+    const students = rows
+      .map((r) => ({
+        userId: r.userId,
+        userName: r.userName,
+        emailId: r.emailId,
+        phoneNumber: r.phoneNumber,
+        status: r.status,
+        instituteId: r.instituteId,
+        enrollmentId: r.enrollmentId,
+        sessionId: r.sessionId,
+        session: r.sessionName,
+        rollNumber: r.rollNumber ?? null,
+        classId: r.classId ?? null,
+        className: r.className ?? null,
+        sectionId: r.sectionId ?? null,
+        sectionName: r.sectionName ?? null,
+        /** Exams this enrolment is on the roster of: class, section and roll for this session are locked while > 0. */
+        examCount: rosterExams(r),
+        fatherName: r.fatherName ?? null,
+        gender: r.gender ?? null,
+        dob: r.dob ?? null,
+        aadhar: r.aadhar ?? null,
+        address: r.address ?? null,
+        profileUrl: r.profileUrl ?? null,
+      }))
+      .sort((a, b) => a.userName.localeCompare(b.userName));
+
+    let notEnrolled = 0;
+    let previous: { sessionId: string; sessionName: string; waiting: number } | null = null;
+    if (session) {
+      const [[counts], prior] = await Promise.all([
+        sequelize.query(
+          `SELECT COUNT(*)::int AS n FROM viaexam_users u JOIN roles r ON r.id = u."roleId" AND r.role = 'STUDENT'
+           WHERE u."instituteId" = :inst AND u.status = 1
+             AND NOT EXISTS (SELECT 1 FROM viaexam_student_enrollments e WHERE e."studentId" = u."userId" AND e."sessionId" = :ses AND e."isActive" = true)`,
+          { replacements: { inst: instituteId, ses: session.sessionId }, type: QueryTypes.SELECT }
+        ) as Promise<any[]>,
+        Session.findOne({ where: { instituteId, isDeleted: false, startDate: { [Op.lt]: session.startDate } }, order: [["startDate", "DESC"]] }),
+      ]);
+      notEnrolled = Number(counts?.n ?? 0);
+      if (prior) {
+        const [waiting] = (await sequelize.query(
+          `SELECT COUNT(*)::int AS n FROM viaexam_student_enrollments e
+           JOIN viaexam_users u ON u."userId" = e."studentId" AND u.status = 1
+           WHERE e."sessionId" = :prior AND e."isActive" = true
+             AND NOT EXISTS (SELECT 1 FROM viaexam_student_enrollments x WHERE x."studentId" = e."studentId" AND x."sessionId" = :ses)`,
+          { replacements: { prior: prior.sessionId, ses: session.sessionId }, type: QueryTypes.SELECT }
+        )) as any[];
+        previous = { sessionId: prior.sessionId, sessionName: prior.sessionName, waiting: Number(waiting?.n ?? 0) };
+      }
+    }
 
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Students fetched successfully.",
-      data: { students: result, total: result.length },
+      data: {
+        students,
+        total: students.length,
+        session: session ? { sessionId: session.sessionId, sessionName: session.sessionName, isActive: session.isActive } : null,
+        notEnrolled,
+        previous,
+      },
     };
   } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return fail(httpStatus.INTERNAL_SERVER_ERROR, `Something went wrong: ${e.message}`);
   }
 };
 
 // ─── GET ONE STUDENT ──────────────────────────────────────────────────────────
+// The person, their current class, and every session they studied in.
 const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
   try {
     const instituteId = createdBy?.instituteId;
-    const userWhere: any = { userId };
-    const profileWhere: any = { rollNumber: userId };
-
-    if (instituteId) {
-      userWhere.instituteId = instituteId;
-      profileWhere.instituteId = instituteId;
-    }
-
+    const userWhere: any = { userId, ...(instituteId ? { instituteId } : {}) };
     let student = await UserModal.findOne({
       where: userWhere,
-      include: [
-        { model: Role, as: "role" },
-        {
-          model: StudentProfile,
-          as: "studentProfile",
-          include: [
-            { model: Class, as: "class", where: { isDeleted: false }, required: false },
-            { model: Section, as: "section", where: { isDeleted: false }, required: false },
-          ],
-        },
-      ],
+      include: [{ model: Role, as: "role" }, { model: StudentProfile, as: "studentProfile" }],
       attributes: { exclude: ["password", "refreshToken"] },
     });
 
+    // Older links pass a roll number instead of the id.
     if (!student) {
-      const profile = await StudentProfile.findOne({
-        where: profileWhere,
-      });
-      if (profile && profile.userId) {
-        const userSecondWhere: any = { userId: profile.userId };
-        if (instituteId) {
-          userSecondWhere.instituteId = instituteId;
-        }
+      const profile = await StudentProfile.findOne({ where: { rollNumber: userId, ...(instituteId ? { instituteId } : {}) } });
+      if (profile?.userId) {
         student = await UserModal.findOne({
-          where: userSecondWhere,
-          include: [
-            { model: Role, as: "role" },
-            {
-              model: StudentProfile,
-              as: "studentProfile",
-              include: [
-                { model: Class, as: "class", where: { isDeleted: false }, required: false },
-                { model: Section, as: "section", where: { isDeleted: false }, required: false },
-              ],
-            },
-          ],
+          where: { userId: profile.userId, ...(instituteId ? { instituteId } : {}) },
+          include: [{ model: Role, as: "role" }, { model: StudentProfile, as: "studentProfile" }],
           attributes: { exclude: ["password", "refreshToken"] },
         });
       }
     }
-
-    if (!student) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Student not found.",
-      };
-    }
+    if (!student) return fail(httpStatus.NOT_FOUND, "Student not found.");
 
     const s = student.toJSON() as any;
-    // Tells the edit form whether class / section / session / roll can still change.
-    const placementLock = s.studentProfile ? await studentPlacementLock(s.studentProfile, s.instituteId) : { locked: false, exams: 0, reason: null };
-    const data = {
-      placementLock,
-      userId: s.userId,
-      userName: s.userName,
-      emailId: s.emailId,
-      phoneNumber: s.phoneNumber,
-      status: s.status,
-      instituteId: s.instituteId,
-      studentProfile: s.studentProfile
-        ? {
-          ...s.studentProfile,
-          sectionId: s.studentProfile.sectionId,
-          sectionName: s.studentProfile.section?.sectionName ?? null,
-        }
-        : null,
-    };
+    const [history, current] = await Promise.all([enrollmentsOf(s.userId, s.instituteId), currentEnrollment(s.userId, s.instituteId)]);
+    const now = history.find((h) => h.enrollmentId === current?.enrollmentId) ?? null;
+    // Tells the edit form whether this session's class / section / roll can still change.
+    const placementLock = now ? await enrollmentLock({ instituteId: s.instituteId, sessionId: now.sessionId, classId: now.classId, sectionId: now.sectionId }, now.sessionName) : { locked: false, exams: 0, reason: null };
 
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Student fetched successfully.",
-      data,
+      data: {
+        placementLock,
+        userId: s.userId,
+        userName: s.userName,
+        emailId: s.emailId,
+        phoneNumber: s.phoneNumber,
+        status: s.status,
+        instituteId: s.instituteId,
+        studentProfile: s.studentProfile
+          ? {
+              ...s.studentProfile,
+              classId: now?.classId ?? s.studentProfile.classId,
+              className: now?.className ?? s.studentProfile.className,
+              sectionId: now?.sectionId ?? s.studentProfile.sectionId,
+              sectionName: now?.sectionName ?? null,
+              session: now?.sessionName ?? s.studentProfile.session,
+              sessionId: now?.sessionId ?? null,
+              rollNumber: now?.rollNumber ?? s.studentProfile.rollNumber,
+            }
+          : null,
+        /** Every session the student studied in, newest first. */
+        enrollments: history,
+      },
     };
   } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return fail(httpStatus.INTERNAL_SERVER_ERROR, `Something went wrong: ${e.message}`);
   }
 };
 
 // ─── UPDATE STUDENT ───────────────────────────────────────────────────────────
-// Personal details can always change. Class, section, session and roll number are
-// locked while the student is on an exam roster (see academicGuards.service).
+// Personal details can always change. Class, section and roll number are set per session
+// (body.sessionId or body.session; the student's current session when blank): that
+// session's enrolment is written, others are left alone. A session's placement is locked
+// while the student is on the roster of one of its exams.
 const updateStudent = async (userId: string, body: any, files: any, createdBy: any): Promise<any> => {
   const instituteId = createdBy.instituteId;
   try {
@@ -483,38 +375,41 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
     }
 
     const profile = await StudentProfile.findOne({ where: { userId, instituteId } });
-    let placement: Placement | null = null;
-    let rollNumber = profile?.rollNumber ?? "";
+    let place: Place | null = null;
+    let rollNumber = "";
 
-    if (profile) {
-      const wantsPlacement = ["classId", "className", "sectionId", "session", "rollNumber"].some((k) => body[k] !== undefined);
-      if (wantsPlacement) {
-        const resolved = await resolvePlacement(
-          {
-            classId: body.classId ?? (body.className === undefined ? profile.classId : undefined),
-            className: body.className ?? profile.className,
-            sectionId: body.sectionId ?? profile.sectionId,
-            session: body.session ?? profile.session,
-          },
-          instituteId
-        );
-        if ("message" in resolved) return fail(httpStatus.BAD_REQUEST, resolved.message);
-        rollNumber = clean(body.rollNumber ?? profile.rollNumber);
-        if (!rollNumber) return fail(httpStatus.BAD_REQUEST, "Roll number is required.");
+    const wantsPlacement = ["classId", "className", "sectionId", "session", "sessionId", "rollNumber"].some((k) => body[k] !== undefined && body[k] !== "");
+    if (profile && wantsPlacement) {
+      const current = await currentEnrollment(userId, instituteId);
+      const sessionParam = clean(body.sessionId) || clean(body.session) || current?.sessionId || "";
+      const session = await findSession(instituteId, sessionParam);
+      if (!session) return fail(httpStatus.BAD_REQUEST, "Choose a session that exists (Master Data → Sessions).");
+      const existing = await enrollmentIn(userId, session.sessionId);
+      const resolved = await resolvePlace(
+        {
+          classId: body.classId ?? (body.className === undefined ? existing?.classId : undefined),
+          className: body.className,
+          sectionId: body.sectionId ?? existing?.sectionId ?? undefined,
+          sessionId: session.sessionId,
+        },
+        instituteId
+      );
+      if ("message" in resolved) return fail(httpStatus.BAD_REQUEST, resolved.message);
+      rollNumber = clean(body.rollNumber ?? existing?.rollNumber);
+      if (!rollNumber) return fail(httpStatus.BAD_REQUEST, "Roll number is required.");
 
-        // Older profiles keep the class / section by name; the same place by name is not a move.
-        const sameClass = resolved.classId === profile.classId || (!profile.classId && nameKey(resolved.className) === nameKey(profile.className));
-        const sameSection =
-          resolved.sectionId === (profile.sectionId ?? "") || (resolved.sectionName !== "" && nameKey(resolved.sectionName) === nameKey(profile.sectionId));
-        const moved = !sameClass || !sameSection || resolved.session !== profile.session || rollNumber !== profile.rollNumber;
-        if (moved) {
-          const lock = await studentPlacementLock(profile, instituteId);
-          if (lock.locked) return fail(httpStatus.CONFLICT, lock.reason);
-          if (await rollTaken(instituteId, rollNumber, resolved, userId)) {
-            return fail(httpStatus.CONFLICT, `Roll number ${rollNumber} is already used in ${placementLabel(resolved)}.`);
+      const moved = !existing || !existing.isActive || existing.classId !== resolved.classId || existing.sectionId !== resolved.sectionId || existing.rollNumber !== rollNumber;
+      if (moved) {
+        if (existing) {
+          const lock = await enrollmentLock(existing, session.sessionName);
+          if (lock.locked && (existing.classId !== resolved.classId || existing.sectionId !== resolved.sectionId || existing.rollNumber !== rollNumber)) {
+            return fail(httpStatus.CONFLICT, lock.reason);
           }
-          placement = resolved;
         }
+        if (await rollTaken(resolved.sessionId, resolved.sectionId, rollNumber, userId)) {
+          return fail(httpStatus.CONFLICT, `Roll number ${rollNumber} is already used in ${placeLabel(resolved)}.`);
+        }
+        place = resolved;
       }
     }
 
@@ -531,9 +426,6 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
       const profileUrl = files?.profilePhoto?.[0] ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}` : profile.profileUrl;
       await profile.update(
         {
-          ...(placement
-            ? { classId: placement.classId, className: placement.className, sectionId: placement.sectionId, session: placement.session, rollNumber }
-            : {}),
           fatherName: body.fatherName ?? profile.fatherName,
           gender: body.gender ?? profile.gender,
           address: body.address ?? profile.address,
@@ -543,12 +435,16 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
         },
         { transaction: t }
       );
+      if (place) {
+        await placeStudent({ instituteId, studentId: userId, place, rollNumber }, t);
+        await syncStudentProfiles(instituteId, [userId], t);
+      }
     });
 
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: placement ? `Student updated and moved to ${placementLabel(placement)}.` : "Student updated.",
+      message: place ? `Student updated: ${placeLabel(place)}, roll ${rollNumber}.` : "Student updated.",
       data: { userId, userName: user.userName },
     };
   } catch (e: any) {
@@ -557,8 +453,9 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
 };
 
 // ─── DELETE STUDENT ───────────────────────────────────────────────────────────
-// Deactivates the account and frees the roll number. Published results stay linked to
-// the student; adding them again with the same email restores the account.
+// The student leaves: the account is deactivated and their place in the current (and any
+// later) session is freed. Earlier sessions keep them, with their published results;
+// adding them again with the same email restores the account.
 const deleteStudent = async (userId: string, createdBy: any): Promise<any> => {
   try {
     const instituteId = createdBy.instituteId;
@@ -568,12 +465,13 @@ const deleteStudent = async (userId: string, createdBy: any): Promise<any> => {
     await sequelize.transaction(async (t) => {
       await user.update({ status: 0, refreshToken: null }, { transaction: t });
       await StudentProfile.update({ isActive: false }, { where: { userId, instituteId }, transaction: t });
+      await leaveOpenSessions(instituteId, userId, t);
     });
 
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `${user.userName} deleted. Their published results are kept; add them again with the same email to place them in another class.`,
+      message: `${user.userName} deleted. Earlier sessions and published results are kept; add them again with the same email to bring them back.`,
       data: {},
     };
   } catch (e: any) {
@@ -581,11 +479,13 @@ const deleteStudent = async (userId: string, createdBy: any): Promise<any> => {
   }
 };
 
-// ─── PROMOTE STUDENTS (year end) ──────────────────────────────────────────────
-// Moves the chosen students to a class / section of another session in one go.
-// Old exams keep their published results (they store class, section and session),
-// so a student can move once their work in the current session is published.
-// Body: { studentIds[], toClassId, toSectionId?, toSession, rollNumbers?: { [userId]: roll } }
+// ─── PROMOTE / MOVE STUDENTS ──────────────────────────────────────────────────
+// Puts the chosen students in a class / section of a session in one go:
+//   another session  → year-end promotion (or detention): next session's enrolment is
+//                      added; this session's stays exactly as it is, with its results
+//   the same session → a class change, refused for students already on an exam roster
+// Body: { studentIds[], toClassId, toSectionId, toSession | toSessionId,
+//         fromSessionId?, rollNumbers?: { [userId]: roll } }
 const promoteStudents = async (body: any, createdBy: any): Promise<any> => {
   const instituteId = createdBy.instituteId;
   try {
@@ -593,65 +493,56 @@ const promoteStudents = async (body: any, createdBy: any): Promise<any> => {
     if (!studentIds.length) return fail(httpStatus.BAD_REQUEST, "Choose at least one student.");
     if (studentIds.length > 500) return fail(httpStatus.BAD_REQUEST, "You can promote up to 500 students at a time.");
 
-    const target = await resolvePlacement(
-      { classId: body.toClassId, sectionId: body.toSectionId, session: body.toSession ?? body.toSessionId },
-      instituteId
-    );
+    const target = await resolvePlace({ classId: body.toClassId, sectionId: body.toSectionId, sessionId: body.toSessionId ?? body.toSession }, instituteId);
     if ("message" in target) return fail(httpStatus.BAD_REQUEST, target.message);
+    const fromSession = clean(body.fromSessionId) ? await findSession(instituteId, body.fromSessionId) : null;
     const rolls: Record<string, unknown> = body.rollNumbers && typeof body.rollNumbers === "object" ? body.rollNumbers : {};
 
-    const profiles = await StudentProfile.findAll({
-      where: { instituteId, userId: { [Op.in]: studentIds }, isActive: true },
-      include: [{ model: UserModal, as: "user", attributes: ["userId", "userName", "status"], required: true, where: { status: 1 } }],
-    });
-    const byId = new Map(profiles.map((p) => [p.userId, p]));
+    const users = await UserModal.findAll({ where: { instituteId, userId: { [Op.in]: studentIds }, status: 1 }, attributes: ["userId", "userName"] });
+    const userOf = new Map(users.map((u) => [u.userId, u]));
 
     const skipped: { userId: string; name: string; reason: string }[] = [];
-    const moves: { profile: StudentProfile; rollNumber: string }[] = [];
+    const moves: { studentId: string; rollNumber: string }[] = [];
     const rollsInBatch = new Set<string>();
 
     for (const id of studentIds) {
-      const profile = byId.get(id);
-      const name = (profile as any)?.user?.userName ?? "";
-      if (!profile) {
+      const user = userOf.get(id);
+      const name = user?.userName ?? "";
+      if (!user) {
         skipped.push({ userId: id, name, reason: "Not an active student of this institute." });
         continue;
       }
-      const rollNumber = clean(rolls[id]) || clean(profile.rollNumber);
-      if (profile.classId === target.classId && (profile.sectionId ?? "") === target.sectionId && profile.session === target.session) {
-        skipped.push({ userId: id, name, reason: `Already in ${placementLabel(target)}.` });
+      const source = fromSession ? await enrollmentIn(id, fromSession.sessionId) : await currentEnrollment(id, instituteId);
+      const rollNumber = clean(rolls[id]) || clean(source?.rollNumber);
+      if (!rollNumber) {
+        skipped.push({ userId: id, name, reason: "No roll number to give them; enter one." });
         continue;
       }
-      // Within the same session this is a class change, which the exam roster lock governs.
-      if (profile.session === target.session) {
-        const lock = await studentPlacementLock(profile, instituteId);
+      const there = await enrollmentIn(id, target.sessionId);
+      if (there && there.isActive && there.classId === target.classId && there.sectionId === target.sectionId && there.rollNumber === rollNumber) {
+        skipped.push({ userId: id, name, reason: `Already in ${placeLabel(target)}.` });
+        continue;
+      }
+      // Changing a session's placement is refused once its exams count on it.
+      if (there) {
+        const lock = await enrollmentLock(there, target.sessionName);
         if (lock.locked) {
-          skipped.push({ userId: id, name, reason: `On the roster of ${lock.exams} exam(s) in ${profile.session}; delete and add again to move.` });
-          continue;
-        }
-      } else {
-        const open = await unfinishedExamsFor(profile, instituteId);
-        if (open) {
-          skipped.push({ userId: id, name, reason: `Has answer sheets in ${open} unpublished exam(s) of ${profile.session}. Publish those results first.` });
+          skipped.push({ userId: id, name, reason: `On the roster of ${lock.exams} exam(s) in ${target.sessionName}, so their class there can't change.` });
           continue;
         }
       }
-      if (rollsInBatch.has(rollNumber) || (await rollTaken(instituteId, rollNumber, target, id))) {
-        skipped.push({ userId: id, name, reason: `Roll number ${rollNumber} is already used in ${placementLabel(target)}.` });
+      if (rollsInBatch.has(rollNumber) || (await rollTaken(target.sessionId, target.sectionId, rollNumber, id))) {
+        skipped.push({ userId: id, name, reason: `Roll number ${rollNumber} is already used in ${placeLabel(target)}.` });
         continue;
       }
       rollsInBatch.add(rollNumber);
-      moves.push({ profile, rollNumber });
+      moves.push({ studentId: id, rollNumber });
     }
 
     if (moves.length) {
       await sequelize.transaction(async (t) => {
-        for (const { profile, rollNumber } of moves) {
-          await profile.update(
-            { classId: target.classId, className: target.className, sectionId: target.sectionId, session: target.session, rollNumber },
-            { transaction: t }
-          );
-        }
+        for (const m of moves) await placeStudent({ instituteId, studentId: m.studentId, place: target, rollNumber: m.rollNumber }, t);
+        await syncStudentProfiles(instituteId, moves.map((m) => m.studentId), t);
       });
     }
 
@@ -659,7 +550,7 @@ const promoteStudents = async (body: any, createdBy: any): Promise<any> => {
       error: false,
       statusCode: httpStatus.OK,
       message: moves.length
-        ? `${moves.length} ${moves.length === 1 ? "student" : "students"} moved to ${placementLabel(target)}${skipped.length ? ` · ${skipped.length} skipped` : ""}.`
+        ? `${moves.length} ${moves.length === 1 ? "student" : "students"} placed in ${placeLabel(target)}${skipped.length ? ` · ${skipped.length} skipped` : ""}.`
         : "No students were moved.",
       data: { promoted: moves.length, skipped, target },
     };

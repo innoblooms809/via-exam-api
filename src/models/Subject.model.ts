@@ -10,6 +10,8 @@ interface SubjectAttributes {
   subjectName: string;   // Mathematics, Science, English
   subjectCode: string | null;  // MAT001, SCI001
   teacherId: string | null;  // FK → User (subject teacher)
+  // No longer set: marks are per session and exam (MarksScheme, Master Data → Marks & grading).
+  // Kept for older rows; reads use the exam's or the scheme's marks.
   totalMarks: number;
   passingMarks: number;
   isActive: boolean;
@@ -26,6 +28,8 @@ interface SubjectCreationAttributes
     | "sectionId"
     | "subjectCode"
     | "teacherId"
+    | "totalMarks"
+    | "passingMarks"
     | "isActive"
     | "isDeleted"
   > { }

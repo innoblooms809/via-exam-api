@@ -20,6 +20,7 @@
     "migrate:answer-sheets": "cross-env NODE_ENV=development ts-node src/scripts/migrateAnswerSheetsToCloudinary.ts",
     "migrate:institute-logos": "cross-env NODE_ENV=development ts-node src/scripts/migrateInstituteLogosToCloudinary.ts",
     "db:migrate:workflow": "sequelize-cli db:migrate --name 20261010000000-exam-workflow-and-indexes.js",
+    "db:migrate:person-page": "sequelize-cli db:migrate --name 20261014000000-person-page-indexes.js",
     "db:migrate:status": "sequelize-cli db:migrate:status"
   },
   "keywords": [

@@ -4,7 +4,7 @@ import Exam from "../../models/Exam.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
-import StudentProfile from "../../models/Student.model";
+import { studentForSheet } from "../student/enrollment.service";
 import logger from "../../config/logger";
 import axios from "axios";
 import FormData from "form-data";
@@ -61,15 +61,9 @@ const triggerEvaluationV2 = async (
     }
 
     // Lookup Student
-    const student = await StudentProfile.findOne({
-      where: {
-        rollNumber: sheet.rollNo,
-        instituteId: sheet.instituteId,
-        classId: sheet.classId,
-      },
-    });
-
-    const studentId = student ? student.userId : `STUDENT-${sheet.rollNo}`;
+    // The student with this roll number in the sheet's class and section, in its exam's session.
+    const ownerId = await studentForSheet(sheet);
+    const studentId = ownerId ?? `STUDENT-${sheet.rollNo}`;
 
     // 3. Find or Create AIEvaluation record as Pending
     const evaluationId = newId("evaluation");
