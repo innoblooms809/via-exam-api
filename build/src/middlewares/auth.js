@@ -89,7 +89,7 @@ const resolveRequestAuthRole = (req) => {
 exports.resolveRequestAuthRole = resolveRequestAuthRole;
 // ─── 1. AUTHENTICATION GUARD ("Who is this? → req.viaExamUser") ───────────────
 const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     try {
         const authHeader = req.headers.authorization;
         const superAdminCookie = getCookieValue(req, "superAdminToken");
@@ -192,6 +192,24 @@ const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
                 message: "User not found.",
             });
         }
+        // A valid token is not enough: the account (and its school) must still be
+        // active, so deactivating or deleting someone takes effect immediately.
+        if (user.isDeleted || user.status !== 1) {
+            return res.status(http_status_1.default.UNAUTHORIZED).json({
+                error: true,
+                statusCode: http_status_1.default.UNAUTHORIZED,
+                message: user.status === 2 ? "Your account is suspended. Contact your administrator." : "Your account is inactive. Contact your administrator.",
+            });
+        }
+        const userInstitute = user.institute;
+        const isSuperAdmin = cleanRole((_c = user.role) === null || _c === void 0 ? void 0 : _c.role) === "SUPERADMIN";
+        if (!isSuperAdmin && user.instituteId && (!userInstitute || userInstitute.isDeleted || userInstitute.status !== 1)) {
+            return res.status(http_status_1.default.FORBIDDEN).json({
+                error: true,
+                statusCode: http_status_1.default.FORBIDDEN,
+                message: "Your institute's account is not active. Contact the ViaExam team.",
+            });
+        }
         req.viaExamUser = user;
         // ─────────────────────────────────────────────
         // PASSIVE WINSTON ACTIVITY & PRESENCE TRACKER
@@ -199,7 +217,7 @@ const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
         // ── and updates presence status to ONLINE without raw endpoint strings on UI.
         // ─────────────────────────────────────────────
         try {
-            const userRole = ((_c = user.role) === null || _c === void 0 ? void 0 : _c.role) || "USER";
+            const userRole = ((_d = user.role) === null || _d === void 0 ? void 0 : _d.role) || "USER";
             const reqPath = (req.originalUrl || req.url || "").toLowerCase();
             // Skip background utility/polling endpoints so they don't overwrite user's main UI activity
             const isUtility = reqPath.includes("/notifications") ||

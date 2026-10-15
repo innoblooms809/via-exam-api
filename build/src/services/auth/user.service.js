@@ -37,6 +37,7 @@ const TeacherProfile_model_1 = __importDefault(require("../../models/TeacherProf
 const Student_model_1 = __importDefault(require("../../models/Student.model"));
 const ScannerProfile_model_1 = __importDefault(require("../../models/ScannerProfile.model"));
 const Section_model_1 = __importDefault(require("../../models/Section.model"));
+const idGenerator_1 = require("../../utils/idGenerator");
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_SECONDS = 5;
@@ -105,10 +106,19 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
         // Reuse your existing helpers
         const password = yield helper_1.default.generatePassword();
         const encryptedPassword = yield encryption_1.default.encryptPassword(password);
-        const userId = yield helper_1.default.generateUserId();
-        req.body.password = encryptedPassword;
-        req.body.userId = userId;
-        const newUser = yield User_model_1.default.create(req.body);
+        const userId = (0, idGenerator_1.newId)("user");
+        // Only these fields come from the request; password, ids and lockout state never do.
+        const { userName, emailId, phoneNumber, roleId, instituteId } = req.body;
+        const newUser = yield User_model_1.default.create({
+            userId,
+            userName,
+            emailId,
+            phoneNumber,
+            roleId,
+            instituteId: instituteId || null,
+            password: encryptedPassword,
+            status: 1,
+        });
         const _a = newUser.toJSON(), { password: _ } = _a, userResponse = __rest(_a, ["password"]);
         return {
             error: false,
@@ -159,21 +169,6 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
                 message: "Invalid credentials.",
             };
         }
-        // Account status checks
-        if (user.status === 0) {
-            return {
-                error: true,
-                statusCode: http_status_1.default.UNAUTHORIZED,
-                message: "Your account is inactive.",
-            };
-        }
-        if (user.status === 2) {
-            return {
-                error: true,
-                statusCode: http_status_1.default.UNAUTHORIZED,
-                message: "Account suspended.",
-            };
-        }
         // Lock check (DISABLED)
         /*
         if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
@@ -210,6 +205,33 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
                 error: true,
                 statusCode: http_status_1.default.BAD_REQUEST,
                 message: "Invalid credentials.",
+            };
+        }
+        // Status checks come after the password, so they don't reveal which accounts exist.
+        // A suspended institute blocks all of its users (suspension marks them 2), so say
+        // that rather than blaming the person's own account.
+        if (user.instituteId) {
+            const userInstitute = yield Institute_model_1.default.findOne({ where: { instituteId: user.instituteId }, attributes: ["status", "isDeleted"] });
+            if (!userInstitute || userInstitute.isDeleted || Number(userInstitute.status) !== 1) {
+                return {
+                    error: true,
+                    statusCode: http_status_1.default.FORBIDDEN,
+                    message: "Your institute's ViaExam access is suspended. Contact the ViaExam team.",
+                };
+            }
+        }
+        if (user.status === 0) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.UNAUTHORIZED,
+                message: "Your account is inactive.",
+            };
+        }
+        if (user.status === 2) {
+            return {
+                error: true,
+                statusCode: http_status_1.default.UNAUTHORIZED,
+                message: "Account suspended.",
             };
         }
         // Reset lock info after successful login
@@ -453,7 +475,14 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
             updates.profileUrl = `/${uploadedFile.path.replace(/\\/g, "/")}`;
         }
         else if (body.profileUrl || body.profileImage) {
-            updates.profileUrl = body.profileUrl || body.profileImage;
+            // Only an https image URL or a path we serve ourselves — never javascript:/data: URLs.
+            const candidate = String(body.profileUrl || body.profileImage).trim();
+            const isOwnUpload = /^\/(v1\/)?uploads\/[A-Za-z0-9/_.-]+$/.test(candidate) && !candidate.includes("..");
+            const isHttpsUrl = /^https:\/\/[^\s"'<>]+$/i.test(candidate) && candidate.length <= 2048;
+            if (!isOwnUpload && !isHttpsUrl) {
+                return { error: true, statusCode: http_status_1.default.BAD_REQUEST, data: {}, message: "Profile photo must be an uploaded image or an https link." };
+            }
+            updates.profileUrl = candidate;
         }
         // 4. Update Teacher Profile if provided/applicable
         const teacherProfile = yield TeacherProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);

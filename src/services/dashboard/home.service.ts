@@ -598,7 +598,7 @@ const loadScannerHome = async (user: any) => {
     select(SCANNER_SUMMARY_SQL, r),
     select(SCANNER_DAILY_SQL, r),
     select(SCANNER_RECENT_SQL, r),
-    ExamWorkflowService.myScanExams(user, { status: "ASSIGNED", limit: 6 }),
+    ExamWorkflowService.myScanExams(user, { status: "ASSIGNED", limit: 50 }),
   ]);
 
   return {

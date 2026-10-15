@@ -86,14 +86,7 @@ const getExamBySelection = (req, res) => __awaiter(void 0, void 0, void 0, funct
         // Find Exam
         // ─────────────────────────────────────────────
         const exam = yield Exam_model_1.default.findOne({
-            where: {
-                sessionId: sessionData.sessionId,
-                classId: classData.classId,
-                subjectId: subjectData.subjectId,
-                examType,
-                instituteId,
-                isDeleted: false,
-            },
+            where: Object.assign(Object.assign({ sessionId: sessionData.sessionId, classId: classData.classId, subjectId: subjectData.subjectId, examType }, (req.body.examId ? { examId: String(req.body.examId) } : {})), { instituteId, isDeleted: false }),
         });
         // ─────────────────────────────────────────────
         // Exam Not Found
