@@ -36,6 +36,10 @@ export const ID_KINDS = {
   recheck: "RCK",
   notification: "NTF",
   event: "EVT",
+  enrollment: "ENR",
+  paperComment: "PCM",
+  crossCheckRound: "XCR",
+  crossCheckItem: "XCI",
 } as const;
 
 export type IdKind = keyof typeof ID_KINDS;

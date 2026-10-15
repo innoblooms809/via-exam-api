@@ -7,8 +7,11 @@ import instituteRoutes from "./institute/institute.route";
 import teacherRoutes from "./teacher/teacher.route";
 import examRoutes from "./exam/exam.route";
 import examWorkflowRoutes from "./exam/examWorkflow.route";
+import crossCheckRoutes from "./exam/crossCheck.route";
 import questionPaperRoutes from "./question-paper/questionPaper.route";
 import sessionRoutes from "./academic/session.route";
+import sessionSetupRoutes from "./academic/sessionSetup.route";
+import { marksRoutes, settingsRoutes } from "./academic/marks.route";
 import classRoutes from "./academic/class.route";
 import sectionRoutes from "./academic/section.route";
 import subjectRoutes from "./academic/subject.route";
@@ -76,6 +79,18 @@ const defaultRoutes = [
     route: sessionRoutes,
   },
   {
+    path: "/session-setup",
+    route: sessionSetupRoutes,
+  },
+  {
+    path: "/marks",
+    route: marksRoutes,
+  },
+  {
+    path: "/institute-settings",
+    route: settingsRoutes,
+  },
+  {
     path: "/class",
     route: classRoutes,
   },
@@ -98,6 +113,10 @@ const defaultRoutes = [
   {
     path: "/exam-workflow",
     route: examWorkflowRoutes,
+  },
+  {
+    path: "/cross-checks",
+    route: crossCheckRoutes,
   },
   {
     path: "/question-papers",

@@ -52,7 +52,10 @@ router.patch("/rejectQuestionPaper/:paperId/reject", ...adminOnly, rejectQuestio
 router.patch("/publishQuestionPaper/:paperId/publish", ...adminOnly, publishQuestionPaper);
 router.get("/pending", ...academic, getPendingQuestionPapers);
 router.get("/getAllQuestionPapers", ...academic, getAllQuestionPapers);
+// A paper's discussion: comments between the admins and the paper setter, and its approval steps.
 router.get("/remarks/:examId", ...academic, getExamRemarksController);
 router.post("/remarks/:examId", ...academic, addExamRemarkController);
+router.get("/exams/:examId/comments", ...academic, getExamRemarksController);
+router.post("/exams/:examId/comments", ...academic, addExamRemarkController);
 
 export default router;

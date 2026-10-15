@@ -79,7 +79,7 @@ const getAllEvaluations = async (req: any, res: Response): Promise<any> => {
 const updateEvaluation = async (req: any, res: Response): Promise<any> => {
   try {
     const { sheetId } = req.params;
-    const { totalScore, evaluations, feedback } = req.body;
+    const { totalScore, evaluations, feedback, reason } = req.body;
     if (!sheetId) {
       return res.status(httpStatus.BAD_REQUEST).json({
         error: true,
@@ -88,11 +88,11 @@ const updateEvaluation = async (req: any, res: Response): Promise<any> => {
       });
     }
 
-    const result = await AIEvaluationService.updateEvaluationBySheetId(sheetId, {
-      totalScore,
-      evaluations,
-      feedback,
-    });
+    const result = await AIEvaluationService.updateEvaluationBySheetId(
+      sheetId,
+      { totalScore, evaluations, feedback, reason },
+      req.viaExamUser
+    );
     return res.status(result.statusCode).send(result);
   } catch (error: any) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

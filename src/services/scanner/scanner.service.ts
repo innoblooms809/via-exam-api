@@ -8,7 +8,7 @@ import Exam from "../../models/Exam.model";
 import Class from "../../models/Class.model";
 import Subject from "../../models/Subject.model";
 import Session from "../../models/Session.model";
-import StudentProfile from "../../models/Student.model";
+import StudentEnrollment from "../../models/StudentEnrollment.model";
 import UserModal from "../../models/User.model";
 import RegHelper from "../../utils/helper";
 import { isTeacherRequester, requireSheetAccess, scopeSheetRows } from "../evaluation/evaluationAccess.service";
@@ -338,10 +338,11 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
           where: { instituteId, isDeleted: false },
           attributes: ["examId", "classId", "subjectId", "examType"],
         }),
-        classIds.length
-          ? StudentProfile.count({
-              where: { instituteId, classId: { [Op.in]: classIds } },
-              group: ["classId"],
+        // Students per class in each exam's own session.
+        classIds.length && sessionIds.length
+          ? StudentEnrollment.count({
+              where: { instituteId, classId: { [Op.in]: classIds }, sessionId: { [Op.in]: sessionIds }, isActive: true },
+              group: ["sessionId", "classId"],
             })
           : [],
       ]);
@@ -351,7 +352,7 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
     const sessionMap = new Map<string, string>(sessionsList.map((s: any) => [s.sessionId, s.sessionName]));
     const userMap = new Map<string, string>(usersList.map((u: any) => [u.userId, u.userName]));
     const studentMap = new Map<string, number>(
-      (studentCounts as any[]).map((r) => [r.classId, Number(r.count)])
+      (studentCounts as any[]).map((r) => [`${r.sessionId}|${r.classId}`, Number(r.count)])
     );
 
     // Calculate uploaded sheet count per exam, matching by examId OR (classId, subjectId, examType)
@@ -394,7 +395,7 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
         passingMarks: exam.passingMarks,
         duration: exam.duration,
         instructions: exam.instructions,
-        totalStudents: exam.classId ? studentMap.get(exam.classId) || 0 : 0,
+        totalStudents: exam.classId ? studentMap.get(`${exam.sessionId}|${exam.classId}`) || 0 : 0,
         uploadedCount: countUploadedForExam(exam),
         status: exam.status,
         questionPaperStatus: qp?.status || null,

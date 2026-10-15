@@ -1,7 +1,8 @@
 import httpStatus from "http-status";
 import Exam from "../../models/Exam.model";
 import StudentResult, { RESULT_STATUS } from "../../models/StudentResult.model";
-import StudentProfile from "../../models/Student.model";
+import StudentEnrollment from "../../models/StudentEnrollment.model";
+import { currentEnrollment } from "./enrollment.service";
 import RecheckRequest from "../../models/RecheckRequest.model";
 import Subject from "../../models/Subject.model";
 import Class from "../../models/Class.model";
@@ -16,36 +17,36 @@ import {
   getSubjectPerformanceStyle,
 } from "../../utils/adminDashboard.helper";
 
+/**
+ * Where the student studies now (their current session's class and section) and the
+ * exams that are theirs: that session, that class, whole-class or their section.
+ */
+const placeOf = async (studentId: string, instituteId: string) => {
+  const e = await currentEnrollment(studentId, instituteId);
+  if (!e) return null;
+  const exams = {
+    instituteId,
+    isDeleted: false,
+    sessionId: e.sessionId,
+    classId: e.classId,
+    [Op.or]: [{ sectionId: null }, { sectionId: "" }, ...(e.sectionId ? [{ sectionId: e.sectionId }] : [])],
+  };
+  return { enrollment: e, exams };
+};
+
+const NO_PROFILE = { error: true, statusCode: httpStatus.NOT_FOUND, message: "Student profile not found." };
+
 const getStudentDashboardOverview = async (studentId: string, instituteId: string) => {
   try {
-    // Get student's profile to determine their class and section
-    const studentProfile = await StudentProfile.findOne({
-      where: { userId: studentId, instituteId },
-      attributes: ["classId", "sectionId", "instituteId"],
-    });
+    const place = await placeOf(studentId, instituteId);
+    if (!place) return NO_PROFILE;
 
-    if (!studentProfile) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Student profile not found.",
-      };
-    }
-
-    const { classId } = studentProfile;
-
-    // Get upcoming exams for the student's class
+    // Upcoming exams of the student's class this session
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const upcomingExams = await Exam.count({
-      where: {
-        instituteId,
-        classId,
-        isDeleted: false,
-        status: "Live",
-        examDate: { [Op.gte]: today },
-      },
+      where: { ...place.exams, status: "Live", examDate: { [Op.gte]: today } },
     });
 
     // Students only ever see results the admin has published.
@@ -88,16 +89,9 @@ const getStudentDashboardOverview = async (studentId: string, instituteId: strin
 
 const getUpcomingExams = async (studentId: string, instituteId: string, query: any): Promise<any> => {
   try {
-    const studentProfile = await StudentProfile.findOne({
-      where: { userId: studentId, instituteId },
-      attributes: ["classId"],
-    });
+    const place = await placeOf(studentId, instituteId);
+    if (!place) return NO_PROFILE;
 
-    if (!studentProfile) {
-      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Student profile not found." };
-    }
-
-    const { classId } = studentProfile;
     const page = Math.max(1, parseInt(query.page || "1", 10));
     const limit = Math.min(100, Math.max(1, parseInt(query.limit || "10", 10)));
     const offset = (page - 1) * limit;
@@ -106,13 +100,7 @@ const getUpcomingExams = async (studentId: string, instituteId: string, query: a
     today.setHours(0, 0, 0, 0);
 
     const { count, rows } = await Exam.findAndCountAll({
-      where: {
-        instituteId,
-        classId,
-        isDeleted: false,
-        status: "Live",
-        examDate: { [Op.gte]: today },
-      },
+      where: { ...place.exams, status: "Live", examDate: { [Op.gte]: today } },
       include: [
         { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
         { model: Class, as: "class", attributes: ["classId", "className"], required: true },
@@ -151,16 +139,9 @@ const getUpcomingExams = async (studentId: string, instituteId: string, query: a
 
 const getExamProgress = async (studentId: string, instituteId: string, query: any): Promise<any> => {
   try {
-    const studentProfile = await StudentProfile.findOne({
-      where: { userId: studentId, instituteId },
-      attributes: ["classId"],
-    });
+    const place = await placeOf(studentId, instituteId);
+    if (!place) return NO_PROFILE;
 
-    if (!studentProfile) {
-      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Student profile not found." };
-    }
-
-    const { classId } = studentProfile;
     const period = query.period || "month";
 
     let dateFilter: any = {};
@@ -179,11 +160,11 @@ const getExamProgress = async (studentId: string, instituteId: string, query: an
     }
 
     const totalAssigned = await Exam.count({
-      where: { instituteId, classId, isDeleted: false, examDate: dateFilter },
+      where: { ...place.exams, examDate: dateFilter },
     });
 
     const upcoming = await Exam.count({
-      where: { instituteId, classId, isDeleted: false, status: "Live", examDate: { [Op.gte]: new Date() } },
+      where: { ...place.exams, status: "Live", examDate: { [Op.gte]: new Date() } },
     });
 
     const [completed, published] = await Promise.all([
@@ -268,16 +249,9 @@ const getPerformanceOverview = async (studentId: string, instituteId: string, qu
 
 const getSubjectComparison = async (studentId: string, instituteId: string, query: any): Promise<any> => {
   try {
-    const studentProfile = await StudentProfile.findOne({
-      where: { userId: studentId, instituteId },
-      attributes: ["classId", "sectionId"],
-    });
-
-    if (!studentProfile) {
-      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Student profile not found." };
-    }
-
-    const { classId, sectionId } = studentProfile;
+    const place = await placeOf(studentId, instituteId);
+    if (!place) return NO_PROFILE;
+    const { sessionId, classId, sectionId } = place.enrollment;
     const period = query.period || "semester";
 
     let dateFilter: any = {};
@@ -296,11 +270,11 @@ const getSubjectComparison = async (studentId: string, instituteId: string, quer
       raw: true,
     });
 
-    const classmates = await StudentProfile.findAll({
-      where: { instituteId, classId, sectionId, isActive: true, userId: { [Op.ne]: studentId } },
-      attributes: ["userId"],
+    const classmates = await StudentEnrollment.findAll({
+      where: { instituteId, sessionId, classId, sectionId, isActive: true, studentId: { [Op.ne]: studentId } },
+      attributes: ["studentId"],
     });
-    const classmateIds = classmates.map((s) => s.userId);
+    const classmateIds = classmates.map((s) => s.studentId);
 
     const classAverages = classmateIds.length
       ? await StudentResult.findAll({

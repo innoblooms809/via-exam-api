@@ -4,13 +4,14 @@ import Section from "../../models/Section.model";
 import Class from "../../models/Class.model";
 import User from "../../models/User.model";
 import Exam from "../../models/Exam.model";
-import StudentProfile from "../../models/Student.model";
 import { sequelize } from "../../config/sequelize";
 import { compareClassNames } from "./class.service";
 import { MAX_NAME_LENGTH, nameKey, normalizeSectionName, uniqueNames } from "../../utils/academicNames";
 import { newId } from "../../utils/idGenerator";
 import { examCountsBy, examsUsing, findStaff, renameLockMessage } from "./academicGuards.service";
-import { checkClassTeacherPost, classTeacherPostOf, isHeadTeacher, syncTeacherType } from "../teacher/classTeacher.service";
+import { checkClassTeacherPost, classTeacherPostOf, isHeadTeacher } from "../teacher/classTeacher.service";
+import StudentEnrollment from "../../models/StudentEnrollment.model";
+import { activeSession, addToCurrentSession, forgetMasterRows, syncCurrentMirrors } from "./sessionSetup.service";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -71,6 +72,7 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
 
     let added = 0;
     const skipped: string[] = [];
+    const forSession: { classId: string; sectionId: string; classTeacherId: string | null }[] = [];
 
     for (const cls of classes.sort((a, b) => compareClassNames(a.className, b.className))) {
       const current = await Section.findAll({ where: { classId: cls.classId }, transaction: t });
@@ -83,22 +85,13 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
           continue;
         }
         if (found) {
-          await found.update(
-            // Its old class teacher may look after another section by now, so it comes back without one.
-            { isDeleted: false, isActive: true, classTeacherId },
-            { transaction: t },
-          );
+          // Its old class teacher may look after another section by now, so it comes back without one.
+          await found.update({ isDeleted: false, isActive: true }, { transaction: t });
+          forSession.push({ classId: cls.classId, sectionId: found.sectionId, classTeacherId });
         } else {
-          await Section.create(
-            {
-              sectionId: newId("section"),
-              classId: cls.classId,
-              instituteId,
-              sectionName,
-              classTeacherId,
-            },
-            { transaction: t },
-          );
+          const sectionId = newId("section");
+          await Section.create({ sectionId, classId: cls.classId, instituteId, sectionName }, { transaction: t });
+          forSession.push({ classId: cls.classId, sectionId, classTeacherId });
         }
         added += 1;
       }
@@ -111,7 +104,8 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
         skipped.length === 1 ? `Section ${skipped[0]} already exists.` : `These sections already exist: ${skipped.join(", ")}.`,
       );
     }
-    await syncTeacherType(classTeacherId, instituteId, t);
+    // The class teacher is this session's (Session setup); the section's own column copies it.
+    await addToCurrentSession(instituteId, { sections: forSession }, t);
     await t.commit();
 
     const parts = [`${added} ${added === 1 ? "section" : "sections"} added`];
@@ -143,9 +137,10 @@ const getAllSections = async (query: any, createdBy: any): Promise<any> => {
       ],
     });
 
-    const studentRows = (await StudentProfile.findAll({
+    const current = await activeSession(instituteId);
+    const studentRows = (await StudentEnrollment.findAll({
       attributes: ["sectionId", [sequelize.fn("COUNT", sequelize.col("id")), "count"]],
-      where: { instituteId },
+      where: { instituteId, sessionId: current?.sessionId ?? "-", isActive: true },
       group: ["sectionId"],
       raw: true,
     })) as any[];
@@ -189,7 +184,8 @@ const getSectionById = async (sectionId: string, createdBy: any): Promise<any> =
     });
     if (!section) return fail(404, "Section not found.");
 
-    const studentCount = await StudentProfile.count({ where: { instituteId: createdBy.instituteId, sectionId } });
+    const current = await activeSession(createdBy.instituteId);
+    const studentCount = await StudentEnrollment.count({ where: { instituteId: createdBy.instituteId, sectionId, sessionId: current?.sessionId ?? "-", isActive: true } });
     return {
       error: false,
       statusCode: 200,
@@ -243,10 +239,9 @@ const updateSection = async (sectionId: string, body: any, createdBy: any): Prom
       }
     }
 
-    await section.update({ sectionName, classTeacherId });
+    await section.update({ sectionName });
     if (classTeacherId !== previousTeacherId) {
-      await syncTeacherType(classTeacherId, instituteId);
-      await syncTeacherType(previousTeacherId, instituteId);
+      await addToCurrentSession(instituteId, { sections: [{ classId: section.classId, sectionId, classTeacherId }] });
     }
     await section.reload({
       include: [
@@ -273,7 +268,7 @@ const deleteSection = async (sectionId: string, createdBy: any): Promise<any> =>
 
     const label = `${(section as any).class?.className ?? ""}-${section.sectionName}`.replace(/^-/, "");
     const [students, exams] = await Promise.all([
-      StudentProfile.count({ where: { instituteId, sectionId } }),
+      StudentEnrollment.count({ where: { instituteId, sectionId } }),
       Exam.count({ where: { instituteId, sectionId, isDeleted: false } }),
     ]);
     if (students || exams) {
@@ -286,10 +281,18 @@ const deleteSection = async (sectionId: string, createdBy: any): Promise<any> =>
       return fail(httpStatus.CONFLICT, `Section ${label} can't be deleted because it has ${used}.`);
     }
 
-    // A deleted section has no class teacher; theirs goes back to being a subject teacher.
-    const freedTeacherId = section.classTeacherId;
-    await section.update({ isDeleted: true, isActive: false, classTeacherId: null });
-    await syncTeacherType(freedTeacherId, instituteId);
+    // A class always keeps one section: students and exams belong to sections.
+    const siblings = await Section.count({ where: { classId: section.classId, isDeleted: false, sectionId: { [Op.ne]: sectionId } } });
+    if (!siblings) {
+      return fail(httpStatus.CONFLICT, `Section ${label} is the only section of Class ${(section as any).class?.className ?? ""}. A class keeps at least one section; add another first.`);
+    }
+
+    // A deleted section leaves every session; its class teacher goes back to being a subject teacher.
+    await sequelize.transaction(async (t) => {
+      await section.update({ isDeleted: true, isActive: false, classTeacherId: null }, { transaction: t });
+      await forgetMasterRows({ sectionId }, t);
+      await syncCurrentMirrors(instituteId, t);
+    });
     return { error: false, statusCode: 200, message: `Section ${label} deleted.`, data: {} };
   } catch (e: any) {
     return fail(500, e.message);

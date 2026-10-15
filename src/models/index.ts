@@ -26,8 +26,25 @@ import ExamScannerAssignment from "./ExamScannerAssignment.model";
 import ExamAttendance from "./ExamAttendance.model";
 import StudentResult from "./StudentResult.model";
 import RecheckAssignment from "./RecheckAssignment.model";
+import SessionSection from "./SessionSection.model";
+import SessionSubject from "./SessionSubject.model";
+import StudentEnrollment from "./StudentEnrollment.model";
+import MarksScheme from "./MarksScheme.model";
+import MarksAudit from "./MarksAudit.model";
+import InstituteSettings from "./InstituteSettings.model";
+import PaperComment from "./PaperComment.model";
+import { CrossCheckItem, CrossCheckRound } from "./CrossCheck.model";
 
 export {
+  MarksScheme,
+  MarksAudit,
+  InstituteSettings,
+  PaperComment,
+  CrossCheckRound,
+  CrossCheckItem,
+  SessionSection,
+  SessionSubject,
+  StudentEnrollment,
   ExamScannerAssignment,
   ExamAttendance,
   StudentResult,
@@ -725,3 +742,26 @@ StudentResult.belongsTo(Subject, { foreignKey: "subjectId", targetKey: "subjectI
 StudentResult.belongsTo(User, { foreignKey: "studentId", targetKey: "userId", as: "student", constraints: false });
 RecheckRequest.hasOne(RecheckAssignment, { foreignKey: "requestId", sourceKey: "requestId", as: "assignment", constraints: false });
 RecheckAssignment.belongsTo(User, { foreignKey: "teacherId", targetKey: "userId", as: "teacher", constraints: false });
+
+// ═══════════════════════════════════════════════════════════════
+// SESSION SETUP: sections and subjects that run in a session, and where each
+// student studies in it (constraints: false — business keys, integrity in the services)
+// ═══════════════════════════════════════════════════════════════
+SessionSection.belongsTo(Section, { foreignKey: "sectionId", targetKey: "sectionId", as: "section", constraints: false });
+SessionSection.belongsTo(Class, { foreignKey: "classId", targetKey: "classId", as: "class", constraints: false });
+SessionSection.belongsTo(User, { foreignKey: "classTeacherId", targetKey: "userId", as: "classTeacher", constraints: false });
+SessionSubject.belongsTo(Subject, { foreignKey: "subjectId", targetKey: "subjectId", as: "subject", constraints: false });
+SessionSubject.belongsTo(Class, { foreignKey: "classId", targetKey: "classId", as: "class", constraints: false });
+SessionSubject.belongsTo(User, { foreignKey: "teacherId", targetKey: "userId", as: "teacher", constraints: false });
+StudentEnrollment.belongsTo(User, { foreignKey: "studentId", targetKey: "userId", as: "student", constraints: false });
+StudentEnrollment.belongsTo(Class, { foreignKey: "classId", targetKey: "classId", as: "class", constraints: false });
+StudentEnrollment.belongsTo(Section, { foreignKey: "sectionId", targetKey: "sectionId", as: "section", constraints: false });
+StudentEnrollment.belongsTo(Session, { foreignKey: "sessionId", targetKey: "sessionId", as: "session", constraints: false });
+
+// ═══════════════════════════════════════════════════════════════
+// MARKS: each subject's marks per exam and session, and who changed any mark
+// ═══════════════════════════════════════════════════════════════
+MarksScheme.belongsTo(Subject, { foreignKey: "subjectId", targetKey: "subjectId", as: "subject", constraints: false });
+MarksScheme.belongsTo(Class, { foreignKey: "classId", targetKey: "classId", as: "class", constraints: false });
+MarksAudit.belongsTo(User, { foreignKey: "changedBy", targetKey: "userId", as: "changer", constraints: false });
+PaperComment.belongsTo(User, { foreignKey: "authorId", targetKey: "userId", as: "author", constraints: false });
