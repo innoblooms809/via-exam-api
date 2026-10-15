@@ -19,6 +19,7 @@ const connect_1 = __importDefault(require("./db/connect")); // Change to sequeli
 const superAdmin_1 = __importDefault(require("./config/superAdmin"));
 const pythonServices_1 = require("./config/pythonServices");
 const pipeline6_service_1 = require("./services/evaluation/pipeline6.service");
+const subscriptionScheduler_1 = require("./services/subscription/subscriptionScheduler");
 let server;
 const bootApp = () => {
     server = app_1.default.listen(config_1.default.port, () => __awaiter(void 0, void 0, void 0, function* () {
@@ -26,6 +27,8 @@ const bootApp = () => {
         logger_1.default.info((0, pythonServices_1.describePythonServices)());
         void (0, pythonServices_1.checkPythonServices)(); // logs reachability only; never blocks startup
         yield (0, superAdmin_1.default)();
+        // Default plans, subscriptions for existing institutes, then hourly expiry checks and reminders.
+        void (0, subscriptionScheduler_1.startSubscriptionScheduler)();
         // The AI evaluation queue is in memory: put evaluations left "Pending" by a restart back in line.
         void (0, pipeline6_service_1.recoverPipeline6Queue)();
     }));

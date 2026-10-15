@@ -21,15 +21,16 @@ import {
 import { authenticate, authorize } from "../../../middlewares/auth";
 import { questionPaperUpload } from "../../../utils/multer";
 import { getExamBySelection } from "../../../controllers/exam/getExamBySelection";
-import { ACADEMIC, ADMINS } from "../../../config/roles";
+import { ACADEMIC, ADMINS, STAFF } from "../../../config/roles";
 
 const router = Router();
 
 // Teachers write and submit papers; only the school admin approves, rejects or publishes.
 const academic = [authenticate, authorize(ACADEMIC)];
 const adminOnly = [authenticate, authorize(ADMINS)];
+const staff = [authenticate, authorize(STAFF)];
 
-router.post("/getExamBySelection", ...academic, getExamBySelection);
+router.post("/getExamBySelection", ...staff, getExamBySelection);
 router.post("/createQuestionPaper", ...academic, createQuestionPaper);
 router.put("/updateQuestionPaper/:paperId", ...academic, updateQuestionPaper);
 router.delete("/deleteQuestionPaper/:paperId", ...academic, deleteQuestionPaper);

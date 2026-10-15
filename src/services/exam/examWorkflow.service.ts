@@ -416,7 +416,7 @@ const myScanExams = async (user: any, query: any) => {
   const status = clean(query?.status).toUpperCase();
   if (status === SCAN_STATUS.ASSIGNED || status === SCAN_STATUS.COMPLETED) where.status = status;
 
-  const { rows, count } = await ExamScannerAssignment.findAndCountAll({ where, order: [["status", "ASC"], ["createdAt", "DESC"]], limit, offset });
+  const { rows, count } = await ExamScannerAssignment.findAndCountAll({ where, order: [["status", "DESC"], ["createdAt", "DESC"]], limit, offset });
   const exams = rows.length
     ? await Exam.findAll({ where: { examId: { [Op.in]: rows.map((r) => r.examId) }, isDeleted: false }, include: EXAM_INCLUDES })
     : [];
