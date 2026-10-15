@@ -5,7 +5,6 @@ import Role from "../../models/Role.model";
 import Institute from "../../models/Institute.model";
 import Class from "../../models/Class.model";
 import Subject from "../../models/Subject.model";
-import SubjectTeacher from "../../models/SubjectTeacher.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import Exam from "../../models/Exam.model";
@@ -19,7 +18,9 @@ import { Op } from "sequelize";
 import { findStaff, teacherOpenWork } from "../academic/academicGuards.service";
 import { newId } from "../../utils/idGenerator";
 import { cleanEmail, contactTakenMessage, staffInputProblem } from "../../utils/staffInput";
-import { TEACHER_TYPES, checkClassTeacherPost, isTeacherType, syncTeacherType } from "./classTeacher.service";
+import { TEACHER_TYPES, checkClassTeacherPost, isTeacherType } from "./classTeacher.service";
+import SessionSection from "../../models/SessionSection.model";
+import { activeSession, addToCurrentSession, releaseTeacher } from "../academic/sessionSetup.service";
 import {
   formatSpecializations,
   parseSpecializations,
@@ -108,7 +109,7 @@ const createTeacher = async (
     );
 
 
-    if (post) await Section.update({ classTeacherId: newUser.userId }, { where: { sectionId: post.sectionId }, transaction: t });
+    if (post) await addToCurrentSession(instituteId, { sections: [{ classId: post.classId, sectionId: post.sectionId, classTeacherId: newUser.userId }] }, t);
 
     // 10. Commit
     await t.commit();
@@ -467,9 +468,10 @@ const updateTeacher = async (
       // stored type; an edit that doesn't change the type leaves that alone.)
       if ((body.teacherType !== undefined && nextType !== "Class Teacher") || post) {
         await Class.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
-        await Section.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
+        const current = await activeSession(instituteId, t);
+        if (current) await SessionSection.update({ classTeacherId: null }, { where: { sessionId: current.sessionId, classTeacherId: userId }, transaction: t });
       }
-      if (post) await Section.update({ classTeacherId: userId }, { where: { sectionId: post.sectionId }, transaction: t });
+      await addToCurrentSession(instituteId, post ? { sections: [{ classId: post.classId, sectionId: post.sectionId, classTeacherId: userId }] } : {}, t);
     }
 
     await t.commit();
@@ -506,10 +508,8 @@ const deleteTeacher = async (userId: string, createdBy: any): Promise<any> => {
     const freed = await sequelize.transaction(async (t) => {
       await user.update({ status: 0, refreshToken: null }, { transaction: t });
       await Class.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
-      await Section.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
-      await syncTeacherType(userId, instituteId, t);
-      const [subjects] = await Subject.update({ teacherId: null }, { where: { teacherId: userId, instituteId, isDeleted: false }, transaction: t });
-      return subjects;
+      const released = await releaseTeacher(instituteId, userId, t);
+      return released.subjects;
     });
 
     return {

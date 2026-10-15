@@ -1,3 +1,4 @@
+import PaperDiscussion from "../../services/question-paper/paperDiscussion.service";
 import { Request, Response } from "express";
 import {
   Op,
@@ -551,47 +552,27 @@ export const rejectExamPair = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-// ─── REMARKS / CHAT CONTROLLERS ─────────────────────────────────────────
+// ─── PAPER DISCUSSION (comments + approval steps) ───────────────────────
+// GET  /question-papers/remarks/:examId  (also /exams/:examId/comments)
+// POST /question-papers/remarks/:examId  { remark, paperSet? }
+
+const sendDiscussionError = (res: Response, error: any) =>
+  res.status(error?.statusCode ?? httpStatus.BAD_REQUEST).json({ error: true, message: error?.message || "Something went wrong." });
 
 export const getExamRemarksController = async (req: any, res: Response): Promise<any> => {
   try {
-    const { examId } = req.params;
-
-    const result = await QuestionPaperService.getExamRemarks(examId);
-
-    return res.status(httpStatus.OK).json({
-      error: false,
-      message: "Remarks fetched successfully.",
-      data: result,
-    });
+    const data = await PaperDiscussion.listComments(req.viaExamUser, req.params.examId);
+    return res.status(httpStatus.OK).json({ error: false, message: "Discussion loaded.", data });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendDiscussionError(res, error);
   }
 };
 
 export const addExamRemarkController = async (req: any, res: Response): Promise<any> => {
   try {
-    const { examId } = req.params;
-    const { remark } = req.body;
-    const user = req.viaExamUser || req.user || {};
-    const rawRole = (typeof user.role === "object" ? user.role?.role : user.role || "ADMIN").toString().toUpperCase();
-    const senderRole = rawRole.includes("TEACH") ? "TEACHER" : "ADMIN";
-    const senderName = user.name || user.fullName || (senderRole === "TEACHER" ? "Teacher" : "Admin Reviewer");
-
-    const result = await QuestionPaperService.addExamRemark(examId, remark, senderRole, senderName);
-
-    return res.status(httpStatus.OK).json({
-      error: false,
-      message: "Remark added successfully.",
-      data: result,
-    });
+    const data = await PaperDiscussion.addComment(req.viaExamUser, req.params.examId, req.body ?? {});
+    return res.status(httpStatus.OK).json({ error: false, message: "Comment sent.", data });
   } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
+    return sendDiscussionError(res, error);
   }
 };

@@ -4,6 +4,7 @@ import User from "../../models/User.model";
 import Class from "../../models/Class.model";
 import Subject from "../../models/Subject.model";
 import Session from "../../models/Session.model";
+import SessionSubject from "../../models/SessionSubject.model";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
 import {
@@ -195,6 +196,12 @@ export const createExamSchedule = async (items: SchedulePaperInput[], instituteI
     const sessionIds = new Set(sessions.map((s) => s.sessionId));
     const classById = new Map(classes.map((c) => [c.classId, c]));
     const subjectById = new Map(subjects.map((s) => [s.subjectId, s]));
+    // What each session teaches (Session setup).
+    const taught = new Set(
+      (await SessionSubject.findAll({ where: { sessionId: { [Op.in]: [...sessionIds] }, subjectId: { [Op.in]: subjects.map((s) => s.subjectId) } }, attributes: ["sessionId", "subjectId"] })).map(
+        (r) => `${r.sessionId}|${r.subjectId}`
+      )
+    );
 
     const problems: { index: number; message: string }[] = [];
     const rows: any[] = [];
@@ -209,6 +216,7 @@ export const createExamSchedule = async (items: SchedulePaperInput[], instituteI
       if (!item || !sessionIds.has(item.sessionId)) return fail("choose a session of your school.");
       if (!cls) return fail("class not found.");
       if (!subject || subject.classId !== cls.classId) return fail("this subject does not belong to the class.");
+      if (!taught.has(`${item.sessionId}|${subject.subjectId}`)) return fail("isn't taught in this class that session. Add it in Session setup first.");
       const examType = String(item.examType ?? "").trim();
       if (!examType) return fail("choose the exam (e.g. Mid Term).");
       if (!isDateOnly(item.date)) return fail("choose a valid date.");

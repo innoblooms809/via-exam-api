@@ -4,8 +4,8 @@
  * evaluated" check and result publishing all read from here, so the three
  * always agree on who counts.
  *
- * Who sits an exam: active students of the exam's class (and section, when
- * the exam has one) in the exam's session.
+ * Who sits an exam: students enrolled in the exam's class (and section, when
+ * the exam has one) in the exam's session (services/student/enrollment.service).
  * Which sheets belong to it: rows tagged with the exam id, plus older rows that
  * were stored without one but match the exam's class / section / subject /
  * exam type and were uploaded after the exam was created.
@@ -18,10 +18,10 @@ import Section from "../../models/Section.model";
 import Subject from "../../models/Subject.model";
 import Session from "../../models/Session.model";
 import UserModal from "../../models/User.model";
-import StudentProfile from "../../models/Student.model";
 import Scanner from "../../models/Scanner.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import ExamAttendance, { ATTENDANCE_STATUS } from "../../models/ExamAttendance.model";
+import { studentsIn } from "../student/enrollment.service";
 
 export const EXAM_INCLUDES = [
   { model: Class, as: "class", attributes: ["classId", "className"], required: false },
@@ -96,33 +96,15 @@ export const sheetWhereForExam = (exam: any) => {
   };
 };
 
-/** Active students who should sit this exam. */
+/**
+ * Students who sit this exam: those in its class (and section) in its own session, with
+ * the roll number they have in that session. Promotion adds next year's enrolment and
+ * leaves this one alone, so an exam's roster never changes after the year ends.
+ */
 export const studentsForExam = async (exam: any) => {
-  if (!exam.classId) return [];
-  const className = exam.class?.className;
-  const where: any = {
-    instituteId: exam.instituteId,
-    isActive: true,
-    [Op.or]: [{ classId: exam.classId }, ...(className ? [{ className }] : [])],
-  };
-  const sectionKeys = [exam.sectionId, exam.section?.sectionName].filter(Boolean);
-  if (sectionKeys.length) where.sectionId = { [Op.in]: sectionKeys };
-  if (exam.session?.sessionName) where.session = exam.session.sessionName;
-
-  const profiles: any[] = await StudentProfile.findAll({
-    where,
-    attributes: ["userId", "rollNumber"],
-    include: [
-      {
-        model: UserModal,
-        as: "user",
-        attributes: ["userId", "userName"],
-        where: { status: 1, isDeleted: false },
-        required: true,
-      },
-    ],
-  });
-  return profiles.map((p) => ({ studentId: p.userId as string, name: p.user?.userName ?? "", rollNo: clean(p.rollNumber) }));
+  if (!exam.classId || !exam.sessionId) return [];
+  const students = await studentsIn({ instituteId: exam.instituteId, sessionId: exam.sessionId, classId: exam.classId, section: exam.sectionId || null });
+  return students.map((s) => ({ studentId: s.studentId, name: s.name, rollNo: s.rollNo }));
 };
 
 /** Roll numbers of the students who sit this exam (uploads for anyone else are refused). */

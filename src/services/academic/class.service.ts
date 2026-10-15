@@ -9,6 +9,8 @@ import TeacherProfile from "../../models/TeacherProfile.model";
 import { sequelize } from "../../config/sequelize";
 import { newId } from "../../utils/idGenerator";
 import { examCountsBy, examsUsing, renameLockMessage } from "./academicGuards.service";
+import StudentEnrollment from "../../models/StudentEnrollment.model";
+import { activeSession, addToCurrentSession, forgetMasterRows } from "./sessionSetup.service";
 import {
   MAX_BULK_ITEMS,
   MAX_NAME_LENGTH,
@@ -29,11 +31,15 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 // ─── CREATE CLASS(ES) ─────────────────────────────────────────────────────────
 // Accepts { className } or { classNames: [] }, plus optional sections / subjects
-// that are added to every class created.
+// that are added to every class created. A class always gets at least one section
+// (A when none is given): students and exams belong to a section.
+const DEFAULT_SECTION = "A";
+
 const createClass = async (body: any, createdBy: any): Promise<any> => {
   const instituteId = createdBy.instituteId;
   const classNames = uniqueNames(body.classNames ?? body.className, normalizeClassName);
-  const sectionNames = uniqueNames(body.sections ?? [], normalizeSectionName);
+  const askedSections = uniqueNames(body.sections ?? [], normalizeSectionName);
+  const sectionNames = askedSections.length ? askedSections : [DEFAULT_SECTION];
   const subjectNames = uniqueNames(body.subjects ?? [], normalizeSubjectName);
 
   if (classNames.length === 0) return fail(httpStatus.BAD_REQUEST, "Enter at least one class.");
@@ -52,6 +58,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
     const restored: string[] = [];
     const skipped: string[] = [];
     const touched: Class[] = [];
+    const forSession: { sections: { classId: string; sectionId: string }[]; subjects: { classId: string; subjectId: string }[] } = { sections: [], subjects: [] };
 
     for (const className of classNames) {
       const found = byKey.get(nameKey(className));
@@ -85,6 +92,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
           if (found) {
             if (found.isDeleted) await found.update({ isDeleted: false, isActive: true }, { transaction: t });
             createdSectionMap.set(nameKey(found.sectionName), found.sectionId);
+            forSession.sections.push({ classId: cls.classId, sectionId: found.sectionId });
             continue;
           }
           const newSec = await Section.create(
@@ -92,6 +100,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
             { transaction: t },
           );
           createdSectionMap.set(nameKey(sectionName), newSec.sectionId);
+          forSession.sections.push({ classId: cls.classId, sectionId: newSec.sectionId });
         }
       }
 
@@ -108,11 +117,14 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
           );
           if (found) {
             if (found.isDeleted) await found.update({ isDeleted: false, isActive: true, sectionId: targetSectionId }, { transaction: t });
+            forSession.subjects.push({ classId: cls.classId, subjectId: found.subjectId });
             continue;
           }
+          const subjectId = newId("subject");
+          forSession.subjects.push({ classId: cls.classId, subjectId });
           await Subject.create(
             {
-              subjectId: newId("subject"),
+              subjectId,
               instituteId,
               classId: cls.classId,
               sectionId: targetSectionId,
@@ -133,6 +145,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
         skipped.length === 1 ? `Class ${skipped[0]} already exists.` : `Classes ${skipped.join(", ")} already exist.`,
       );
     }
+    await addToCurrentSession(instituteId, forSession, t);
     await t.commit();
 
     const added = created.length + restored.length;
@@ -171,9 +184,10 @@ const getAllClasses = async (createdBy: any): Promise<any> => {
       ],
     });
 
-    const studentRows = (await StudentProfile.findAll({
+    const current = await activeSession(instituteId);
+    const studentRows = (await StudentEnrollment.findAll({
       attributes: ["classId", [sequelize.fn("COUNT", sequelize.col("id")), "count"]],
-      where: { instituteId },
+      where: { instituteId, sessionId: current?.sessionId ?? "-", isActive: true },
       group: ["classId"],
       raw: true,
     })) as any[];
@@ -274,7 +288,8 @@ const getClassById = async (classId: string, createdBy: any): Promise<any> => {
     const json: any = classData.toJSON();
     json.sections = [...(json.sections ?? [])].sort((a: any, b: any) => compareClassNames(a.sectionName, b.sectionName));
     json.subjects = [...(json.subjects ?? [])].sort((a: any, b: any) => a.subjectName.localeCompare(b.subjectName));
-    json.studentCount = await StudentProfile.count({ where: { instituteId: createdBy.instituteId, classId } });
+    const current = await activeSession(createdBy.instituteId);
+    json.studentCount = await StudentEnrollment.count({ where: { instituteId: createdBy.instituteId, classId, sessionId: current?.sessionId ?? "-", isActive: true } });
 
     return { error: false, statusCode: 200, message: "Class fetched successfully.", data: json };
   } catch (e: any) {
@@ -345,7 +360,7 @@ const deleteClass = async (classId: string, createdBy: any): Promise<any> => {
     if (!classData) return fail(httpStatus.NOT_FOUND, "Class not found.");
 
     const [students, exams] = await Promise.all([
-      StudentProfile.count({ where: { instituteId, classId } }),
+      StudentEnrollment.count({ where: { instituteId, classId } }),
       Exam.count({ where: { instituteId, classId, isDeleted: false } }),
     ]);
     if (students || exams) {
@@ -357,6 +372,7 @@ const deleteClass = async (classId: string, createdBy: any): Promise<any> => {
       await classData.update({ isDeleted: true, isActive: false }, { transaction: t });
       await Section.update({ isDeleted: true, isActive: false }, { where: { classId }, transaction: t });
       await Subject.update({ isDeleted: true, isActive: false }, { where: { classId }, transaction: t });
+      await forgetMasterRows({ classId }, t);
     });
 
     return {

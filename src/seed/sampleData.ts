@@ -82,16 +82,15 @@ const seed = async () => {
   await sequelize.sync({ force: false });
   await removeLegacySuperAdminSeed();
 
+  // No EXAMINER role: setting papers, evaluating and cross-checking are a teacher's work.
   const [
     adminRole,
     teacherRole,
     studentRole,
-    examinerRole,
   ] = await Promise.all([
     findOrCreateRole("ADMIN", "Institute administrator"),
-    findOrCreateRole("TEACHER", "Teacher who creates question papers"),
+    findOrCreateRole("TEACHER", "Teacher who sets papers and evaluates"),
     findOrCreateRole("STUDENT", "Student who appears for exams"),
-    findOrCreateRole("EXAMINER", "Teacher who reviews question papers"),
   ]);
 
   const modules = ["institutes", "users", "exams", "question-papers", "students"];
@@ -111,12 +110,6 @@ const seed = async () => {
     await findOrCreateAccess(studentRole.id, moduleName, {
       create: false,
       edit: false,
-      delete: false,
-      view: ["exams", "question-papers"].includes(moduleName),
-    });
-    await findOrCreateAccess(examinerRole.id, moduleName, {
-      create: false,
-      edit: moduleName === "question-papers",
       delete: false,
       view: ["exams", "question-papers"].includes(moduleName),
     });
@@ -202,7 +195,7 @@ const seed = async () => {
       emailId: "examiner.seed@viaexam.com",
       phoneNumber: "9000000013",
       password,
-      roleId: examinerRole.id,
+      roleId: teacherRole.id,
       instituteId: "INST-DEMO-001",
       status: 1,
       loginAttempts: 0,

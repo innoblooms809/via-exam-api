@@ -7,7 +7,7 @@ import Section from "../../models/Section.model";
 import Subject from "../../models/Subject.model";
 import Session from "../../models/Session.model";
 import Notification from "../../models/Notification.model";
-import StudentProfile from "../../models/Student.model";
+import StudentEnrollment from "../../models/StudentEnrollment.model";
 import Scanner from "../../models/Scanner.model";
 import StudentResult from "../../models/StudentResult.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
@@ -19,6 +19,8 @@ import { checkTeacherForSubject } from "../teacher/teacherSubject.service";
 import { newId } from "../../utils/idGenerator";
 import { EXAM_TYPE_HINT, normalizeExamType } from "../../utils/examTypes";
 import { examMarksLock, examStructureLock, examUsage } from "../academic/academicGuards.service";
+import { isTaughtIn, sectionRunsIn } from "../academic/sessionSetup.service";
+import { marksFor } from "../academic/marks.service";
 
 /** Single exam-table status that drives Manage Exams + approval. */
 export const EXAM_WORKFLOW_STATUSES = [
@@ -134,6 +136,21 @@ const checkExamPlacement = async (
     }
   }
 
+  // The session's setup says what is taught that year (Master Data → Session setup).
+  if (!(await isTaughtIn(session.sessionId, subject.subjectId))) {
+    return {
+      error: bad(
+        httpStatus.CONFLICT,
+        `${subject.subjectName} isn't taught in Class ${cls.className} in session ${session.sessionName}. Add it to the class in Session setup first.`
+      ),
+    };
+  }
+  for (const secId of sectionIds) {
+    if (secId && !(await sectionRunsIn(session.sessionId, secId))) {
+      return { error: bad(httpStatus.CONFLICT, `That section of Class ${cls.className} doesn't run in session ${session.sessionName}. Add it in Session setup first.`) };
+    }
+  }
+
   const siblings = await Exam.findAll({
     where: {
       instituteId,
@@ -171,8 +188,6 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
 
     const examType = normalizeExamType(body.examType);
     if (!examType) return bad(httpStatus.BAD_REQUEST, EXAM_TYPE_HINT);
-    const marksError = checkMarks(body.totalMarks, body.passingMarks);
-    if (marksError) return bad(httpStatus.BAD_REQUEST, marksError);
 
     // The paper setter must be an active teacher of the institute who can teach the subject.
     const teacherRole = await Role.findOne({ where: { role: "TEACHER" } });
@@ -180,7 +195,7 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       where: { userId: body.teacherId, instituteId, roleId: teacherRole?.id, status: 1, isDeleted: false },
     });
     if (!teacher) return bad(httpStatus.NOT_FOUND, "Teacher not found in your institute.");
-    const fit = await checkTeacherForSubject(instituteId, teacher.userId, body.subjectId);
+    const fit = await checkTeacherForSubject(instituteId, teacher.userId, body.subjectId, String(body.sessionId ?? ""));
     if (!fit.ok) return bad(httpStatus.BAD_REQUEST, fit.message ?? "This teacher can't teach the subject.");
 
     // "ALL" (or nothing) = one exam for the whole class; otherwise one exam per chosen section.
@@ -195,6 +210,16 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       sectionIds: requested.length ? Array.from(new Set(requested)) : [null],
     });
     if ("error" in placement) return placement.error;
+
+    // Its marks are the subject's for this exam and session (Master Data → Marks & grading).
+    const scheme = await marksFor(String(body.sessionId), examType, String(body.subjectId));
+    if (!scheme) {
+      const subject = await Subject.findOne({ where: { subjectId: body.subjectId }, attributes: ["subjectName"] });
+      return bad(
+        httpStatus.CONFLICT,
+        `${subject?.subjectName ?? "This subject"} has no ${examType} marks for this session yet. Set them in Master Data → Marks & grading first.`
+      );
+    }
 
     const createdExams = await sequelize.transaction(async (t) => {
       const rows: Exam[] = [];
@@ -212,8 +237,8 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
               subjectId: body.subjectId,
               teacherId: teacher.userId,
               examinerId: createdBy.userId,
-              totalMarks: Number(body.totalMarks),
-              passingMarks: Number(body.passingMarks),
+              totalMarks: scheme.maxMarks,
+              passingMarks: scheme.passMarks,
               duration: body.duration ? Number(body.duration) : null,
               instructions: body.instructions || null,
               examDate: body.examDate || null,
@@ -317,8 +342,8 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
     });
 
     const formattedExams = await Promise.all(exams.map(async (exam: any) => {
-      const totalStudents = await StudentProfile.count({
-        where: { instituteId, classId: exam.classId, isActive: true }
+      const totalStudents = await StudentEnrollment.count({
+        where: { instituteId, sessionId: exam.sessionId, classId: exam.classId, isActive: true, ...(exam.sectionId ? { sectionId: exam.sectionId } : {}) },
       });
       const uploadedSheets = await Scanner.count({
         where: {
@@ -545,8 +570,22 @@ const updateExam = async (examId: string, body: any, requestedBy: any): Promise<
       nextSubjectId !== exam.subjectId ||
       nextSectionId !== (exam.sectionId ?? null) ||
       nextType !== exam.examType;
-    const nextTotal = body.totalMarks !== undefined && body.totalMarks !== "" ? Number(body.totalMarks) : exam.totalMarks;
-    const nextPassing = body.passingMarks !== undefined && body.passingMarks !== "" ? Number(body.passingMarks) : exam.passingMarks;
+    // Marks aren't edited on the exam: they are the subject's for this exam and session
+    // (Master Data → Marks & grading). Moving the exam to another subject / type / session
+    // takes that one's marks.
+    const askedTotal = body.totalMarks !== undefined && body.totalMarks !== "" ? Number(body.totalMarks) : exam.totalMarks;
+    const askedPassing = body.passingMarks !== undefined && body.passingMarks !== "" ? Number(body.passingMarks) : exam.passingMarks;
+    if (!structureChanged && (askedTotal !== exam.totalMarks || askedPassing !== exam.passingMarks)) {
+      return bad(httpStatus.BAD_REQUEST, "An exam's marks are set in Master Data → Marks & grading, for every exam of the subject at once.");
+    }
+    let nextTotal = exam.totalMarks;
+    let nextPassing = exam.passingMarks;
+    if (structureChanged) {
+      const scheme = await marksFor(nextSessionId, nextType, nextSubjectId);
+      if (!scheme) return bad(httpStatus.CONFLICT, `That subject has no ${nextType} marks for the session yet. Set them in Master Data → Marks & grading first.`);
+      nextTotal = scheme.maxMarks;
+      nextPassing = scheme.passMarks;
+    }
     const marksChanged = nextTotal !== exam.totalMarks || nextPassing !== exam.passingMarks;
 
     if (structureChanged || marksChanged) {
@@ -582,7 +621,7 @@ const updateExam = async (examId: string, body: any, requestedBy: any): Promise<
     }
 
     if (nextTeacherId !== exam.teacherId || nextSubjectId !== exam.subjectId) {
-      const fit = await checkTeacherForSubject(instituteId, nextTeacherId, nextSubjectId);
+      const fit = await checkTeacherForSubject(instituteId, nextTeacherId, nextSubjectId, nextSessionId);
       if (!fit.ok) return bad(httpStatus.BAD_REQUEST, fit.message ?? "This teacher can't teach the subject.");
     }
     const teacherChanged = nextTeacherId !== exam.teacherId;
