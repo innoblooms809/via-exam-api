@@ -15,7 +15,7 @@ import ExamWorkflowService, { PAPER_APPROVED_STATUSES } from "../exam/examWorkfl
 // Exam stages follow examWorkflow.stageOf(); the only approximation is that an exam
 // without a scanner counts as "scanning" once any sheet tagged with it is uploaded
 // (the workflow page decides "scan finished" from the full roster). When the school
-// cross-checks, a reviewed exam waits in CROSS_CHECK until its round is done.
+// cross-checks the exam's subject, a reviewed exam waits in CROSS_CHECK until its round is done.
 
 const TZ = "Asia/Kolkata";
 const ADMIN_CACHE_MS = 30_000;
@@ -78,7 +78,7 @@ const series = (rows: any[]) => rows.map((r) => ({ day: r.day, uploaded: num(r.u
 
 const ADMIN_SUMMARY_SQL = `
 WITH b AS (SELECT (date_trunc('month', now() AT TIME ZONE :tz) AT TIME ZONE :tz) AS m0),
-ex AS (SELECT "examId", status, "examDate" FROM viaexam_exams WHERE "instituteId" = :inst AND "isDeleted" = false),
+ex AS (SELECT "examId", "subjectId", status, "examDate" FROM viaexam_exams WHERE "instituteId" = :inst AND "isDeleted" = false),
 pub AS (SELECT DISTINCT "examId" FROM viaexam_student_results WHERE "instituteId" = :inst AND "isDeleted" = false),
 sc AS (SELECT "examId", status FROM viaexam_exam_scanner_assignments WHERE "instituteId" = :inst AND "isActive" = true),
 ev AS (SELECT "examId", "reviewedAt" FROM viaexam_evaluation_assignments WHERE "instituteId" = :inst AND "isActive" = true),
@@ -95,7 +95,7 @@ st AS (
          CASE
            WHEN pub."examId" IS NOT NULL THEN 'PUBLISHED'
            WHEN ex.status NOT IN (:approved) THEN 'PAPER_PENDING'
-           WHEN ev."reviewedAt" IS NOT NULL AND :crossCheck AND (xr."examId" IS NULL OR xr.pending > 0) THEN 'CROSS_CHECK'
+           WHEN ev."reviewedAt" IS NOT NULL AND :crossCheck AND (:ccAllSubjects OR ex."subjectId" IN (:ccSubjects)) AND (xr."examId" IS NULL OR xr.pending > 0) THEN 'CROSS_CHECK'
            WHEN ev."reviewedAt" IS NOT NULL THEN 'REVIEWED'
            WHEN sc.status = 'COMPLETED' THEN 'EVALUATING'
            WHEN sc."examId" IS NOT NULL OR up."examId" IS NOT NULL THEN 'SCANNING'
@@ -354,8 +354,12 @@ const personRow = (x: any) => ({
 });
 
 const loadAdminHome = async (instituteId: string) => {
-  const crossCheck = (await settingsOf(instituteId)).crossCheck.mode !== "off";
-  const r = { inst: instituteId, days: DAYS, approved: PAPER_APPROVED_STATUSES, withSetter: PAPER_WITH_SETTER, crossCheck };
+  const rule = (await settingsOf(instituteId)).crossCheck;
+  const crossCheck = rule.mode !== "off";
+  // IN () is invalid SQL, so "every subject" is its own flag and the list is never empty.
+  const ccAllSubjects = rule.subjectIds == null;
+  const ccSubjects = rule.subjectIds?.length ? rule.subjectIds : [""];
+  const r = { inst: instituteId, days: DAYS, approved: PAPER_APPROVED_STATUSES, withSetter: PAPER_WITH_SETTER, crossCheck, ccAllSubjects, ccSubjects };
   const [[s], daily, upcoming, approvals, paperSetting, rechecks, workload, trends, people] = await Promise.all([
     select(ADMIN_SUMMARY_SQL, r),
     select(ADMIN_DAILY_SQL, r),
