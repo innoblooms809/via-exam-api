@@ -17,6 +17,7 @@ import { nameKey } from "../../utils/academicNames";
 import { bulkStudentRowSchema } from "../../validations/student.validation";
 import { findSession } from "../academic/sessionSetup.service";
 import { emailChange } from "../../utils/staffInput";
+import { photoChange, uploadedPhoto } from "../../utils/profilePhoto";
 import {
   currentEnrollment,
   enrollmentIn,
@@ -80,7 +81,7 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
       return fail(httpStatus.CONFLICT, `Roll number ${rollNumber} is already used in ${placeLabel(place)}.`);
     }
 
-    const profileUrl = files?.profilePhoto?.[0] ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}` : null;
+    const profileUrl = uploadedPhoto(files);
     const plainPassword = body.password || (await RegHelper.generatePassword());
     const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
     const profileFields = {
@@ -103,7 +104,7 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
       let account: UserModal;
       if (restoring) {
         await restoring.update(
-          { userName: `${body.firstName} ${body.lastName}`, phoneNumber: body.mobile, password: encryptedPassword, status: 1, isDeleted: false },
+          { userName: `${body.firstName} ${body.lastName}`, phoneNumber: body.mobile, password: encryptedPassword, status: 1, isDeleted: false, ...(profileUrl ? { profileUrl } : {}) },
           { transaction: t }
         );
         const profile = await StudentProfile.findOne({ where: { userId: restoring.userId }, transaction: t });
@@ -121,6 +122,7 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
             roleId: studentRole.id,
             instituteId,
             status: 1,
+            profileUrl,
           },
           { transaction: t }
         );
@@ -162,7 +164,8 @@ SELECT ${all ? `DISTINCT ON (e."studentId")` : ""}
        u."userId", u."userName", u."emailId", u."phoneNumber", u.status, u."instituteId",
        e."enrollmentId", e."sessionId", se."sessionName", e."classId", c."className",
        e."sectionId", sec."sectionName", e."rollNumber",
-       p."fatherName", p.gender, p.dob, p.aadhar, p.address, p."profileUrl"
+       p."fatherName", p.gender, p.dob, p.aadhar, p.address,
+       COALESCE(u."profileUrl", p."profileUrl") AS "profileUrl"
 FROM viaexam_student_enrollments e
 JOIN viaexam_users u ON u."userId" = e."studentId" AND u.status = 1
 JOIN viaexam_sessions se ON se."sessionId" = e."sessionId"
@@ -413,17 +416,19 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
       }
     }
 
+    const photo = photoChange(files, body);
     await sequelize.transaction(async (t) => {
       await user.update(
         {
           userName: body.firstName && body.lastName ? `${body.firstName} ${body.lastName}` : user.userName,
           phoneNumber: body.mobile ?? user.phoneNumber,
           emailId: nextEmail.email ?? user.emailId,
+          ...(photo !== undefined ? { profileUrl: photo } : {}),
         },
         { transaction: t }
       );
       if (!profile) return;
-      const profileUrl = files?.profilePhoto?.[0] ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}` : profile.profileUrl;
+      const profileUrl = photo !== undefined ? photo : profile.profileUrl;
       await profile.update(
         {
           fatherName: body.fatherName ?? profile.fatherName,

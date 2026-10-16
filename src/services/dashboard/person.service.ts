@@ -52,12 +52,17 @@ const inRange = (col: string, ranged: boolean) => (ranged ? `AND ${col} >= CAST(
 const X = (n: number) => Array.from({ length: n }, (_, i) => `NULL::text AS x${i + 1}`).join(", ");
 
 const BASE_SQL = `
-SELECT u."userId", u."userName", u."emailId", u."phoneNumber", u.status, u."profileUrl", u."createdAt", u."updatedAt",
+SELECT u."userId", u."userName", u."emailId", u."phoneNumber", u.status, u."createdAt", u."updatedAt",
+       -- Their own photo first, then the one the admin added on their role's profile.
+       COALESCE(u."profileUrl", tp."profileUrl", sp."profileUrl", st."profileUrl") AS "profileUrl",
        u."lastLoginAt", r.role,
        ps."presenceStatus", ps."lastActivityAt", ps."lastLoginAt" AS "presenceLoginAt"
 FROM viaexam_users u
 JOIN roles r ON r.id = u."roleId"
 LEFT JOIN viaexam_user_presence_sessions ps ON ps."userId" = u."userId"
+LEFT JOIN viaexam_teacher_profiles tp ON tp."userId" = u."userId"
+LEFT JOIN viaexam_scanner_profiles sp ON sp."userId" = u."userId"
+LEFT JOIN viaexam_student_profiles st ON st."userId" = u."userId"
 WHERE u."userId" = :id AND u."instituteId" = :inst AND u."isDeleted" = false`;
 
 const LAST_SIGN_IN_SQL = `

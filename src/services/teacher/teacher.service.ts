@@ -17,7 +17,8 @@ import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
 import { findStaff, teacherOpenWork } from "../academic/academicGuards.service";
 import { newId } from "../../utils/idGenerator";
-import { cleanEmail, contactTakenMessage, emailChange, staffInputProblem } from "../../utils/staffInput";
+import { cleanEmail, contactTakenMessage, emailChange, staffAgeProblem, staffInputProblem } from "../../utils/staffInput";
+import { photoChange, uploadedPhoto } from "../../utils/profilePhoto";
 import { TEACHER_TYPES, checkClassTeacherPost, isTeacherType } from "./classTeacher.service";
 import SessionSection from "../../models/SessionSection.model";
 import { activeSession, addToCurrentSession, releaseTeacher } from "../academic/sessionSetup.service";
@@ -61,10 +62,8 @@ const createTeacher = async (
 
   const t = await sequelize.transaction();
   try {
-    // 7. Profile photo
-    const profileUrl = files?.profilePhoto?.[0]
-      ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
-      : null;
+    // 7. Profile photo (optional)
+    const profileUrl = uploadedPhoto(files);
 
     // 8. Create user record
     const plainPassword = body.password || (await RegHelper.generatePassword());
@@ -83,6 +82,7 @@ const createTeacher = async (
         roleId: teacherRole.id,
         instituteId,
         status: 1,
+        profileUrl,
       },
       { transaction: t },
     );
@@ -266,7 +266,8 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
         experience: u.teacherProfile?.experience ?? null,
         joiningDate: u.teacherProfile?.joiningDate ?? null,
         dob: u.teacherProfile?.dob ?? null,
-        profileUrl: u.teacherProfile?.profileUrl ?? null,
+        // Their own photo (from their profile) first, then the one the admin added.
+        profileUrl: u.profileUrl ?? u.teacherProfile?.profileUrl ?? null,
         isExaminer: u.teacherProfile?.isExaminer ?? false,
         examinerSince: u.teacherProfile?.examinerSince ?? null,
         assignedClass,
@@ -429,8 +430,13 @@ const updateTeacher = async (
     if (body[k] === undefined || body[k] === "") continue;
     const d = new Date(body[k]);
     if (Number.isNaN(d.getTime())) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `Enter a valid ${k === "dob" ? "date of birth" : "joining date"}.` };
+    if (k === "dob") {
+      const ageProblem = staffAgeProblem(d);
+      if (ageProblem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: ageProblem };
+    }
     dates[k] = d;
   }
+  const photo = photoChange(files, body);
 
   const t = await sequelize.transaction();
   try {
@@ -439,15 +445,14 @@ const updateTeacher = async (
         userName: first && last ? `${first} ${last}` : user.userName,
         phoneNumber: phone ?? user.phoneNumber,
         emailId: nextEmail.email ?? user.emailId,
+        ...(photo !== undefined ? { profileUrl: photo } : {}),
       },
       { transaction: t },
     );
 
     // Update profile
     if (profile) {
-      const profileUrl = files?.profilePhoto?.[0]
-        ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
-        : profile.profileUrl;
+      const profileUrl = photo !== undefined ? photo : profile.profileUrl;
 
       await profile.update(
         {
@@ -659,7 +664,7 @@ const getDeactivatedTeachers = async (createdBy: any, query: any): Promise<any> 
       experience: u.teacherProfile?.experience ?? null,
       joiningDate: u.teacherProfile?.joiningDate ?? null,
       dob: u.teacherProfile?.dob ?? null,
-      profileUrl: u.teacherProfile?.profileUrl ?? null,
+      profileUrl: u.profileUrl ?? u.teacherProfile?.profileUrl ?? null,
       isExaminer: u.teacherProfile?.isExaminer ?? false,
       examinerSince: u.teacherProfile?.examinerSince ?? null,
     }));
