@@ -41,7 +41,7 @@ import TeacherProfile from "../../models/TeacherProfile.model";
 import { specialisesIn } from "../../utils/specialization";
 import { subjectTeacherIn } from "../academic/sessionSetup.service";
 import { checkExamEvaluated } from "./examProgress";
-import { assertCrossCheckDone, crossCheckStates } from "./crossCheck.service";
+import { assertCrossCheckDone, crossCheckStates, type CrossCheckState } from "./crossCheck.service";
 
 // ─── Small helpers ───────────────────────────────────────────────────────────
 
@@ -180,7 +180,8 @@ const listPipeline = async (admin: any, query: any) => {
       const publishedAt = publishedByExam.get(exam.examId) ?? null;
       const scanDone = scanFinished(scanner, roster.counts.pending, roster.counts.total);
       const check = crossCheck.byExam.get(exam.examId);
-      const crossCheckWaiting = crossCheck.required && Boolean(evaluator?.reviewedAt) && !publishedAt && (!check || check.pending > 0);
+      const crossCheckCovered = crossCheck.covers(exam.subjectId);
+      const crossCheckWaiting = crossCheckCovered && Boolean(evaluator?.reviewedAt) && !publishedAt && (!check || check.pending > 0);
       return {
         examId: exam.examId,
         examType: exam.examType,
@@ -202,8 +203,8 @@ const listPipeline = async (admin: any, query: any) => {
         sessionName: exam.session?.sessionName ?? "",
         paperSetter: exam.teacher?.userName ?? "",
         stage: stageOf({ paperApproved, scanner, evaluator, published: Boolean(publishedAt), scanDone, crossCheckWaiting }),
-        // The school cross-checks: this exam's round (null until it starts).
-        crossCheck: crossCheck.required
+        // The policy covers this exam's subject: its round (null until it starts).
+        crossCheck: crossCheckCovered
           ? { started: Boolean(check), total: check?.total ?? 0, pending: check?.pending ?? 0, changed: check?.changed ?? 0, checkerId: check?.checkerId ?? null }
           : null,
         counts: roster.counts,
@@ -223,30 +224,51 @@ const listPipeline = async (admin: any, query: any) => {
 };
 
 /** Every step of one exam with its timestamp — the "process time" view. */
+/** When a cross-check finished; null while it runs, or before it starts. */
+const crossCheckDoneAt = (cc: CrossCheckState | null): Date | null => (cc?.status === "done" ? (cc.completedAt ?? cc.startedAt) : null);
+
+/** Under the cross-check step: how far it has got. */
+const crossCheckDetail = (cc: CrossCheckState | null): string | null => {
+  if (!cc) return null;
+  const papers = (n: number) => `${n} ${n === 1 ? "paper" : "papers"}`;
+  if (cc.status === "done") {
+    if (!cc.total) return "No paper needed a check";
+    return cc.changed ? `${papers(cc.total)} checked, ${cc.changed} changed` : `${papers(cc.total)} checked, none changed`;
+  }
+  return `${cc.total - cc.pending} of ${papers(cc.total)} checked`;
+};
+
 const getTimeline = async (user: any, examId: string) => {
   const exam = await requireExam(user.instituteId, examId);
-  const [papers, scanners, evaluators, firstResult, rechecks] = await Promise.all([
+  const [papers, scanners, evaluators, firstResult, rechecks, roster, { covers, byExam }] = await Promise.all([
     QuestionPaper.findAll({ where: { examId: exam.examId }, attributes: ["paperSet", "status", "submittedAt", "approvedAt", "createdAt"] }),
     ExamScannerAssignment.findAll({ where: { examId: exam.examId }, order: [["createdAt", "ASC"]] }),
     EvaluationAssignment.findAll({ where: { examId: exam.examId }, order: [["createdAt", "ASC"]] }),
     StudentResult.findOne({ where: { examId: exam.examId, isDeleted: false }, order: [["publishedAt", "ASC"]] }),
     RecheckRequest.count({ where: { examId: exam.examId } }),
+    buildRoster(exam),
+    crossCheckStates(exam.instituteId, [exam.examId]),
   ]);
-  const roster = await buildRoster(exam);
   const first = (dates: (Date | null | undefined)[]) =>
     dates.filter(Boolean).sort((a, b) => new Date(a as Date).getTime() - new Date(b as Date).getTime())[0] ?? null;
   const activeScan = scanners.find((s) => s.isActive) ?? null;
   const activeEval = evaluators.find((e) => e.isActive) ?? null;
 
+  // The cross-check step: shown when the policy covers the subject, or when the exam had one.
+  // It stays out for schools that never cross-checked, and for exams published before it.
+  const cc = byExam.get(exam.examId) ?? null;
+  const crossCheckStep = !cc && (!covers(exam.subjectId) || firstResult) ? null : { key: "CROSS_CHECK", label: "Cross-checked by a second teacher", at: crossCheckDoneAt(cc), detail: crossCheckDetail(cc) };
+
   const steps = [
-    { key: "CREATED", label: "Exam created and assigned to the subject teacher", at: exam.createdAt },
-    { key: "PAPER_SUBMITTED", label: "Question paper and model answer submitted", at: first(papers.map((p) => p.submittedAt)) },
-    { key: "PAPER_APPROVED", label: "Approved by admin", at: first(papers.map((p) => p.approvedAt)) },
-    { key: "SCANNER_ASSIGNED", label: "Scanner assigned", at: activeScan?.createdAt ?? null },
-    { key: "SCAN_COMPLETED", label: "All answer sheets uploaded / absentees marked", at: activeScan?.completedAt ?? null },
-    { key: "EVALUATOR_ASSIGNED", label: "Evaluator assigned", at: activeEval?.createdAt ?? null },
-    { key: "EVALUATION_REVIEWED", label: "Evaluation completed and reviewed", at: activeEval?.reviewedAt ?? null },
-    { key: "RESULTS_PUBLISHED", label: "Results published to students", at: firstResult?.publishedAt ?? null },
+    { key: "CREATED", label: "Exam created and assigned to the subject teacher", at: exam.createdAt, detail: null },
+    { key: "PAPER_SUBMITTED", label: "Question paper and model answer submitted", at: first(papers.map((p) => p.submittedAt)), detail: null },
+    { key: "PAPER_APPROVED", label: "Approved by admin", at: first(papers.map((p) => p.approvedAt)), detail: null },
+    { key: "SCANNER_ASSIGNED", label: "Scanner assigned", at: activeScan?.createdAt ?? null, detail: null },
+    { key: "SCAN_COMPLETED", label: "All answer sheets uploaded / absentees marked", at: activeScan?.completedAt ?? null, detail: null },
+    { key: "EVALUATOR_ASSIGNED", label: "Evaluator assigned", at: activeEval?.createdAt ?? null, detail: null },
+    { key: "EVALUATION_REVIEWED", label: "Evaluation completed and reviewed", at: activeEval?.reviewedAt ?? null, detail: null },
+    ...(crossCheckStep ? [crossCheckStep] : []),
+    { key: "RESULTS_PUBLISHED", label: "Results published to students", at: firstResult?.publishedAt ?? null, detail: null },
   ];
   return {
     examId: exam.examId,
