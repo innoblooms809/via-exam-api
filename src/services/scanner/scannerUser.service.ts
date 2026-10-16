@@ -9,7 +9,7 @@ import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
 import { findStaff, scannerOpenWork } from "../academic/academicGuards.service";
 import { newId } from "../../utils/idGenerator";
-import { cleanEmail, contactTakenMessage, staffInputProblem } from "../../utils/staffInput";
+import { cleanEmail, contactTakenMessage, emailChange, staffInputProblem } from "../../utils/staffInput";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 
 // ─── CREATE SCANNER ───────────────────────────────────────────────────────────
@@ -222,12 +222,17 @@ const updateScanner = async (
     const taken = await contactTakenMessage("", phone, instituteId, userId);
     if (taken) return { error: true, statusCode: httpStatus.CONFLICT, message: taken };
   }
+  const nextEmail = await emailChange(body.emailId ?? body.email, user, instituteId);
+  if (nextEmail.problem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: nextEmail.problem };
   const dob = body.dob ? new Date(body.dob) : null;
   if (dob && Number.isNaN(dob.getTime())) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a valid date of birth." };
 
   try {
     await sequelize.transaction(async (t) => {
-      await user.update({ userName: first && last ? `${first} ${last}` : user.userName, phoneNumber: phone ?? user.phoneNumber }, { transaction: t });
+      await user.update(
+        { userName: first && last ? `${first} ${last}` : user.userName, phoneNumber: phone ?? user.phoneNumber, emailId: nextEmail.email ?? user.emailId },
+        { transaction: t },
+      );
       if (profile) {
         const profileUrl = files?.profilePhoto?.[0] ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}` : profile.profileUrl;
         await profile.update(

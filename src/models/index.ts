@@ -32,6 +32,7 @@ import StudentEnrollment from "./StudentEnrollment.model";
 import MarksScheme from "./MarksScheme.model";
 import MarksAudit from "./MarksAudit.model";
 import InstituteSettings from "./InstituteSettings.model";
+import ReportTemplate from "./ReportTemplate.model";
 import PaperComment from "./PaperComment.model";
 import { CrossCheckItem, CrossCheckRound } from "./CrossCheck.model";
 
@@ -39,6 +40,7 @@ export {
   MarksScheme,
   MarksAudit,
   InstituteSettings,
+  ReportTemplate,
   PaperComment,
   CrossCheckRound,
   CrossCheckItem,

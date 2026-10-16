@@ -19,3 +19,7 @@ settingsRoutes.get("/", authorize(ACADEMIC), Controller.getSettings);
 settingsRoutes.put("/grading-scale", authorize(ADMINS), Controller.saveGradingScale);
 settingsRoutes.put("/marks-defaults", authorize(ADMINS), Controller.saveMarksDefaults);
 settingsRoutes.put("/cross-check", authorize(ADMINS), Controller.saveCrossCheck);
+// The printed result sheet: header (from the institute profile unless replaced), columns, signatures…
+settingsRoutes.get("/result-sheet", authorize(ADMINS), Controller.getResultSheet);
+settingsRoutes.put("/result-sheet", authorize(ADMINS), Controller.saveResultSheet);
+settingsRoutes.delete("/result-sheet", authorize(ADMINS), Controller.resetResultSheet);
