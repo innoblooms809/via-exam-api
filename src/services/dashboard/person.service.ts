@@ -55,7 +55,7 @@ const BASE_SQL = `
 SELECT u."userId", u."userName", u."emailId", u."phoneNumber", u.status, u."createdAt", u."updatedAt",
        -- Their own photo first, then the one the admin added on their role's profile.
        COALESCE(u."profileUrl", tp."profileUrl", sp."profileUrl", st."profileUrl") AS "profileUrl",
-       u."lastLoginAt", r.role,
+       u."lastLoginAt", UPPER(r.role) AS role,
        ps."presenceStatus", ps."lastActivityAt", ps."lastLoginAt" AS "presenceLoginAt"
 FROM viaexam_users u
 JOIN roles r ON r.id = u."roleId"
@@ -63,7 +63,12 @@ LEFT JOIN viaexam_user_presence_sessions ps ON ps."userId" = u."userId"
 LEFT JOIN viaexam_teacher_profiles tp ON tp."userId" = u."userId"
 LEFT JOIN viaexam_scanner_profiles sp ON sp."userId" = u."userId"
 LEFT JOIN viaexam_student_profiles st ON st."userId" = u."userId"
-WHERE u."userId" = :id AND u."instituteId" = :inst AND u."isDeleted" = false`;
+WHERE (u."userId" = :id OR st."rollNumber" = :id OR EXISTS (
+        SELECT 1 FROM viaexam_student_enrollments en
+        WHERE en."studentId" = u."userId" AND (en."rollNumber" = :id OR en."enrollmentId" = :id)
+      ))
+  AND (u."instituteId" = :inst OR st."instituteId" = :inst)
+  AND (u."isDeleted" = false OR u."isDeleted" IS NULL)`;
 
 const LAST_SIGN_IN_SQL = `
 SELECT MAX("createdAt") AS at FROM viaexam_activity_logs
@@ -77,13 +82,15 @@ ORDER BY "startDate" DESC`;
 // Personal details from the profile; class, section, roll and class teacher from the
 // enrolment of the session asked for (every session: the current one, else the latest).
 const STUDENT_PROFILE_SQL = `
-SELECT p."fatherName", p.gender, p.dob, p.address, p."isActive", p."createdAt",
+SELECT COALESCE(p."fatherName", '') AS "fatherName", p.gender, p.dob, p.address,
+       COALESCE(p."isActive", true) AS "isActive", COALESCE(p."createdAt", u."createdAt") AS "createdAt",
        e."classId", e."sectionId", e."rollNumber", e."sessionId", se."sessionName" AS session,
        c."className", s."sectionName", t."userName" AS "classTeacher"
-FROM viaexam_student_profiles p
+FROM viaexam_users u
+LEFT JOIN viaexam_student_profiles p ON p."userId" = u."userId"
 LEFT JOIN LATERAL (
   SELECT x.* FROM viaexam_student_enrollments x JOIN viaexam_sessions xs ON xs."sessionId" = x."sessionId"
-  WHERE x."studentId" = p."userId" AND (:session = '' OR x."sessionId" = :session)
+  WHERE x."studentId" = u."userId" AND (:session = '' OR x."sessionId" = :session)
   ORDER BY xs."isActive" DESC, xs."startDate" DESC LIMIT 1
 ) e ON true
 LEFT JOIN viaexam_sessions se ON se."sessionId" = e."sessionId"
@@ -91,20 +98,32 @@ LEFT JOIN viaexam_classes c ON c."classId" = e."classId"
 LEFT JOIN viaexam_sections s ON s."sectionId" = e."sectionId"
 LEFT JOIN viaexam_session_sections ss ON ss."sessionId" = e."sessionId" AND ss."sectionId" = e."sectionId"
 LEFT JOIN viaexam_users t ON t."userId" = ss."classTeacherId"
-WHERE p."userId" = :id`;
+WHERE u."userId" = :id`;
 
 // Sheets carry the roll number, not the student id: a sheet is the student's when its
 // class and roll match what they had in that exam's session.
-const STUDENT_SHEETS = `s."instituteId" = :inst AND s."isDeleted" = false AND EXISTS (
-  SELECT 1 FROM viaexam_student_enrollments en
-  WHERE en."studentId" = :id AND en."sessionId" = e."sessionId" AND en."classId" = s."classId" AND en."rollNumber" = s."rollNo"
-    AND (e."sectionId" IS NULL OR e."sectionId" = '' OR e."sectionId" = en."sectionId"))`;
+const STUDENT_SHEETS = `s."instituteId" = :inst AND s."isDeleted" = false AND (
+  EXISTS (
+    SELECT 1 FROM viaexam_student_enrollments en
+    WHERE en."studentId" = :id AND en."sessionId" = e."sessionId" AND en."classId" = s."classId" AND en."rollNumber" = s."rollNo"
+      AND (e."sectionId" IS NULL OR e."sectionId" = '' OR e."sectionId" = en."sectionId")
+  ) OR EXISTS (
+    SELECT 1 FROM viaexam_student_profiles sp
+    WHERE sp."userId" = :id AND sp."classId" = s."classId" AND sp."rollNumber" = s."rollNo"
+  )
+)`;
 
 // Exams of the student: their class (and section) in each session they studied in.
-const STUDENT_EXAMS = `e."instituteId" = :inst AND e."isDeleted" = false AND EXISTS (
-  SELECT 1 FROM viaexam_student_enrollments en
-  WHERE en."studentId" = :id AND en."sessionId" = e."sessionId" AND en."classId" = e."classId"
-    AND (e."sectionId" IS NULL OR e."sectionId" = '' OR e."sectionId" = en."sectionId"))`;
+const STUDENT_EXAMS = `e."instituteId" = :inst AND e."isDeleted" = false AND (
+  EXISTS (
+    SELECT 1 FROM viaexam_student_enrollments en
+    WHERE en."studentId" = :id AND en."sessionId" = e."sessionId" AND en."classId" = e."classId"
+      AND (e."sectionId" IS NULL OR e."sectionId" = '' OR e."sectionId" = en."sectionId")
+  ) OR EXISTS (
+    SELECT 1 FROM viaexam_student_profiles sp
+    WHERE sp."userId" = :id AND sp."classId" = e."classId"
+  )
+)`;
 
 // ─── Session ──────────────────────────────────────────────────────────────────
 
@@ -148,10 +167,13 @@ const context = async (user: any, userId: string, query: PersonQuery): Promise<C
   if (query.examType && !examType) throw new BadRequest(EXAM_TYPE_HINT);
   const sessionId = query.sessionId;
   const [[base], sessions] = await Promise.all([select(BASE_SQL, { id, inst }), select<SessionRow>(SESSIONS_SQL, { inst })]);
-  if (!base || !PEOPLE_ROLES.includes(base.role)) return null;
+  const role = (base?.role ? String(base.role).toUpperCase() : "") as Role;
+  if (!base || !PEOPLE_ROLES.includes(role)) return null;
+  base.role = role;
 
+  const canonicalId = base.userId;
   const session = pickSession(sessions, sessionId);
-  const [studentProfile] = base.role === "STUDENT" ? await select(STUDENT_PROFILE_SQL, { id, session: session?.sessionId ?? "" }) : [];
+  const [studentProfile] = base.role === "STUDENT" ? await select(STUDENT_PROFILE_SQL, { id: canonicalId, session: session?.sessionId ?? "" }) : [];
   // What a teacher teaches is per session; "every session" shows the current one.
   const teachSession = session?.sessionId ?? sessions.find((s) => s.isActive)?.sessionId ?? "";
   return {
@@ -162,7 +184,7 @@ const context = async (user: any, userId: string, query: PersonQuery): Promise<C
     ranged: Boolean(session),
     studentProfile: studentProfile ?? null,
     r: {
-      id,
+      id: canonicalId,
       inst,
       session: session?.sessionId ?? "",
       examType: examType ?? "",
@@ -274,13 +296,34 @@ const WORK: Record<Role, { groups: Record<WorkStatus, string[]>; sql: string }> 
       WHERE a."instituteId" = :inst AND a."scannerId" = :id AND a."isActive" = true ${IN_SCOPE}`,
   },
   STUDENT: {
-    groups: { pending: [], done: ["results"] },
+    groups: { pending: ["awaiting-result", "rechecks-pending"], done: ["results", "rechecks-done"] },
     sql: `
       SELECT 'results' AS grp, 1 AS rank, res."publishedAt" AS at, 'r:' || res."resultId" AS key, ${EXAM_COLUMNS},
-             res."marksObtained", res."totalMarks", res.percentage, res.grade, res."resultStatus", res."publishedAt"
+             res."marksObtained", res."totalMarks", res.percentage, res.grade, res."resultStatus"::text, res."publishedAt",
+             NULL::timestamptz AS "assignedAt"
       FROM viaexam_student_results res JOIN viaexam_exams e ON e."examId" = res."examId" ${EXAM_NAMES}
       WHERE res."instituteId" = :inst AND res."studentId" = :id AND res."isDeleted" = false
-        AND res."publishedAt" IS NOT NULL ${IN_SCOPE}`,
+        AND res."publishedAt" IS NOT NULL ${IN_SCOPE}
+      UNION ALL
+      SELECT 'awaiting-result' AS grp, 1 AS rank, COALESCE(e."examDate"::timestamptz, e."createdAt") AS at, 'ex:' || e."examId" AS key, ${EXAM_COLUMNS},
+             NULL::numeric AS "marksObtained", NULL::numeric AS "totalMarks", NULL::numeric AS percentage, NULL::text AS grade,
+             'Awaiting Result'::text AS "resultStatus", NULL::timestamptz AS "publishedAt",
+             e."createdAt" AS "assignedAt"
+      FROM viaexam_exams e ${EXAM_NAMES}
+      WHERE ${STUDENT_EXAMS} ${IN_SCOPE}
+        AND NOT EXISTS (
+          SELECT 1 FROM viaexam_student_results res
+          WHERE res."examId" = e."examId" AND res."studentId" = :id
+            AND res."isDeleted" = false AND res."publishedAt" IS NOT NULL
+        )
+      UNION ALL
+      SELECT CASE WHEN q.status::text IN ('Pending', 'Under Review', 'Approved') THEN 'rechecks-pending' ELSE 'rechecks-done' END AS grp,
+             2 AS rank, COALESCE(q."updatedAt", q."createdAt") AS at, 'rq:' || q."requestId" AS key, ${EXAM_COLUMNS},
+             NULL::numeric AS "marksObtained", NULL::numeric AS "totalMarks", NULL::numeric AS percentage, NULL::text AS grade,
+             q.status::text AS "resultStatus", NULL::timestamptz AS "publishedAt",
+             q."createdAt" AS "assignedAt"
+      FROM viaexam_recheck_requests q JOIN viaexam_exams e ON e."examId" = q."examId" ${EXAM_NAMES}
+      WHERE q."instituteId" = :inst AND q."studentId" = :id ${IN_SCOPE}`,
   },
 };
 
@@ -307,6 +350,7 @@ const toWorkItem = (role: Role, r: any): WorkItem => {
     passed: r.resultStatus === "PASS",
     resultStatus: r.resultStatus ?? null,
     publishedAt: iso(r.publishedAt),
+    assignedAt: iso(r.assignedAt),
   };
 };
 
@@ -473,7 +517,7 @@ const historySql = (ctx: Ctx) => {
     SELECT v.at, 'recheck', v.ev, v.ev || ':' || q."requestId", ${EXAM_COLUMNS}, q.reason::text, NULL, NULL, NULL
     FROM viaexam_recheck_requests q JOIN viaexam_exams e ON e."examId" = q."examId" ${EXAM_NAMES}
     CROSS JOIN LATERAL (VALUES (q."createdAt", 'recheck-asked'),
-                               (CASE WHEN q.status = 'Rejected' THEN q."reviewedAt" END, 'recheck-declined'),
+                               (CASE WHEN q.status::text = 'Rejected' THEN q."reviewedAt" END, 'recheck-declined'),
                                (q."completedAt", 'recheck-done')) v(at, ev)
     WHERE q."instituteId" = :inst AND q."studentId" = :id AND v.at IS NOT NULL ${IN_SCOPE}`;
 };
@@ -648,7 +692,7 @@ const studentSummary = async (r: Record<string, unknown>, profile: any) => {
       (SELECT COUNT(*) FROM viaexam_exam_attendance a JOIN viaexam_exams e ON e."examId" = a."examId"
          WHERE a."instituteId" = :inst AND a."studentId" = :id AND a.status = 'ABSENT' ${IN_SCOPE})::int AS absent,
       (SELECT COUNT(*) FROM viaexam_recheck_requests q JOIN viaexam_exams e ON e."examId" = q."examId"
-         WHERE q."instituteId" = :inst AND q."studentId" = :id AND q.status IN ('Pending', 'Under Review', 'Approved') ${IN_SCOPE})::int AS "rechecksOpen"`, r),
+         WHERE q."instituteId" = :inst AND q."studentId" = :id AND q.status::text IN ('Pending', 'Under Review', 'Approved') ${IN_SCOPE})::int AS "rechecksOpen"`, r),
   ]);
   return {
     profile: profile
