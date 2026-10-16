@@ -16,6 +16,7 @@ import { newId } from "../../utils/idGenerator";
 import { nameKey } from "../../utils/academicNames";
 import { bulkStudentRowSchema } from "../../validations/student.validation";
 import { findSession } from "../academic/sessionSetup.service";
+import { emailChange } from "../../utils/staffInput";
 import {
   currentEnrollment,
   enrollmentIn,
@@ -370,9 +371,8 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
     if (body.mobile && body.mobile !== user.phoneNumber && (await UserModal.findOne({ where: { phoneNumber: body.mobile } }))) {
       return fail(httpStatus.CONFLICT, "Phone number is already registered.");
     }
-    if (body.email && body.email !== user.emailId && (await UserModal.findOne({ where: { emailId: body.email } }))) {
-      return fail(httpStatus.CONFLICT, "Email address is already registered.");
-    }
+    const nextEmail = await emailChange(body.email || undefined, user, instituteId);
+    if (nextEmail.problem) return fail(httpStatus.BAD_REQUEST, nextEmail.problem);
 
     const profile = await StudentProfile.findOne({ where: { userId, instituteId } });
     let place: Place | null = null;
@@ -418,7 +418,7 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
         {
           userName: body.firstName && body.lastName ? `${body.firstName} ${body.lastName}` : user.userName,
           phoneNumber: body.mobile ?? user.phoneNumber,
-          emailId: body.email ?? user.emailId,
+          emailId: nextEmail.email ?? user.emailId,
         },
         { transaction: t }
       );

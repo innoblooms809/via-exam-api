@@ -17,7 +17,7 @@ import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
 import { findStaff, teacherOpenWork } from "../academic/academicGuards.service";
 import { newId } from "../../utils/idGenerator";
-import { cleanEmail, contactTakenMessage, staffInputProblem } from "../../utils/staffInput";
+import { cleanEmail, contactTakenMessage, emailChange, staffInputProblem } from "../../utils/staffInput";
 import { TEACHER_TYPES, checkClassTeacherPost, isTeacherType } from "./classTeacher.service";
 import SessionSection from "../../models/SessionSection.model";
 import { activeSession, addToCurrentSession, releaseTeacher } from "../academic/sessionSetup.service";
@@ -403,6 +403,8 @@ const updateTeacher = async (
     const taken = await contactTakenMessage("", phone, instituteId, userId);
     if (taken) return { error: true, statusCode: httpStatus.CONFLICT, message: taken };
   }
+  const nextEmail = await emailChange(body.emailId ?? body.email, user, instituteId);
+  if (nextEmail.problem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: nextEmail.problem };
   if (body.specialization !== undefined) {
     const specProblem = validateSpecializations(parseSpecializations(body.specialization));
     if (specProblem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: specProblem };
@@ -436,6 +438,7 @@ const updateTeacher = async (
       {
         userName: first && last ? `${first} ${last}` : user.userName,
         phoneNumber: phone ?? user.phoneNumber,
+        emailId: nextEmail.email ?? user.emailId,
       },
       { transaction: t },
     );
