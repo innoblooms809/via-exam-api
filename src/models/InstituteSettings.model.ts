@@ -30,6 +30,8 @@ export interface CrossCheckRule {
   above: number | null;
   /** rules: papers within this many marks of the pass mark (either side) go for cross-check. */
   nearPass: number | null;
+  /** The subjects (Subject.subjectId) whose exams are cross-checked; null: every subject. */
+  subjectIds: string[] | null;
 }
 
 interface InstituteSettingsAttributes {

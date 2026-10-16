@@ -2,9 +2,9 @@
  * Cross-checking: a second teacher checks the marks of chosen answer sheets after the
  * exam's evaluator has confirmed them, before results are published.
  *
- *   The school's rule (Master Data → Cross-checking): off · every sheet ("all") · sheets by
- *   marks ("rules": below a percentage, at or above one, within some marks of the pass mark)
- *   · sheets the admin picks ("pick").
+ *   The school's policy (Master Data → Cross-check policy): disabled · all answer sheets
+ *   ("all") · score-based ("rules": below a percentage, at or above one, within some marks of
+ *   the pass mark) · manual selection ("pick"); for every subject or only selected ones.
  *
  *   1. The evaluator marks the exam reviewed → it waits for its cross-check.
  *   2. The admin starts a round: the sheets the rule chooses (or the ones they pick) and a
@@ -14,7 +14,7 @@
  *   4. The last sheet checked closes the round; the admins hear what changed, and results
  *      can be published.
  *
- * While the rule is on, results can't be published before the exam's round is done
+ * While the policy covers an exam's subject, results can't be published before its round is done
  * (assertCrossCheckDone), and only the cross-checker changes the marks of a sheet in an
  * open round (sheetHeldForCrossCheck).
  */
@@ -34,7 +34,7 @@ import { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
 import ApiError from "../../utils/ApiError";
 import { newId } from "../../utils/idGenerator";
 import { specialisesIn } from "../../utils/specialization";
-import { settingsOf } from "../academic/instituteSettings.service";
+import { crossCheckCovers, settingsOf } from "../academic/instituteSettings.service";
 import { logMarksChange } from "../academic/marks.service";
 import { subjectTeacherIn } from "../academic/sessionSetup.service";
 import { EXAM_INCLUDES, buildRoster, type RosterRow } from "./examRoster.service";
@@ -44,6 +44,20 @@ const clean = (v: unknown) => String(v ?? "").trim();
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const pct = (score: number, total: number) => (total > 0 ? round2((score / total) * 100) : 0);
+
+/** Runs `fn` over `items`, at most `limit` at a time: each roster is a heavy set of queries. */
+const mapLimit = async <T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> => {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+};
 
 const maskName = (value: unknown) =>
   String(value ?? "")
@@ -58,11 +72,11 @@ const maskRoll = (value: unknown) => {
 };
 
 const REASON_TEXT: Record<CrossCheckReason, (rule: CrossCheckRule | null) => string> = {
-  all: () => "Every paper is cross-checked",
-  below: (r) => `Below ${r?.below ?? "?"}%`,
-  above: (r) => `At or above ${r?.above ?? "?"}%`,
+  all: () => "Full review: all answer sheets",
+  below: (r) => `Score below ${r?.below ?? "?"}%`,
+  above: (r) => `Score at or above ${r?.above ?? "?"}%`,
   "near-pass": (r) => `Within ${r?.nearPass ?? "?"} marks of the pass mark`,
-  picked: () => "Picked by the admin",
+  picked: () => "Manually selected by the admin",
 };
 
 // ─── The rule, and what it chooses ────────────────────────────────────────────
@@ -108,13 +122,16 @@ export interface CrossCheckState {
   total: number;
   pending: number;
   changed: number;
+  startedAt: Date;
+  completedAt: Date | null;
 }
 
-/** Whether the rule is on, and each exam's active round with its counts. */
+/** The policy, whether it covers a subject, and each exam's active round with its counts. */
 export const crossCheckStates = async (instituteId: string, examIds: string[]) => {
   const rule = await ruleOf(instituteId);
+  const covers = (subjectId: string | null | undefined) => crossCheckCovers(rule, subjectId);
   const byExam = new Map<string, CrossCheckState>();
-  if (rule.mode === "off" || !examIds.length) return { required: rule.mode !== "off", rule, byExam };
+  if (rule.mode === "off" || !examIds.length) return { covers, rule, byExam };
   const rounds = await CrossCheckRound.findAll({ where: { examId: { [Op.in]: examIds }, isActive: true } });
   const items = rounds.length ? await CrossCheckItem.findAll({ where: { roundId: { [Op.in]: rounds.map((r) => r.roundId) } }, attributes: ["roundId", "status"] }) : [];
   for (const r of rounds) {
@@ -126,21 +143,23 @@ export const crossCheckStates = async (instituteId: string, examIds: string[]) =
       total: mine.length,
       pending: mine.filter((i) => i.status === CROSS_CHECK_ITEM_STATUS.PENDING).length,
       changed: mine.filter((i) => i.status === CROSS_CHECK_ITEM_STATUS.CHANGED).length,
+      startedAt: r.createdAt,
+      completedAt: r.completedAt,
     });
   }
-  return { required: true, rule, byExam };
+  return { covers, rule, byExam };
 };
 
-/** Publishing waits for the cross-check while the school's rule is on. */
-export const assertCrossCheckDone = async (exam: { instituteId: string; examId: string }) => {
-  const { required, byExam } = await crossCheckStates(exam.instituteId, [exam.examId]);
-  if (!required) return;
+/** Publishing waits for the cross-check while the policy covers the exam's subject. */
+export const assertCrossCheckDone = async (exam: { instituteId: string; examId: string; subjectId: string }) => {
+  const { covers, byExam } = await crossCheckStates(exam.instituteId, [exam.examId]);
+  if (!covers(exam.subjectId)) return;
   const state = byExam.get(exam.examId);
   if (!state) {
-    throw new ApiError(httpStatus.CONFLICT, "This exam needs its cross-check first. Choose the papers and a cross-checker under Exams → Cross-check.");
+    throw new ApiError(httpStatus.CONFLICT, "This exam requires a cross-check before results are published. Assign one under Exams → Evaluation → Cross-check.");
   }
   if (state.pending > 0) {
-    throw new ApiError(httpStatus.CONFLICT, `The cross-check isn't finished yet: ${state.total - state.pending} of ${plural(state.total, "paper")} checked.`);
+    throw new ApiError(httpStatus.CONFLICT, `The cross-check is in progress: ${state.total - state.pending} of ${plural(state.total, "answer sheet")} verified.`);
   }
 };
 
@@ -164,8 +183,8 @@ export const closeRoundForReopen = async (examId: string) => {
         instituteId: round.instituteId,
         userId: round.checkerId,
         type: "CROSS_CHECK_UNASSIGNED",
-        title: "Cross-check stopped",
-        message: `The evaluator reopened the marks of ${exam ? examLabel(exam) : "an exam"}, so its cross-check stopped. You'll be told if it starts again.`,
+        title: "Cross-check cancelled",
+        message: `The evaluator reopened the marks of ${exam ? examLabel(exam) : "an exam"}, so its cross-check was cancelled. You will be notified if it is assigned again.`,
         referenceId: examId,
       },
     ]).catch(() => undefined);
@@ -212,7 +231,7 @@ const summaryOf = (round: CrossCheckRound | null, state: CrossCheckState | undef
       }
     : null;
 
-/** Exams whose marks the evaluator confirmed and whose results aren't out, plus every exam with a round. */
+/** Exams of covered subjects whose marks the evaluator confirmed, plus every exam with a round. */
 const listExams = async (admin: any, query: any) => {
   const instituteId = admin.instituteId;
   const rule = await ruleOf(instituteId);
@@ -224,23 +243,26 @@ const listExams = async (admin: any, query: any) => {
   if (!examIds.length) return { rule, exams: [] };
   const where: any = { instituteId, isDeleted: false, examId: { [Op.in]: examIds } };
   if (clean(query?.sessionId)) where.sessionId = clean(query.sessionId);
-  const [exams, published, { byExam }] = await Promise.all([
+  const [all, published, { byExam }] = await Promise.all([
     Exam.findAll({ where, include: EXAM_INCLUDES, order: [["examDate", "DESC"]] }),
     StudentResult.findAll({ where: { examId: { [Op.in]: examIds }, isDeleted: false }, attributes: ["examId"], group: ["examId"], raw: true }) as unknown as Promise<{ examId: string }[]>,
     crossCheckStates(instituteId, examIds),
   ]);
   const publishedSet = new Set(published.map((p) => p.examId));
   const roundOf = new Map(rounds.map((r) => [r.examId, r]));
+  // Exams of subjects outside the policy stay out, unless they already have a round.
+  const exams = (all as any[]).filter((e) => roundOf.has(e.examId) || crossCheckCovers(rule, e.subjectId));
   const evaluatorOf = new Map(reviewed.map((r) => [r.examId, r]));
   const names = await namesOf([...reviewed.map((r) => r.teacherId), ...rounds.map((r) => r.checkerId)]);
-  const rows = await Promise.all(
-    exams.map(async (exam: any) => {
+  // Only exams that can still start need the "how many would be chosen" count, and the
+  // rosters behind it are loaded a few at a time.
+  const rows = await mapLimit(exams, 4, async (exam: any) => {
       const round = roundOf.get(exam.examId) ?? null;
       const evaluator = evaluatorOf.get(exam.examId);
       // How many sheets the rule would choose now (before a round starts).
       let wouldChoose: number | null = null;
       let marked = 0;
-      if (!round && rule.mode !== "off") {
+      if (!round && rule.mode !== "off" && !publishedSet.has(exam.examId)) {
         const rows = markedRows((await buildRoster(exam)).rows);
         marked = rows.length;
         wouldChoose = rule.mode === "pick" ? null : rows.filter((r) => reasonFor(r, exam, rule)).length;
@@ -248,6 +270,7 @@ const listExams = async (admin: any, query: any) => {
       return {
         examId: exam.examId,
         label: examLabel(exam),
+        subjectId: exam.subjectId,
         subjectName: exam.subject?.subjectName ?? "",
         className: exam.class?.className ?? "",
         sectionName: exam.section?.sectionName ?? "",
@@ -262,8 +285,7 @@ const listExams = async (admin: any, query: any) => {
         wouldChoose,
         round: summaryOf(round, byExam.get(exam.examId), names),
       };
-    })
-  );
+  });
   return { rule, exams: rows };
 };
 
@@ -286,6 +308,7 @@ const examDetail = async (admin: any, examId: string) => {
     exam: {
       examId: exam.examId,
       label: examLabel(exam),
+      subjectName: exam.subject?.subjectName ?? "",
       examType: exam.examType,
       sessionName: exam.session?.sessionName ?? "",
       totalMarks: exam.totalMarks,
@@ -293,6 +316,8 @@ const examDetail = async (admin: any, examId: string) => {
       evaluator: evaluator ? { userId: evaluator.teacherId, name: names.get(evaluator.teacherId) ?? "", reviewedAt: evaluator.reviewedAt } : null,
     },
     rule,
+    /** Whether the policy covers this exam's subject. */
+    covered: crossCheckCovers(rule, exam.subjectId),
     sheets: rows.map((r) => ({
       sheetId: r.sheetId,
       studentId: r.studentId,
@@ -329,8 +354,11 @@ const examDetail = async (admin: any, examId: string) => {
 const startRound = async (admin: any, examId: string, body: any) => {
   const instituteId = admin.instituteId;
   const rule = await ruleOf(instituteId);
-  if (rule.mode === "off") throw new ApiError(httpStatus.BAD_REQUEST, "Cross-checking is off. Turn it on in Master Data → Cross-checking.");
+  if (rule.mode === "off") throw new ApiError(httpStatus.BAD_REQUEST, "Cross-check is disabled. Enable it in Master Data → Cross-check policy.");
   const exam = await loadExam(instituteId, examId);
+  if (!crossCheckCovers(rule, exam.subjectId)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `${exam.subject?.subjectName ?? "This subject"} isn't covered by the cross-check policy. Add it in Master Data → Cross-check policy.`);
+  }
   const evaluator = await EvaluationAssignment.findOne({ where: { examId: exam.examId, isActive: true } });
   if (!evaluator?.reviewedAt) throw new ApiError(httpStatus.CONFLICT, "The evaluator hasn't confirmed this exam's marks yet.");
   if (await StudentResult.count({ where: { examId: exam.examId, isDeleted: false } })) {
@@ -349,8 +377,8 @@ const startRound = async (admin: any, examId: string, body: any) => {
   if (rule.mode === "pick") {
     const picked = new Set((Array.isArray(body?.sheetIds) ? body.sheetIds : []).map(clean).filter(Boolean));
     chosen = rows.filter((r) => picked.has(r.sheetId as string)).map((row) => ({ row, reason: CROSS_CHECK_REASON.PICKED }));
-    if (!chosen.length) throw new ApiError(httpStatus.BAD_REQUEST, "Pick at least one paper to cross-check.");
-    if (chosen.length !== picked.size) throw new ApiError(httpStatus.BAD_REQUEST, "Some picked papers aren't this exam's marked answer sheets. Refresh and pick again.");
+    if (!chosen.length) throw new ApiError(httpStatus.BAD_REQUEST, "Select at least one answer sheet to cross-check.");
+    if (chosen.length !== picked.size) throw new ApiError(httpStatus.BAD_REQUEST, "Some selected answer sheets aren't evaluated sheets of this exam. Refresh and select again.");
   } else {
     chosen = rows.flatMap((row) => {
       const reason = reasonFor(row, exam, rule);
@@ -361,7 +389,7 @@ const startRound = async (admin: any, examId: string, body: any) => {
   const round = await sequelize.transaction(async (t) => {
     await Exam.findOne({ where: { examId: exam.examId }, transaction: t, lock: t.LOCK.UPDATE });
     if (await activeRound(exam.examId, t, true)) {
-      throw new ApiError(httpStatus.CONFLICT, "This exam's cross-check has already started. Change its checker, or start it over.");
+      throw new ApiError(httpStatus.CONFLICT, "This exam's cross-check is already assigned. Reassign the cross-checker, or restart it.");
     }
     const created = await CrossCheckRound.create(
       {
@@ -399,8 +427,8 @@ const startRound = async (admin: any, examId: string, body: any) => {
             instituteId,
             userId: checker.userId,
             type: "CROSS_CHECK_ASSIGNED",
-            title: "Papers to cross-check",
-            message: `Cross-check ${plural(chosen.length, "answer sheet")} of ${examLabel(exam)}. Student names are hidden.`,
+            title: "Cross-check assigned",
+            message: `Verify the marks of ${plural(chosen.length, "answer sheet")} in ${examLabel(exam)}. Student identities are masked.`,
             referenceId: exam.examId,
           },
         ],
@@ -414,8 +442,8 @@ const startRound = async (admin: any, examId: string, body: any) => {
     roundId: round.roundId,
     chosen: chosen.length,
     message: chosen.length
-      ? `${plural(chosen.length, "paper")} sent to ${checker.userName} for cross-checking.`
-      : "No paper matches the rule, so there is nothing to cross-check. The results can be published.",
+      ? `${plural(chosen.length, "answer sheet")} assigned to ${checker.userName} for cross-check.`
+      : "No answer sheet meets the selection criteria, so no cross-check is required. Results can be published.",
   };
 };
 
@@ -428,8 +456,8 @@ const changeChecker = async (admin: any, examId: string, body: any) => {
   if (!checker) throw new ApiError(httpStatus.BAD_REQUEST, `Choose a cross-checker who teaches ${exam.subject?.subjectName ?? "the subject"} and isn't the exam's evaluator.`);
   const previous = await sequelize.transaction(async (t) => {
     const round = await activeRound(exam.examId, t, true);
-    if (!round) throw new ApiError(httpStatus.NOT_FOUND, "This exam's cross-check hasn't started.");
-    if (round.status !== "open") throw new ApiError(httpStatus.CONFLICT, "This exam's cross-check is already done.");
+    if (!round) throw new ApiError(httpStatus.NOT_FOUND, "No cross-check is assigned for this exam.");
+    if (round.status !== "open") throw new ApiError(httpStatus.CONFLICT, "This exam's cross-check is already completed.");
     const before = round.checkerId;
     if (before === checker.userId) return null;
     await round.update({ checkerId: checker.userId }, { transaction: t });
@@ -440,12 +468,12 @@ const changeChecker = async (admin: any, examId: string, body: any) => {
           instituteId,
           userId: checker.userId,
           type: "CROSS_CHECK_ASSIGNED",
-          title: "Papers to cross-check",
-          message: `Cross-check ${plural(pending, "answer sheet")} of ${examLabel(exam)}. Student names are hidden.`,
+          title: "Cross-check assigned",
+          message: `Verify the marks of ${plural(pending, "answer sheet")} in ${examLabel(exam)}. Student identities are masked.`,
           referenceId: exam.examId,
         },
         ...(before
-          ? [{ instituteId, userId: before, type: "CROSS_CHECK_UNASSIGNED", title: "Cross-check reassigned", message: `The cross-check of ${examLabel(exam)} was given to another teacher.`, referenceId: exam.examId }]
+          ? [{ instituteId, userId: before, type: "CROSS_CHECK_UNASSIGNED", title: "Cross-check reassigned", message: `The cross-check of ${examLabel(exam)} was reassigned to another teacher.`, referenceId: exam.examId }]
           : []),
       ],
       t
@@ -462,11 +490,11 @@ const resetRound = async (admin: any, examId: string) => {
     throw new ApiError(httpStatus.CONFLICT, "This exam's results are already published.");
   }
   const round = await activeRound(exam.examId);
-  if (!round) throw new ApiError(httpStatus.NOT_FOUND, "This exam's cross-check hasn't started.");
+  if (!round) throw new ApiError(httpStatus.NOT_FOUND, "No cross-check is assigned for this exam.");
   await round.update({ isActive: false });
   if (round.checkerId && round.status === "open") {
     await notifyAll([
-      { instituteId: round.instituteId, userId: round.checkerId, type: "CROSS_CHECK_UNASSIGNED", title: "Cross-check stopped", message: `The admin started the cross-check of ${examLabel(exam)} over.`, referenceId: exam.examId },
+      { instituteId: round.instituteId, userId: round.checkerId, type: "CROSS_CHECK_UNASSIGNED", title: "Cross-check cancelled", message: `The admin restarted the cross-check of ${examLabel(exam)}; your assignment was withdrawn.`, referenceId: exam.examId },
     ]).catch(() => undefined);
   }
   return { examId: exam.examId };
@@ -534,11 +562,11 @@ const checkItem = async (teacher: any, itemId: string, body: any) => {
   const note = clean(body?.note).slice(0, 1000);
   const outcome = await sequelize.transaction(async (t) => {
     const item = await CrossCheckItem.findOne({ where: { itemId: clean(itemId), instituteId: teacher.instituteId }, transaction: t, lock: t.LOCK.UPDATE });
-    if (!item) throw new ApiError(httpStatus.NOT_FOUND, "That paper isn't in a cross-check.");
+    if (!item) throw new ApiError(httpStatus.NOT_FOUND, "This answer sheet isn't part of a cross-check.");
     const round = await CrossCheckRound.findOne({ where: { roundId: item.roundId }, transaction: t, lock: t.LOCK.UPDATE });
     if (!round?.isActive || round.status !== "open") throw new ApiError(httpStatus.CONFLICT, "This cross-check is closed.");
-    if (round.checkerId !== teacher.userId) throw new ApiError(httpStatus.FORBIDDEN, "This paper is with another cross-checker.");
-    if (item.status !== CROSS_CHECK_ITEM_STATUS.PENDING) throw new ApiError(httpStatus.CONFLICT, "You've already checked this paper.");
+    if (round.checkerId !== teacher.userId) throw new ApiError(httpStatus.FORBIDDEN, "This answer sheet is assigned to another cross-checker.");
+    if (item.status !== CROSS_CHECK_ITEM_STATUS.PENDING) throw new ApiError(httpStatus.CONFLICT, "You have already verified this answer sheet.");
     const exam: any = await Exam.findOne({ where: { examId: item.examId }, include: EXAM_INCLUDES, transaction: t });
     if (!exam) throw new ApiError(httpStatus.NOT_FOUND, "Exam not found.");
     if (await StudentResult.count({ where: { examId: exam.examId, isDeleted: false }, transaction: t })) {
@@ -549,11 +577,11 @@ const checkItem = async (teacher: any, itemId: string, body: any) => {
     }
     const marks = round2(marksIn);
     const evaluation = await AIEvaluation.findOne({ where: { sheetId: item.sheetId }, transaction: t, lock: t.LOCK.UPDATE });
-    if (!evaluation) throw new ApiError(httpStatus.NOT_FOUND, "This paper has no marks to check.");
+    if (!evaluation) throw new ApiError(httpStatus.NOT_FOUND, "This answer sheet has no marks to verify.");
     const current = evaluation.totalScore == null ? null : Number(evaluation.totalScore);
     const before = item.marksBefore ?? current;
     const changed = before == null || Math.abs(marks - before) >= 0.005;
-    if (changed && note.length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Say why the marks change; the admin and the evaluator see it.");
+    if (changed && note.length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Give a reason for the revision; the admin and the evaluator can see it.");
 
     if (current == null || Math.abs(marks - current) >= 0.005) {
       await evaluation.update({ totalScore: marks }, { transaction: t });
@@ -588,7 +616,7 @@ const checkItem = async (teacher: any, itemId: string, body: any) => {
       const all = await CrossCheckItem.findAll({ where: { roundId: round.roundId }, attributes: ["status"], transaction: t });
       const changedCount = all.filter((i) => i.status === CROSS_CHECK_ITEM_STATUS.CHANGED).length;
       const label = examLabel(exam);
-      const summary = `${plural(all.length, "paper")} checked, ${changedCount ? `${plural(changedCount, "mark")} changed` : "no marks changed"}`;
+      const summary = `${plural(all.length, "answer sheet")} verified, ${changedCount ? plural(changedCount, "revision") : "no revisions"}`;
       const evaluator = await EvaluationAssignment.findOne({ where: { examId: exam.examId, isActive: true }, transaction: t });
       await notifyAll(
         [
@@ -596,12 +624,12 @@ const checkItem = async (teacher: any, itemId: string, body: any) => {
             instituteId: exam.instituteId,
             userId,
             type: "CROSS_CHECK_DONE",
-            title: "Cross-check done",
-            message: `Cross-check of ${label} is done: ${summary}. The results can be published.`,
+            title: "Cross-check completed",
+            message: `The cross-check of ${label} is complete: ${summary}. Results can now be published.`,
             referenceId: exam.examId,
           })),
           ...(evaluator && evaluator.teacherId !== teacher.userId
-            ? [{ instituteId: exam.instituteId, userId: evaluator.teacherId, type: "CROSS_CHECK_DONE", title: "Cross-check done", message: `The cross-check of ${label} is done: ${summary}.`, referenceId: exam.examId }]
+            ? [{ instituteId: exam.instituteId, userId: evaluator.teacherId, type: "CROSS_CHECK_DONE", title: "Cross-check completed", message: `The cross-check of ${label} is complete: ${summary}.`, referenceId: exam.examId }]
             : []),
         ],
         t
