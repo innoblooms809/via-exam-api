@@ -6,6 +6,7 @@ import logger from "../../config/logger";
 import { memoize } from "../../utils/memoCache";
 import { buildRoster, loadExam } from "../exam/examRoster.service";
 import ExamWorkflowService, { PAPER_APPROVED_STATUSES } from "../exam/examWorkflow.service";
+import { maskName } from "../evaluation/evaluationAccess.service";
 
 // Home pages of the institute roles (admin, teacher, scanner, student). Each page is
 // one request: a few aggregate SQL statements run in parallel, nothing is loaded into
@@ -735,7 +736,7 @@ const loadScannerHome = async (user: any) => {
     recentUploads: recent.map((x: any) => ({
       sheetId: x.sheetId,
       rollNo: x.rollNo ?? "",
-      studentName: x.studentName ?? "",
+      studentName: maskName(x.studentName) ?? "",
       examType: x.examType ?? "",
       className: x.className ?? "",
       sectionName: x.sectionName ?? "",

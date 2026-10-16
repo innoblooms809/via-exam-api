@@ -30,6 +30,10 @@ export type SheetAccess = "full" | "masked" | "none";
 export const isTeacherRequester = (user: any): boolean =>
   String(user?.role?.role ?? user?.role ?? "").toUpperCase().includes("TEACH");
 
+/** Scanners see names and personal details masked like the teacher panel, but keep roll numbers (they match physical sheets by roll). */
+export const isScannerRequester = (user: any): boolean =>
+  String(user?.role?.role ?? user?.role ?? "").toUpperCase().includes("SCAN");
+
 export const isAdminRequester = (user: any): boolean => {
   const role = String(user?.role?.role ?? user?.role ?? "").toUpperCase().replace(/[\s_-]+/g, "");
   return role === "ADMIN" || role === "SUPERADMIN";
@@ -222,10 +226,10 @@ export function accessForExam(scope: TeacherScope, exam: { examId: string; subje
 }
 
 /** Masks the identity fields of one sheet row (plain object). */
-export function maskSheetRow<T extends Record<string, any>>(row: T): T {
+export function maskSheetRow<T extends Record<string, any>>(row: T, options: { keepRoll?: boolean } = {}): T {
   return {
     ...row,
-    rollNo: maskRoll(row.rollNo),
+    rollNo: options.keepRoll ? row.rollNo : maskRoll(row.rollNo),
     studentName: row.studentName ? maskName(row.studentName) : row.studentName,
     // Uploaded file names often carry the roll number or name.
     fileName: row.fileName ? `answer-sheet${fileExtension(row.fileName)}` : row.fileName,
@@ -235,6 +239,7 @@ export function maskSheetRow<T extends Record<string, any>>(row: T): T {
 
 /** Filters a sheet list to what the requester may see, masking where needed. */
 export async function scopeSheetRows<T extends Record<string, any>>(user: any, rows: T[]): Promise<T[]> {
+  if (isScannerRequester(user)) return rows.map((row) => maskSheetRow(row, { keepRoll: true }));
   if (!isTeacherRequester(user)) return rows;
   const scope = await getTeacherScope(user);
   return rows.flatMap((row) => {
@@ -352,13 +357,13 @@ export async function scopeEvaluationRows(user: any, rows: any[]): Promise<any[]
   });
 }
 
-/** A student list entry with every identifying field hidden. */
-export function maskStudentRecord(s: any) {
+/** A student list entry with every identifying field hidden (roll number too, unless keepRoll). */
+export function maskStudentRecord(s: any, options: { keepRoll?: boolean } = {}) {
   return {
     ...s,
     userId: maskId(s.userId),
     userName: maskName(s.userName),
-    rollNumber: s.rollNumber ? maskRoll(s.rollNumber) : s.rollNumber,
+    rollNumber: options.keepRoll || !s.rollNumber ? s.rollNumber : maskRoll(s.rollNumber),
     emailId: s.emailId ? "****" : s.emailId,
     phoneNumber: s.phoneNumber ? "****" : s.phoneNumber,
     fatherName: s.fatherName ? maskName(s.fatherName) : s.fatherName,

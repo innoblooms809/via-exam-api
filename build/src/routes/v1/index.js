@@ -12,8 +12,11 @@ const institute_route_1 = __importDefault(require("./institute/institute.route")
 const teacher_route_1 = __importDefault(require("./teacher/teacher.route"));
 const exam_route_1 = __importDefault(require("./exam/exam.route"));
 const examWorkflow_route_1 = __importDefault(require("./exam/examWorkflow.route"));
+const crossCheck_route_1 = __importDefault(require("./exam/crossCheck.route"));
 const questionPaper_route_1 = __importDefault(require("./question-paper/questionPaper.route"));
 const session_route_1 = __importDefault(require("./academic/session.route"));
+const sessionSetup_route_1 = __importDefault(require("./academic/sessionSetup.route"));
+const marks_route_1 = require("./academic/marks.route");
 const class_route_1 = __importDefault(require("./academic/class.route"));
 const section_route_1 = __importDefault(require("./academic/section.route"));
 const subject_route_1 = __importDefault(require("./academic/subject.route"));
@@ -79,6 +82,18 @@ const defaultRoutes = [
         route: session_route_1.default,
     },
     {
+        path: "/session-setup",
+        route: sessionSetup_route_1.default,
+    },
+    {
+        path: "/marks",
+        route: marks_route_1.marksRoutes,
+    },
+    {
+        path: "/institute-settings",
+        route: marks_route_1.settingsRoutes,
+    },
+    {
         path: "/class",
         route: class_route_1.default,
     },
@@ -101,6 +116,10 @@ const defaultRoutes = [
     {
         path: "/exam-workflow",
         route: examWorkflow_route_1.default,
+    },
+    {
+        path: "/cross-checks",
+        route: crossCheck_route_1.default,
     },
     {
         path: "/question-papers",
