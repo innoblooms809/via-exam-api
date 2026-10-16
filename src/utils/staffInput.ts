@@ -1,7 +1,9 @@
 // Checks for the "add teacher" / "add scanner staff" forms, so a bad value gets a
 // sentence that says what to fix instead of a database error.
 
+import { Op } from "sequelize";
 import UserModal from "../models/User.model";
+import { sequelize } from "../config/sequelize";
 
 const NAME = /^[A-Za-z][A-Za-z.'’ -]{0,49}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -81,4 +83,30 @@ export const contactTakenMessage = async (email: string, phone: string, institut
       : "This mobile number is already registered.";
   }
   return null;
+};
+
+/**
+ * An admin changing someone's email (their login). Returns the cleaned new email,
+ * nothing when it is unchanged or not sent, or a problem. Sign-in, password resets
+ * and login emails all look the user up by email at the time, and sessions are tied
+ * to the userId, so a change takes effect on their next sign-in and logs no one out.
+ */
+export const emailChange = async (
+  raw: unknown,
+  user: { userId: string; emailId: string },
+  instituteId: string
+): Promise<{ email?: string; problem?: string }> => {
+  if (raw === undefined || raw === null) return {};
+  const email = cleanEmail(raw);
+  if (!email) return { problem: "Email is required; it is their login." };
+  if (!EMAIL.test(email) || email.length > 320) return { problem: "Enter a valid email address." };
+  if (email === String(user.emailId ?? "").toLowerCase()) return {};
+  // Any account, any institute, deleted or not: the email must stay unique.
+  const owner = await UserModal.findOne({
+    where: { [Op.and]: [sequelize.where(sequelize.fn("lower", sequelize.col("emailId")), email), { userId: { [Op.ne]: user.userId } }] },
+  });
+  if (owner) {
+    return { problem: owner.instituteId === instituteId ? `${owner.userName} already uses this email.` : "This email is already registered." };
+  }
+  return { email };
 };
