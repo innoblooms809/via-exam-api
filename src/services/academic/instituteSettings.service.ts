@@ -5,6 +5,8 @@
  */
 
 import httpStatus from "http-status";
+import { Op } from "sequelize";
+import Subject from "../../models/Subject.model";
 import InstituteSettings, { type CrossCheckRule, type GradeBand, type MarksDefault } from "../../models/InstituteSettings.model";
 import MarksAudit, { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
 import { EXAM_TYPES } from "../../utils/examTypes";
@@ -27,7 +29,11 @@ export const DEFAULT_GRADING_SCALE: GradeBand[] = [
 
 export const DEFAULT_MARKS: Record<string, MarksDefault> = Object.fromEntries(EXAM_TYPES.map((t) => [t, { maxMarks: 80, passPercent: 33 }]));
 
-export const DEFAULT_CROSS_CHECK: CrossCheckRule = { mode: "off", below: null, above: null, nearPass: null };
+export const DEFAULT_CROSS_CHECK: CrossCheckRule = { mode: "off", below: null, above: null, nearPass: null, subjectIds: null };
+
+/** Whether the policy covers an exam of this subject. */
+export const crossCheckCovers = (rule: CrossCheckRule, subjectId: string | null | undefined) =>
+  rule.mode !== "off" && (rule.subjectIds == null || (Boolean(subjectId) && rule.subjectIds.includes(subjectId as string)));
 
 export interface Settings {
   gradingScale: GradeBand[];
@@ -138,11 +144,19 @@ const saveMarksDefaults = async (user: any, body: any) => {
   return { error: false, statusCode: httpStatus.OK, message: "Starting marks saved.", data: { marksDefaults: { ...current.marksDefaults, ...out } } };
 };
 
-/** Cross-checking: off, every paper, papers by marks, or papers the admin picks. */
+/** Cross-check policy: disabled, all answer sheets, score-based or manual selection; every subject or selected ones. */
 const saveCrossCheck = async (user: any, body: any) => {
   const instituteId = String(user?.instituteId ?? "");
   const mode = String(body?.mode ?? "");
-  if (!["off", "all", "rules", "pick"].includes(mode)) return fail(httpStatus.BAD_REQUEST, "Choose off, every paper, papers by marks, or papers you pick.");
+  if (!["off", "all", "rules", "pick"].includes(mode)) return fail(httpStatus.BAD_REQUEST, "Choose a selection method: disabled, all answer sheets, score-based or manual.");
+  let subjectIds: string[] | null = null;
+  if (mode !== "off" && Array.isArray(body?.subjectIds)) {
+    const wanted = [...new Set(body.subjectIds.map((v: unknown) => String(v ?? "").trim()).filter(Boolean))] as string[];
+    if (!wanted.length) return fail(httpStatus.BAD_REQUEST, "Select at least one subject, or apply the policy to all subjects.");
+    const found = await Subject.findAll({ where: { instituteId, subjectId: { [Op.in]: wanted }, isDeleted: false }, attributes: ["subjectId"] });
+    if (found.length !== wanted.length) return fail(httpStatus.BAD_REQUEST, "Some selected subjects no longer exist. Refresh the page and select again.");
+    subjectIds = wanted;
+  }
   const pct = (v: unknown) => (v === null || v === undefined || v === "" ? null : Number(v));
   const below = pct(body?.below);
   const above = pct(body?.above);
@@ -155,9 +169,16 @@ const saveCrossCheck = async (user: any, body: any) => {
     return fail(httpStatus.BAD_REQUEST, "Set at least one rule: below a percentage, at or above one, or near the pass mark.");
   }
   if (below !== null && above !== null && below >= above) return fail(httpStatus.BAD_REQUEST, "“Below” must be lower than “at or above”.");
-  const rule: CrossCheckRule = { mode: mode as CrossCheckRule["mode"], below, above, nearPass };
+  const rules = mode === "rules";
+  const rule: CrossCheckRule = {
+    mode: mode as CrossCheckRule["mode"],
+    below: rules ? below : null,
+    above: rules ? above : null,
+    nearPass: rules ? nearPass : null,
+    subjectIds,
+  };
   await upsert(instituteId, user.userId, { crossCheck: rule });
-  return { error: false, statusCode: httpStatus.OK, message: mode === "off" ? "Cross-checking is off." : "Cross-checking rules saved.", data: { crossCheck: rule } };
+  return { error: false, statusCode: httpStatus.OK, message: mode === "off" ? "Cross-check disabled." : "Cross-check policy saved.", data: { crossCheck: rule } };
 };
 
 export default { getSettings, saveGradingScale, saveMarksDefaults, saveCrossCheck };
