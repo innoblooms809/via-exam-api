@@ -112,6 +112,8 @@ const classResults = async (admin: any, query: any) => {
     return new Map(columns.map((c) => [c.subjectId, mine.find((r) => c.examIds.includes(r.examId)) ?? null]));
   };
 
+  /** Students with a subject not in yet: no rank (their total is partial). */
+  const partial = new Set<string>();
   const students = studentIds.map((studentId) => {
     const marks = bySubject(studentId);
     let obtained = 0;
@@ -137,6 +139,7 @@ const classResults = async (admin: any, query: any) => {
       };
     });
     const percentage = max > 0 ? round1((obtained / max) * 100) : null;
+    if (missing || !columns.length) partial.add(studentId);
     const result: OverallResult = failed ? "FAIL" : missing || !columns.length ? "INCOMPLETE" : "PASS";
     const place = placeOf.get(studentId);
     const rollNo = rows.find((r) => r.studentId === studentId)?.rollNo ?? place?.rollNumber ?? "";
@@ -149,14 +152,16 @@ const classResults = async (admin: any, query: any) => {
       obtained: round1(obtained),
       max,
       percentage,
-      grade: result === "INCOMPLETE" ? null : gradeOn(gradingScale, percentage),
+      // No grade on a partial total (a fail with subjects still to come).
+      grade: result === "INCOMPLETE" || missing ? null : gradeOn(gradingScale, percentage),
       result,
       rank: null as number | null,
     };
   });
 
-  // Rank complete results by percentage; equal percentages share a rank (1, 2, 2, 4).
-  const ranked = students.filter((s) => s.result !== "INCOMPLETE" && s.percentage != null).sort((a, b) => b.percentage! - a.percentage!);
+  // Rank by percentage only students with every subject in (a fail with subjects still
+  // unpublished is on a partial total); equal percentages share a rank (1, 2, 2, 4).
+  const ranked = students.filter((s) => !partial.has(s.studentId) && s.percentage != null).sort((a, b) => b.percentage! - a.percentage!);
   ranked.forEach((s, i) => {
     s.rank = i > 0 && ranked[i - 1].percentage === s.percentage ? ranked[i - 1].rank : i + 1;
   });
