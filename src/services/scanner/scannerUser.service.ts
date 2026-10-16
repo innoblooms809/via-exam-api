@@ -9,7 +9,8 @@ import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
 import { findStaff, scannerOpenWork } from "../academic/academicGuards.service";
 import { newId } from "../../utils/idGenerator";
-import { cleanEmail, contactTakenMessage, emailChange, staffInputProblem } from "../../utils/staffInput";
+import { cleanEmail, contactTakenMessage, emailChange, staffAgeProblem, staffInputProblem } from "../../utils/staffInput";
+import { photoChange, uploadedPhoto } from "../../utils/profilePhoto";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 
 // ─── CREATE SCANNER ───────────────────────────────────────────────────────────
@@ -34,7 +35,7 @@ const createScanner = async (
   if (!scannerRole) return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: "SCANNER role not found. Please seed roles." };
 
   try {
-    const profileUrl = files?.profilePhoto?.[0] ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}` : null;
+    const profileUrl = uploadedPhoto(files);
     const plainPassword = body.password || (await RegHelper.generatePassword());
     const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
     const userId = newId("user");
@@ -50,6 +51,7 @@ const createScanner = async (
           roleId: scannerRole.id,
           instituteId,
           status: 1,
+          profileUrl,
         },
         { transaction: t },
       );
@@ -138,7 +140,8 @@ const getAllScanners = async (createdBy: any, query: any): Promise<any> => {
         dob: u.scannerProfile?.dob ?? null,
         gender: u.scannerProfile?.gender ?? null,
         aadhar: u.scannerProfile?.aadhar ?? null,
-        profileUrl: u.scannerProfile?.profileUrl ?? null,
+        // Their own photo (from their profile) first, then the one the admin added.
+        profileUrl: u.profileUrl ?? u.scannerProfile?.profileUrl ?? null,
         examsAssigned: mine.length,
         examsOpen: mine.filter((a) => a.status === "ASSIGNED").length,
       };
@@ -226,15 +229,18 @@ const updateScanner = async (
   if (nextEmail.problem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: nextEmail.problem };
   const dob = body.dob ? new Date(body.dob) : null;
   if (dob && Number.isNaN(dob.getTime())) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a valid date of birth." };
+  const ageProblem = dob ? staffAgeProblem(dob) : null;
+  if (ageProblem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: ageProblem };
+  const photo = photoChange(files, body);
 
   try {
     await sequelize.transaction(async (t) => {
       await user.update(
-        { userName: first && last ? `${first} ${last}` : user.userName, phoneNumber: phone ?? user.phoneNumber, emailId: nextEmail.email ?? user.emailId },
+        { userName: first && last ? `${first} ${last}` : user.userName, phoneNumber: phone ?? user.phoneNumber, emailId: nextEmail.email ?? user.emailId, ...(photo !== undefined ? { profileUrl: photo } : {}) },
         { transaction: t },
       );
       if (profile) {
-        const profileUrl = files?.profilePhoto?.[0] ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}` : profile.profileUrl;
+        const profileUrl = photo !== undefined ? photo : profile.profileUrl;
         await profile.update(
           {
             address: body.address ?? profile.address,

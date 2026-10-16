@@ -33,9 +33,8 @@ const lastResendAt = new Map<string, number>();
  * Both happen in one transaction: if the email can't be sent the password change
  * is rolled back, so nobody is left locked out with a password they never got.
  */
-const issueCredentials = async (user: any, password: string): Promise<void> => {
+const signInFor = async (user: any) => {
   const roleName = String(await getRoleName(user.roleId)).toLowerCase();
-
   let loginUrl = `${config.frontendUrl}/auth/superadmin/signin`;
   let instituteName = "ViaExam Platform";
   if (user.instituteId) {
@@ -46,6 +45,11 @@ const issueCredentials = async (user: any, password: string): Promise<void> => {
       instituteName = institute.instituteName;
     }
   }
+  return { roleName, loginUrl, instituteName };
+};
+
+const issueCredentials = async (user: any, password: string): Promise<void> => {
+  const { roleName, loginUrl, instituteName } = await signInFor(user);
   const encrypted = await EncryptPassword.encryptPassword(password);
 
   await sequelize.transaction(async (t) => {
@@ -71,11 +75,33 @@ const issueCredentials = async (user: any, password: string): Promise<void> => {
         password,
         role: roleName.charAt(0).toUpperCase() + roleName.slice(1),
         loginUrl,
+        kind: "reset",
       });
     }
     if (sent === false) throw new Error("The login details email could not be sent.");
   });
 };
+
+/**
+ * Emails a user their login email and sign-in link, and leaves the password alone.
+ * (The current password can't be sent: only its hash is stored.)
+ */
+const sendLoginDetails = async (user: any): Promise<boolean> => {
+  const { roleName, loginUrl } = await signInFor(user);
+  const { sendUserCredentials } = require("../../utils/mailHelper");
+  return sendUserCredentials({
+    userName: user.userName,
+    email: user.emailId,
+    phone: user.phoneNumber,
+    password: null,
+    role: roleName.charAt(0).toUpperCase() + roleName.slice(1),
+    loginUrl,
+    kind: "details",
+  });
+};
+
+/** How an admin sends someone their login: a generated password, one they typed, or the details only. */
+export type LoginMode = "generate" | "manual" | "details";
 
 /**
  * Public "resend my login details" (sign-in page). The password is always
@@ -115,7 +141,7 @@ const resendCredentials = async (email: string): Promise<any> => {
  * to one they typed) and emails it to that user. Only users of the admin's own
  * institute, and never another admin.
  */
-const adminResetCredentials = async (admin: any, email: string, password?: string): Promise<any> => {
+const adminResetCredentials = async (admin: any, email: string, password?: string, mode?: string): Promise<any> => {
   try {
     const cleanEmail = String(email ?? "").trim().toLowerCase();
     const user: any = await UserModal.findOne({
@@ -130,8 +156,29 @@ const adminResetCredentials = async (admin: any, email: string, password?: strin
       return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Admin passwords can't be reset from here." };
     }
 
+    // Older callers send no mode: a password means "manual", none means "generate".
+    const typed = password !== undefined && password !== null && String(password).trim() !== "";
+    const how: LoginMode = mode === "details" || mode === "manual" || mode === "generate" ? mode : typed ? "manual" : "generate";
+
+    if (how === "details") {
+      if (Number(user.status) !== 1) {
+        return { error: true, statusCode: httpStatus.CONFLICT, message: "This account is deactivated. Reactivate it before sending login details." };
+      }
+      const sent = await sendLoginDetails(user);
+      if (sent === false) return { error: true, statusCode: httpStatus.BAD_GATEWAY, message: "The email could not be sent. Check the address and try again." };
+      return {
+        error: false,
+        statusCode: httpStatus.OK,
+        message: `Login details sent to ${user.emailId}. Their password is unchanged.`,
+        data: { email: user.emailId, mode: how },
+      };
+    }
+    if (how === "manual" && !typed) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter the new password, or let one be generated." };
+    }
+
     let nextPassword = Helper.generateTempPassword();
-    if (password !== undefined && String(password).trim() !== "") {
+    if (how === "manual") {
       nextPassword = String(password).trim();
       const strong =
         nextPassword.length >= 8 &&
@@ -153,7 +200,7 @@ const adminResetCredentials = async (admin: any, email: string, password?: strin
       error: false,
       statusCode: httpStatus.OK,
       message: `Password updated and login details sent to ${user.emailId}.`,
-      data: { email: user.emailId },
+      data: { email: user.emailId, mode: how },
     };
   } catch (e: any) {
     return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: "Could not reset the password. Please try again." };

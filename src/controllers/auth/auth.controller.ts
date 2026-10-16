@@ -60,7 +60,7 @@ const resendCredentials = async (req: Request, res: Response): Promise<any> => {
 // School admin: reset a user's password (optionally to a typed one) and email it.
 const adminResetCredentials = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await AuthService.adminResetCredentials(req.viaExamUser, req.body?.email, req.body?.password);
+    const result = await AuthService.adminResetCredentials(req.viaExamUser, req.body?.email, req.body?.password, req.body?.mode);
     return res.status(result.statusCode).send(result);
   } catch {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

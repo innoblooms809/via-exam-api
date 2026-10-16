@@ -19,6 +19,19 @@ const validDate = (v: unknown) => {
   return Number.isNaN(d.getTime()) ? undefined : d;
 };
 
+/** Staff (teachers, scanner staff) must be 18 or older on the day they are added or edited. */
+export const MIN_STAFF_AGE = 18;
+
+/** A problem with a staff date of birth (under 18 by the calendar, or over 100 years ago), or null. */
+export const staffAgeProblem = (dob: Date, today = new Date()): string | null => {
+  // By calendar date, not days: someone born on 16 Oct 2008 turns 18 on 16 Oct 2026.
+  const adult = new Date(Date.UTC(today.getUTCFullYear() - MIN_STAFF_AGE, today.getUTCMonth(), today.getUTCDate()));
+  if (dob.getTime() > adult.getTime()) return `Staff must be at least ${MIN_STAFF_AGE} years old; check the date of birth.`;
+  const oldest = new Date(Date.UTC(today.getUTCFullYear() - 100, today.getUTCMonth(), today.getUTCDate()));
+  if (dob.getTime() < oldest.getTime()) return "Check the date of birth; it is more than 100 years ago.";
+  return null;
+};
+
 /**
  * Returns the first problem with the person's basic details, or null.
  * Teachers need a date of birth, joining date and qualification; scanner staff don't.
@@ -48,9 +61,8 @@ export const staffInputProblem = (
   if (dob === undefined) return "Enter a valid date of birth.";
   if (!dob && opts.requireDob) return "Date of birth is required.";
   if (dob) {
-    const age = (Date.now() - dob.getTime()) / (365.25 * 24 * 3600 * 1000);
-    if (age < 18) return "Staff must be at least 18 years old; check the date of birth.";
-    if (age > 100) return "Check the date of birth; it is more than 100 years ago.";
+    const ageProblem = staffAgeProblem(dob);
+    if (ageProblem) return ageProblem;
   }
 
   const joining = validDate(body.joiningDate);
