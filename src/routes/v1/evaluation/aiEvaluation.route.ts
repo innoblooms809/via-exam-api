@@ -61,6 +61,13 @@ router.get(
   Pipeline6Controller.getQueueStatus
 );
 
+// Failed AI evaluations
+router.get(
+  "/failed",
+  authenticate,
+  authorize(ACADEMIC),
+  Controller.getFailedEvaluations
+);
 
 // Get evaluation result by sheet ID
 router.get(

@@ -103,10 +103,25 @@ const updateEvaluation = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+// GET /v1/ai-evaluation/failed
+const getFailedEvaluations = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await AIEvaluationService.getFailedEvaluations(req.viaExamUser, req.query);
+    return res.status(result.statusCode).send(result);
+  } catch (error: any) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: error.message || "Internal Server Error",
+    });
+  }
+};
+
 export default {
   evaluateSheet,
   getEvaluation,
   getAllEvaluations,
   updateEvaluation,
+  getFailedEvaluations,
 };
 

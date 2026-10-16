@@ -15,6 +15,7 @@ import { getSheetQueueInfo } from "./pipeline6.service";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
 import StudentResult from "../../models/StudentResult.model";
+import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/sequelize";
 import { logMarksChange } from "../academic/marks.service";
 import { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
@@ -462,10 +463,117 @@ const updateEvaluationBySheetId = async (
   }
 };
 
+// ─── GET FAILED EVALUATIONS ───────────────────────────────────────────────────
+// Answer sheets where AI evaluation has failed (status = 'Failed').
+// Returns full sheet, exam, class, subject, student, and error details so admins
+// can inspect and re-trigger AI evaluation.
+const getFailedEvaluations = async (user: any, query?: any): Promise<any> => {
+  try {
+    const inst = user?.instituteId;
+    if (!inst) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "Institute ID is required.",
+      };
+    }
+
+    const examId = query?.examId;
+    const sessionId = query?.sessionId;
+
+    const rows: any[] = await sequelize.query(
+      `SELECT
+        e.id,
+        e."evaluationId",
+        e."sheetId",
+        e."studentId",
+        COALESCE(ex."examId", sh."examId", e."examId") AS "examId",
+        COALESCE(ex."classId", sh."classId", e."classId") AS "classId",
+        COALESCE(sh.section, e.section) AS "section",
+        COALESCE(ex."subjectId", sh."subjectId", e."subjectId") AS "subjectId",
+        COALESCE(ex."examType", sh."examType", e."examType") AS "examType",
+        e.status,
+        e.error,
+        e."totalScore",
+        e.feedback,
+        e."createdAt",
+        e."updatedAt" AS "failedAt",
+        sh."rollNo",
+        sh."fileName",
+        sh."fileUrl",
+        sh."fileMimeType",
+        sh."fileSize",
+        sh."status" AS "sheetStatus",
+        sh."uploadedBy",
+        sh."createdAt" AS "uploadedAt",
+        uploader."userName" AS "uploadedByName",
+        COALESCE(u."userName", sh."studentName", 'Student') AS "studentName",
+        COALESCE(en."rollNumber", sp."rollNumber", sh."rollNo") AS "rollNumber",
+        ex."examDate",
+        ex."examType" AS "examTypeName",
+        ex."totalMarks",
+        ex.status AS "examStatus",
+        sub."subjectName",
+        sub."subjectCode",
+        c."className",
+        sec."sectionName",
+        sess."sessionId",
+        sess."sessionName"
+      FROM viaexam_ai_evaluations e
+      JOIN viaexam_answer_sheets sh ON sh."sheetId" = e."sheetId" AND sh."isDeleted" = false
+      LEFT JOIN viaexam_exams ex ON (
+        ex."examId" = COALESCE(NULLIF(sh."examId", ''), NULLIF(e."examId", ''))
+        OR (
+          (sh."examId" IS NULL OR sh."examId" = '' OR sh."examId" = sh."examType")
+          AND ex."instituteId" = sh."instituteId"
+          AND ex."classId" = COALESCE(sh."classId", e."classId")
+          AND ex."subjectId" = COALESCE(sh."subjectId", e."subjectId")
+          AND ex."examType" = COALESCE(sh."examType", e."examType")
+          AND ex."isDeleted" = false
+        )
+      ) AND ex."isDeleted" = false
+      LEFT JOIN viaexam_subjects sub ON sub."subjectId" = COALESCE(ex."subjectId", sh."subjectId", e."subjectId")
+      LEFT JOIN viaexam_classes c ON c."classId" = COALESCE(ex."classId", sh."classId", e."classId")
+      LEFT JOIN viaexam_sections sec ON sec."sectionId" = ex."sectionId" OR (sec."instituteId" = sh."instituteId" AND sec."sectionName" = COALESCE(sh.section, e.section))
+      LEFT JOIN viaexam_sessions sess ON sess."sessionId" = ex."sessionId"
+      LEFT JOIN viaexam_users u ON u."userId" = e."studentId"
+      LEFT JOIN viaexam_student_profiles sp ON sp."userId" = e."studentId"
+      LEFT JOIN viaexam_student_enrollments en ON en."studentId" = e."studentId" AND en."sessionId" = ex."sessionId"
+      LEFT JOIN viaexam_users uploader ON uploader."userId" = sh."uploadedBy"
+      WHERE sh."instituteId" = :inst
+        AND e.status = 'Failed'
+        ${examId ? 'AND (ex."examId" = :examId OR sh."examId" = :examId OR e."examId" = :examId)' : ""}
+        ${sessionId ? 'AND (ex."sessionId" = :sessionId OR sess."sessionId" = :sessionId)' : ""}
+      ORDER BY e."updatedAt" DESC`,
+      {
+        replacements: { inst, ...(examId ? { examId } : {}), ...(sessionId ? { sessionId } : {}) },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Failed evaluations fetched successfully.",
+      data: {
+        items: rows,
+        total: rows.length,
+      },
+    };
+  } catch (error: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${error.message}`,
+    };
+  }
+};
+
 export default {
   triggerEvaluation,
   getEvaluationBySheetId,
   getAllEvaluations,
   updateEvaluationBySheetId,
+  getFailedEvaluations,
 };
 
