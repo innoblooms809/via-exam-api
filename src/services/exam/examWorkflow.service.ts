@@ -504,7 +504,8 @@ const scanRoster = async (user: any, examId: string) => {
     },
     rows: roster.rows.map((r) => ({
       studentId: r.studentId,
-      name: r.name,
+      // Scanners see the name masked (as in the teacher panel); the roll number stays visible.
+      name: isAdmin(user) ? r.name : maskName(r.name),
       rollNo: r.rollNo,
       state: r.state,
       sheetId: r.sheetId,
