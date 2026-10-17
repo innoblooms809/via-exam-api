@@ -68,11 +68,11 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
     yield sequelize_2.sequelize.authenticate();
     yield sequelize_2.sequelize.sync({ force: false });
     yield removeLegacySuperAdminSeed();
-    const [adminRole, teacherRole, studentRole, examinerRole,] = yield Promise.all([
+    // No EXAMINER role: setting papers, evaluating and cross-checking are a teacher's work.
+    const [adminRole, teacherRole, studentRole,] = yield Promise.all([
         findOrCreateRole("ADMIN", "Institute administrator"),
-        findOrCreateRole("TEACHER", "Teacher who creates question papers"),
+        findOrCreateRole("TEACHER", "Teacher who sets papers and evaluates"),
         findOrCreateRole("STUDENT", "Student who appears for exams"),
-        findOrCreateRole("EXAMINER", "Teacher who reviews question papers"),
     ]);
     const modules = ["institutes", "users", "exams", "question-papers", "students"];
     for (const moduleName of modules) {
@@ -91,12 +91,6 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         yield findOrCreateAccess(studentRole.id, moduleName, {
             create: false,
             edit: false,
-            delete: false,
-            view: ["exams", "question-papers"].includes(moduleName),
-        });
-        yield findOrCreateAccess(examinerRole.id, moduleName, {
-            create: false,
-            edit: moduleName === "question-papers",
             delete: false,
             view: ["exams", "question-papers"].includes(moduleName),
         });
@@ -162,7 +156,7 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         emailId: "examiner.seed@viaexam.com",
         phoneNumber: "9000000013",
         password,
-        roleId: examinerRole.id,
+        roleId: teacherRole.id,
         instituteId: "INST-DEMO-001",
         status: 1,
         loginAttempts: 0,

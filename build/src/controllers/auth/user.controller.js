@@ -218,6 +218,14 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 message: "User not found",
             });
         }
+        // Deactivated or deleted accounts can't mint new tokens.
+        if (user.isDeleted || user.status !== 1) {
+            return res.status(http_status_1.default.FORBIDDEN).json({
+                error: true,
+                statusCode: http_status_1.default.FORBIDDEN,
+                message: "This account is no longer active.",
+            });
+        }
         const matchingStored = candidates.find((candidate) => candidate === user.refreshToken);
         if (matchingStored) {
             refreshToken = matchingStored;
