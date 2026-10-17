@@ -7,6 +7,16 @@ import { sendOtpEmail } from "../../utils/mailHelper" // your existing mailer
 import config from "../../config/config"
 import Helper from "../../utils/helper"
 import { sequelize } from "../../config/sequelize"
+import { Op, col, fn, where as sqlWhere } from "sequelize"
+
+/**
+ * Matches a user's email whatever its case. New accounts are stored lowercased, but older
+ * ones kept their capitals ("Aditya4@gmail.com"), so an exact match on the lowercased
+ * input missed them. Sign-in already matches case-insensitively.
+ */
+const emailIs = (email: string) => ({
+  [Op.and]: [sqlWhere(fn("lower", col(`${UserModal.name}.emailId`)), String(email ?? "").trim().toLowerCase())],
+});
 
 // ─── Helper to get role name from roleId ───────────────────────────────────────
 const getRoleName = async (roleId: number): Promise<string> => {
@@ -116,7 +126,7 @@ const resendCredentials = async (email: string): Promise<any> => {
       return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a valid email address." };
     }
 
-    const user = await UserModal.findOne({ where: { emailId: cleanEmail, status: 1, isDeleted: false } });
+    const user = await UserModal.findOne({ where: { ...emailIs(cleanEmail), status: 1, isDeleted: false } });
     if (!user) return { error: false, statusCode: httpStatus.OK, message: genericResendMessage, data: {} };
 
     const last = lastResendAt.get(user.userId) ?? 0;
@@ -144,10 +154,12 @@ const resendCredentials = async (email: string): Promise<any> => {
 const adminResetCredentials = async (admin: any, email: string, password?: string, mode?: string): Promise<any> => {
   try {
     const cleanEmail = String(email ?? "").trim().toLowerCase();
-    const user: any = await UserModal.findOne({
-      where: { emailId: cleanEmail, isDeleted: false },
-      include: [{ model: Role, as: "role" }],
-    });
+    const user: any = admin?.instituteId
+      ? await UserModal.findOne({
+          where: { ...emailIs(cleanEmail), instituteId: admin.instituteId, isDeleted: false },
+          include: [{ model: Role, as: "role" }],
+        })
+      : null;
     if (!user || !admin?.instituteId || user.instituteId !== admin.instituteId) {
       return { error: true, statusCode: httpStatus.NOT_FOUND, message: "No user with this email in your institute." };
     }
@@ -212,7 +224,7 @@ const forgotPassword = async (email: string): Promise<any> => {
   try {
     // 1. Check user exists
     const user = await UserModal.findOne({
-      where: { emailId: email, status: 1 },
+      where: { ...emailIs(email), status: 1 },
     });
 
     if (!user) {
@@ -291,7 +303,7 @@ const verifyOtp = async (email: string, otp: string): Promise<any> => {
 
     // 3. Check if user still exists and is active
     const user = await UserModal.findOne({
-      where: { emailId: email, status: 1 },
+      where: { ...emailIs(email), status: 1 },
     });
 
     if (!user) {
@@ -348,7 +360,7 @@ const resetPassword = async (
 
     // 3. Find user
     const user = await UserModal.findOne({
-      where: { emailId: email, status: 1 },
+      where: { ...emailIs(email), status: 1 },
     });
 
     if (!user) {

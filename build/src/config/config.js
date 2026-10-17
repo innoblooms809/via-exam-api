@@ -36,7 +36,10 @@ const envVarsSchema = joi_1.default.object()
     CLOUDINARY_API_KEY: joi_1.default.string().description('Cloudinary API key'),
     CLOUDINARY_API_SECRET: joi_1.default.string().description('Cloudinary API secret'),
     FIREBASE_SERVICE_ACCOUNT_PATH: joi_1.default.string().description('Path to the Firebase service-account JSON (push notifications)'),
-    FIREBASE_SERVICE_ACCOUNT_JSON: joi_1.default.string().description('Firebase service-account JSON, raw or base64 (instead of the path)')
+    FIREBASE_SERVICE_ACCOUNT_JSON: joi_1.default.string().description('Firebase service-account JSON, raw or base64 (instead of the path)'),
+    STRIPE_SECRET_KEY: joi_1.default.string().description('Stripe secret key (sk_test_… / sk_live_…)'),
+    STRIPE_WEBHOOK_SECRET: joi_1.default.string().description('Stripe webhook signing secret (whsec_…)'),
+    STRIPE_CURRENCY: joi_1.default.string().lowercase().length(3).default('inr').description('Currency of plan prices and checkout')
 })
     .unknown();
 const { value: envVars, error } = envVarsSchema
@@ -84,5 +87,10 @@ exports.default = {
     firebase: {
         serviceAccountPath: envVars.FIREBASE_SERVICE_ACCOUNT_PATH,
         serviceAccountJson: envVars.FIREBASE_SERVICE_ACCOUNT_JSON
+    },
+    stripe: {
+        secretKey: envVars.STRIPE_SECRET_KEY,
+        webhookSecret: envVars.STRIPE_WEBHOOK_SECRET,
+        currency: envVars.STRIPE_CURRENCY
     }
 };

@@ -28,6 +28,7 @@ import RecheckRequest from "../../models/RecheckRequest.model";
 import RecheckAssignment from "../../models/RecheckAssignment.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import Subject from "../../models/Subject.model";
+import Session from "../../models/Session.model";
 import ExamScannerAssignment, { SCAN_STATUS } from "../../models/ExamScannerAssignment.model";
 import ExamAttendance, { ATTENDANCE_STATUS } from "../../models/ExamAttendance.model";
 import StudentResult, { RESULT_STATUS } from "../../models/StudentResult.model";
@@ -899,15 +900,22 @@ const myResults = async (student: any, query: any) => {
   if (clean(query?.examType)) where.examType = clean(query.examType);
   if (clean(query?.sessionId)) where.sessionId = clean(query.sessionId);
 
-  const rows: any[] = await StudentResult.findAll({
-    where,
-    include: [
-      { model: Subject, as: "subject", attributes: ["subjectName"], required: false },
-      { model: Exam, as: "exam", attributes: ["examId", "examDate"], required: false, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") },
-    ],
-    order: [["publishedAt", "DESC"]],
-    limit: 500,
-  });
+  const [rows, activeSession]: [any[], any] = await Promise.all([
+    StudentResult.findAll({
+      where,
+      include: [
+        { model: Subject, as: "subject", attributes: ["subjectName"], required: false },
+        { model: Exam, as: "exam", attributes: ["examId", "examDate"], required: false, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") },
+      ],
+      order: [["publishedAt", "DESC"]],
+      limit: 500,
+    }),
+    Session.findOne({
+      where: { instituteId: student.instituteId, isActive: true },
+      attributes: ["sessionId", "sessionName"],
+    }),
+  ]);
+
   const rechecks = rows.length
     ? await RecheckRequest.findAll({
         where: { studentId: student.userId, examId: { [Op.in]: rows.map((r) => r.examId) } },
@@ -919,8 +927,20 @@ const myResults = async (student: any, query: any) => {
   const groups = new Map<string, any>();
   for (const r of rows) {
     const sessionName = r.exam?.session?.sessionName ?? "";
+    const isCurrentSession = Boolean(
+      (activeSession?.sessionId && r.sessionId === activeSession.sessionId) ||
+      r.exam?.session?.isActive === true
+    );
     const key = `${r.sessionId}|${r.examType}`;
-    if (!groups.has(key)) groups.set(key, { sessionId: r.sessionId, sessionName, examType: r.examType, subjects: [] as any[] });
+    if (!groups.has(key)) {
+      groups.set(key, {
+        sessionId: r.sessionId,
+        sessionName,
+        isCurrentSession,
+        examType: r.examType,
+        subjects: [] as any[],
+      });
+    }
     const recheck = recheckByExam.get(r.examId);
     groups.get(key).subjects.push({
       ...toResultRow(r, null),
@@ -948,6 +968,7 @@ const myResults = async (student: any, query: any) => {
   };
 
   return {
+    activeSession: activeSession ? { sessionId: activeSession.sessionId, sessionName: activeSession.sessionName } : null,
     groups: [...groups.values()].map((g) => ({ ...g, summary: summarise(g.subjects) })),
   };
 };

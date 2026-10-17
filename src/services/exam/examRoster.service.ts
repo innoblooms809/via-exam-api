@@ -27,7 +27,7 @@ export const EXAM_INCLUDES = [
   { model: Class, as: "class", attributes: ["classId", "className"], required: false },
   { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
   { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: false },
-  { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
+  { model: Session, as: "session", attributes: ["sessionId", "sessionName", "isActive"], required: false },
   { model: UserModal, as: "teacher", attributes: ["userId", "userName"], required: false },
 ];
 
