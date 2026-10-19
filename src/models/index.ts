@@ -512,15 +512,19 @@ StudentProfile.belongsTo(Section, {
 // });
 
 
-// // Session → Institute
-// Session.belongsTo(Institute, {
-//   foreignKey: "instituteId",
-//   targetKey: "instituteId",
-//   as: "institute",
-// });
+// SESSION ↔ CLASS
+// ═══════════════════════════════════════
+Session.hasMany(Class, {
+  foreignKey: "sessionId",
+  sourceKey: "sessionId",
+  as: "classes",
+});
 
-
-
+Class.belongsTo(Session, {
+  foreignKey: "sessionId",
+  targetKey: "sessionId",
+  as: "session",
+});
 
 // // Subject relations
 

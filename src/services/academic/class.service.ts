@@ -37,6 +37,8 @@ const DEFAULT_SECTION = "A";
 
 const createClass = async (body: any, createdBy: any): Promise<any> => {
   const instituteId = createdBy.instituteId;
+  const sessionId = body.sessionId;
+  if (!sessionId) return fail(httpStatus.BAD_REQUEST, "Session ID is required.");
   const classNames = uniqueNames(body.classNames ?? body.className, normalizeClassName);
   const askedSections = uniqueNames(body.sections ?? [], normalizeSectionName);
   const sectionNames = askedSections.length ? askedSections : [DEFAULT_SECTION];
@@ -51,7 +53,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
 
   const t = await sequelize.transaction();
   try {
-    const existing = await Class.findAll({ where: { instituteId }, transaction: t });
+    const existing = await Class.findAll({ where: { instituteId, sessionId }, transaction: t });
     const byKey = new Map(existing.map((c) => [nameKey(c.className), c]));
 
     const created: string[] = [];
@@ -73,7 +75,7 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
         continue;
       }
       const row = await Class.create(
-        { classId: newId("class"), instituteId, className },
+        { classId: newId("class"), instituteId, sessionId, className },
         { transaction: t },
       );
       created.push(className);
@@ -166,11 +168,16 @@ const createClass = async (body: any, createdBy: any): Promise<any> => {
 };
 
 // ─── GET ALL CLASSES ──────────────────────────────────────────────────────────
-const getAllClasses = async (createdBy: any): Promise<any> => {
+const getAllClasses = async (createdBy: any, query?: any): Promise<any> => {
   try {
     const instituteId = createdBy.instituteId;
+    const whereClause: any = { instituteId, isActive: true, isDeleted: false };
+    if (query?.sessionId) {
+      whereClause.sessionId = query.sessionId;
+    }
+
     const classes = await Class.findAll({
-      where: { instituteId, isActive: true, isDeleted: false },
+      where: whereClause,
       include: [
         { model: Section, as: "sections", where: { isDeleted: false }, required: false },
         {
@@ -318,7 +325,7 @@ const updateClass = async (classId: string, body: any, createdBy: any): Promise<
       return fail(httpStatus.BAD_REQUEST, `Class name can be at most ${MAX_NAME_LENGTH} characters.`);
     }
 
-    const others = await Class.findAll({ where: { instituteId }, transaction: t });
+    const others = await Class.findAll({ where: { instituteId, sessionId: classData.sessionId }, transaction: t });
     const clash = others.find((c) => c.classId !== classId && nameKey(c.className) === nameKey(className));
     if (clash) {
       await t.rollback();
