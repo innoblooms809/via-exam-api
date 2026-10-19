@@ -79,6 +79,11 @@ next-env.d.ts
 # Misc
 # =========================
 *.pem
+# Markdown files
+*.md
+
+# Log files
+*.log
 logs/
 
 

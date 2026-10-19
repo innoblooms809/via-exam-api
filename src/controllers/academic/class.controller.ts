@@ -37,7 +37,8 @@ const getAllClasses = async (
   try {
     logger.info(`GET /v1/class/getAllClasses - user: ${req.viaExamUser?.id}`);
     const result = await ClassService.getAllClasses(
-          req.viaExamUser
+          req.viaExamUser,
+          req.query
     );
 
     return res.status(result.statusCode).send(result);

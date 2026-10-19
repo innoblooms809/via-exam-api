@@ -221,16 +221,16 @@ export const uploadSheets = async (
     const rollNos = files.map((f) => rollNoFromFileName(f.originalname)).filter(Boolean);
     const existingRows = rollNos.length
       ? await Scanner.findAll({
-          where: {
-            instituteId,
-            classId: body.classId,
-            section: body.section,
-            subjectId: body.subjectId,
-            examType: body.examType,
-            rollNo: { [Op.in]: rollNos },
-            isDeleted: false,
-          },
-        })
+        where: {
+          instituteId,
+          classId: body.classId,
+          section: body.section,
+          subjectId: body.subjectId,
+          examType: body.examType,
+          rollNo: { [Op.in]: rollNos },
+          isDeleted: false,
+        },
+      })
       : [];
     const existingByRoll = new Map(existingRows.map((r) => [String(r.rollNo), r]));
 
