@@ -20,7 +20,7 @@ import {
 import Section from "../../models/Section.model";
 import { newId } from "../../utils/idGenerator";
 import { examCountsBy, examsUsing } from "./academicGuards.service";
-import { addToCurrentSession, forgetMasterRows, syncCurrentMirrors } from "./sessionSetup.service";
+import { addToCurrentSession, addToSession, forgetMasterRows, runningIn, sessionForNewRows, syncCurrentMirrors } from "./sessionSetup.service";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -30,6 +30,8 @@ const isBlankId = (value: unknown) => value === undefined || value === null || v
 // Accepts { classId | classIds[] } with either
 //   subjects: [{ subjectName, sectionId? }]   (many at once)
 // or the single fields { subjectName, subjectCode?, teacherId?, sectionId? }.
+// Master data only, unless { sessionId } names the session they are taught in
+// (subjects already in master data then join it).
 // A subject's marks aren't set here: they are per session and exam, on Marks & grading.
 const createSubject = async (body: any, createdBy: any): Promise<any> => {
   const instituteId = createdBy.instituteId;
@@ -74,6 +76,10 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
     return fail(httpStatus.CONFLICT, `Subject code ${subjectCode} is already in use.`);
   }
 
+  const target = await sessionForNewRows(instituteId, body.sessionId, Boolean(teacherId));
+  if ("message" in target) return fail(target.status, target.message);
+  const session = target.session;
+
   const t = await sequelize.transaction();
   try {
     const classes = await Class.findAll({
@@ -87,8 +93,9 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
 
     let added = 0;
     const skipped: string[] = [];
-    // New subjects (and sections made for them) are taught from the current session on.
+    // What runs in the session, when adding for one: the subjects and the sections they need.
     const forSession: { sections: { classId: string; sectionId: string }[]; subjects: { classId: string; subjectId: string; teacherId?: string | null }[] } = { sections: [], subjects: [] };
+    const inSession = session ? (await runningIn(session.sessionId, t)).subjectIds : new Set<string>();
 
     for (const cls of classes.sort((a, b) => compareClassNames(a.className, b.className))) {
       const current = await Subject.findAll({ where: { classId: cls.classId }, transaction: t });
@@ -133,7 +140,14 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
           (s) => (s.sectionId ?? null) === targetSectionId && nameKey(s.subjectName) === nameKey(subject.subjectName),
         );
         if (found && !found.isDeleted) {
-          skipped.push(classes.length > 1 ? `${found.subjectName} (${cls.className})` : found.subjectName);
+          if (!session || inSession.has(found.subjectId)) {
+            skipped.push(classes.length > 1 ? `${found.subjectName} (${cls.className})` : found.subjectName);
+            continue;
+          }
+          // Already in master data: it joins the session, with its section.
+          forSession.subjects.push({ classId: cls.classId, subjectId: found.subjectId, ...(teacherId ? { teacherId } : {}) });
+          if (found.sectionId) forSession.sections.push({ classId: cls.classId, sectionId: found.sectionId });
+          added += 1;
           continue;
         }
         if (found) {
@@ -172,16 +186,23 @@ const createSubject = async (body: any, createdBy: any): Promise<any> => {
 
     if (added === 0) {
       await t.rollback();
+      const one = skipped.length === 1;
       return fail(
         httpStatus.CONFLICT,
-        skipped.length === 1 ? `${skipped[0]} already exists in this class.` : `Already added: ${skipped.join(", ")}.`,
+        session
+          ? one
+            ? `${skipped[0]} is already taught in ${session.sessionName}.`
+            : `Already taught in ${session.sessionName}: ${skipped.join(", ")}.`
+          : one
+            ? `${skipped[0]} already exists in this class.`
+            : `Already added: ${skipped.join(", ")}.`,
       );
     }
-    await addToCurrentSession(instituteId, forSession, t);
+    if (session) await addToSession(instituteId, session.sessionId, forSession, t);
     await t.commit();
 
-    const parts = [`${added} ${added === 1 ? "subject" : "subjects"} added`];
-    if (skipped.length) parts.push(`${skipped.length} already existed`);
+    const parts = [`${added} ${added === 1 ? "subject" : "subjects"} added to ${session ? session.sessionName : "master data"}`];
+    if (skipped.length) parts.push(`${skipped.length} ${session ? `already in ${session.sessionName}` : "already existed"}`);
     return {
       error: false,
       statusCode: httpStatus.CREATED,

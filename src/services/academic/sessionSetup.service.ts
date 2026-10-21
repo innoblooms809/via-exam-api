@@ -184,31 +184,66 @@ export const ensureSectionRuns = async (instituteId: string, sessionId: string, 
   });
 };
 
-/** Adds new master sections / subjects to the current session (they were added to be used now). */
-export const addToCurrentSession = async (
-  instituteId: string,
-  items: { sections?: { classId: string; sectionId: string; classTeacherId?: string | null }[]; subjects?: { classId: string; subjectId: string; teacherId?: string | null }[] },
-  transaction?: Transaction
-) => {
-  const current = await activeSession(instituteId, transaction);
-  if (!current) return;
+type SessionItems = {
+  sections?: { classId: string; sectionId: string; classTeacherId?: string | null }[];
+  subjects?: { classId: string; subjectId: string; teacherId?: string | null }[];
+};
+
+/** Makes master sections / subjects run in a session (the caller checked the session is the institute's). */
+export const addToSession = async (instituteId: string, sessionId: string, items: SessionItems, transaction?: Transaction) => {
   for (const s of items.sections ?? []) {
     const [row, created] = await SessionSection.findOrCreate({
-      where: { sessionId: current.sessionId, sectionId: s.sectionId },
-      defaults: { instituteId, sessionId: current.sessionId, classId: s.classId, sectionId: s.sectionId, classTeacherId: s.classTeacherId ?? null },
+      where: { sessionId, sectionId: s.sectionId },
+      defaults: { instituteId, sessionId, classId: s.classId, sectionId: s.sectionId, classTeacherId: s.classTeacherId ?? null },
       transaction,
     });
     if (!created && s.classTeacherId !== undefined && row.classTeacherId !== s.classTeacherId) await row.update({ classTeacherId: s.classTeacherId ?? null }, { transaction });
   }
   for (const s of items.subjects ?? []) {
     const [row, created] = await SessionSubject.findOrCreate({
-      where: { sessionId: current.sessionId, subjectId: s.subjectId },
-      defaults: { instituteId, sessionId: current.sessionId, classId: s.classId, subjectId: s.subjectId, teacherId: s.teacherId ?? null },
+      where: { sessionId, subjectId: s.subjectId },
+      defaults: { instituteId, sessionId, classId: s.classId, subjectId: s.subjectId, teacherId: s.teacherId ?? null },
       transaction,
     });
     if (!created && s.teacherId !== undefined && row.teacherId !== s.teacherId) await row.update({ teacherId: s.teacherId ?? null }, { transaction });
   }
   await syncCurrentMirrors(instituteId, transaction);
+};
+
+/** Makes sections / subjects run in the current session, when there is one (a teacher chosen for them now). */
+export const addToCurrentSession = async (instituteId: string, items: SessionItems, transaction?: Transaction) => {
+  const current = await activeSession(instituteId, transaction);
+  if (current) await addToSession(instituteId, current.sessionId, items, transaction);
+};
+
+/**
+ * The session newly added classes / sections / subjects run in. Added in Master Data,
+ * none: they run once Session setup adds them. A screen working in one session names it
+ * (id or name). A class or subject teacher chosen while adding is the current session's,
+ * so it brings that session.
+ */
+export const sessionForNewRows = async (
+  instituteId: string,
+  asked: unknown,
+  withTeacher = false,
+  transaction?: Transaction
+): Promise<{ session: Session | null } | { status: number; message: string }> => {
+  if (!String(asked ?? "").trim()) return { session: withTeacher ? await activeSession(instituteId, transaction) : null };
+  const session = await findSession(instituteId, asked, transaction);
+  if (!session) return { status: httpStatus.NOT_FOUND, message: "Session not found." };
+  if (withTeacher && !session.isActive) return { status: httpStatus.BAD_REQUEST, message: `Teachers for ${session.sessionName} are chosen in Session setup.` };
+  return { session };
+};
+
+/** What already runs in a session: its classes, sections and subjects. */
+export const runningIn = async (sessionId: string, transaction?: Transaction) => {
+  const sections = await SessionSection.findAll({ where: { sessionId }, attributes: ["classId", "sectionId"], raw: true, transaction });
+  const subjects = await SessionSubject.findAll({ where: { sessionId }, attributes: ["classId", "subjectId"], raw: true, transaction });
+  return {
+    classIds: new Set([...sections, ...subjects].map((r) => r.classId)),
+    sectionIds: new Set(sections.map((r) => r.sectionId)),
+    subjectIds: new Set(subjects.map((r) => r.subjectId)),
+  };
 };
 
 /** A school's first session takes every class, section and subject of the master data, with their teachers. */

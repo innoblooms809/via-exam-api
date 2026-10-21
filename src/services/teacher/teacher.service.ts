@@ -14,7 +14,7 @@ import RegHelper from "../../utils/helper";
 import exclude from "../../utils/exclude";
 import Section from "../../models/Section.model";
 import { sequelize } from "../../config/sequelize";
-import { Op } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import { findStaff, teacherOpenWork } from "../academic/academicGuards.service";
 import { newId } from "../../utils/idGenerator";
 import { cleanEmail, contactTakenMessage, emailChange, staffAgeProblem, staffInputProblem } from "../../utils/staffInput";
@@ -701,6 +701,77 @@ const reactivateTeacher = async (userId: string, createdBy: any): Promise<any> =
 };
 
 // ─── GET MY ASSIGNMENTS ─────────────────────────────────────────────────────────
+// ─── My teaching, per session ───────────────────────────────────────────────────
+// What the signed-in teacher teaches in each session, from Session setup (the master
+// subject / class rows are the school's catalogue and say nothing about a session): the
+// subjects of each class they teach, with that class's sections and students in the
+// session, and the sections they are class teacher of.
+
+const MY_SUBJECTS_SQL = `
+SELECT ss."sessionId", se."sessionName", se."isActive", ss."classId", c."className",
+       ss."subjectId", sub."subjectName", sub."subjectCode",
+       COALESCE((SELECT json_agg(json_build_object('sectionId', x."sectionId", 'sectionName', sec."sectionName") ORDER BY sec."sectionName")
+                 FROM viaexam_session_sections x
+                 JOIN viaexam_sections sec ON sec."sectionId" = x."sectionId" AND sec."isDeleted" = false
+                 WHERE x."sessionId" = ss."sessionId" AND x."classId" = ss."classId"), '[]'::json) AS sections,
+       (SELECT COUNT(*) FROM viaexam_student_enrollments en
+        WHERE en."sessionId" = ss."sessionId" AND en."classId" = ss."classId" AND en."isActive" = true)::int AS students
+FROM viaexam_session_subjects ss
+JOIN viaexam_sessions se ON se."sessionId" = ss."sessionId" AND se."isDeleted" = false
+JOIN viaexam_classes c ON c."classId" = ss."classId" AND c."isDeleted" = false
+JOIN viaexam_subjects sub ON sub."subjectId" = ss."subjectId" AND sub."isDeleted" = false
+WHERE ss."instituteId" = :inst AND ss."teacherId" = :uid
+ORDER BY se."startDate" DESC NULLS LAST, c."className", sub."subjectName"`;
+
+const MY_CLASSES_SQL = `
+SELECT x."sessionId", se."sessionName", se."isActive", x."classId", c."className", x."sectionId", sec."sectionName",
+       (SELECT COUNT(*) FROM viaexam_student_enrollments en
+        WHERE en."sessionId" = x."sessionId" AND en."sectionId" = x."sectionId" AND en."isActive" = true)::int AS students
+FROM viaexam_session_sections x
+JOIN viaexam_sessions se ON se."sessionId" = x."sessionId" AND se."isDeleted" = false
+JOIN viaexam_classes c ON c."classId" = x."classId" AND c."isDeleted" = false
+JOIN viaexam_sections sec ON sec."sectionId" = x."sectionId" AND sec."isDeleted" = false
+WHERE x."instituteId" = :inst AND x."classTeacherId" = :uid
+ORDER BY se."startDate" DESC NULLS LAST, c."className", sec."sectionName"`;
+
+const getMyTeaching = async (user: any): Promise<any> => {
+  try {
+    const replacements = { inst: String(user?.instituteId ?? ""), uid: String(user?.userId ?? "") };
+    const [subjects, classes] = await Promise.all([
+      sequelize.query<any>(MY_SUBJECTS_SQL, { type: QueryTypes.SELECT, replacements }),
+      sequelize.query<any>(MY_CLASSES_SQL, { type: QueryTypes.SELECT, replacements }),
+    ]);
+    const session = (x: any) => ({ sessionId: x.sessionId, sessionName: x.sessionName ?? "", isCurrent: Boolean(x.isActive) });
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Your teaching, per session.",
+      data: {
+        subjects: subjects.map((x: any) => ({
+          ...session(x),
+          classId: x.classId,
+          className: x.className ?? "",
+          subjectId: x.subjectId,
+          subjectName: x.subjectName ?? "",
+          subjectCode: x.subjectCode ?? "",
+          sections: Array.isArray(x.sections) ? x.sections : [],
+          students: Number(x.students) || 0,
+        })),
+        classTeacherOf: classes.map((x: any) => ({
+          ...session(x),
+          classId: x.classId,
+          className: x.className ?? "",
+          sectionId: x.sectionId,
+          sectionName: x.sectionName ?? "",
+          students: Number(x.students) || 0,
+        })),
+      },
+    };
+  } catch (e: any) {
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Your classes and subjects couldn't be loaded: ${e.message}` };
+  }
+};
+
 const getMyAssignments = async (teacherId: string): Promise<any> => {
   try {
     const user = await UserModal.findOne({ where: { userId: teacherId } });
@@ -1067,6 +1138,7 @@ export default {
   getDeactivatedTeachers,
   reactivateTeacher,
   getMyAssignments,
+  getMyTeaching,
   getTeacherQuestionPapers,
   getTeacherExamsWithApprovalStatus: async (
     teacherUser: any,

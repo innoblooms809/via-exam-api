@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { Request,Response } from "express";
+import { Request, Response } from "express";
 import ClassService from "../../services/academic/class.service";
 import logger from "../../config/logger";
 
@@ -8,6 +8,7 @@ const createClass = async (
   req: any,
   res: Response
 ): Promise<any> => {
+  console.log(req.viaExamUser);
   try {
 
     const result = await ClassService.createClass(
@@ -37,8 +38,8 @@ const getAllClasses = async (
   try {
     logger.info(`GET /v1/class/getAllClasses - user: ${req.viaExamUser?.id}`);
     const result = await ClassService.getAllClasses(
-          req.viaExamUser,
-          req.query
+      req.viaExamUser,
+      req.query
     );
 
     return res.status(result.statusCode).send(result);
