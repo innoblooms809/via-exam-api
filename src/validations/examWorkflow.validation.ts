@@ -29,7 +29,7 @@ const assignScanner = {
 };
 
 const myScanExams = {
-  query: Joi.object({ page, limit, status: Joi.string().valid("ASSIGNED", "COMPLETED", "").insensitive(), _t: cacheBuster }),
+  query: Joi.object({ page, limit, status: Joi.string().valid("ASSIGNED", "COMPLETED", "").insensitive(), sessionId: id.allow(""), _t: cacheBuster }),
 };
 
 const setAttendance = {
@@ -102,6 +102,12 @@ const completeRecheck = {
   }),
 };
 
+// A scanner's request to re-open a completed upload, and the admin's answer (a note is
+// required to reject; the service checks that, since approve and reject share the shape).
+const requestReopen = { ...examParam, body: Joi.object({ reason: Joi.string().trim().min(5).max(500).required() }) };
+const listReopenRequests = { query: Joi.object({ status: Joi.string().valid("PENDING", "DECIDED", "ALL", "").insensitive(), _t: cacheBuster }) };
+const decideReopen = { ...requestParam, body: Joi.object({ note: text(500) }) };
+
 export default {
   classResults,
   examParam,
@@ -117,4 +123,7 @@ export default {
   rejectRecheck,
   myRechecks,
   completeRecheck,
+  requestReopen,
+  listReopenRequests,
+  decideReopen,
 };

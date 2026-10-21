@@ -30,6 +30,8 @@ import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import Subject from "../../models/Subject.model";
 import Session from "../../models/Session.model";
 import ExamScannerAssignment, { SCAN_STATUS } from "../../models/ExamScannerAssignment.model";
+import ScanReopenRequest, { REOPEN_STATUS } from "../../models/ScanReopenRequest.model";
+import { invalidate } from "../../utils/memoCache";
 import ExamAttendance, { ATTENDANCE_STATUS } from "../../models/ExamAttendance.model";
 import StudentResult, { RESULT_STATUS } from "../../models/StudentResult.model";
 import ApiError from "../../utils/ApiError";
@@ -50,6 +52,13 @@ const clean = (v: unknown) => String(v ?? "").trim();
 const roleKey = (user: any) => String(user?.role?.role ?? "").toUpperCase().replace(/[\s_-]+/g, "");
 const isAdmin = (user: any) => ["ADMIN", "INSTITUTEADMIN", "SUPERADMIN"].includes(roleKey(user));
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Scanner staff never see evaluation: their roster numbers stop at sheets in, absentees and pending. */
+const scanCountsFor = (user: any, counts: Awaited<ReturnType<typeof buildRoster>>["counts"]) => {
+  if (isAdmin(user)) return counts;
+  const { evaluated: _evaluated, evaluationFailed: _failed, evaluationPercent: _percent, ...upload } = counts;
+  return upload;
+};
 
 export const PAPER_APPROVED_STATUSES = ["Approved", "Live", "Completed"];
 
@@ -362,11 +371,14 @@ const assignScanner = async (admin: any, examId: string, body: any) => {
         { note, assignedBy: admin.userId, status: SCAN_STATUS.ASSIGNED, completedAt: null, completedBy: null },
         { transaction: t }
       );
+      // Re-opening here answers the scanner's open request, if they had asked.
+      if (reopened) await settleOpenReopen(exam.examId, admin.userId, true, "Re-opened under Scanning.", t);
       return previous;
     }
     if (previous) {
       previousScannerId = previous.scannerId;
       await previous.update({ isActive: false, unassignedAt: new Date() }, { transaction: t });
+      await settleOpenReopen(exam.examId, admin.userId, false, "The exam was given to another scanner.", t);
     }
     const created = await ExamScannerAssignment.create(
       { assignmentId: newId("scannerAssignment"), instituteId, examId: exam.examId, scannerId, assignedBy: admin.userId, note },
@@ -398,6 +410,7 @@ const assignScanner = async (admin: any, examId: string, body: any) => {
       { instituteId, userId: scannerId, type: "SCAN_REOPENED", title: "Upload re-opened", message: `The admin re-opened uploading for ${examLabel(exam)}.`, referenceId: exam.examId },
     ]);
   }
+  refreshHomes(instituteId);
   return { examId: exam.examId, scannerId: result.scannerId, status: result.status, assignedAt: result.createdAt };
 };
 
@@ -408,12 +421,14 @@ const unassignScanner = async (admin: any, examId: string) => {
     const active = await activeScanner(exam.examId, t, true);
     if (!active) throw new ApiError(httpStatus.NOT_FOUND, "No scanner is assigned to this exam.");
     await active.update({ isActive: false, unassignedAt: new Date() }, { transaction: t });
+    await settleOpenReopen(exam.examId, admin.userId, false, "The scanner was removed from this exam.", t);
     await notifyAll(
       [{ instituteId, userId: active.scannerId, type: "SCAN_UNASSIGNED", title: "Scanning unassigned", message: `You no longer upload sheets for ${examLabel(exam)}.`, referenceId: exam.examId }],
       t
     );
     return active.scannerId;
   });
+  refreshHomes(instituteId);
   return { examId: exam.examId, scannerId };
 };
 
@@ -421,7 +436,7 @@ const unassignScanner = async (admin: any, examId: string) => {
 // SCANNER — assigned exams, roster, absentees, completion
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** The scanner's own active assignments (admins see every active one). */
+/** The scanner's own active assignments (admins see every active one); `sessionId` keeps one session's exams. */
 const myScanExams = async (user: any, query: any) => {
   const instituteId = user.instituteId;
   const { page, limit, offset } = paging(query, 10);
@@ -429,6 +444,11 @@ const myScanExams = async (user: any, query: any) => {
   if (!isAdmin(user)) where.scannerId = user.userId;
   const status = clean(query?.status).toUpperCase();
   if (status === SCAN_STATUS.ASSIGNED || status === SCAN_STATUS.COMPLETED) where.status = status;
+  const sessionId = clean(query?.sessionId);
+  if (sessionId) {
+    const inSession = await Exam.findAll({ where: { instituteId, sessionId, isDeleted: false }, attributes: ["examId"], raw: true });
+    where.examId = { [Op.in]: inSession.map((e: any) => e.examId) };
+  }
 
   const { rows, count } = await ExamScannerAssignment.findAndCountAll({ where, order: [["status", "DESC"], ["createdAt", "DESC"]], limit, offset });
   const exams = rows.length
@@ -458,11 +478,17 @@ const myScanExams = async (user: any, query: any) => {
         assignedAt: a.createdAt,
         completedAt: a.completedAt,
         note: a.note,
-        counts: roster.counts,
+        counts: scanCountsFor(user, roster.counts),
       };
     })
   );
-  return { exams: items.filter(Boolean), pagination: pageInfo(count, page, limit) };
+  const list = items.filter(Boolean) as NonNullable<(typeof items)[number]>[];
+  // The scanner sees where their re-open request for each exam stands.
+  if (!isAdmin(user)) {
+    const latest = await latestReopenRequests(list.map((e) => e.examId), user.userId);
+    return { exams: list.map((e) => ({ ...e, reopenRequest: reopenInfo(latest.get(e.examId)) })), pagination: pageInfo(count, page, limit) };
+  }
+  return { exams: list, pagination: pageInfo(count, page, limit) };
 };
 
 /** The scanner (or an admin) may work on this exam's sheets. */
@@ -487,7 +513,10 @@ const requireScanAccess = async (user: any, examId: string, { forWrite }: { forW
 
 const scanRoster = async (user: any, examId: string) => {
   const { exam, assignment } = await requireScanAccess(user, examId, { forWrite: false });
-  const roster = await buildRoster(exam);
+  const [roster, latest] = await Promise.all([
+    buildRoster(exam),
+    isAdmin(user) ? Promise.resolve(new Map<string, ScanReopenRequest>()) : latestReopenRequests([exam.examId], user.userId),
+  ]);
   return {
     exam: {
       examId: exam.examId,
@@ -502,6 +531,8 @@ const scanRoster = async (user: any, examId: string) => {
       sessionName: exam.session?.sessionName ?? "",
       scanStatus: assignment?.status ?? null,
       completedAt: assignment?.completedAt ?? null,
+      // The scanner's latest request to re-open it (scanner staff only).
+      reopenRequest: reopenInfo(latest.get(exam.examId)),
     },
     rows: roster.rows.map((r) => ({
       studentId: r.studentId,
@@ -516,7 +547,7 @@ const scanRoster = async (user: any, examId: string) => {
       // Marks are for the admin; the scanner only needs to know a sheet is in.
       ...(isAdmin(user) ? { evaluationId: r.evaluationId, evaluationStatus: r.evaluationStatus, score: r.score } : {}),
     })),
-    counts: roster.counts,
+    counts: scanCountsFor(user, roster.counts),
   };
 };
 
@@ -570,7 +601,7 @@ const setAttendance = async (user: any, examId: string, body: any) => {
     }
   });
 
-  return { examId: exam.examId, updated: studentIds.length, absent, counts: (await buildRoster(exam)).counts };
+  return { examId: exam.examId, updated: studentIds.length, absent, counts: scanCountsFor(user, (await buildRoster(exam)).counts) };
 };
 
 /** Scanner marks the upload done; allowed only when every student has a sheet or is absent. */
@@ -617,7 +648,7 @@ const completeScan = async (user: any, examId: string) => {
   });
   // Sheets may all have their marks already (marked as they arrived): then that's 100% evaluated too.
   void checkExamEvaluated(exam.examId).catch(() => undefined);
-  return { examId: exam.examId, scanStatus: SCAN_STATUS.COMPLETED, completedAt, counts: roster.counts };
+  return { examId: exam.examId, scanStatus: SCAN_STATUS.COMPLETED, completedAt, counts: scanCountsFor(user, roster.counts) };
 };
 
 /**
@@ -1314,6 +1345,206 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
   return { requestId: request.requestId, status: "Completed", ...outcome };
 };
 
+// ═════════════════════════════════════════════════════════════════════════════
+// SCANNER ⇄ ADMIN — re-opening a completed upload
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// Once a scanner marks an exam's upload complete they can't add sheets. To add a late
+// sheet they ask the admin, with a reason; the admin approves (uploading re-opens for the
+// same scanner) or rejects it with a note. One open request per exam. Re-opening or
+// reassigning the exam under Scanning decides an open request too.
+
+/** A re-open request as the scanner's pages show it. */
+const reopenInfo = (r: ScanReopenRequest | null | undefined) =>
+  r
+    ? { requestId: r.requestId, status: r.status, reason: r.reason, requestedAt: r.createdAt, decidedAt: r.decidedAt, decisionNote: r.decisionNote }
+    : null;
+
+/** Each exam's latest re-open request by this scanner. */
+const latestReopenRequests = async (examIds: string[], scannerId: string) => {
+  const latest = new Map<string, ScanReopenRequest>();
+  if (!examIds.length) return latest;
+  const rows = await ScanReopenRequest.findAll({ where: { examId: { [Op.in]: examIds }, scannerId }, order: [["createdAt", "DESC"]] });
+  for (const r of rows) if (!latest.has(r.examId)) latest.set(r.examId, r);
+  return latest;
+};
+
+/** The admin and scanner dashboards count open requests: show a change at once. */
+const refreshHomes = (instituteId: string) => {
+  invalidate(`home:admin:${instituteId}`);
+  invalidate(`home:scanner:${instituteId}`);
+};
+
+/** Closes an exam's open request when the admin re-opens or reassigns the exam under Scanning. */
+const settleOpenReopen = (examId: string, adminId: string, approved: boolean, note: string, transaction: Transaction) =>
+  ScanReopenRequest.update(
+    { status: approved ? REOPEN_STATUS.APPROVED : REOPEN_STATUS.REJECTED, decidedBy: adminId, decidedAt: new Date(), decisionNote: note },
+    { where: { examId, status: REOPEN_STATUS.PENDING }, transaction }
+  );
+
+/** Scanner: asks the admin to re-open uploading for an exam they marked complete. */
+const requestReopen = async (user: any, examId: string, body: any) => {
+  const reason = clean(body?.reason).slice(0, 500);
+  if (reason.length < 5) throw new ApiError(httpStatus.BAD_REQUEST, "Say in a few words why uploading should re-open.");
+  const exam = await requireExam(user.instituteId, examId);
+
+  const request = await sequelize.transaction(async (t) => {
+    const assignment = await activeScanner(exam.examId, t, true);
+    if (!assignment || assignment.scannerId !== user.userId) {
+      throw new ApiError(httpStatus.FORBIDDEN, "This exam is not assigned to you for scanning.");
+    }
+    if (assignment.status !== SCAN_STATUS.COMPLETED) {
+      throw new ApiError(httpStatus.CONFLICT, "Uploading for this exam is still open; there is nothing to re-open.");
+    }
+    if (await publishedCount(exam.examId, t)) {
+      throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published, so its sheets can't change.");
+    }
+    const open = await ScanReopenRequest.findOne({ where: { examId: exam.examId, status: REOPEN_STATUS.PENDING }, transaction: t });
+    if (open) throw new ApiError(httpStatus.CONFLICT, "You already asked to re-open this exam. The admin hasn't answered yet.");
+
+    const created = await ScanReopenRequest.create(
+      { requestId: newId("scanReopen"), instituteId: exam.instituteId, examId: exam.examId, assignmentId: assignment.assignmentId, scannerId: user.userId, reason },
+      { transaction: t }
+    );
+    const scanner = await UserModal.findOne({ where: { userId: user.userId }, attributes: ["userName"], transaction: t });
+    const admins = Array.from(new Set([assignment.assignedBy, ...(await instituteAdminIds(exam.instituteId, t))]));
+    await notifyAll(
+      admins.map((userId) => ({
+        instituteId: exam.instituteId,
+        userId,
+        type: "SCAN_REOPEN_REQUESTED",
+        title: "Request to re-open an upload",
+        message: `${scanner?.userName || "The scanner"} asks to re-open uploading for ${examLabel(exam)}: ${preview(reason)}`,
+        referenceId: exam.examId,
+      })),
+      t
+    );
+    return created;
+  });
+  refreshHomes(exam.instituteId);
+  return { examId: exam.examId, request: reopenInfo(request) };
+};
+
+/** Admin: the scanners' requests, open ones first (PENDING), the decided ones (DECIDED), or ALL. */
+const listReopenRequests = async (admin: any, query: any) => {
+  const instituteId = admin.instituteId;
+  const view = clean(query?.status).toUpperCase() || "PENDING";
+  const where: any = { instituteId };
+  if (view === "PENDING") where.status = REOPEN_STATUS.PENDING;
+  else if (view === "DECIDED") where.status = { [Op.in]: [REOPEN_STATUS.APPROVED, REOPEN_STATUS.REJECTED] };
+
+  const [rows, byStatus] = await Promise.all([
+    ScanReopenRequest.findAll({ where, order: [["createdAt", view === "PENDING" ? "ASC" : "DESC"]], limit: 200 }),
+    ScanReopenRequest.findAll({
+      where: { instituteId },
+      attributes: ["status", [sequelize.fn("COUNT", sequelize.col("id")), "n"]],
+      group: ["status"],
+      raw: true,
+    }) as unknown as Promise<{ status: string; n: string }[]>,
+  ]);
+  const examIds = [...new Set(rows.map((r) => r.examId))];
+  const userIds = [...new Set(rows.flatMap((r) => [r.scannerId, r.decidedBy]).filter(Boolean) as string[])];
+  const [exams, users, assignments] = await Promise.all([
+    examIds.length ? Exam.findAll({ where: { examId: { [Op.in]: examIds }, instituteId }, include: EXAM_INCLUDES }) : [],
+    userIds.length ? UserModal.findAll({ where: { userId: { [Op.in]: userIds } }, attributes: ["userId", "userName"] }) : [],
+    examIds.length ? ExamScannerAssignment.findAll({ where: { examId: { [Op.in]: examIds }, isActive: true } }) : [],
+  ]);
+  const examById = new Map(exams.map((e: any) => [e.examId, e]));
+  const nameOf = new Map(users.map((u: any) => [u.userId, u.userName]));
+  const activeByExam = new Map(assignments.map((a) => [a.examId, a]));
+  const count = (s: string) => Number(byStatus.find((x) => x.status === s)?.n ?? 0);
+
+  return {
+    requests: rows.map((r) => {
+      const exam: any = examById.get(r.examId);
+      const active = activeByExam.get(r.examId);
+      return {
+        ...reopenInfo(r),
+        examId: r.examId,
+        label: exam ? examLabel(exam) : "",
+        examType: exam?.examType ?? "",
+        examDate: exam?.examDate ?? null,
+        subjectName: exam?.subject?.subjectName ?? "",
+        className: exam?.class?.className ?? "",
+        sectionName: exam?.section?.sectionName ?? "",
+        sessionId: exam?.sessionId ?? null,
+        sessionName: exam?.session?.sessionName ?? "",
+        scannerId: r.scannerId,
+        scannerName: nameOf.get(r.scannerId) ?? "",
+        decidedByName: r.decidedBy ? (nameOf.get(r.decidedBy) ?? "") : null,
+        // Approving needs the same scanner still on the exam (else reassign it under Scanning).
+        stillAssigned: Boolean(active && active.scannerId === r.scannerId),
+        scanStatus: active?.status ?? null,
+      };
+    }),
+    counts: { pending: count(REOPEN_STATUS.PENDING), approved: count(REOPEN_STATUS.APPROVED), rejected: count(REOPEN_STATUS.REJECTED) },
+  };
+};
+
+/** Admin: approves (uploading re-opens for the scanner) or rejects (with a note) an open request. */
+const decideReopen = async (admin: any, requestId: string, approve: boolean, body: any) => {
+  const instituteId = admin.instituteId;
+  const note = clean(body?.note).slice(0, 500) || null;
+  if (!approve && (!note || note.length < 3)) throw new ApiError(httpStatus.BAD_REQUEST, "Tell the scanner why, in a short note.");
+
+  const decided = await sequelize.transaction(async (t) => {
+    const request = await ScanReopenRequest.findOne({ where: { requestId, instituteId }, transaction: t, lock: t.LOCK.UPDATE });
+    if (!request) throw new ApiError(httpStatus.NOT_FOUND, "That request doesn't exist.");
+    if (request.status !== REOPEN_STATUS.PENDING) {
+      throw new ApiError(httpStatus.CONFLICT, `This request was already ${request.status === REOPEN_STATUS.APPROVED ? "approved" : "rejected"}.`);
+    }
+    const exam = await requireExam(instituteId, request.examId);
+
+    if (approve) {
+      // Lock the exam row so publishing can't slip in between.
+      await Exam.findOne({ where: { examId: exam.examId }, transaction: t, lock: t.LOCK.UPDATE });
+      if (await publishedCount(exam.examId, t)) {
+        throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published. Unpublish them first, or reject the request.");
+      }
+      const assignment = await activeScanner(exam.examId, t, true);
+      if (!assignment || assignment.scannerId !== request.scannerId) {
+        throw new ApiError(httpStatus.CONFLICT, "This exam is no longer with that scanner. Reject the request, or give the exam to them again under Scanning.");
+      }
+      if (assignment.status === SCAN_STATUS.COMPLETED) {
+        await assignment.update({ status: SCAN_STATUS.ASSIGNED, completedAt: null, completedBy: null }, { transaction: t });
+      }
+    }
+
+    await request.update(
+      { status: approve ? REOPEN_STATUS.APPROVED : REOPEN_STATUS.REJECTED, decidedBy: admin.userId, decidedAt: new Date(), decisionNote: note },
+      { transaction: t }
+    );
+    const label = examLabel(exam);
+    await notifyAll(
+      [
+        approve
+          ? {
+              instituteId,
+              userId: request.scannerId,
+              type: "SCAN_REOPENED",
+              title: "Upload re-opened",
+              message: `The admin re-opened uploading for ${label}.${note ? ` Note: ${preview(note)}` : ""} Mark it complete again when you're done.`,
+              referenceId: exam.examId,
+            }
+          : {
+              instituteId,
+              userId: request.scannerId,
+              type: "SCAN_REOPEN_REJECTED",
+              title: "Re-open request declined",
+              message: `The admin didn't re-open uploading for ${label}: ${preview(note ?? "")}`,
+              referenceId: exam.examId,
+            },
+      ],
+      t
+    );
+    return request;
+  });
+  refreshHomes(instituteId);
+  return { examId: decided.examId, request: reopenInfo(decided) };
+};
+
+const approveReopen = (admin: any, requestId: string, body: any) => decideReopen(admin, requestId, true, body);
+const rejectReopen = (admin: any, requestId: string, body: any) => decideReopen(admin, requestId, false, body);
 
 export default {
   listPipeline,
@@ -1335,4 +1566,8 @@ export default {
   rejectRecheck,
   myRechecks,
   completeRecheck,
+  requestReopen,
+  listReopenRequests,
+  approveReopen,
+  rejectReopen,
 };

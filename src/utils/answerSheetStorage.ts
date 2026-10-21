@@ -61,16 +61,23 @@ export const uploadAnswerSheet = async (params: {
   mimeType: string;
   instituteId: string;
   sheetId: string;
+  /**
+   * Set when a file replaces another: the new one gets its own address, so no browser or
+   * CDN cache can show the old scan, and the caller deletes the old file. Only the current
+   * scan of a sheet is ever kept.
+   */
+  revision?: string;
 }): Promise<StoredAnswerSheet> => {
-  const { filePath, originalName, mimeType, instituteId, sheetId } = params;
+  const { filePath, originalName, mimeType, instituteId, sheetId, revision } = params;
   const resourceType = resourceTypeFor(mimeType);
   const ext = extensionFor(mimeType, originalName);
 
   // A "raw" public id keeps its extension; an image's must not have one.
+  const name = revision ? `${sheetId}-${revision}` : sheetId;
   const publicId =
     resourceType === "raw"
-      ? `${folderFor(instituteId)}/${sheetId}${ext}`
-      : `${folderFor(instituteId)}/${sheetId}`;
+      ? `${folderFor(instituteId)}/${name}${ext}`
+      : `${folderFor(instituteId)}/${name}`;
 
   let lastError: any = null;
 

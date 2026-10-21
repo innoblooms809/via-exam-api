@@ -31,6 +31,7 @@ export const ID_KINDS = {
   evaluation: "EVL",
   assignment: "ASN",
   scannerAssignment: "SCA",
+  scanReopen: "SRO",
   attendance: "ATT",
   result: "RES",
   recheck: "RCK",

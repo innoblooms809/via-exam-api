@@ -11,7 +11,7 @@ import Session from "../../models/Session.model";
 import StudentEnrollment from "../../models/StudentEnrollment.model";
 import UserModal from "../../models/User.model";
 import RegHelper from "../../utils/helper";
-import { isTeacherRequester, requireSheetAccess, scopeSheetRows } from "../evaluation/evaluationAccess.service";
+import { isScannerRequester, isTeacherRequester, requireSheetAccess, scopeSheetRows } from "../evaluation/evaluationAccess.service";
 import AnswerSheetStorage from "../answer-sheet/answerSheetStorage.service";
 import { newId } from "../../utils/idGenerator";
 import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
@@ -36,10 +36,13 @@ const uploadSheets = AnswerSheetStorage.uploadSheets;
 // ─── REPLACE ONE SHEET ────────────────────────────────────────────────────────
 const replaceSheet = AnswerSheetStorage.replaceSheet;
 
+/** Sheet statuses that come from evaluation, hidden from scanner staff. */
+const SCANNER_HIDDEN_STATUSES = new Set(["Evaluated", "Evaluating", "Failed"]);
+
 const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
   try {
     const instituteId = requestedBy.instituteId;
-    const { classId, section, subjectId, examType, rollNo, status, sheetId } = query;
+    const { classId, section, subjectId, examType, rollNo, status, sheetId, examId } = query;
 
     const where: any = { instituteId, isDeleted: false };
     if (classId) where.classId = classId;
@@ -49,6 +52,7 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
     if (rollNo) where.rollNo = rollNo;
     if (status) where.status = status;
     if (sheetId) where.sheetId = sheetId;
+    if (examId) where.examId = examId;
 
     // Never return fileBuffer in list — too heavy
     const sheets = await Scanner.findAll({
@@ -58,8 +62,10 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
     });
 
     const sheetIds = sheets.map((s: any) => s.sheetId);
+    // Scanner staff never see evaluation: their sheets carry no AI status or score.
+    const scanner = isScannerRequester(requestedBy);
     const aiEvals =
-      sheetIds.length > 0
+      sheetIds.length > 0 && !scanner
         ? await AIEvaluation.findAll({
           where: { sheetId: sheetIds },
           attributes: ["sheetId", "totalScore", "status"],
@@ -73,6 +79,11 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
 
     const enrichedSheets = sheets.map((sheet: any) => {
       const s = sheet.toJSON();
+      if (scanner) {
+        // A status the evaluation set reads as plain "uploaded" to them.
+        if (SCANNER_HIDDEN_STATUSES.has(String(s.status))) s.status = "Uploaded";
+        return s;
+      }
       const ev = evalMap.get(s.sheetId);
       if (ev) {
         if (ev.status === "Success") {

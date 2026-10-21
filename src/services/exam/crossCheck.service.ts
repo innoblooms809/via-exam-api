@@ -528,6 +528,13 @@ const myRounds = async (teacher: any, query: any) => {
         roundId: r.roundId,
         examId: r.examId,
         label: exam ? examLabel(exam) : "",
+        // For the teacher's session / exam / class / subject filters.
+        sessionId: exam?.sessionId ?? null,
+        sessionName: exam?.session?.sessionName ?? "",
+        examType: exam?.examType ?? "",
+        className: exam?.class?.className ?? "",
+        sectionName: exam?.section?.sectionName ?? "",
+        subjectName: exam?.subject?.subjectName ?? "",
         totalMarks: exam?.totalMarks ?? null,
         passingMarks: exam?.passingMarks ?? null,
         status: r.status,
