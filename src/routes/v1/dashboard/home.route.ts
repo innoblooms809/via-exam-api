@@ -7,7 +7,8 @@ import { ADMINS, TEACHERS } from "../../../config/roles";
 const router = Router();
 
 // One request per role home page; each returns everything above the fold.
-// GET /v1/home/admin    — institute KPIs, exam pipeline, needs-attention counts, queues
+// GET /v1/home/admin?sessionId= — institute KPIs, exam pipeline, needs-attention counts, analytics, queues
+//   (sessionId: a session of the school, "all", or blank for the current one)
 // GET /v1/home/teacher  — papers to set, evaluations / rechecks assigned to me
 // GET /v1/home/scanner  — my scanning assignments and uploads
 // GET /v1/home/student  — my timetable, published results and rechecks

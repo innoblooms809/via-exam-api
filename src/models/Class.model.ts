@@ -5,7 +5,6 @@ interface ClassAttributes {
   id: number;
   classId: string;
   instituteId: string; // FK → Institute
-  sessionId: string; // FK -> Session
   className: string; // Class 1, Class 2 ... Class 12
   classTeacherId?: string | null; // FK → User (class teacher)
   isActive: boolean;
@@ -21,7 +20,6 @@ class Class extends Model<ClassAttributes, ClassCreationAttributes> {
   public id!: number;
   public classId!: string;
   public instituteId!: string;
-  public sessionId!: string;
   public className!: string;
   public classTeacherId!: string | null;
   public isActive!: boolean;
@@ -43,10 +41,6 @@ Class.init(
       unique: true,
     },
     instituteId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    sessionId: {
       type: DataTypes.STRING,
       allowNull: false,
     },
@@ -77,9 +71,9 @@ Class.init(
     timestamps: true,
     indexes: [
       {
-        // Unique: one section per class per session per institute
+        // One class of a name per institute; the sessions it runs in are Session setup's rows.
         unique: true,
-        fields: ["instituteId", "sessionId", "className"],
+        fields: ["instituteId", "className"],
       },
     ],
   },

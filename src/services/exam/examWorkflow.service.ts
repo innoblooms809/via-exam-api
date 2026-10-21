@@ -1043,6 +1043,9 @@ const recheckRow = (r: any, exam: any, assignment: any, names: Map<string, strin
     examType: exam?.examType ?? "",
     subjectName: exam?.subject?.subjectName ?? "",
     className: exam?.class?.className ?? "",
+    sectionName: exam?.section?.sectionName ?? "",
+    sessionName: exam?.session?.sessionName ?? "",
+    totalMarks: exam?.totalMarks == null ? null : Number(exam.totalMarks),
     studentId: masked ? null : r.studentId,
     studentName: masked ? maskName(studentName) : studentName,
     reason: r.reason,
@@ -1193,12 +1196,17 @@ const rejectRecheck = async (admin: any, requestId: string, body: any) => {
 const myRechecks = async (teacher: any, query: any) => {
   const { page, limit, offset } = paging(query, 10);
   const open = clean(query?.state) !== "done";
-  const { rows, count } = await RecheckAssignment.findAndCountAll({
-    where: { instituteId: teacher.instituteId, teacherId: teacher.userId, completedAt: open ? null : { [Op.ne]: null } },
-    order: [["assignedAt", "DESC"]],
-    limit,
-    offset,
-  });
+  const mine = { instituteId: teacher.instituteId, teacherId: teacher.userId };
+  const [{ rows, count }, openCount, doneCount] = await Promise.all([
+    RecheckAssignment.findAndCountAll({
+      where: { ...mine, completedAt: open ? null : { [Op.ne]: null } },
+      order: [["assignedAt", "DESC"]],
+      limit,
+      offset,
+    }),
+    RecheckAssignment.count({ where: { ...mine, completedAt: null } }),
+    RecheckAssignment.count({ where: { ...mine, completedAt: { [Op.ne]: null } } }),
+  ]);
   const requests = rows.length ? await RecheckRequest.findAll({ where: { requestId: { [Op.in]: rows.map((r) => r.requestId) } } }) : [];
   const evaluations = requests.length
     ? await AIEvaluation.findAll({ where: { evaluationId: { [Op.in]: requests.map((r) => r.evaluationId) } }, attributes: ["evaluationId", "sheetId", "totalScore"] })
@@ -1211,6 +1219,7 @@ const myRechecks = async (teacher: any, query: any) => {
       const ev = req ? evalById.get(req.evaluationId) : undefined;
       return { ...d, sheetId: ev?.sheetId ?? null, currentScore: ev?.totalScore == null ? null : Number(ev.totalScore) };
     }),
+    summary: { open: openCount, done: doneCount },
     pagination: pageInfo(count, page, limit),
   };
 };

@@ -26,7 +26,7 @@ const run =
   };
 
 export default {
-  getAdminHome: run(HomeService.getAdminHome),
+  getAdminHome: (req: Request, res: Response) => run((user) => HomeService.getAdminHome(user, { sessionId: str(req.query.sessionId) }))(req, res),
   getSetupStatus: run(HomeService.getSetupStatus, 0),
   getTeacherHome: run(HomeService.getTeacherHome),
   getScannerHome: run(HomeService.getScannerHome),

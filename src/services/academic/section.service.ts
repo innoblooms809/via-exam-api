@@ -11,7 +11,7 @@ import { newId } from "../../utils/idGenerator";
 import { examCountsBy, examsUsing, findStaff, renameLockMessage } from "./academicGuards.service";
 import { checkClassTeacherPost, classTeacherPostOf, isHeadTeacher } from "../teacher/classTeacher.service";
 import StudentEnrollment from "../../models/StudentEnrollment.model";
-import { activeSession, addToCurrentSession, forgetMasterRows, syncCurrentMirrors } from "./sessionSetup.service";
+import { activeSession, addToCurrentSession, addToSession, forgetMasterRows, runningIn, sessionForNewRows, syncCurrentMirrors } from "./sessionSetup.service";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -25,7 +25,8 @@ const findTeacher = async (userId: string, instituteId: string) => {
 
 // ─── CREATE SECTION(S) ────────────────────────────────────────────────────────
 // Accepts { classId | classIds[], sectionName | sectionNames[] } — every section
-// is added to every class chosen.
+// is added to every class chosen. Master data only, unless { sessionId } names the
+// session they run in (sections already in master data then join it).
 const createSection = async (body: any, createdBy: any): Promise<any> => {
   const instituteId = createdBy.instituteId;
   const classIds: string[] = Array.from(
@@ -59,6 +60,10 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
     }
   }
 
+  const target = await sessionForNewRows(instituteId, body.sessionId, Boolean(classTeacherId));
+  if ("message" in target) return fail(target.status, target.message);
+  const session = target.session;
+
   const t = await sequelize.transaction();
   try {
     const classes = await Class.findAll({
@@ -73,6 +78,7 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
     let added = 0;
     const skipped: string[] = [];
     const forSession: { classId: string; sectionId: string; classTeacherId: string | null }[] = [];
+    const inSession = session ? (await runningIn(session.sessionId, t)).sectionIds : new Set<string>();
 
     for (const cls of classes.sort((a, b) => compareClassNames(a.className, b.className))) {
       const current = await Section.findAll({ where: { classId: cls.classId }, transaction: t });
@@ -81,7 +87,13 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
       for (const sectionName of sectionNames) {
         const found = byKey.get(nameKey(sectionName));
         if (found && !found.isDeleted) {
-          skipped.push(`${cls.className}-${found.sectionName}`);
+          if (!session || inSession.has(found.sectionId)) {
+            skipped.push(`${cls.className}-${found.sectionName}`);
+            continue;
+          }
+          // Already in master data: it joins the session.
+          forSession.push({ classId: cls.classId, sectionId: found.sectionId, classTeacherId });
+          added += 1;
           continue;
         }
         if (found) {
@@ -99,17 +111,24 @@ const createSection = async (body: any, createdBy: any): Promise<any> => {
 
     if (added === 0) {
       await t.rollback();
+      const one = skipped.length === 1;
       return fail(
         httpStatus.CONFLICT,
-        skipped.length === 1 ? `Section ${skipped[0]} already exists.` : `These sections already exist: ${skipped.join(", ")}.`,
+        session
+          ? one
+            ? `Section ${skipped[0]} is already in ${session.sessionName}.`
+            : `These sections are already in ${session.sessionName}: ${skipped.join(", ")}.`
+          : one
+            ? `Section ${skipped[0]} already exists.`
+            : `These sections already exist: ${skipped.join(", ")}.`,
       );
     }
-    // The class teacher is this session's (Session setup); the section's own column copies it.
-    await addToCurrentSession(instituteId, { sections: forSession }, t);
+    // A class teacher is the session's (Session setup); the section's own column copies the current one.
+    if (session) await addToSession(instituteId, session.sessionId, { sections: forSession }, t);
     await t.commit();
 
-    const parts = [`${added} ${added === 1 ? "section" : "sections"} added`];
-    if (skipped.length) parts.push(`${skipped.join(", ")} already existed`);
+    const parts = [`${added} ${added === 1 ? "section" : "sections"} added to ${session ? session.sessionName : "master data"}`];
+    if (skipped.length) parts.push(`${skipped.join(", ")} ${session ? `already in ${session.sessionName}` : "already existed"}`);
     return {
       error: false,
       statusCode: httpStatus.CREATED,
