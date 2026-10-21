@@ -114,6 +114,28 @@ export const rosterRolls = async (instituteId: string, examId: string): Promise<
   return new Set((await studentsForExam(exam)).map((s) => s.rollNo).filter(Boolean));
 };
 
+/**
+ * Each roll number on an exam's roster and its student's section, by name as sheets carry
+ * it: a sheet of a whole-class exam takes its student's own section. A roll number found in
+ * two sections maps to "" (whose it is can't be told from the roll alone).
+ */
+export const rosterSectionsByRoll = async (instituteId: string, examId: string): Promise<Map<string, string>> => {
+  const exam = await loadExam(instituteId, examId);
+  if (!exam?.classId || !exam.sessionId) return new Map();
+  const students = await studentsIn({ instituteId: exam.instituteId, sessionId: exam.sessionId, classId: exam.classId, section: exam.sectionId || null });
+  const ids = [...new Set(students.map((s) => s.sectionId).filter(Boolean))] as string[];
+  const nameOf = new Map(
+    ids.length ? (await Section.findAll({ where: { sectionId: { [Op.in]: ids } }, attributes: ["sectionId", "sectionName"] })).map((s) => [s.sectionId, s.sectionName]) : []
+  );
+  const byRoll = new Map<string, string>();
+  for (const s of students) {
+    if (!s.rollNo) continue;
+    const name = (s.sectionId && nameOf.get(s.sectionId)) || "";
+    byRoll.set(s.rollNo, byRoll.has(s.rollNo) && byRoll.get(s.rollNo) !== name ? "" : name);
+  }
+  return byRoll;
+};
+
 export const buildRoster = async (exam: any): Promise<Roster> => {
   const [students, sheets, absentRows] = await Promise.all([
     studentsForExam(exam),

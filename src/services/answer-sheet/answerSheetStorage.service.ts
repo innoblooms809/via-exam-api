@@ -37,7 +37,7 @@ import { inspectDiskFile } from "../../middlewares/verifyUpload";
 import { ANSWER_SHEET_DETECTED_TYPES } from "../../utils/fileSignature";
 import { newId } from "../../utils/idGenerator";
 import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
-import { rosterRolls } from "../exam/examRoster.service";
+import { rosterRolls, rosterSectionsByRoll, sheetWhereForExam } from "../exam/examRoster.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -139,9 +139,14 @@ export const uploadSheets = async (
       };
     }
 
-    const missing = (["classId", "section", "subjectId", "examType"] as const).filter(
-      (key) => !String((body as any)?.[key] ?? "").trim(),
-    );
+    // The exam these sheets belong to: the one the client names, else the newest
+    // exam of this class / subject / type that covers the section.
+    const requestedExamId = String((body as any)?.examId ?? "").trim();
+    // A named exam says who sits it; a whole-class exam has no section to send.
+    const needed = requestedExamId
+      ? (["classId", "subjectId", "examType"] as const)
+      : (["classId", "section", "subjectId", "examType"] as const);
+    const missing = needed.filter((key) => !String((body as any)?.[key] ?? "").trim());
     if (missing.length > 0) {
       return {
         error: true,
@@ -171,9 +176,6 @@ export const uploadSheets = async (
 
     const replaceExisting = isTruthyFlag(body.replace) || isTruthyFlag(body.overwrite);
 
-    // The exam these sheets belong to: the one the client names, else the newest
-    // exam of this class / subject / type that covers the section.
-    const requestedExamId = String((body as any)?.examId ?? "").trim();
     // Sheets carry the section as a name or an id; exams store the id.
     const sectionRow = await Section.findOne({
       where: { instituteId, classId: body.classId, isDeleted: false, [Op.or]: [{ sectionId: body.section }, { sectionName: body.section }] },
@@ -217,19 +219,27 @@ export const uploadSheets = async (
       return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
     }
 
+    // No section sent (a whole-class exam): each sheet takes its student's own section,
+    // and the sheets already in are the exam's own, whatever section they carry.
+    const sectionGiven = Boolean(String(body.section ?? "").trim());
+    const sectionByRoll = sectionGiven ? null : await rosterSectionsByRoll(instituteId, matchingExam.examId);
+    const sectionOf = (rollNo: string) => (sectionByRoll ? (sectionByRoll.get(rollNo) ?? "") : body.section);
+
     // One query instead of one per file.
     const rollNos = files.map((f) => rollNoFromFileName(f.originalname)).filter(Boolean);
     const existingRows = rollNos.length
       ? await Scanner.findAll({
-        where: {
-          instituteId,
-          classId: body.classId,
-          section: body.section,
-          subjectId: body.subjectId,
-          examType: body.examType,
-          rollNo: { [Op.in]: rollNos },
-          isDeleted: false,
-        },
+        where: sectionByRoll
+          ? { ...sheetWhereForExam(matchingExam), rollNo: { [Op.in]: rollNos } }
+          : {
+            instituteId,
+            classId: body.classId,
+            section: body.section,
+            subjectId: body.subjectId,
+            examType: body.examType,
+            rollNo: { [Op.in]: rollNos },
+            isDeleted: false,
+          },
       })
       : [];
     const existingByRoll = new Map(existingRows.map((r) => [String(r.rollNo), r]));
@@ -301,6 +311,8 @@ export const uploadSheets = async (
           mimeType: file.mimetype,
           instituteId,
           sheetId,
+          // A replacement gets its own address; the old file is deleted once the row points here.
+          ...(existing ? { revision: Date.now().toString(36) } : {}),
         });
 
         if (existing) {
@@ -344,7 +356,7 @@ export const uploadSheets = async (
           instituteId,
           examId: matchingExam ? matchingExam.examId : undefined,
           classId: body.classId,
-          section: body.section,
+          section: sectionOf(rollNo),
           subjectId: body.subjectId,
           examType: body.examType,
           rollNo,
@@ -450,12 +462,14 @@ export const replaceSheet = async (
       resourceType: sheet.fileResourceType,
     };
 
+    // Its own address, so nothing cached can show the old scan; the old file is deleted below.
     const stored = await uploadAnswerSheet({
       filePath: file.path,
       originalName: file.originalname,
       mimeType: file.mimetype,
       instituteId: sheet.instituteId,
       sheetId: sheet.sheetId,
+      revision: Date.now().toString(36),
     });
 
     try {

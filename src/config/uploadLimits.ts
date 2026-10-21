@@ -31,7 +31,11 @@ export const ANSWER_SHEET_LIMITS = {
   maxRequestBytes: 60 * 1024 * 1024,
 } as const;
 
-/** Formats used by scanning hardware. Anything else is rejected by name. */
+/**
+ * File extension of each format a stored sheet can be in (names the file in storage). New
+ * uploads are PDF only (see answerSheetUpload's filter and ANSWER_SHEET_DETECTED_TYPES);
+ * older sheets may be images.
+ */
 export const ANSWER_SHEET_MIME_TYPES: Record<string, string> = {
   "application/pdf": ".pdf",
   "image/jpeg": ".jpg",
@@ -40,17 +44,6 @@ export const ANSWER_SHEET_MIME_TYPES: Record<string, string> = {
   "image/tiff": ".tif",
   "image/heic": ".heic",
 };
-
-export const ANSWER_SHEET_EXTENSIONS = [
-  ".pdf",
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".webp",
-  ".tif",
-  ".tiff",
-  ".heic",
-];
 
 export const formatBytes = (bytes: number): string => {
   if (!Number.isFinite(bytes) || bytes < 0) return "0 MB";
@@ -61,6 +54,6 @@ export const formatBytes = (bytes: number): string => {
 
 /** Human summary used in error messages and on the upload screen. */
 export const answerSheetLimitSummary = (): string =>
-  `Up to ${ANSWER_SHEET_LIMITS.maxFilesPerRequest} files per batch, ` +
+  `PDF only. Up to ${ANSWER_SHEET_LIMITS.maxFilesPerRequest} files per batch, ` +
   `${formatBytes(ANSWER_SHEET_LIMITS.maxFileBytes)} per file, ` +
   `${formatBytes(ANSWER_SHEET_LIMITS.maxRequestBytes)} per batch.`;

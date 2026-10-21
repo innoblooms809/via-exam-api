@@ -13,7 +13,8 @@ const admin = authorize(ADMINS);
 
 // ── Admin: where every exam is in the workflow ───────────────────────────────
 router.get("/exams", admin, validate(Validation.listPipeline), Controller.listPipeline);
-router.get("/exams/:examId/timeline", authorize(MEMBERS), validate(Validation.examParam), Controller.getTimeline);
+// Not scanner staff: the timeline tells the evaluation's story, which they never see.
+router.get("/exams/:examId/timeline", authorize(MEMBERS.filter((r) => r !== "SCANNER")), validate(Validation.examParam), Controller.getTimeline);
 
 // ── Admin: scanner assignment ───────────────────────────────────────────────
 router.get("/exams/:examId/scanners", admin, validate(Validation.examParam), Controller.listScanners);
@@ -25,6 +26,13 @@ router.get("/scanner/exams", authorize(UPLOADERS), validate(Validation.myScanExa
 router.get("/scanner/exams/:examId/roster", authorize(UPLOADERS), validate(Validation.examParam), Controller.scanRoster);
 router.post("/scanner/exams/:examId/attendance", authorize(UPLOADERS), validate(Validation.setAttendance), Controller.setAttendance);
 router.post("/scanner/exams/:examId/complete", authorize(UPLOADERS), validate(Validation.examParam), Controller.completeScan);
+// A completed upload re-opens only through the admin: the scanner asks, the admin decides.
+router.post("/scanner/exams/:examId/reopen-request", authorize(["SCANNER"]), validate(Validation.requestReopen), Controller.requestReopen);
+
+// ── Admin: scanners' requests to re-open a completed upload ──────────────────
+router.get("/reopen-requests", admin, validate(Validation.listReopenRequests), Controller.listReopenRequests);
+router.post("/reopen-requests/:requestId/approve", admin, validate(Validation.decideReopen), Controller.approveReopen);
+router.post("/reopen-requests/:requestId/reject", admin, validate(Validation.decideReopen), Controller.rejectReopen);
 
 // ── Admin: results ───────────────────────────────────────────────────────────
 router.post("/exams/:examId/publish", admin, validate(Validation.examParam), Controller.publishResults);
