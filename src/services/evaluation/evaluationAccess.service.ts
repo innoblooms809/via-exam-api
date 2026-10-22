@@ -1,13 +1,15 @@
 // Who may see which student answer sheets, and whether names are masked.
 //
-//   Admin / super admin / scanner / examiner  → everything, real names, may evaluate
-//   Teacher who teaches the subject of that class (Subject.teacherId)  → view only, real names
+//   Admin / super admin  → every sheet and its AI marks, real names, view only (never evaluates)
+//   Scanner  → the scans they handle, view only
+//   Teacher who teaches the subject of that class (Subject.teacherId)  → view only, real names,
+//     except the sheets they recheck or cross-check (those stay masked, see below)
 //   Teacher assigned by the admin to evaluate the exam  → names masked ("R**** S*****", roll "1**"), may evaluate
 //   Teacher cross-checking a paper (open round)  → names masked, view only (the verdict changes marks)
 //   Any other teacher (e.g. only set the question paper)  → no access
 //
-// Running AI evaluation or changing marks is allowed only for the assigned evaluator
-// (and admins): an exam nobody is assigned to cannot be evaluated by a teacher.
+// Running AI evaluation or changing marks is allowed only for the assigned evaluator: an exam
+// nobody is assigned to cannot be evaluated, and the admin views sheets and marks, never edits.
 //
 // Masking is applied here, on the server, so a masked teacher's browser never
 // receives the real name or roll number.
@@ -113,6 +115,11 @@ export interface TeacherScope {
   recheckSheetIds: Set<string>;
   /** Sheets in this teacher's open cross-check rounds → masked data, view only. */
   crossCheckSheetIds: Set<string>;
+  /**
+   * Every sheet this teacher rechecks or cross-checks (open or done): always masked, even
+   * when they teach the subject, so a re-evaluation or second check stays blind.
+   */
+  blindSheetIds: Set<string>;
 }
 
 /** Sheet ids behind the recheck requests assigned to this teacher and not yet completed. */
@@ -134,6 +141,22 @@ async function openRecheckSheetIds(instituteId: string, teacherId: string): Prom
   return new Set(evaluations.map((e) => String(e.sheetId)));
 }
 
+/** Every sheet of a recheck given to this teacher or a cross-check round they hold, open or done. */
+async function blindSheetIdsOf(instituteId: string, teacherId: string): Promise<Set<string>> {
+  const [assignments, rounds] = await Promise.all([
+    RecheckAssignment.findAll({ where: { instituteId, teacherId }, attributes: ["requestId"] }),
+    CrossCheckRound.findAll({ where: { instituteId, checkerId: teacherId }, attributes: ["roundId"] }),
+  ]);
+  const [requests, items] = await Promise.all([
+    assignments.length ? RecheckRequest.findAll({ where: { requestId: { [Op.in]: assignments.map((a) => a.requestId) } }, attributes: ["evaluationId"] }) : [],
+    rounds.length ? CrossCheckItem.findAll({ where: { roundId: { [Op.in]: rounds.map((r) => r.roundId) } }, attributes: ["sheetId"] }) : [],
+  ]);
+  const evaluations = requests.length
+    ? await AIEvaluation.findAll({ where: { evaluationId: { [Op.in]: requests.map((r) => r.evaluationId) } }, attributes: ["sheetId"] })
+    : [];
+  return new Set([...evaluations.map((e) => String(e.sheetId)), ...items.map((i) => String(i.sheetId))]);
+}
+
 /** Sheets in the open cross-check rounds this teacher checks. */
 async function openCrossCheckSheetIds(instituteId: string, teacherId: string): Promise<Set<string>> {
   const rounds = await CrossCheckRound.findAll({ where: { instituteId, checkerId: teacherId, isActive: true, status: "open" }, attributes: ["roundId"] });
@@ -146,7 +169,7 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
   const userId = String(user?.userId ?? "");
   const instituteId = String(user?.instituteId ?? "");
 
-  const [subjects, assignments, recheckSheetIds, crossCheckSheetIds] = await Promise.all([
+  const [subjects, assignments, recheckSheetIds, crossCheckSheetIds, blindSheetIds] = await Promise.all([
     Subject.findAll({
       where: { instituteId, teacherId: userId, isDeleted: false },
       attributes: ["subjectId", "classId"],
@@ -158,6 +181,7 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
     }),
     openRecheckSheetIds(instituteId, userId),
     openCrossCheckSheetIds(instituteId, userId),
+    blindSheetIdsOf(instituteId, userId),
   ]);
 
   const exams = assignments.length
@@ -181,6 +205,7 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
     ownClassKeys,
     recheckSheetIds,
     crossCheckSheetIds,
+    blindSheetIds,
     assignedExams: exams.map((e: any) => ({
       examId: String(e.examId),
       subjectId: String(e.subjectId),
@@ -196,7 +221,9 @@ const isRecheckSheet = (scope: TeacherScope, sheet: SheetLike) =>
   Boolean(sheet.sheetId) && scope.recheckSheetIds.has(String(sheet.sheetId));
 
 export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAccess {
-  if (scope.ownSubjectIds.has(String(sheet.subjectId ?? ""))) return "full";
+  // A sheet this teacher rechecks or cross-checks is never shown with its owner's name or roll.
+  const blind = Boolean(sheet.sheetId) && scope.blindSheetIds.has(String(sheet.sheetId));
+  if (scope.ownSubjectIds.has(String(sheet.subjectId ?? ""))) return blind ? "masked" : "full";
   const assigned = scope.assignedExams.some(
     (a) =>
       (sheet.examId && a.examId === String(sheet.examId)) ||
@@ -264,9 +291,14 @@ export async function requireSheetAccess(
     throw new ApiError(httpStatus.FORBIDDEN, "Access denied.");
   }
   if (!isTeacherRequester(user)) {
-    if (isAdminRequester(user)) return { access: "full", sheet, canEvaluate: true };
-    // Scanners may open the scans they handle; nobody but an admin or the
-    // assigned evaluator may evaluate or change marks (students least of all).
+    // The admin sees every sheet and its AI marks; running AI evaluation and changing marks
+    // are the assigned evaluator's work.
+    if (isAdminRequester(user)) {
+      if (options.evaluate) throw new ApiError(httpStatus.FORBIDDEN, "Only the evaluator assigned to this exam runs AI evaluation or changes marks. You can view the sheet and its marks.");
+      return { access: "full", sheet, canEvaluate: false };
+    }
+    // Scanners may open the scans they handle; nobody but the assigned evaluator may
+    // evaluate or change marks (students least of all).
     const role = String(user?.role?.role ?? user?.role ?? "").toUpperCase();
     if (role !== "SCANNER" || options.evaluate) {
       throw new ApiError(httpStatus.FORBIDDEN, "You do not have access to evaluate this answer sheet.");
