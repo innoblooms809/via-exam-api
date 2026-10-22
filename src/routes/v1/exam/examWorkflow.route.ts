@@ -24,8 +24,9 @@ router.delete("/exams/:examId/scanner", admin, validate(Validation.examParam), C
 // ── Scanner: assigned exams, roster, absentees, completion ───────────────────
 router.get("/scanner/exams", authorize(UPLOADERS), validate(Validation.myScanExams), Controller.myScanExams);
 router.get("/scanner/exams/:examId/roster", authorize(UPLOADERS), validate(Validation.examParam), Controller.scanRoster);
-router.post("/scanner/exams/:examId/attendance", authorize(UPLOADERS), validate(Validation.setAttendance), Controller.setAttendance);
-router.post("/scanner/exams/:examId/complete", authorize(UPLOADERS), validate(Validation.examParam), Controller.completeScan);
+// Absentees and "upload complete" are the scanner's (the admin sees them, re-opens on request).
+router.post("/scanner/exams/:examId/attendance", authorize(["SCANNER"]), validate(Validation.setAttendance), Controller.setAttendance);
+router.post("/scanner/exams/:examId/complete", authorize(["SCANNER"]), validate(Validation.examParam), Controller.completeScan);
 // A completed upload re-opens only through the admin: the scanner asks, the admin decides.
 router.post("/scanner/exams/:examId/reopen-request", authorize(["SCANNER"]), validate(Validation.requestReopen), Controller.requestReopen);
 
