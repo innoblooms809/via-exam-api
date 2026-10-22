@@ -282,7 +282,7 @@ rr AS (
   SELECT ex."sessionId", COUNT(*)::int AS n
   FROM viaexam_recheck_requests r
   JOIN ex ON ex."examId" = r."examId"
-  WHERE r."instituteId" = :inst AND r.status = 'Pending'
+  WHERE r."instituteId" = :inst AND r.status IN ('Pending', 'Awaiting Approval')
   GROUP BY 1
 ),
 -- Answer sheets the AI couldn't mark (one evaluation per sheet).
@@ -344,15 +344,16 @@ WHERE e."instituteId" = :inst AND e."isDeleted" = false AND e.status IN (:withSe
 ORDER BY "examDay" NULLS LAST, e."examTime" NULLS LAST, e."createdAt"
 LIMIT 6`;
 
-// Students' recheck requests, oldest first, from every session.
+// Students' recheck requests waiting on the admin (new ones, and teachers' decisions to
+// approve), oldest first, from every session.
 const ADMIN_RECHECKS_SQL = `
-SELECT rr."requestId", rr."createdAt", u."userName" AS "studentName", ${EXAM_COLUMNS}, ${EXAM_SESSION_COLUMNS}
+SELECT rr."requestId", rr."createdAt", rr.status::text AS "recheckStatus", u."userName" AS "studentName", ${EXAM_COLUMNS}, ${EXAM_SESSION_COLUMNS}
 FROM viaexam_recheck_requests rr
 JOIN viaexam_exams e ON e."examId" = rr."examId" AND e."isDeleted" = false
 ${EXAM_NAMES}
 ${EXAM_SESSION}
 LEFT JOIN viaexam_users u ON u."userId" = rr."studentId"
-WHERE rr."instituteId" = :inst AND rr.status = 'Pending'
+WHERE rr."instituteId" = :inst AND rr.status IN ('Pending', 'Awaiting Approval')
 ORDER BY rr."createdAt"
 LIMIT 5`;
 
@@ -660,7 +661,7 @@ const loadAdminHome = async (instituteId: string, session: { sessionId: string; 
       open: rows.filter((x) => x.sessionId !== null && open.has(x.sessionId)).reduce((n, x) => n + x.withSetter, 0),
       items: paperSetting.map((x: any) => ({ ...listRow(x), examDate: x.examDay ?? null, teacherId: x.teacherId ?? null, teacherName: x.teacherName ?? "" })),
     },
-    rechecks: rechecks.map((x: any) => ({ ...listRow(x), requestId: x.requestId, studentName: x.studentName ?? "", requestedAt: x.createdAt })),
+    rechecks: rechecks.map((x: any) => ({ ...listRow(x), requestId: x.requestId, studentName: x.studentName ?? "", requestedAt: x.createdAt, status: x.recheckStatus ?? "Pending" })),
     workload: {
       teachers: workload.filter((x: any) => x.role === "TEACHER").map(workRow),
       scanners: workload.filter((x: any) => x.role === "SCANNER").map(workRow),
@@ -786,8 +787,9 @@ ev AS (
   WHERE a."instituteId" = :inst AND a."teacherId" = :uid AND a."isActive" = true
 ),
 rc AS (
-  SELECT ra."completedAt", ra."previousScore", ra."revisedScore" FROM viaexam_recheck_assignments ra
+  SELECT ra."completedAt", ra."previousScore", ra."revisedScore", rr.status::text AS status FROM viaexam_recheck_assignments ra
   JOIN viaexam_exams e ON e."examId" = ra."examId" AND e."sessionId" = :ses
+  JOIN viaexam_recheck_requests rr ON rr."requestId" = ra."requestId"
   WHERE ra."instituteId" = :inst AND ra."teacherId" = :uid
 ),
 teaching AS (
@@ -818,8 +820,11 @@ SELECT
   (SELECT COUNT(*) FROM mev WHERE stage = 'ALL_IN')::int AS ev_all_in,
   (SELECT COUNT(*) FROM mev WHERE stage = 'CONFIRMED')::int AS ev_confirmed,
   (SELECT COUNT(*) FROM mev WHERE stage = 'PUBLISHED')::int AS ev_published,
-  (SELECT COUNT(*) FROM rc WHERE "completedAt" IS NOT NULL
+  -- My decisions the admin approved: marks kept or changed; and those still waiting for approval.
+  (SELECT COUNT(*) FROM rc WHERE status = 'Completed'
      AND ("previousScore" IS NULL OR "revisedScore" IS NULL OR abs("revisedScore" - "previousScore") < 0.005))::int AS recheck_kept,
+  (SELECT COUNT(*) FROM rc WHERE status = 'Completed')::int AS recheck_approved,
+  (SELECT COUNT(*) FROM rc WHERE status = 'Awaiting Approval')::int AS recheck_awaiting,
   (SELECT COUNT(*) FROM my WHERE status IN ('Draft', 'Paper Created'))::int AS to_prepare,
   (SELECT COUNT(*) FROM my WHERE status = 'Rejected')::int AS rejected,
   (SELECT COUNT(*) FROM my WHERE status = 'Pending Approval')::int AS pending_approval,
@@ -974,8 +979,9 @@ const loadTeacherHome = async (instituteId: string, userId: string, session: Hom
       },
       rechecks: {
         open: num(s?.recheck_open),
+        awaiting: num(s?.recheck_awaiting),
         kept: num(s?.recheck_kept),
-        changed: Math.max(0, num(s?.recheck_done) - num(s?.recheck_kept)),
+        changed: Math.max(0, num(s?.recheck_approved) - num(s?.recheck_kept)),
       },
     },
     tasks: tasks.map((x: any) => ({ ...examRow(x), kind: x.kind, requestId: x.requestId ?? null, assignedAt: x.assignedAt ?? null })),
@@ -1151,6 +1157,13 @@ LIMIT 6`;
 /** Recheck requests on the current session's exams. */
 const STUDENT_SESSION_RECHECKS = `rr."examId" IN (SELECT "examId" FROM viaexam_exams WHERE "instituteId" = :inst AND "sessionId" = :ses)`;
 
+/** A completed claim changed the marks (`ra` = its recheck assignment). */
+const CLAIM_CHANGED = `COALESCE(abs(ra."revisedScore" - ra."previousScore") >= 0.005, ra."revisedScore" IS NOT NULL AND ra."previousScore" IS NULL)`;
+/** A decided claim's outcome (null while open), as the student's pages name it. */
+const CLAIM_OUTCOME = `CASE WHEN rr.status = 'Rejected' THEN 'REJECTED'
+  WHEN rr.status = 'Completed' AND ${CLAIM_CHANGED} THEN 'CHANGED'
+  WHEN rr.status = 'Completed' THEN 'UNCHANGED' END`;
+
 const STUDENT_RESULTS_SQL = `
 SELECT COUNT(*)::int AS total,
        COUNT(*) FILTER (WHERE "resultStatus" = 'PASS')::int AS passed,
@@ -1158,8 +1171,9 @@ SELECT COUNT(*)::int AS total,
        COUNT(*) FILTER (WHERE "resultStatus" = 'ABSENT')::int AS absent,
        AVG(percentage) FILTER (WHERE "resultStatus" IN ('PASS', 'FAIL')) AS average,
        MAX(percentage) FILTER (WHERE "resultStatus" IN ('PASS', 'FAIL')) AS best,
+       COUNT(*) FILTER (WHERE "publishedAt" >= now() - interval '7 days')::int AS new_week,
        (SELECT COUNT(*) FROM viaexam_recheck_requests rr
-         WHERE rr."studentId" = :uid AND rr."instituteId" = :inst AND rr.status IN ('Pending', 'Under Review', 'Approved')
+         WHERE rr."studentId" = :uid AND rr."instituteId" = :inst AND rr.status IN ('Pending', 'Under Review', 'Awaiting Approval', 'Approved')
            AND ${STUDENT_SESSION_RECHECKS})::int AS rechecks_open,
        (SELECT COUNT(*) FROM viaexam_recheck_requests rr
          WHERE rr."studentId" = :uid AND rr."instituteId" = :inst AND rr.status IN ('Completed', 'Rejected')
@@ -1169,10 +1183,11 @@ WHERE "studentId" = :uid AND "instituteId" = :inst AND "isDeleted" = false AND "
 
 const STUDENT_LATEST_SQL = `
 SELECT r."resultId", r."examId", r."examType", r."marksObtained", r."totalMarks", r.percentage, r.grade,
-       r."resultStatus", r."publishedAt", sub."subjectName", rr.status AS "recheckStatus"
+       r."resultStatus", r."publishedAt", sub."subjectName", rr.status AS "recheckStatus", ${CLAIM_OUTCOME} AS "recheckOutcome"
 FROM viaexam_student_results r
 LEFT JOIN viaexam_subjects sub ON sub."subjectId" = r."subjectId"
 LEFT JOIN viaexam_recheck_requests rr ON rr."examId" = r."examId" AND rr."studentId" = r."studentId"
+LEFT JOIN viaexam_recheck_assignments ra ON ra."requestId" = rr."requestId"
 WHERE r."studentId" = :uid AND r."instituteId" = :inst AND r."isDeleted" = false AND r."sessionId" = :ses
 ORDER BY r."publishedAt" DESC
 LIMIT 6`;
@@ -1188,23 +1203,51 @@ ORDER BY 2 DESC
 LIMIT 8`;
 
 const STUDENT_RECHECKS_SQL = `
-SELECT rr."requestId", rr.status, rr."createdAt", rr."completedAt", sub."subjectName", e."examType"
+SELECT rr."requestId", rr.status, rr.category, ${CLAIM_OUTCOME} AS outcome, rr."createdAt", rr."completedAt", sub."subjectName", e."examType"
 FROM viaexam_recheck_requests rr
+LEFT JOIN viaexam_recheck_assignments ra ON ra."requestId" = rr."requestId"
 LEFT JOIN viaexam_subjects sub ON sub."subjectId" = rr."subjectId"
 LEFT JOIN viaexam_exams e ON e."examId" = rr."examId"
 WHERE rr."studentId" = :uid AND rr."instituteId" = :inst AND ${STUDENT_SESSION_RECHECKS}
 ORDER BY rr."createdAt" DESC
 LIMIT 4`;
 
+// My claims of the session by where they are, and completed ones by whether the marks changed.
+const STUDENT_CLAIMS_SQL = `
+SELECT COUNT(*) FILTER (WHERE rr.status = 'Pending')::int AS pending,
+       COUNT(*) FILTER (WHERE rr.status IN ('Under Review', 'Approved'))::int AS reviewing,
+       COUNT(*) FILTER (WHERE rr.status = 'Awaiting Approval')::int AS approving,
+       COUNT(*) FILTER (WHERE rr.status = 'Completed')::int AS completed,
+       COUNT(*) FILTER (WHERE rr.status = 'Completed' AND ${CLAIM_CHANGED})::int AS changed,
+       COUNT(*) FILTER (WHERE rr.status = 'Rejected')::int AS rejected
+FROM viaexam_recheck_requests rr
+LEFT JOIN viaexam_recheck_assignments ra ON ra."requestId" = rr."requestId"
+WHERE rr."studentId" = :uid AND rr."instituteId" = :inst AND ${STUDENT_SESSION_RECHECKS}`;
+
+// Each exam (Unit Test, Mid Term, …) of the session: my overall percentage in it, as on My Results.
+const STUDENT_BY_EXAM_SQL = `
+SELECT r."examType",
+       SUM(r."marksObtained") FILTER (WHERE r."resultStatus" IN ('PASS', 'FAIL')) * 100.0
+         / NULLIF(SUM(r."totalMarks") FILTER (WHERE r."resultStatus" IN ('PASS', 'FAIL')), 0) AS percentage,
+       COUNT(*)::int AS subjects,
+       COUNT(*) FILTER (WHERE r."resultStatus" = 'PASS')::int AS passed,
+       MAX(r."publishedAt") AS "publishedAt"
+FROM viaexam_student_results r
+WHERE r."studentId" = :uid AND r."instituteId" = :inst AND r."isDeleted" = false AND r."sessionId" = :ses
+GROUP BY r."examType"
+ORDER BY MIN(r."publishedAt")`;
+
 const loadStudentHome = async (instituteId: string, userId: string, session: HomeSession | null) => {
   // No current session: nothing matches "" (every exam and result has a session), so the page is empty.
   const r = { inst: instituteId, uid: userId, ses: session?.sessionId ?? "" };
-  const [[profile], [s], latest, subjects, rechecks] = await Promise.all([
+  const [[profile], [s], latest, subjects, rechecks, [claims], byExam] = await Promise.all([
     select(STUDENT_PROFILE_SQL, r),
     select(STUDENT_RESULTS_SQL, r),
     select(STUDENT_LATEST_SQL, r),
     select(STUDENT_SUBJECTS_SQL, r),
     select(STUDENT_RECHECKS_SQL, r),
+    select(STUDENT_CLAIMS_SQL, r),
+    select(STUDENT_BY_EXAM_SQL, r),
   ]);
 
   // Section keys: the id and the name, since older exams / profiles store either one.
@@ -1231,8 +1274,28 @@ const loadStudentHome = async (instituteId: string, userId: string, session: Hom
       absent: num(s?.absent),
       average: pctOrNull(s?.average),
       best: pctOrNull(s?.best),
+      /** Published in the last seven days. */
+      newThisWeek: num(s?.new_week),
     },
     rechecks: { open: num(s?.rechecks_open), closed: num(s?.rechecks_closed) },
+    analytics: {
+      claims: {
+        pending: num(claims?.pending),
+        reviewing: num(claims?.reviewing),
+        /** Rechecked; the exam office is approving the decision. */
+        approving: num(claims?.approving),
+        changed: num(claims?.changed),
+        kept: Math.max(0, num(claims?.completed) - num(claims?.changed)),
+        rejected: num(claims?.rejected),
+      },
+      byExamType: byExam.map((x: any) => ({
+        examType: x.examType ?? "",
+        percentage: pctOrNull(x.percentage),
+        subjects: num(x.subjects),
+        passed: num(x.passed),
+        publishedAt: x.publishedAt ?? null,
+      })),
+    },
     upcoming: upcoming.map((x: any) => ({ ...examRow(x), duration: x.duration ?? null, totalMarks: x.totalMarks ?? null })),
     latestResults: latest.map((x: any) => ({
       resultId: x.resultId,
@@ -1246,11 +1309,15 @@ const loadStudentHome = async (instituteId: string, userId: string, session: Hom
       resultStatus: x.resultStatus,
       publishedAt: x.publishedAt,
       recheckStatus: x.recheckStatus ?? null,
+      recheckOutcome: x.recheckOutcome ?? null,
     })),
     subjects: subjects.map((x: any) => ({ subjectName: x.subjectName, average: pctOrNull(x.average) ?? 0, exams: num(x.exams) })),
     recentRechecks: rechecks.map((x: any) => ({
       requestId: x.requestId,
       status: x.status,
+      category: x.category ?? null,
+      /** CHANGED, UNCHANGED or REJECTED once decided. */
+      outcome: x.outcome ?? null,
       subjectName: x.subjectName ?? "",
       examType: x.examType ?? "",
       requestedAt: x.createdAt,

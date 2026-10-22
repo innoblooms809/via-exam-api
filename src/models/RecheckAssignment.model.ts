@@ -3,8 +3,11 @@ import { sequelize } from "../config/sequelize";
 
 // Who re-evaluates a student's recheck request, and what came of it.
 // One row per recheck request (requestId is unique); reassigning to another
-// teacher updates the row. Kept apart from viaexam_recheck_requests so that
-// table's columns don't change.
+// teacher updates the row.
+// The teacher's decision (revisedScore, teacherNote, completedAt = when they sent it)
+// reaches the result only once an admin approves it (approvedBy, approvedAt). An admin
+// can send it back instead (returnNote, returnedAt): completedAt is cleared and the
+// teacher decides again.
 
 interface RecheckAssignmentAttributes {
   id: number;
@@ -18,12 +21,16 @@ interface RecheckAssignmentAttributes {
   revisedScore: number | null;
   teacherNote: string | null;
   completedAt: Date | null;
+  approvedBy: string | null;
+  approvedAt: Date | null;
+  returnNote: string | null;
+  returnedAt: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface RecheckAssignmentCreationAttributes
-  extends Optional<RecheckAssignmentAttributes, "id" | "previousScore" | "revisedScore" | "teacherNote" | "completedAt"> {}
+  extends Optional<RecheckAssignmentAttributes, "id" | "previousScore" | "revisedScore" | "teacherNote" | "completedAt" | "approvedBy" | "approvedAt" | "returnNote" | "returnedAt"> {}
 
 class RecheckAssignment
   extends Model<RecheckAssignmentAttributes, RecheckAssignmentCreationAttributes>
@@ -40,6 +47,10 @@ class RecheckAssignment
   public revisedScore!: number | null;
   public teacherNote!: string | null;
   public completedAt!: Date | null;
+  public approvedBy!: string | null;
+  public approvedAt!: Date | null;
+  public returnNote!: string | null;
+  public returnedAt!: Date | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -57,6 +68,10 @@ RecheckAssignment.init(
     revisedScore: { type: DataTypes.DECIMAL(7, 2), allowNull: true, defaultValue: null },
     teacherNote: { type: DataTypes.STRING(1000), allowNull: true, defaultValue: null },
     completedAt: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
+    approvedBy: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
+    approvedAt: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
+    returnNote: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
+    returnedAt: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
   },
   {
     sequelize,

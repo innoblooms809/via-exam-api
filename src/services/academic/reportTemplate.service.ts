@@ -62,6 +62,13 @@ export interface ResultSheetTemplate {
   /** One line above the page footer ("This is a computer-generated document."). "" for none. */
   footerNote: string;
   showGeneratedAt: boolean;
+  /** What a student sees of a published result on My Results, besides the marks of each subject. */
+  studentView: {
+    /** Each question's marks, as evaluated. */
+    questionMarks: boolean;
+    /** The evaluation's feedback and remarks (overall and per question). */
+    feedback: boolean;
+  };
 }
 
 export const DEFAULT_RESULT_SHEET: ResultSheetTemplate = {
@@ -75,6 +82,7 @@ export const DEFAULT_RESULT_SHEET: ResultSheetTemplate = {
   signatures: ["Class teacher", "Exam in-charge", "Principal"],
   footerNote: "",
   showGeneratedAt: true,
+  studentView: { questionMarks: true, feedback: true },
 };
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -134,6 +142,7 @@ export const checkTemplate = (input: any, base: ResultSheetTemplate = DEFAULT_RE
       signatures,
       footerNote: input.footerNote === undefined ? base.footerNote : line(input.footerNote ?? "", 160),
       showGeneratedAt: flag(input.showGeneratedAt, base.showGeneratedAt),
+      studentView: pick(input.studentView, base.studentView),
     },
   };
 };
@@ -162,6 +171,19 @@ const instituteLines = (i: Institute | null) => {
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 
 const KIND = "result-sheet" as const;
+
+/** The school's saved template (the defaults when none is saved). */
+export const resultTemplateOf = async (instituteId: string) => stored(await ReportTemplate.findOne({ where: { instituteId, kind: KIND } }));
+
+/**
+ * What a student's own report card needs besides the marks: the school's template, its
+ * header lines and grade bands. Read-only, for the student's download (the same PDF the
+ * admin prints for them).
+ */
+export const printBitsOf = async (instituteId: string) => {
+  const [template, institute, settings] = await Promise.all([resultTemplateOf(instituteId), Institute.findOne({ where: { instituteId, isDeleted: false } }), settingsOf(instituteId)]);
+  return { template, institute: instituteLines(institute), gradingScale: settings.gradingScale };
+};
 
 /** The template, the defaults, the institute's lines and grade bands (all a PDF needs besides the marks). */
 const getResultSheet = async (user: any) => {

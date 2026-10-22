@@ -317,7 +317,7 @@ const WORK: Record<Role, { groups: Record<WorkStatus, string[]>; sql: string }> 
             AND res."isDeleted" = false AND res."publishedAt" IS NOT NULL
         )
       UNION ALL
-      SELECT CASE WHEN q.status::text IN ('Pending', 'Under Review', 'Approved') THEN 'rechecks-pending' ELSE 'rechecks-done' END AS grp,
+      SELECT CASE WHEN q.status::text IN ('Pending', 'Under Review', 'Awaiting Approval', 'Approved') THEN 'rechecks-pending' ELSE 'rechecks-done' END AS grp,
              2 AS rank, COALESCE(q."updatedAt", q."createdAt") AS at, 'rq:' || q."requestId" AS key, ${EXAM_COLUMNS},
              NULL::numeric AS "marksObtained", NULL::numeric AS "totalMarks", NULL::numeric AS percentage, NULL::text AS grade,
              q.status::text AS "resultStatus", NULL::timestamptz AS "publishedAt",
@@ -461,12 +461,12 @@ const historySql = (ctx: Ctx) => {
     WHERE a."instituteId" = :inst AND a."teacherId" = :id AND v.at IS NOT NULL ${IN_SCOPE}
     UNION ALL
     SELECT v.at, 'recheck', v.ev, v.ev || ':' || ra."requestId", ${EXAM_COLUMNS},
-           u."userName"::text, ra."previousScore"::text, ra."revisedScore"::text, NULL
+           u."userName"::text, ra."previousScore"::text, ra."revisedScore"::text, ra."returnNote"::text
     FROM viaexam_recheck_assignments ra
     JOIN viaexam_recheck_requests rr ON rr."requestId" = ra."requestId"
     JOIN viaexam_exams e ON e."examId" = ra."examId" ${EXAM_NAMES}
     LEFT JOIN viaexam_users u ON u."userId" = rr."studentId"
-    CROSS JOIN LATERAL (VALUES (ra."assignedAt", 'recheck-assigned'), (ra."completedAt", 'recheck-finished')) v(at, ev)
+    CROSS JOIN LATERAL (VALUES (ra."assignedAt", 'recheck-assigned'), (ra."completedAt", 'recheck-finished'), (ra."returnedAt", 'recheck-returned'), (ra."approvedAt", 'recheck-approved')) v(at, ev)
     WHERE ra."instituteId" = :inst AND ra."teacherId" = :id AND v.at IS NOT NULL ${IN_SCOPE}`;
 
   if (ctx.role === "SCANNER")
@@ -544,7 +544,9 @@ const describe = (h: any): Pick<HistoryEvent, "title" | "detail" | "tone"> => {
     case "eval-done": return { tone: "green", title: "Finished checking the marks", detail: exam };
     case "eval-removed": return { tone: "slate", title: "Removed as evaluator", detail: exam };
     case "recheck-assigned": return { tone: "blue", title: `Asked to recheck ${h.x1 || "a student"}'s sheet`, detail: exam };
-    case "recheck-finished": return { tone: "green", title: "Finished a recheck", detail: `${exam} — ${h.x2 ?? "?"} → ${h.x3 ?? "?"}` };
+    case "recheck-finished": return { tone: "green", title: "Sent a recheck decision", detail: `${exam} — ${h.x2 ?? "?"} → ${h.x3 ?? "?"}` };
+    case "recheck-returned": return { tone: "amber", title: "Recheck decision sent back", detail: `${exam}${h.x4 ? ` — “${h.x4}”` : ""}` };
+    case "recheck-approved": return { tone: "green", title: "Recheck decision approved", detail: `${exam} — ${h.x2 ?? "?"} → ${h.x3 ?? "?"}` };
     case "scan-assigned": return { tone: "cyan", title: "Asked to scan an exam", detail: joined(exam, h.x1) };
     case "scan-done": return { tone: "green", title: "Finished scanning", detail: exam };
     case "scan-removed": return { tone: "slate", title: "Taken off the exam", detail: exam };
@@ -692,7 +694,7 @@ const studentSummary = async (r: Record<string, unknown>, profile: any) => {
       (SELECT COUNT(*) FROM viaexam_exam_attendance a JOIN viaexam_exams e ON e."examId" = a."examId"
          WHERE a."instituteId" = :inst AND a."studentId" = :id AND a.status = 'ABSENT' ${IN_SCOPE})::int AS absent,
       (SELECT COUNT(*) FROM viaexam_recheck_requests q JOIN viaexam_exams e ON e."examId" = q."examId"
-         WHERE q."instituteId" = :inst AND q."studentId" = :id AND q.status::text IN ('Pending', 'Under Review', 'Approved') ${IN_SCOPE})::int AS "rechecksOpen"`, r),
+         WHERE q."instituteId" = :inst AND q."studentId" = :id AND q.status::text IN ('Pending', 'Under Review', 'Awaiting Approval', 'Approved') ${IN_SCOPE})::int AS "rechecksOpen"`, r),
   ]);
   return {
     profile: profile
