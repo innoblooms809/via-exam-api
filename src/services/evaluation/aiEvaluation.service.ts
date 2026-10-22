@@ -393,7 +393,7 @@ const updateEvaluationBySheetId = async (
       };
     }
 
-    const sheet = await Scanner.findOne({ where: { sheetId }, attributes: ["examId", "instituteId"] });
+    const sheet = await Scanner.findOne({ where: { sheetId }, attributes: ["examId", "instituteId", "classId", "section", "rollNo"] });
     const exam = sheet?.examId ? await Exam.findOne({ where: { examId: sheet.examId } }) : null;
     const score = data.totalScore === undefined || data.totalScore === null ? null : Number(data.totalScore);
     if (score !== null && (!Number.isFinite(score) || score < 0 || (exam && score > exam.totalMarks))) {
@@ -417,6 +417,9 @@ const updateEvaluationBySheetId = async (
     }
 
     const before = aiEval.totalScore == null ? null : Number(aiEval.totalScore);
+    // Whose marks these are, from the sheet's enrolment (the evaluation's own studentId can be
+    // someone else's), so the marks history names the right student.
+    const ownerId = sheet ? await studentForSheet(sheet) : null;
     await sequelize.transaction(async (t) => {
       await aiEval.update(
         {
@@ -440,7 +443,7 @@ const updateEvaluationBySheetId = async (
             examType: exam?.examType ?? null,
             examId: exam?.examId ?? null,
             subjectId: exam?.subjectId ?? null,
-            studentId: aiEval.studentId?.startsWith("STUDENT-") ? null : aiEval.studentId,
+            studentId: ownerId,
             sheetId,
           },
           t

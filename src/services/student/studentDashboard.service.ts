@@ -3,7 +3,7 @@ import Exam from "../../models/Exam.model";
 import StudentResult, { RESULT_STATUS } from "../../models/StudentResult.model";
 import StudentEnrollment from "../../models/StudentEnrollment.model";
 import { currentEnrollment } from "./enrollment.service";
-import RecheckRequest from "../../models/RecheckRequest.model";
+import RecheckRequest, { RECHECK_OPEN_STATUSES } from "../../models/RecheckRequest.model";
 import Subject from "../../models/Subject.model";
 import Class from "../../models/Class.model";
 import ActivityLog from "../../models/ActivityLog.model";
@@ -62,7 +62,7 @@ const getStudentDashboardOverview = async (studentId: string, instituteId: strin
       where: {
         studentId,
         instituteId,
-        status: { [Op.in]: ["Pending", "Under Review"] },
+        status: { [Op.in]: RECHECK_OPEN_STATUSES },
       },
     });
 
@@ -175,7 +175,7 @@ const getExamProgress = async (studentId: string, instituteId: string, query: an
     ]);
 
     const rechecks = await RecheckRequest.count({
-      where: { studentId, instituteId, status: { [Op.in]: ["Pending", "Under Review"] }, createdAt: dateFilter },
+      where: { studentId, instituteId, status: { [Op.in]: RECHECK_OPEN_STATUSES }, createdAt: dateFilter },
     });
 
     const progress = [

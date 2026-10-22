@@ -41,14 +41,22 @@ router.get("/results", admin, validate(Validation.listResults), Controller.listR
 // Class result sheet: students × subjects for one exam type (Mid Term / Final) of a session.
 router.get("/results/class", admin, validate(Validation.classResults), Controller.classResults);
 
-// ── Student: own results and one recheck per exam ────────────────────────────
+// ── Student: own results, report card and one recheck claim per exam ─────────
 router.get("/student/results", authorize(["STUDENT"]), validate(Validation.myResults), Controller.myResults);
+// The report card as the school prints it (only the student's own row of the class sheet).
+router.get("/student/report-card", authorize(["STUDENT"]), validate(Validation.myReportCard), Controller.myReportCard);
+// One result in full: question-wise marks and feedback as far as the school shows them.
+router.get("/student/results/:resultId", authorize(["STUDENT"]), validate(Validation.resultParam), Controller.myResultDetail);
+router.get("/student/rechecks", authorize(["STUDENT"]), validate(Validation.myClaims), Controller.myClaims);
 router.post("/student/rechecks", authorize(["STUDENT"]), validate(Validation.createRecheck), Controller.createRecheck);
 
-// ── Rechecks: admin assigns / rejects, teacher completes ─────────────────────
+// ── Rechecks: admin assigns / rejects, teacher decides, admin approves ───────
 router.get("/rechecks", admin, validate(Validation.listRechecks), Controller.listRechecks);
 router.post("/rechecks/:requestId/assign", admin, validate(Validation.assignRecheck), Controller.assignRecheck);
 router.post("/rechecks/:requestId/reject", admin, validate(Validation.rejectRecheck), Controller.rejectRecheck);
+// The teacher's decision reaches the result only once an admin approves it.
+router.post("/rechecks/:requestId/approve", admin, validate(Validation.approveRecheck), Controller.approveRecheck);
+router.post("/rechecks/:requestId/return", admin, validate(Validation.returnRecheck), Controller.returnRecheck);
 router.get("/teacher/rechecks", authorize(ACADEMIC), validate(Validation.myRechecks), Controller.myRechecks);
 router.post("/teacher/rechecks/:requestId/complete", authorize(ACADEMIC), validate(Validation.completeRecheck), Controller.completeRecheck);
 

@@ -49,6 +49,8 @@ export const logMarksChange = (
     subjectId?: string | null;
     studentId?: string | null;
     sheetId?: string | null;
+    /** The admin who approved it (a recheck decision). */
+    approvedBy?: string | null;
   },
   transaction?: Transaction
 ) =>
@@ -58,6 +60,7 @@ export const logMarksChange = (
       what: entry.what,
       source: entry.source,
       changedBy: entry.changedBy,
+      approvedBy: entry.approvedBy ?? null,
       oldValue: entry.oldValue === undefined || entry.oldValue === null ? null : String(entry.oldValue).slice(0, 255),
       newValue: entry.newValue === undefined || entry.newValue === null ? null : String(entry.newValue).slice(0, 255),
       reason: entry.reason ? String(entry.reason).slice(0, 2000) : null,
@@ -334,19 +337,69 @@ const copyMarks = async (user: any, body: any) => {
 };
 
 // ─── GET /marks/changes ────────────────────────────────────────────────────────
-// Who changed which marks, newest first. ?examId= / ?subjectId= / ?studentId= / ?sessionId= /
-// ?examType= / ?what=max-marks,pass-marks narrow it; ?before=<id> pages back.
+// Who changed which marks, newest first. ?examId= / ?subjectId= / ?sessionId= / ?examType= /
+// ?sheetId= (one answer sheet) / ?what=max-marks,pass-marks set the scope; ?changedBy= (a
+// person), ?studentId= and ?source=recheck,cross-check narrow it; ?before=<id> pages back.
+// ?facets=1 also lists, for the scope, who made changes, whose marks changed and where (for
+// the filter menus).
+
+const userNames = async (ids: string[]) =>
+  new Map(
+    ids.length
+      ? (await sequelize.query<{ userId: string; userName: string }>(`SELECT "userId", "userName" FROM viaexam_users WHERE "userId" IN (:ids)`, { replacements: { ids }, type: QueryTypes.SELECT })).map(
+          (u) => [u.userId, u.userName]
+        )
+      : []
+  );
+
+/** Who made changes, whose marks changed and where, with counts, in a scope. */
+const changeFacets = async (scope: any) => {
+  const count = [sequelize.fn("COUNT", sequelize.col("id")), "n"] as [ReturnType<typeof sequelize.fn>, string];
+  const [changers, students, sources] = (await Promise.all([
+    MarksAudit.findAll({ where: scope, attributes: ["changedBy", count], group: ["changedBy"], raw: true }),
+    MarksAudit.findAll({ where: { ...scope, studentId: { [Op.ne]: null } }, attributes: ["studentId", count], group: ["studentId"], raw: true }),
+    MarksAudit.findAll({ where: scope, attributes: ["source", count], group: ["source"], raw: true }),
+  ])) as unknown as [{ changedBy: string; n: string }[], { studentId: string; n: string }[], { source: string; n: string }[]];
+  const names = await userNames([...new Set([...changers.map((c) => c.changedBy), ...students.map((s) => s.studentId)])]);
+  const people = <T,>(rows: T[], id: (r: T) => string) =>
+    rows
+      .map((r: any) => ({ userId: id(r), name: names.get(id(r)) ?? "Someone", count: Number(r.n) || 0 }))
+      .sort((a, b) => b.count - a.count || byName(a.name, b.name))
+      .slice(0, 100);
+  return {
+    changers: people(changers, (r) => r.changedBy),
+    students: people(students, (r) => r.studentId),
+    sources: sources.map((s) => ({ source: s.source, count: Number(s.n) || 0 })),
+  };
+};
 
 const getChanges = async (user: any, query: any) => {
   const instituteId = String(user?.instituteId ?? "");
   const limit = Math.min(100, Math.max(1, Number(query?.limit) || 30));
-  const where: any = { instituteId };
-  for (const k of ["examId", "subjectId", "studentId", "sessionId"] as const) if (query?.[k]) where[k] = String(query[k]);
-  if (query?.examType) where.examType = normalizeExamType(query.examType) ?? String(query.examType);
+  const scope: any = { instituteId };
+  for (const k of ["examId", "subjectId", "sessionId", "sheetId"] as const) if (query?.[k]) scope[k] = String(query[k]);
+  if (query?.examType) scope.examType = normalizeExamType(query.examType) ?? String(query.examType);
   const what = String(query?.what ?? "").split(",").map((w) => w.trim()).filter((w) => (Object.values(MARKS_CHANGE) as string[]).includes(w));
-  if (what.length) where.what = { [Op.in]: what };
+  if (what.length) scope.what = { [Op.in]: what };
+  const where: any = { ...scope };
+  if (query?.studentId) where.studentId = String(query.studentId);
+  if (query?.changedBy) where.changedBy = String(query.changedBy);
+  const source = String(query?.source ?? "").split(",").map((s) => s.trim()).filter((s) => (Object.values(MARKS_SOURCE) as string[]).includes(s));
+  if (source.length) where.source = { [Op.in]: source };
   if (query?.before) where.id = { [Op.lt]: Number(query.before) };
-  const rows = await MarksAudit.findAll({ where, order: [["id", "DESC"]], limit: limit + 1, include: [{ association: "changer", attributes: ["userName"], required: false }] });
+  const [rows, facets] = await Promise.all([
+    MarksAudit.findAll({
+      where,
+      order: [["id", "DESC"]],
+      limit: limit + 1,
+      include: [
+        { association: "changer", attributes: ["userName"], required: false },
+        { association: "approver", attributes: ["userName"], required: false },
+      ],
+    }),
+    // Only the first page asks; a page further back keeps the menus it has.
+    query?.facets && !query?.before ? changeFacets(scope) : null,
+  ]);
   const more = rows.length > limit;
   const page = rows.slice(0, limit);
   const subjectIds = [...new Set(page.map((r) => r.subjectId).filter(Boolean))] as string[];
@@ -376,13 +429,19 @@ const getChanges = async (user: any, query: any) => {
         examType: r.examType,
         examId: r.examId,
         subject: r.subjectId ? (subjectOf.get(r.subjectId) ?? null) : null,
+        studentId: r.studentId ?? null,
         student: r.studentId ? (studentOf.get(r.studentId) ?? null) : null,
+        sheetId: r.sheetId ?? null,
         oldValue: r.oldValue,
         newValue: r.newValue,
         reason: r.reason,
+        changedById: r.changedBy,
         changedBy: r.changer?.userName ?? "Someone",
+        /** The admin who approved it (a recheck decision). */
+        approvedBy: r.approvedBy ? (r.approver?.userName ?? "an admin") : null,
       })),
       next: more ? page[page.length - 1].id : null,
+      ...(facets ? { facets } : {}),
     },
   };
 };

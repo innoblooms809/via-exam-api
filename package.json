@@ -22,6 +22,8 @@
     "db:migrate:workflow": "sequelize-cli db:migrate --name 20261010000000-exam-workflow-and-indexes.js",
     "db:migrate:person-page": "sequelize-cli db:migrate --name 20261014000000-person-page-indexes.js",
     "db:migrate:report-templates": "sequelize-cli db:migrate --name 20261016000000-report-templates.js",
+    "db:migrate:recheck-claims": "sequelize-cli db:migrate --name 20261022000000-recheck-claims.js",
+    "db:migrate:recheck-approval": "sequelize-cli db:migrate --name 20261022010000-recheck-approval.js",
     "db:migrate:status": "sequelize-cli db:migrate:status"
   },
   "keywords": [

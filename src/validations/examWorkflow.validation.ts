@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { RECHECK_CATEGORIES } from "../models/RecheckRequest.model";
 
 // Ids are business keys: old "IB12345678" and new "VIEXM…" shapes both pass.
 const id = Joi.string().trim().max(64).pattern(/^[A-Za-z0-9_-]+$/);
@@ -71,10 +72,22 @@ const myResults = {
   query: Joi.object({ examType: text(60), sessionId: id.allow(""), _t: cacheBuster }),
 };
 
+const resultParam = { params: Joi.object({ resultId: id.required() }), query: Joi.object({ _t: cacheBuster }) };
+const myClaims = { query: Joi.object({ _t: cacheBuster }) };
+const myReportCard = {
+  query: Joi.object({ sessionId: id.required(), examType: Joi.string().trim().max(60).required(), _t: cacheBuster }),
+};
+
 const createRecheck = {
   body: Joi.object({
     examId: id,
     evaluationId: id,
+    category: Joi.string()
+      .valid(...RECHECK_CATEGORIES.map((c) => c.key))
+      .required()
+      .messages({ "any.required": "Choose what kind of marking concern this is.", "any.only": "Choose what kind of marking concern this is." }),
+    // The questions the claim is about (the evaluation's keys); none for the whole paper.
+    questions: Joi.array().items(Joi.string().trim().max(40)).max(60).unique(),
     reason: Joi.string().trim().min(10).max(1000).required().messages({
       "string.min": "Tell us in a sentence or two why the answer sheet should be rechecked.",
     }),
@@ -85,7 +98,7 @@ const listRechecks = {
   query: Joi.object({
     page,
     limit,
-    status: Joi.string().valid("Pending", "Under Review", "Completed", "Rejected", "Approved", ""),
+    status: Joi.string().valid("Pending", "Under Review", "Awaiting Approval", "Completed", "Rejected", "Approved", ""),
     examId: id.allow(""),
     _t: cacheBuster,
   }),
@@ -93,6 +106,12 @@ const listRechecks = {
 
 const assignRecheck = { ...requestParam, body: Joi.object({ teacherId: id.allow("", null) }) };
 const rejectRecheck = { ...requestParam, body: Joi.object({ note: Joi.string().trim().min(3).max(1000).required() }) };
+const approveRecheck = { ...requestParam, body: Joi.object({}) };
+// Sending a decision back always says what to look at again.
+const returnRecheck = {
+  ...requestParam,
+  body: Joi.object({ note: Joi.string().trim().min(3).max(1000).required().messages({ "any.required": "Say what the teacher should look at again." }) }),
+};
 const myRechecks = { query: Joi.object({ page, limit, state: Joi.string().valid("open", "done", ""), _t: cacheBuster }) };
 const completeRecheck = {
   ...requestParam,
@@ -117,10 +136,15 @@ export default {
   setAttendance,
   listResults,
   myResults,
+  resultParam,
+  myClaims,
+  myReportCard,
   createRecheck,
   listRechecks,
   assignRecheck,
   rejectRecheck,
+  approveRecheck,
+  returnRecheck,
   myRechecks,
   completeRecheck,
   requestReopen,

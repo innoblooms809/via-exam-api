@@ -24,8 +24,10 @@ import UserModal from "../../models/User.model";
 import Role from "../../models/Role.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
-import RecheckRequest from "../../models/RecheckRequest.model";
+import RecheckRequest, { RECHECK_CATEGORIES, RECHECK_OPEN_STATUSES, recheckCategoryLabel, type ClaimedQuestion, type RecheckCategory } from "../../models/RecheckRequest.model";
 import RecheckAssignment from "../../models/RecheckAssignment.model";
+import { printBitsOf, resultTemplateOf } from "../academic/reportTemplate.service";
+import ClassResultsService from "./classResults.service";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import Subject from "../../models/Subject.model";
 import Session from "../../models/Session.model";
@@ -52,6 +54,46 @@ const clean = (v: unknown) => String(v ?? "").trim();
 const roleKey = (user: any) => String(user?.role?.role ?? "").toUpperCase().replace(/[\s_-]+/g, "");
 const isAdmin = (user: any) => ["ADMIN", "INSTITUTEADMIN", "SUPERADMIN"].includes(roleKey(user));
 const round2 = (n: number) => Math.round(n * 100) / 100;
+const numOrNull = (v: unknown) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : round2(Number(v)));
+const textList = (v: unknown) => (Array.isArray(v) ? v.map((s) => clean(s)).filter(Boolean).slice(0, 12) : []);
+
+/** "1" → "Q1", "q2b" → "Q2b", "Q3(a)" stays. */
+const questionLabel = (id: string, n: number) => {
+  const raw = clean(id);
+  if (!raw) return `Q${n}`;
+  return /^\d/.test(raw) ? `Q${raw}` : raw.replace(/^q(?=\d)/, "Q");
+};
+
+/**
+ * An evaluation's questions in paper order, as students, admins and teachers see them.
+ * `key` is unique within the paper (the evaluation's question id, numbered again when two
+ * share one); `label` is what people read ("Q3(b)").
+ */
+export const questionsOf = (evaluations: unknown) => {
+  const seen = new Set<string>();
+  return (Array.isArray(evaluations) ? evaluations : []).map((q: any, i: number) => {
+    const label = questionLabel(q?.questionId ?? q?.question_id, i + 1);
+    let key = label;
+    if (seen.has(key)) key = `${label}#${i + 1}`;
+    seen.add(key);
+    // The pipelines write "Evaluated" when the model gave no feedback: that says nothing.
+    const feedback = clean(q?.evaluation?.feedback ?? (typeof q?.feedback === "string" ? q.feedback : ""));
+    return {
+      key,
+      label,
+      text: clean(q?.questionText ?? q?.question_text ?? q?.question).slice(0, 2000),
+      obtained: numOrNull(q?.marks?.obtained ?? q?.obtainedMarks ?? q?.score),
+      maximum: numOrNull(q?.marks?.maximum ?? q?.maxMarks ?? q?.max_marks),
+      status: clean(q?.status) || null,
+      feedback: feedback && feedback.toLowerCase() !== "evaluated" ? feedback.slice(0, 2000) : null,
+      strengths: textList(q?.evaluation?.strengths),
+      improvements: textList(q?.evaluation?.improvements),
+      /** What was read from the student's own sheet for this answer. */
+      studentAnswer: clean(q?.studentAnswer ?? q?.student_answer_snippet).slice(0, 1500) || null,
+    };
+  });
+};
+export type PaperQuestion = ReturnType<typeof questionsOf>[number];
 
 /** Scanner staff never see evaluation: their roster numbers stop at sheets in, absentees and pending. */
 const scanCountsFor = (user: any, counts: Awaited<ReturnType<typeof buildRoster>>["counts"]) => {
@@ -825,7 +867,7 @@ const publishResults = async (admin: any, examId: string) => {
 const unpublishResults = async (admin: any, examId: string) => {
   const instituteId = admin.instituteId;
   const exam = await requireExam(instituteId, examId);
-  const openRechecks = await RecheckRequest.count({ where: { examId: exam.examId, status: { [Op.in]: ["Pending", "Under Review"] } } });
+  const openRechecks = await RecheckRequest.count({ where: { examId: exam.examId, status: { [Op.in]: RECHECK_OPEN_STATUSES } } });
   if (openRechecks) throw new ApiError(httpStatus.CONFLICT, `Resolve the ${openRechecks} open recheck request${openRechecks === 1 ? "" : "s"} first.`);
 
   const withdrawn = await sequelize.transaction(async (t) => {
@@ -948,12 +990,17 @@ const myResults = async (student: any, query: any) => {
     }),
   ]);
 
-  const rechecks = rows.length
-    ? await RecheckRequest.findAll({
-        where: { studentId: student.userId, examId: { [Op.in]: rows.map((r) => r.examId) } },
-        attributes: ["requestId", "examId", "status", "createdAt", "completedAt"],
-      })
-    : [];
+  const examIds = Array.from(new Set(rows.map((r) => r.examId)));
+  const [rechecks, averages, template] = await Promise.all([
+    examIds.length
+      ? RecheckRequest.findAll({
+          where: { studentId: student.userId, examId: { [Op.in]: examIds } },
+          attributes: ["requestId", "examId", "status", "category", "createdAt", "completedAt"],
+        })
+      : Promise.resolve([] as RecheckRequest[]),
+    classAverages(examIds),
+    resultTemplateOf(student.instituteId),
+  ]);
   const recheckByExam = new Map(rechecks.map((r) => [r.examId, r]));
 
   const groups = new Map<string, any>();
@@ -974,12 +1021,25 @@ const myResults = async (student: any, query: any) => {
       });
     }
     const recheck = recheckByExam.get(r.examId);
+    const blocked = recheckBlockedReason(r, recheck);
     groups.get(key).subjects.push({
       ...toResultRow(r, null),
       examDate: r.exam?.examDate ?? null,
       evaluationId: r.evaluationId,
-      recheck: recheck ? { requestId: recheck.requestId, status: recheck.status, requestedAt: recheck.createdAt, completedAt: recheck.completedAt } : null,
-      canRequestRecheck: !recheck && r.resultStatus !== RESULT_STATUS.ABSENT && Boolean(r.evaluationId),
+      /** The average percentage of everyone who sat the exam (absentees not counted). */
+      classAverage: averages.get(r.examId) ?? null,
+      recheck: recheck
+        ? {
+            requestId: recheck.requestId,
+            status: recheck.status,
+            category: recheck.category,
+            categoryLabel: recheckCategoryLabel(recheck.category),
+            requestedAt: recheck.createdAt,
+            completedAt: recheck.completedAt,
+          }
+        : null,
+      canRequestRecheck: !blocked,
+      recheckBlockedReason: blocked,
     });
   }
 
@@ -1002,6 +1062,179 @@ const myResults = async (student: any, query: any) => {
   return {
     activeSession: activeSession ? { sessionId: activeSession.sessionId, sessionName: activeSession.sessionName } : null,
     groups: [...groups.values()].map((g) => ({ ...g, summary: summarise(g.subjects) })),
+    /** What the school lets students see of a result besides its marks (Results → Template). */
+    studentView: template.studentView,
+    categories: RECHECK_CATEGORIES,
+  };
+};
+
+/** Each exam's class average: the mean percentage of the students who sat it. */
+const classAverages = async (examIds: string[]) => {
+  if (!examIds.length) return new Map<string, number>();
+  const rows = (await StudentResult.findAll({
+    where: { examId: { [Op.in]: examIds }, isDeleted: false, resultStatus: { [Op.in]: [RESULT_STATUS.PASS, RESULT_STATUS.FAIL] } },
+    attributes: ["examId", [sequelize.fn("AVG", sequelize.col("percentage")), "average"]],
+    group: ["examId"],
+    raw: true,
+  })) as unknown as { examId: string; average: string | number | null }[];
+  return new Map(rows.filter((r) => r.average != null).map((r) => [r.examId, round2(Number(r.average))]));
+};
+
+/** Why this result can't be rechecked (null: it can). One claim per exam, on an evaluated sheet. */
+const recheckBlockedReason = (result: any, existing: any) => {
+  if (existing) return "You have already made a claim for this exam. Only one is allowed.";
+  if (result.resultStatus === RESULT_STATUS.ABSENT) return "You were absent, so there is no answer sheet to recheck.";
+  if (!result.evaluationId) return "There is no evaluated answer sheet for this result.";
+  return null;
+};
+
+/** A claim as its student sees it: what was asked, where it is, and the decision (the evaluator stays anonymous). */
+const claimForStudent = (request: any, assignment: any, result: any) => {
+  const decided = request.status === "Completed" || request.status === "Rejected";
+  const previous = assignment?.previousScore == null ? null : Number(assignment.previousScore);
+  const revised = assignment?.revisedScore == null ? null : Number(assignment.revisedScore);
+  const changed = request.status === "Completed" && revised != null && (previous == null || Math.abs(previous - revised) >= 0.005);
+  return {
+    requestId: request.requestId,
+    examId: request.examId,
+    category: request.category,
+    categoryLabel: recheckCategoryLabel(request.category),
+    questions: (request.questions ?? []) as ClaimedQuestion[],
+    reason: request.reason,
+    status: request.status,
+    requestedAt: request.createdAt,
+    /** The admin sent it to an evaluator. */
+    assignedAt: assignment?.assignedAt ?? null,
+    /** The evaluator rechecked it (their marks stay hidden until the admin approves them). */
+    recheckedAt: request.status === "Awaiting Approval" || request.status === "Completed" ? (assignment?.completedAt ?? null) : null,
+    completedAt: request.completedAt,
+    decision: decided
+      ? {
+          outcome: request.status === "Rejected" ? "REJECTED" : changed ? "CHANGED" : "UNCHANGED",
+          previousScore: previous,
+          revisedScore: request.status === "Rejected" ? null : revised,
+          note: request.decisionNote ?? (request.status === "Rejected" ? null : (assignment?.teacherNote ?? null)),
+          decidedAt: request.completedAt,
+        }
+      : null,
+    result: result
+      ? {
+          resultId: result.resultId,
+          marksObtained: result.marksObtained == null ? null : Number(result.marksObtained),
+          totalMarks: result.totalMarks,
+          percentage: result.percentage == null ? null : Number(result.percentage),
+          grade: result.grade,
+          resultStatus: result.resultStatus,
+          revisedAt: result.revisedAt,
+          revisionCount: result.revisionCount,
+        }
+      : null,
+  };
+};
+
+/**
+ * One of my published results in full: its marks, the class average, each question's marks
+ * and the evaluation's feedback (as far as the school lets students see them), and my claim.
+ */
+const myResultDetail = async (student: any, resultId: string) => {
+  const r: any = await StudentResult.findOne({
+    where: { resultId: clean(resultId), studentId: student.userId, instituteId: student.instituteId, isDeleted: false },
+    include: [
+      { model: Subject, as: "subject", attributes: ["subjectName"], required: false },
+      { model: Exam, as: "exam", attributes: ["examId", "examDate"], required: false, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") },
+    ],
+  });
+  if (!r) throw new ApiError(httpStatus.NOT_FOUND, "Result not found.");
+
+  // The result names its evaluation (the evaluation's own studentId isn't always the student's).
+  const [template, evaluation, request, averages] = await Promise.all([
+    resultTemplateOf(student.instituteId),
+    r.evaluationId ? AIEvaluation.findOne({ where: { evaluationId: r.evaluationId }, attributes: ["evaluations", "feedback"] }) : null,
+    RecheckRequest.findOne({ where: { studentId: student.userId, examId: r.examId } }),
+    classAverages([r.examId]),
+  ]);
+  const assignment = request ? await RecheckAssignment.findOne({ where: { requestId: request.requestId } }) : null;
+  const view = template.studentView;
+  const questions = view.questionMarks && evaluation ? questionsOf(evaluation.evaluations) : null;
+  const blocked = recheckBlockedReason(r, request);
+
+  return {
+    result: {
+      ...toResultRow(r, null),
+      examDate: r.exam?.examDate ?? null,
+      sessionId: r.sessionId,
+      classAverage: averages.get(r.examId) ?? null,
+    },
+    studentView: view,
+    /** null: the school doesn't show question marks to students; []: none recorded. */
+    questions: questions
+      ? questions.map((q) => (view.feedback ? q : { ...q, feedback: null, strengths: [], improvements: [] }))
+      : null,
+    /** The questions' marks added up (compare with the total). */
+    questionTotal: questions?.length ? round2(questions.reduce((s, q) => s + (q.obtained ?? 0), 0)) : null,
+    feedback: view.feedback ? clean(evaluation?.feedback) || null : null,
+    claim: request ? claimForStudent(request, assignment, r) : null,
+    canRequestRecheck: !blocked,
+    recheckBlockedReason: blocked,
+    categories: RECHECK_CATEGORIES,
+  };
+};
+
+/** Every claim I have made, newest first, with where each one is and its decision. */
+const myClaims = async (student: any) => {
+  const requests = await RecheckRequest.findAll({
+    where: { studentId: student.userId, instituteId: student.instituteId },
+    order: [["createdAt", "DESC"]],
+    limit: 500,
+  });
+  if (!requests.length) return { claims: [], categories: RECHECK_CATEGORIES };
+  const examIds = Array.from(new Set(requests.map((r) => r.examId)));
+  const [exams, assignments, results] = await Promise.all([
+    Exam.findAll({ where: { examId: { [Op.in]: examIds } }, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") }),
+    RecheckAssignment.findAll({ where: { requestId: { [Op.in]: requests.map((r) => r.requestId) } } }),
+    StudentResult.findAll({ where: { studentId: student.userId, examId: { [Op.in]: examIds }, isDeleted: false } }),
+  ]);
+  const examById = new Map(exams.map((e: any) => [e.examId, e]));
+  const assignmentOf = new Map(assignments.map((a) => [a.requestId, a]));
+  const resultOf = new Map(results.map((r) => [r.examId, r]));
+  return {
+    claims: requests.map((req) => {
+      const exam: any = examById.get(req.examId);
+      return {
+        ...claimForStudent(req, assignmentOf.get(req.requestId), resultOf.get(req.examId)),
+        label: exam ? examLabel(exam) : req.examId,
+        subjectName: exam?.subject?.subjectName ?? "",
+        examType: exam?.examType ?? "",
+        examDate: exam?.examDate ?? null,
+        sessionId: exam?.sessionId ?? null,
+        sessionName: exam?.session?.sessionName ?? "",
+      };
+    }),
+    categories: RECHECK_CATEGORIES,
+  };
+};
+
+/**
+ * My report card for one exam of a session, as the school prints it: the class sheet of my
+ * class reduced to my own row (the class averages and how many are ranked stay), with the
+ * school's template, header lines and grade bands.
+ */
+const myReportCard = async (student: any, query: any) => {
+  const instituteId = student.instituteId;
+  const sessionId = clean(query?.sessionId);
+  const examType = clean(query?.examType);
+  if (!sessionId || !examType) throw new ApiError(httpStatus.BAD_REQUEST, "Choose the session and the exam.");
+  // The class I sat this exam in: from my published results of it.
+  const mine = await StudentResult.findOne({ where: { studentId: student.userId, instituteId, sessionId, examType, isDeleted: false }, attributes: ["classId"] });
+  if (!mine?.classId) throw new ApiError(httpStatus.NOT_FOUND, "No results of this exam are published for you yet.");
+  const sheet: any = await ClassResultsService.classResults({ instituteId }, { classId: mine.classId, sessionId, examType });
+  const me = sheet.students.find((s: any) => s.studentId === student.userId);
+  if (!me) throw new ApiError(httpStatus.NOT_FOUND, "No results of this exam are published for you yet.");
+  const bits = await printBitsOf(instituteId);
+  return {
+    sheet: { ...sheet, students: [me], summary: { ...sheet.summary, topper: null } },
+    rankedCount: sheet.students.filter((s: any) => s.rank != null).length,
+    ...bits,
   };
 };
 
@@ -1009,10 +1242,16 @@ const myResults = async (student: any, query: any) => {
 // RECHECK — one per student per exam
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** Student asks for a recheck of a published result. Only one request per exam, ever. */
+/**
+ * Student claims a recheck of a published result: the kind of concern (category), the
+ * questions it is about (none: the whole paper) and their reason. One claim per exam, ever.
+ */
 const createRecheck = async (student: any, body: any) => {
   const instituteId = student.instituteId;
   const reason = clean(body?.reason).slice(0, 1000) || null;
+  // The older form (POST /recheck-requests/create) sends no category.
+  const category = (clean(body?.category).toUpperCase() || "OTHER") as RecheckCategory;
+  if (!RECHECK_CATEGORIES.some((c) => c.key === category)) throw new ApiError(httpStatus.BAD_REQUEST, "Choose what kind of marking concern this is.");
   let examId = clean(body?.examId);
   const evaluationId = clean(body?.evaluationId);
 
@@ -1026,6 +1265,18 @@ const createRecheck = async (student: any, body: any) => {
   if (!result) throw new ApiError(httpStatus.NOT_FOUND, "There is no published result for this exam.");
   if (result.resultStatus === RESULT_STATUS.ABSENT || !result.evaluationId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "A recheck needs an evaluated answer sheet.");
+  }
+
+  // The questions named must be on the evaluated paper; their marks are kept as they were.
+  const asked: string[] = Array.isArray(body?.questions) ? Array.from(new Set(body.questions.map((q: unknown) => clean(q)).filter(Boolean))) : [];
+  let questions: ClaimedQuestion[] | null = null;
+  if (asked.length) {
+    // The student's own published result names the evaluation.
+    const ev = await AIEvaluation.findOne({ where: { evaluationId: result.evaluationId as string }, attributes: ["evaluations"] });
+    const paper = questionsOf(ev?.evaluations);
+    const unknown = asked.filter((k) => !paper.some((q) => q.key === k));
+    if (unknown.length) throw new ApiError(httpStatus.BAD_REQUEST, `${unknown.join(", ")} ${unknown.length === 1 ? "isn't" : "aren't"} on your evaluated paper.`);
+    questions = paper.filter((q) => asked.includes(q.key)).map((q) => ({ questionId: q.key, label: q.label, obtained: q.obtained, maximum: q.maximum }));
   }
 
   const exam = await requireExam(instituteId, examId);
@@ -1043,33 +1294,56 @@ const createRecheck = async (student: any, body: any) => {
         examId,
         evaluationId: result.evaluationId as string,
         subjectId: result.subjectId,
+        category,
+        questions,
         reason,
         status: "Pending",
       },
       { transaction: t }
     );
     const adminIds = await instituteAdminIds(instituteId, t);
+    const about = questions?.length ? ` (${questions.map((q) => q.label).join(", ")})` : "";
     await notifyAll(
       adminIds.map((userId) => ({
         instituteId,
         userId,
         type: "RECHECK_REQUESTED",
         title: "Recheck requested",
-        message: `${student.userName ?? "A student"} asked for a recheck of ${examLabel(exam)}.`,
+        message: `${student.userName ?? "A student"} asked for a recheck of ${examLabel(exam)}: ${recheckCategoryLabel(category)}${about}.`,
         referenceId: request.requestId,
       })),
       t
     );
     return request;
   });
-  return { requestId: created.requestId, status: created.status, examId, requestedAt: created.createdAt };
+  return { requestId: created.requestId, status: created.status, examId, category, questions, requestedAt: created.createdAt };
 };
 
-const recheckRow = (r: any, exam: any, assignment: any, names: Map<string, string>, masked = false) => {
+/**
+ * The questions a claim names, as they stand on the paper now: the text, the marks when the
+ * claim was made and now, and the evaluation's feedback (empty for a whole-paper claim).
+ */
+const claimedDetail = (claimed: ClaimedQuestion[] | null | undefined, paper: PaperQuestion[]) =>
+  (claimed ?? []).map((c) => {
+    const q = paper.find((p) => p.key === c.questionId);
+    return {
+      questionId: c.questionId,
+      label: c.label,
+      text: q?.text ?? "",
+      obtainedAtClaim: c.obtained,
+      obtained: q?.obtained ?? null,
+      maximum: q?.maximum ?? c.maximum,
+      feedback: q?.feedback ?? null,
+    };
+  });
+
+const recheckRow = (r: any, exam: any, assignment: any, names: Map<string, string>, masked = false, paper: PaperQuestion[] = [], sheetId: string | null = null) => {
   const studentName = names.get(r.studentId) ?? "";
   return {
     requestId: r.requestId,
     examId: r.examId,
+    /** The answer sheet the claim is about (its marks history). */
+    sheetId,
     label: exam ? examLabel(exam) : r.examId,
     examType: exam?.examType ?? "",
     subjectName: exam?.subject?.subjectName ?? "",
@@ -1079,7 +1353,13 @@ const recheckRow = (r: any, exam: any, assignment: any, names: Map<string, strin
     totalMarks: exam?.totalMarks == null ? null : Number(exam.totalMarks),
     studentId: masked ? null : r.studentId,
     studentName: masked ? maskName(studentName) : studentName,
+    // The student's claim: the kind of concern, the questions it names, their words.
+    category: r.category ?? null,
+    categoryLabel: recheckCategoryLabel(r.category),
+    questions: claimedDetail(r.questions, paper),
+    questionCount: paper.length,
     reason: r.reason,
+    decisionNote: r.decisionNote ?? null,
     status: r.status,
     requestedAt: r.createdAt,
     completedAt: r.completedAt,
@@ -1089,9 +1369,16 @@ const recheckRow = (r: any, exam: any, assignment: any, names: Map<string, strin
           teacherName: names.get(assignment.teacherId) ?? "",
           assignedAt: assignment.assignedAt,
           previousScore: assignment.previousScore == null ? null : Number(assignment.previousScore),
+          /** The teacher's marks: proposed while awaiting approval, final once approved. */
           revisedScore: assignment.revisedScore == null ? null : Number(assignment.revisedScore),
           teacherNote: assignment.teacherNote,
+          /** When the teacher sent their decision. */
           completedAt: assignment.completedAt,
+          approvedAt: assignment.approvedAt ?? null,
+          approvedByName: assignment.approvedBy ? (names.get(assignment.approvedBy) ?? "") : null,
+          /** The admin's note when they last sent the decision back. */
+          returnNote: assignment.returnNote ?? null,
+          returnedAt: assignment.returnedAt ?? null,
         }
       : null,
   };
@@ -1100,15 +1387,21 @@ const recheckRow = (r: any, exam: any, assignment: any, names: Map<string, strin
 const decorateRechecks = async (requests: any[], masked = false) => {
   if (!requests.length) return [];
   const examIds = Array.from(new Set(requests.map((r) => r.examId)));
-  const [exams, assignments] = await Promise.all([
+  const [exams, assignments, evaluations] = await Promise.all([
     Exam.findAll({ where: { examId: { [Op.in]: examIds } }, include: EXAM_INCLUDES }),
     RecheckAssignment.findAll({ where: { requestId: { [Op.in]: requests.map((r) => r.requestId) } } }),
+    // The papers the claims are about, for the questions they name.
+    AIEvaluation.findAll({ where: { evaluationId: { [Op.in]: requests.map((r) => r.evaluationId).filter(Boolean) } }, attributes: ["evaluationId", "sheetId", "evaluations"] }),
   ]);
   const examById = new Map(exams.map((e: any) => [e.examId, e]));
   const assignmentByRequest = new Map(assignments.map((a) => [a.requestId, a]));
-  const userIds = Array.from(new Set([...requests.map((r) => r.studentId), ...assignments.map((a) => a.teacherId)]));
+  const evaluationOf = new Map(evaluations.map((e) => [e.evaluationId, e]));
+  const userIds = Array.from(new Set([...requests.map((r) => r.studentId), ...assignments.flatMap((a) => [a.teacherId, a.approvedBy].filter(Boolean) as string[])]));
   const names = new Map((await UserModal.findAll({ where: { userId: { [Op.in]: userIds } }, attributes: ["userId", "userName"] })).map((u) => [u.userId, u.userName]));
-  return requests.map((r) => recheckRow(r, examById.get(r.examId), assignmentByRequest.get(r.requestId), names, masked));
+  return requests.map((r) => {
+    const ev = evaluationOf.get(r.evaluationId);
+    return recheckRow(r, examById.get(r.examId), assignmentByRequest.get(r.requestId), names, masked, ev ? questionsOf(ev.evaluations) : [], ev?.sheetId ?? null);
+  });
 };
 
 /** Admin: recheck requests of the institute. */
@@ -1118,10 +1411,10 @@ const listRechecks = async (admin: any, query: any) => {
   if (clean(query?.status)) where.status = clean(query.status);
   if (clean(query?.examId)) where.examId = clean(query.examId);
   const { rows, count } = await RecheckRequest.findAndCountAll({ where, order: [["createdAt", "DESC"]], limit, offset });
-  const [pending, underReview, completed, rejected] = await Promise.all(
-    ["Pending", "Under Review", "Completed", "Rejected"].map((status) => RecheckRequest.count({ where: { instituteId: admin.instituteId, status } }))
+  const [pending, underReview, awaitingApproval, completed, rejected] = await Promise.all(
+    (["Pending", "Under Review", "Awaiting Approval", "Completed", "Rejected"] as const).map((status) => RecheckRequest.count({ where: { instituteId: admin.instituteId, status } }))
   );
-  return { requests: await decorateRechecks(rows), summary: { pending, underReview, completed, rejected }, pagination: pageInfo(count, page, limit) };
+  return { requests: await decorateRechecks(rows), summary: { pending, underReview, awaitingApproval, completed, rejected }, pagination: pageInfo(count, page, limit) };
 };
 
 /** Admin hands a recheck to the exam's evaluator (default) or another eligible teacher. */
@@ -1161,7 +1454,9 @@ const assignRecheck = async (admin: any, requestId: string, body: any) => {
     const existing = await RecheckAssignment.findOne({ where: { requestId: request.requestId }, transaction: t });
     const before = existing?.teacherId ?? null;
     if (existing) {
-      await existing.update({ teacherId, assignedBy: admin.userId, assignedAt: new Date() }, { transaction: t });
+      // Another teacher starts afresh (no earlier send-back note or half decision).
+      const fresh = before !== teacherId ? { revisedScore: null, teacherNote: null, completedAt: null, returnNote: null, returnedAt: null } : {};
+      await existing.update({ teacherId, assignedBy: admin.userId, assignedAt: new Date(), ...fresh }, { transaction: t });
     } else {
       await RecheckAssignment.create(
         {
@@ -1178,6 +1473,7 @@ const assignRecheck = async (admin: any, requestId: string, body: any) => {
     }
     await locked.update({ status: "Under Review", reviewedAt: new Date() }, { transaction: t });
     const label = examLabel(exam);
+    const concern = [recheckCategoryLabel(request.category), (request.questions ?? []).map((q) => q.label).join(", ")].filter(Boolean).join(" · ");
     await notifyAll(
       [
         {
@@ -1185,8 +1481,10 @@ const assignRecheck = async (admin: any, requestId: string, body: any) => {
           userId: teacherId,
           type: "RECHECK_ASSIGNED",
           title: "Recheck assigned",
-          // The student's comment comes with it, so the teacher knows what to look at.
-          message: `Re-evaluate one answer sheet of ${label}. The student's identity is hidden.${request.reason ? ` They wrote: “${preview(request.reason, 200)}”` : ""}`,
+          // The student's claim comes with it, so the teacher knows what to look at.
+          message: `Re-evaluate one answer sheet of ${label}. The student's identity is hidden.${concern ? ` Concern: ${concern}.` : ""}${
+            request.reason ? ` They wrote: “${preview(request.reason, 200)}”` : ""
+          }`,
           referenceId: request.requestId,
         },
         { instituteId, userId: request.studentId, type: "RECHECK_UNDER_REVIEW", title: "Recheck under review", message: `Your recheck for ${label} is being reviewed.`, referenceId: request.requestId },
@@ -1213,7 +1511,8 @@ const rejectRecheck = async (admin: any, requestId: string, body: any) => {
   await sequelize.transaction(async (t) => {
     const locked = await RecheckRequest.findOne({ where: { id: request.id }, transaction: t, lock: t.LOCK.UPDATE });
     if (!locked || !["Pending", "Under Review"].includes(locked.status)) throw new ApiError(httpStatus.CONFLICT, `This request is already ${locked?.status?.toLowerCase() ?? "closed"}.`);
-    await locked.update({ status: "Rejected", reviewedBy: admin.userId, reviewedAt: new Date(), completedAt: new Date() }, { transaction: t });
+    // The reason stays on the claim, where the student reads the decision.
+    await locked.update({ status: "Rejected", decisionNote: note, reviewedBy: admin.userId, reviewedAt: new Date(), completedAt: new Date() }, { transaction: t });
     await RecheckAssignment.update({ teacherNote: note, completedAt: new Date() }, { where: { requestId: request.requestId }, transaction: t });
     await notifyAll(
       [{ instituteId, userId: request.studentId, type: "RECHECK_REJECTED", title: "Recheck not accepted", message: `Your recheck for ${examLabel(exam)} was not accepted: ${note}`, referenceId: request.requestId }],
@@ -1255,7 +1554,11 @@ const myRechecks = async (teacher: any, query: any) => {
   };
 };
 
-/** Teacher finishes a recheck: new marks update the evaluation and the published result. */
+/**
+ * Teacher sends their recheck decision: the final marks (the same marks keep them) and a
+ * remark. Nothing changes yet: an admin approves it (approveRecheck), and only then does the
+ * result change and the student hear; or sends it back with a note (returnRecheck).
+ */
 const completeRecheck = async (teacher: any, requestId: string, body: any) => {
   const instituteId = teacher.instituteId;
   const note = clean(body?.note).slice(0, 1000) || null;
@@ -1267,21 +1570,62 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
     throw new ApiError(httpStatus.BAD_REQUEST, `Marks must be between 0 and ${exam.totalMarks}.`);
   }
 
-  const { gradingScale } = await settingsOf(instituteId);
   const outcome = await sequelize.transaction(async (t) => {
     const locked = await RecheckRequest.findOne({ where: { id: request.id }, transaction: t, lock: t.LOCK.UPDATE });
     if (!locked || locked.status !== "Under Review") throw new ApiError(httpStatus.CONFLICT, "This recheck is not open for review.");
     const assignment = await RecheckAssignment.findOne({ where: { requestId: request.requestId }, transaction: t, lock: t.LOCK.UPDATE });
-    if (!assignment || (assignment.teacherId !== teacher.userId && !isAdmin(teacher))) {
-      throw new ApiError(httpStatus.FORBIDDEN, "This recheck is not assigned to you.");
-    }
+    // Only the teacher it was sent to decides; the admin approves.
+    if (!assignment || assignment.teacherId !== teacher.userId) throw new ApiError(httpStatus.FORBIDDEN, "This recheck is not assigned to you.");
 
-    const evaluation = await AIEvaluation.findOne({ where: { evaluationId: request.evaluationId }, transaction: t, lock: t.LOCK.UPDATE });
+    const evaluation = await AIEvaluation.findOne({ where: { evaluationId: request.evaluationId }, attributes: ["totalScore"], transaction: t });
     const previous = evaluation?.totalScore == null ? null : Number(evaluation.totalScore);
     const marks = round2(revised);
     const changed = previous == null || Math.abs(previous - marks) >= 0.005;
     // Every change of a published mark says why (Marks & grading → Changes).
-    if (changed && (note ?? "").length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Say why the marks change; the admin sees it with the change.");
+    if (changed && (note ?? "").length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Say why the marks change; the admin approves it and the student reads it.");
+    await assignment.update({ previousScore: assignment.previousScore ?? previous, revisedScore: marks, teacherNote: note, completedAt: new Date() }, { transaction: t });
+    await locked.update({ status: "Awaiting Approval" }, { transaction: t });
+
+    const label = examLabel(exam);
+    const adminIds = [assignment.assignedBy, ...(await instituteAdminIds(instituteId, t))];
+    await notifyAll(
+      Array.from(new Set(adminIds)).map((userId) => ({
+        instituteId,
+        userId,
+        type: "RECHECK_DECIDED",
+        title: "Recheck decision to approve",
+        message: `${teacher.userName ?? "The teacher"} rechecked ${label}: ${changed ? `${previous ?? "—"} → ${marks}` : `marks stay at ${marks}`}. Approve it to publish, or send it back.`,
+        referenceId: request.requestId,
+      })),
+      t
+    );
+    return { previous, proposed: marks, changed };
+  });
+  return { requestId: request.requestId, status: "Awaiting Approval", ...outcome };
+};
+
+/**
+ * Admin approves a teacher's recheck decision: the new marks (when they differ) go into the
+ * evaluation and the published result, the change is logged with the teacher who made it and
+ * the admin who approved it, and the student and the teacher are told.
+ */
+const approveRecheck = async (admin: any, requestId: string) => {
+  const instituteId = admin.instituteId;
+  const request = await RecheckRequest.findOne({ where: { requestId: clean(requestId), instituteId } });
+  if (!request) throw new ApiError(httpStatus.NOT_FOUND, "Recheck request not found.");
+  const exam = await requireExam(instituteId, request.examId);
+  const { gradingScale } = await settingsOf(instituteId);
+
+  const outcome = await sequelize.transaction(async (t) => {
+    const locked = await RecheckRequest.findOne({ where: { id: request.id }, transaction: t, lock: t.LOCK.UPDATE });
+    if (!locked || locked.status !== "Awaiting Approval") throw new ApiError(httpStatus.CONFLICT, "This recheck has no decision waiting for approval.");
+    const assignment = await RecheckAssignment.findOne({ where: { requestId: request.requestId }, transaction: t, lock: t.LOCK.UPDATE });
+    if (!assignment || assignment.revisedScore == null) throw new ApiError(httpStatus.CONFLICT, "The teacher's decision is missing. Send it back to them.");
+
+    const evaluation = await AIEvaluation.findOne({ where: { evaluationId: request.evaluationId }, transaction: t, lock: t.LOCK.UPDATE });
+    const previous = evaluation?.totalScore == null ? null : Number(evaluation.totalScore);
+    const marks = round2(Number(assignment.revisedScore));
+    const changed = previous == null || Math.abs(previous - marks) >= 0.005;
     if (evaluation && changed) await evaluation.update({ totalScore: marks }, { transaction: t });
 
     const result = await StudentResult.findOne({ where: { examId: request.examId, studentId: request.studentId, isDeleted: false }, transaction: t, lock: t.LOCK.UPDATE });
@@ -1291,17 +1635,18 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
         { transaction: t }
       );
     }
-    // Who changed the student's marks, from what, and why (Marks & grading → Changes).
+    // Who changed the student's marks (the teacher), who approved it, from what, and why.
     if (changed) {
       await logMarksChange(
         {
           instituteId,
           what: MARKS_CHANGE.STUDENT,
           source: MARKS_SOURCE.RECHECK,
-          changedBy: teacher.userId,
+          changedBy: assignment.teacherId,
+          approvedBy: admin.userId,
           oldValue: previous,
           newValue: marks,
-          reason: note ?? "Recheck",
+          reason: assignment.teacherNote ?? "Recheck",
           sessionId: exam.sessionId,
           examType: exam.examType,
           examId: exam.examId,
@@ -1312,11 +1657,13 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
         t
       );
     }
-    await assignment.update({ previousScore: assignment.previousScore ?? previous, revisedScore: marks, teacherNote: note, completedAt: new Date() }, { transaction: t });
-    await locked.update({ status: "Completed", reviewedBy: teacher.userId, reviewedAt: new Date(), completedAt: new Date() }, { transaction: t });
+    await assignment.update({ approvedBy: admin.userId, approvedAt: new Date() }, { transaction: t });
+    await locked.update(
+      { status: "Completed", decisionNote: assignment.teacherNote, reviewedBy: admin.userId, reviewedAt: new Date(), completedAt: new Date() },
+      { transaction: t }
+    );
 
     const label = examLabel(exam);
-    const adminIds = [assignment.assignedBy, ...(await instituteAdminIds(instituteId, t))];
     await notifyAll(
       [
         {
@@ -1329,20 +1676,54 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
             : `Your recheck for ${label} is done. Your marks stay at ${marks}.`,
           referenceId: request.requestId,
         },
-        ...Array.from(new Set(adminIds)).map((userId) => ({
+        {
           instituteId,
-          userId,
-          type: "RECHECK_COMPLETED",
-          title: "Recheck completed",
-          message: `A recheck of ${label} is done${changed ? ` (${previous ?? "—"} → ${marks})` : " (no change)"}.`,
+          userId: assignment.teacherId,
+          type: "RECHECK_APPROVED",
+          title: "Recheck decision approved",
+          message: `Your recheck decision for ${label} was approved and published${changed ? ` (${previous ?? "—"} → ${marks})` : " (no change)"}.`,
           referenceId: request.requestId,
-        })),
+        },
       ],
       t
     );
     return { previous, revised: marks, changed };
   });
   return { requestId: request.requestId, status: "Completed", ...outcome };
+};
+
+/** Admin sends a teacher's recheck decision back with a note; the teacher decides again. */
+const returnRecheck = async (admin: any, requestId: string, body: any) => {
+  const instituteId = admin.instituteId;
+  const note = clean(body?.note).slice(0, 1000);
+  if (note.length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Say what the teacher should look at again.");
+  const request = await RecheckRequest.findOne({ where: { requestId: clean(requestId), instituteId } });
+  if (!request) throw new ApiError(httpStatus.NOT_FOUND, "Recheck request not found.");
+  const exam = await requireExam(instituteId, request.examId);
+
+  await sequelize.transaction(async (t) => {
+    const locked = await RecheckRequest.findOne({ where: { id: request.id }, transaction: t, lock: t.LOCK.UPDATE });
+    if (!locked || locked.status !== "Awaiting Approval") throw new ApiError(httpStatus.CONFLICT, "This recheck has no decision waiting for approval.");
+    const assignment = await RecheckAssignment.findOne({ where: { requestId: request.requestId }, transaction: t, lock: t.LOCK.UPDATE });
+    if (!assignment) throw new ApiError(httpStatus.CONFLICT, "This recheck isn't with a teacher.");
+    const proposed = assignment.revisedScore == null ? null : Number(assignment.revisedScore);
+    await assignment.update({ revisedScore: null, teacherNote: null, completedAt: null, returnNote: note, returnedAt: new Date() }, { transaction: t });
+    await locked.update({ status: "Under Review" }, { transaction: t });
+    await notifyAll(
+      [
+        {
+          instituteId,
+          userId: assignment.teacherId,
+          type: "RECHECK_RETURNED",
+          title: "Recheck sent back",
+          message: `The admin sent back your recheck decision for ${examLabel(exam)}${proposed != null ? ` (${proposed})` : ""}: ${note}`,
+          referenceId: request.requestId,
+        },
+      ],
+      t
+    );
+  });
+  return { requestId: request.requestId, status: "Under Review" };
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -1560,12 +1941,17 @@ export default {
   unpublishResults,
   listResults,
   myResults,
+  myResultDetail,
+  myClaims,
+  myReportCard,
   createRecheck,
   listRechecks,
   assignRecheck,
   rejectRecheck,
   myRechecks,
   completeRecheck,
+  approveRecheck,
+  returnRecheck,
   requestReopen,
   listReopenRequests,
   approveReopen,

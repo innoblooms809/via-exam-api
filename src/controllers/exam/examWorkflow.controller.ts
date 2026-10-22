@@ -82,6 +82,9 @@ export default {
 
   // Student
   myResults: handle("Results fetched.", (req) => ExamWorkflowService.myResults(user(req), req.query)),
+  myResultDetail: handle("Result fetched.", (req) => ExamWorkflowService.myResultDetail(user(req), req.params.resultId)),
+  myReportCard: handle("Report card fetched.", (req) => ExamWorkflowService.myReportCard(user(req), req.query)),
+  myClaims: handle("Recheck claims fetched.", (req) => ExamWorkflowService.myClaims(user(req))),
   createRecheck: handle("Recheck requested.", (req) => ExamWorkflowService.createRecheck(user(req), req.body), httpStatus.CREATED),
 
   // Rechecks — admin / teacher
@@ -89,5 +92,7 @@ export default {
   assignRecheck: handle("Recheck assigned.", (req) => ExamWorkflowService.assignRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_ASSIGNED")),
   rejectRecheck: handle("Recheck rejected.", (req) => ExamWorkflowService.rejectRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_REJECTED")),
   myRechecks: handle("Recheck requests fetched.", (req) => ExamWorkflowService.myRechecks(user(req), req.query)),
-  completeRecheck: handle("Recheck completed.", (req) => ExamWorkflowService.completeRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_COMPLETED")),
+  completeRecheck: handle("Recheck decision sent for approval.", (req) => ExamWorkflowService.completeRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_DECIDED")),
+  approveRecheck: handle("Recheck decision approved and published.", (req) => ExamWorkflowService.approveRecheck(user(req), req.params.requestId), httpStatus.OK, recheck("RECHECK_APPROVED")),
+  returnRecheck: handle("Recheck decision sent back.", (req) => ExamWorkflowService.returnRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_RETURNED")),
 };

@@ -768,4 +768,5 @@ StudentEnrollment.belongsTo(Session, { foreignKey: "sessionId", targetKey: "sess
 MarksScheme.belongsTo(Subject, { foreignKey: "subjectId", targetKey: "subjectId", as: "subject", constraints: false });
 MarksScheme.belongsTo(Class, { foreignKey: "classId", targetKey: "classId", as: "class", constraints: false });
 MarksAudit.belongsTo(User, { foreignKey: "changedBy", targetKey: "userId", as: "changer", constraints: false });
+MarksAudit.belongsTo(User, { foreignKey: "approvedBy", targetKey: "userId", as: "approver", constraints: false });
 PaperComment.belongsTo(User, { foreignKey: "authorId", targetKey: "userId", as: "author", constraints: false });

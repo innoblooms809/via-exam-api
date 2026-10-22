@@ -2,7 +2,7 @@ import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
 
 // Every change to marks, with who made it and when — so a school can always answer
-// "who changed this mark, from what, and why":
+// "who changed this mark, from what, and why" (and, for a recheck, which admin approved it):
 //   max-marks / pass-marks   a subject's marks on Marks & grading (or an exam's)
 //   student-marks            a student's marks after evaluation (evaluator edit,
 //                            recheck, cross-check)
@@ -41,13 +41,15 @@ interface MarksAuditAttributes {
   newValue: string | null;
   reason: string | null;
   changedBy: string;
+  /** The admin who approved the change (a recheck decision); null when none was needed. */
+  approvedBy: string | null;
   createdAt?: Date;
 }
 
 interface MarksAuditCreationAttributes
   extends Optional<
     MarksAuditAttributes,
-    "id" | "sessionId" | "examType" | "examId" | "subjectId" | "studentId" | "sheetId" | "oldValue" | "newValue" | "reason"
+    "id" | "sessionId" | "examType" | "examId" | "subjectId" | "studentId" | "sheetId" | "oldValue" | "newValue" | "reason" | "approvedBy"
   > {}
 
 class MarksAudit extends Model<MarksAuditAttributes, MarksAuditCreationAttributes> implements MarksAuditAttributes {
@@ -65,6 +67,7 @@ class MarksAudit extends Model<MarksAuditAttributes, MarksAuditCreationAttribute
   public newValue!: string | null;
   public reason!: string | null;
   public changedBy!: string;
+  public approvedBy!: string | null;
   public readonly createdAt!: Date;
 }
 
@@ -84,6 +87,7 @@ MarksAudit.init(
     newValue: { type: DataTypes.STRING(255), allowNull: true },
     reason: { type: DataTypes.TEXT, allowNull: true },
     changedBy: { type: DataTypes.STRING, allowNull: false },
+    approvedBy: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
   },
   {
     sequelize,

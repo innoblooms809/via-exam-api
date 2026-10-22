@@ -82,6 +82,13 @@ const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
         // Push tokens: one row per (browser, user) instead of one user per browser.
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_push_tokens" DROP CONSTRAINT IF EXISTS "viaexam_push_tokens_token_key";`).catch(() => null);
         yield sequelize_1.sequelize.query(`CREATE UNIQUE INDEX IF NOT EXISTS "viaexam_push_tokens_token_user_id" ON "viaexam_push_tokens" ("token", "userId");`).catch(() => null);
+        // Recheck claims: the kind of marking concern, the questions it is about, the decision's words.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_recheck_requests" ADD COLUMN IF NOT EXISTS "category" VARCHAR(40), ADD COLUMN IF NOT EXISTS "questions" JSONB, ADD COLUMN IF NOT EXISTS "decisionNote" TEXT;`).catch(() => null);
+        // A teacher's recheck decision waits for the admin's approval before it reaches the result.
+        yield sequelize_1.sequelize.query(`ALTER TYPE "enum_viaexam_recheck_requests_status" ADD VALUE IF NOT EXISTS 'Awaiting Approval' AFTER 'Under Review';`).catch(() => null);
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_recheck_assignments" ADD COLUMN IF NOT EXISTS "approvedBy" VARCHAR(255), ADD COLUMN IF NOT EXISTS "approvedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "returnNote" TEXT, ADD COLUMN IF NOT EXISTS "returnedAt" TIMESTAMP WITH TIME ZONE;`).catch(() => null);
+        // Who approved a change of marks (a recheck decision), beside who made it.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_marks_audit" ADD COLUMN IF NOT EXISTS "approvedBy" VARCHAR(255);`).catch(() => null);
         yield sequelize_1.sequelize.sync({ force: false });
         logger_1.default.info("Models synced with PostgreSQL");
         // Once per database: fill the per-session tables (setup, enrolments) from existing data.
