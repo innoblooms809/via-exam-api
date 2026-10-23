@@ -34,6 +34,9 @@ import { formatQuestionPaper } from "../../utils/questionPaperText";
 import { getAnswerKeyText, ocrDocument } from "./answerKeyOcr.service";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
+import { failRecheckAiRun, finishRecheckAiRun, startRecheckAiRun, type RecheckContext } from "./recheckDraft.service";
+import RecheckAssignment from "../../models/RecheckAssignment.model";
+import { failCrossCheckAiRun, failInterruptedCrossCheckRuns, finishCrossCheckAiRun, startCrossCheckAiRun, type CrossCheckContext } from "./crossCheckDraft.service";
 
 const EVAL_TIMEOUT_MS = 3600000; // 1 hour — CPU inference on long papers is slow
 
@@ -56,6 +59,13 @@ interface EvaluationJob {
   /** Answer sheet row whose uploaded file must be OCR-ed (or read from its saved OCR cache). */
   answerKeyFileAnswerId: string | null;
   queuedAt: number;
+  /**
+   * A recheck re-run (published results): the outcome goes into that recheck's draft, never
+   * the live evaluation the student reads (see recheckDraft.service).
+   */
+  recheckRequestId?: string;
+  /** A cross-checker's re-run: the outcome goes into their cross-check item's draft (crossCheckDraft.service). */
+  crossCheckItemId?: string;
   // Filled by stage 1 (OCR):
   studentText?: string;
   answerKeyText?: string;
@@ -115,9 +125,19 @@ class StageQueue {
 }
 
 /** Marks the sheet's evaluation as failed with a readable reason. */
-async function failJob(sheetId: string, stage: string, err: any) {
+async function failJob(sheetId: string, stage: string, err: any, job?: EvaluationJob) {
   const message = err?.response?.data?.detail || err?.message || "Unknown error";
   logger.error(`[Pipeline6] ${stage} failed for sheet ${sheetId}: ${message}`);
+  // A recheck re-run fails in its draft; the published evaluation stays as it was.
+  if (job?.recheckRequestId) {
+    await failRecheckAiRun(job.recheckRequestId, `${stage} failed: ${message}`);
+    return;
+  }
+  // So does a cross-checker's; the evaluator's marks stay as they were.
+  if (job?.crossCheckItemId) {
+    await failCrossCheckAiRun(job.crossCheckItemId, `${stage} failed: ${message}`);
+    return;
+  }
   await AIEvaluation.update(
     { status: "Failed", error: `${stage} failed: ${message}` },
     { where: { sheetId } }
@@ -207,7 +227,7 @@ async function runOcrStage(job: EvaluationJob) {
     job.studentText = studentText;
     evaluationQueue.push(job); // hand over to the AI stage; OCR moves on to the next sheet
   } catch (err: any) {
-    await failJob(job.sheetId, "OCR", err);
+    await failJob(job.sheetId, "OCR", err, job);
   }
 }
 
@@ -283,13 +303,25 @@ async function runEvaluationStage(job: EvaluationJob) {
     }));
 
     const totalObtainedScore = evalResult.summary ? evalResult.summary.obtainedMarks : (evalResult.total_score || 0);
+    const overall = typeof evalResult.feedback === "object"
+      ? (evalResult.feedback.overall || JSON.stringify(evalResult.feedback))
+      : (evalResult.feedback || "");
+
+    if (job.recheckRequestId) {
+      await finishRecheckAiRun(job.recheckRequestId, { evaluations: mappedQuestions, totalScore: Number(totalObtainedScore), feedback: overall });
+      logger.info(`[Pipeline6] [AI] Recheck ${job.recheckRequestId}: sheet ${job.sheetId} re-evaluated (${totalObtainedScore} marks, draft).`);
+      return;
+    }
+    if (job.crossCheckItemId) {
+      await finishCrossCheckAiRun(job.crossCheckItemId, { evaluations: mappedQuestions, totalScore: Number(totalObtainedScore), feedback: overall });
+      logger.info(`[Pipeline6] [AI] Cross-check ${job.crossCheckItemId}: sheet ${job.sheetId} re-evaluated (${totalObtainedScore} marks, draft).`);
+      return;
+    }
 
     await aiEval.update({
       status: "Success",
       totalScore: totalObtainedScore,
-      feedback: typeof evalResult.feedback === "object"
-        ? (evalResult.feedback.overall || JSON.stringify(evalResult.feedback))
-        : (evalResult.feedback || ""),
+      feedback: overall,
       evaluations: mappedQuestions,
       studentAnsOcr: job.studentText || "",
       standardAnsOcr: job.answerKeyText || "",
@@ -301,7 +333,7 @@ async function runEvaluationStage(job: EvaluationJob) {
     const waitedSeconds = Math.round((Date.now() - job.queuedAt) / 1000);
     logger.info(`[Pipeline6] [AI] Sheet ${job.sheetId} evaluated: ${totalObtainedScore} marks (${waitedSeconds}s since queued).`);
   } catch (err: any) {
-    await failJob(job.sheetId, "AI evaluation", err);
+    await failJob(job.sheetId, "AI evaluation", err, job);
   }
 }
 
@@ -340,7 +372,11 @@ const isQueued = (sheetId: string) => ocrQueue.has(sheetId) || evaluationQueue.h
 
 export const triggerPipeline6Evaluation = async (
   sheetId: string,
-  force: boolean = false
+  force: boolean = false,
+  /** A recheck teacher's re-run on a published sheet: the outcome goes into the recheck's draft. */
+  recheck: RecheckContext | null = null,
+  /** A cross-checker's re-run: the outcome goes into their cross-check draft. */
+  crossCheck: CrossCheckContext | null = null
 ): Promise<any> => {
   try {
     const sheet: any = (await Scanner.findOne({ where: { sheetId, isDeleted: false } })) || (await Scanner.findByPk(sheetId));
@@ -361,7 +397,7 @@ export const triggerPipeline6Evaluation = async (
       };
     }
 
-    if (aiEval && aiEval.status === "Success" && !force) {
+    if (aiEval && aiEval.status === "Success" && !force && !recheck && !crossCheck) {
       return { error: false, statusCode: httpStatus.OK, message: "Sheet already evaluated.", data: aiEval };
     }
 
@@ -433,6 +469,12 @@ export const triggerPipeline6Evaluation = async (
         totalScore: 0,
         evaluations: [],
       } as any);
+    } else if (recheck) {
+      // A recheck re-run: the draft waits; the published evaluation keeps its status and marks.
+      await startRecheckAiRun(recheck);
+    } else if (crossCheck) {
+      // A cross-checker's re-run: the draft waits; the evaluator's marks stay live.
+      await startCrossCheckAiRun(crossCheck);
     } else {
       await aiEval.update({ status: "Pending", error: null });
     }
@@ -446,6 +488,8 @@ export const triggerPipeline6Evaluation = async (
       typedAnswerKey,
       answerKeyFileAnswerId,
       queuedAt: Date.now(),
+      ...(recheck ? { recheckRequestId: recheck.request.requestId } : {}),
+      ...(crossCheck ? { crossCheckItemId: crossCheck.item.itemId } : {}),
     });
 
     const queue = getSheetQueueInfo(sheetId);
@@ -457,7 +501,7 @@ export const triggerPipeline6Evaluation = async (
       message: queue?.stage === "waiting_for_ocr"
         ? `Queued for AI evaluation (position ${queue.position}).`
         : "AI evaluation started.",
-      data: { ...aiEval.get({ plain: true }), queue },
+      data: { ...aiEval.get({ plain: true }), ...(recheck || crossCheck ? { status: "Pending" } : {}), queue },
     };
   } catch (error: any) {
     logger.error("[Pipeline6 Service] Initialization failed:", error);
@@ -487,6 +531,10 @@ export async function recoverPipeline6Queue(): Promise<void> {
       await triggerPipeline6Evaluation(row.sheetId, true);
     }
     if (stuck.length) logger.info(`[Pipeline6 Queue] Re-queued ${stuck.length} evaluation(s) left pending before restart.`);
+    // A recheck re-run can't be resumed for its teacher: it shows as failed, to run again.
+    const rechecks = await RecheckAssignment.findAll({ where: { draft: { status: "Pending" } } as any, attributes: ["requestId"] });
+    for (const r of rechecks) await failRecheckAiRun(r.requestId, "The AI run was interrupted by a server restart. Run it again.");
+    await failInterruptedCrossCheckRuns();
   } catch (err: any) {
     logger.warn(`[Pipeline6 Queue] Could not recover pending evaluations: ${err?.message || err}`);
   }

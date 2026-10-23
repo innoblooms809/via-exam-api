@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
+import type { QuestionChange } from "./RecheckAssignment.model";
 
 // Every change to marks, with who made it and when — so a school can always answer
 // "who changed this mark, from what, and why" (and, for a recheck, which admin approved it):
@@ -43,13 +44,15 @@ interface MarksAuditAttributes {
   changedBy: string;
   /** The admin who approved the change (a recheck decision); null when none was needed. */
   approvedBy: string | null;
+  /** A student's marks: the questions whose marks changed, from what to what. */
+  details: QuestionChange[] | null;
   createdAt?: Date;
 }
 
 interface MarksAuditCreationAttributes
   extends Optional<
     MarksAuditAttributes,
-    "id" | "sessionId" | "examType" | "examId" | "subjectId" | "studentId" | "sheetId" | "oldValue" | "newValue" | "reason" | "approvedBy"
+    "id" | "sessionId" | "examType" | "examId" | "subjectId" | "studentId" | "sheetId" | "oldValue" | "newValue" | "reason" | "approvedBy" | "details"
   > {}
 
 class MarksAudit extends Model<MarksAuditAttributes, MarksAuditCreationAttributes> implements MarksAuditAttributes {
@@ -68,6 +71,7 @@ class MarksAudit extends Model<MarksAuditAttributes, MarksAuditCreationAttribute
   public reason!: string | null;
   public changedBy!: string;
   public approvedBy!: string | null;
+  public details!: QuestionChange[] | null;
   public readonly createdAt!: Date;
 }
 
@@ -88,6 +92,7 @@ MarksAudit.init(
     reason: { type: DataTypes.TEXT, allowNull: true },
     changedBy: { type: DataTypes.STRING, allowNull: false },
     approvedBy: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
+    details: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
   },
   {
     sequelize,

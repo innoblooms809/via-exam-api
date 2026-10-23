@@ -4,6 +4,8 @@ import ExamWorkflowService from "../../services/exam/examWorkflow.service";
 import ClassResultsService from "../../services/exam/classResults.service";
 import logger from "../../config/logger";
 import { logActivity } from "../../utils/activityLogger";
+import SheetHistoryService from "../../services/exam/sheetHistory.service";
+import ExamReportService from "../../services/exam/examReport.service";
 
 const send = (res: Response, message: string, data: unknown, statusCode: number = httpStatus.OK) =>
   res.status(statusCode).json({ error: false, statusCode, message, data });
@@ -53,6 +55,10 @@ const reopen = (event: string): Audit => ({ event, entity: "SCAN_REOPEN", param:
 const user = (req: any) => req.viaExamUser;
 
 export default {
+  // Admin — one answer sheet's marks history
+  sheetHistory: handle("Marks history fetched.", (req) => SheetHistoryService.sheetHistory(user(req), req.params.sheetId)),
+  examReport: handle("Exam report fetched.", (req) => ExamReportService.examReport(user(req), req.params.examId)),
+
   // Admin — pipeline
   listPipeline: handle("Exams fetched.", (req) => ExamWorkflowService.listPipeline(user(req), req.query)),
   getTimeline: handle("Timeline fetched.", (req) => ExamWorkflowService.getTimeline(user(req), req.params.examId)),

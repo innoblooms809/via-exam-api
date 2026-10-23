@@ -14,7 +14,8 @@ const evaluateSheetPipeline6 = async (req: any, res: Response): Promise<any> => 
       });
     }
 
-    const result = await Pipeline6Service.triggerPipeline6Evaluation(sheetId, force);
+    // req.recheck / req.crossCheck (evaluationRunGuard): a recheck teacher's or cross-checker's run, into their draft.
+    const result = await Pipeline6Service.triggerPipeline6Evaluation(sheetId, force, req.recheck ?? null, req.crossCheck ?? null);
     return res.status(result.statusCode).send(result);
   } catch (error: any) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
