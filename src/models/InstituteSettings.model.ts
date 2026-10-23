@@ -5,6 +5,7 @@ import { sequelize } from "../config/sequelize";
 //   gradingScale  grade bands for results and report cards (highest first)
 //   marksDefaults the marks a subject starts with on Marks & grading, per exam
 //   crossCheck    whether evaluated papers are cross-checked, and which ones
+//   scanQuality   when an uploaded answer sheet is flagged as a poor scan
 // Typed and validated in services/academic/instituteSettings.service; the JSON keeps
 // the rules together without a table per rule.
 
@@ -34,19 +35,35 @@ export interface CrossCheckRule {
   subjectIds: string[] | null;
 }
 
+/** When an uploaded answer sheet is flagged for scan quality (utils/sheetQuality). */
+export interface ScanQualityRule {
+  enabled: boolean;
+  /** Below this DPI a page is low quality. */
+  minDpi: number;
+  /** Below this DPI a page gets a warning. */
+  warnDpi: number;
+  /** Below this sharpness (0–100) a page is low quality (blurred). */
+  minSharpness: number;
+  /** Below this sharpness a page gets a warning. */
+  warnSharpness: number;
+  /** Below this ink-to-paper contrast (0–255) a page is low quality (faint). */
+  minContrast: number;
+}
+
 interface InstituteSettingsAttributes {
   id: number;
   instituteId: string;
   gradingScale: GradeBand[] | null;
   marksDefaults: Record<string, MarksDefault> | null;
   crossCheck: CrossCheckRule | null;
+  scanQuality: ScanQualityRule | null;
   updatedBy: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface InstituteSettingsCreationAttributes
-  extends Optional<InstituteSettingsAttributes, "id" | "gradingScale" | "marksDefaults" | "crossCheck" | "updatedBy"> {}
+  extends Optional<InstituteSettingsAttributes, "id" | "gradingScale" | "marksDefaults" | "crossCheck" | "scanQuality" | "updatedBy"> {}
 
 class InstituteSettings
   extends Model<InstituteSettingsAttributes, InstituteSettingsCreationAttributes>
@@ -57,6 +74,7 @@ class InstituteSettings
   public gradingScale!: GradeBand[] | null;
   public marksDefaults!: Record<string, MarksDefault> | null;
   public crossCheck!: CrossCheckRule | null;
+  public scanQuality!: ScanQualityRule | null;
   public updatedBy!: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -69,6 +87,7 @@ InstituteSettings.init(
     gradingScale: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
     marksDefaults: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
     crossCheck: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
+    scanQuality: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
     updatedBy: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
   },
   {

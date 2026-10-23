@@ -28,6 +28,8 @@ const PERFORMANCE_INDEXES = [
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_recheck_requests_student_idx" ON "viaexam_recheck_requests" ("studentId")`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exam_attendance_student_idx" ON "viaexam_exam_attendance" ("studentId")`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_ai_evaluations_student_idx" ON "viaexam_ai_evaluations" ("studentId")`,
+  // "Low quality" filter on an exam's sheets.
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_exam_quality_idx" ON "viaexam_answer_sheets" ("examId", "qualityFlag") WHERE "isDeleted" = false`,
 ];
 
 const ensurePerformanceIndexes = async () => {
@@ -72,6 +74,11 @@ const connectDB = async (fn: any) => {
     ).catch(() => null);
     // Who approved a change of marks (a recheck decision), beside who made it.
     await sequelize.query(`ALTER TABLE "viaexam_marks_audit" ADD COLUMN IF NOT EXISTS "approvedBy" VARCHAR(255);`).catch(() => null);
+    // Scan quality of each uploaded sheet, and the thresholds the school flags it by.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_answer_sheets" ADD COLUMN IF NOT EXISTS "qualityFlag" VARCHAR(16), ADD COLUMN IF NOT EXISTS "qualityReport" JSONB;`
+    ).catch(() => null);
+    await sequelize.query(`ALTER TABLE "viaexam_institute_settings" ADD COLUMN IF NOT EXISTS "scanQuality" JSONB;`).catch(() => null);
 
     await sequelize.sync({ force: false });
     logger.info("Models synced with PostgreSQL");

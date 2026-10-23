@@ -21,6 +21,7 @@ import UserModal from "../../models/User.model";
 import Scanner from "../../models/Scanner.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import ExamAttendance, { ATTENDANCE_STATUS } from "../../models/ExamAttendance.model";
+import { scanQualityView, type QualitySummary } from "../answer-sheet/sheetQuality.service";
 import { studentsIn } from "../student/enrollment.service";
 
 export const EXAM_INCLUDES = [
@@ -44,6 +45,8 @@ export interface RosterRow {
   evaluationId: string | null;
   evaluationStatus: string | null; // Success | Pending | Failed | null
   score: number | null;
+  /** Scan quality of the sheet (ok / warn / low / unchecked), why, and each page's numbers; null until checked. */
+  quality: QualitySummary | null;
   absentMarkedBy: string | null;
   absentMarkedAt: Date | null;
 }
@@ -60,6 +63,8 @@ export interface RosterCounts {
   evaluationFailed: number;
   /** evaluated / uploaded, 100 when nothing was uploaded. */
   evaluationPercent: number;
+  /** Sheets flagged as a poor scan (warn or low). */
+  poorScans: number;
 }
 
 export interface Roster {
@@ -141,7 +146,7 @@ export const buildRoster = async (exam: any): Promise<Roster> => {
     studentsForExam(exam),
     Scanner.findAll({
       where: sheetWhereForExam(exam),
-      attributes: ["sheetId", "rollNo", "studentName", "fileName", "createdAt"],
+      attributes: ["sheetId", "rollNo", "studentName", "fileName", "createdAt", "qualityFlag", "qualityReport"],
       order: [["createdAt", "DESC"]],
     }),
     ExamAttendance.findAll({ where: { examId: exam.examId, status: ATTENDANCE_STATUS.ABSENT } }),
@@ -176,6 +181,7 @@ export const buildRoster = async (exam: any): Promise<Roster> => {
       evaluationId: ev?.evaluationId ?? null,
       evaluationStatus: ev?.status ?? null,
       score: ev?.status === "Success" && ev.totalScore != null ? Number(ev.totalScore) : null,
+      quality: scanQualityView(sheet),
       absentMarkedBy: absent?.markedBy ?? null,
       absentMarkedAt: absent?.updatedAt ?? null,
     };
@@ -201,6 +207,7 @@ export const buildRoster = async (exam: any): Promise<Roster> => {
     evaluated,
     evaluationFailed: rows.filter((r) => r.evaluationStatus === "Failed").length,
     evaluationPercent: pct(evaluated, uploaded),
+    poorScans: rows.filter((r) => r.quality?.flag === "warn" || r.quality?.flag === "low").length,
   };
   return { rows, counts };
 };

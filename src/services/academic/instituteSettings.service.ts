@@ -7,9 +7,10 @@
 import httpStatus from "http-status";
 import { Op } from "sequelize";
 import Subject from "../../models/Subject.model";
-import InstituteSettings, { type CrossCheckRule, type GradeBand, type MarksDefault } from "../../models/InstituteSettings.model";
+import InstituteSettings, { type CrossCheckRule, type GradeBand, type MarksDefault, type ScanQualityRule } from "../../models/InstituteSettings.model";
 import MarksAudit, { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
 import { EXAM_TYPES } from "../../utils/examTypes";
+import { DEFAULT_SCAN_QUALITY } from "../../utils/sheetQuality";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -39,6 +40,7 @@ export interface Settings {
   gradingScale: GradeBand[];
   marksDefaults: Record<string, MarksDefault>;
   crossCheck: CrossCheckRule;
+  scanQuality: ScanQualityRule;
   updatedAt: string | null;
 }
 
@@ -54,6 +56,7 @@ export const settingsOf = async (instituteId: string): Promise<Settings> => {
     gradingScale: row?.gradingScale?.length ? row.gradingScale : DEFAULT_GRADING_SCALE,
     marksDefaults: { ...DEFAULT_MARKS, ...(row?.marksDefaults ?? {}) },
     crossCheck: { ...DEFAULT_CROSS_CHECK, ...(row?.crossCheck ?? {}) },
+    scanQuality: { ...DEFAULT_SCAN_QUALITY, ...(row?.scanQuality ?? {}) },
     updatedAt: row?.updatedAt ? new Date(row.updatedAt).toISOString() : null,
   };
   cache.set(instituteId, { at: Date.now(), value });
@@ -67,7 +70,7 @@ export const gradeOn = (scale: GradeBand[], percentage: number | null): string |
   return band?.grade ?? null;
 };
 
-const upsert = async (instituteId: string, userId: string, patch: Partial<Pick<InstituteSettings, "gradingScale" | "marksDefaults" | "crossCheck">>) => {
+const upsert = async (instituteId: string, userId: string, patch: Partial<Pick<InstituteSettings, "gradingScale" | "marksDefaults" | "crossCheck" | "scanQuality">>) => {
   const [row] = await InstituteSettings.findOrCreate({ where: { instituteId }, defaults: { instituteId } });
   await row.update({ ...patch, updatedBy: userId });
   cache.delete(instituteId);
@@ -102,7 +105,7 @@ const describeScale = (bands: GradeBand[]) => bands.map((b) => `${b.grade} ≥ $
 
 const getSettings = async (user: any) => {
   const settings = await settingsOf(String(user?.instituteId ?? ""));
-  return { error: false, statusCode: httpStatus.OK, message: "Settings loaded.", data: { ...settings, examTypes: EXAM_TYPES, defaultGradingScale: DEFAULT_GRADING_SCALE } };
+  return { error: false, statusCode: httpStatus.OK, message: "Settings loaded.", data: { ...settings, examTypes: EXAM_TYPES, defaultGradingScale: DEFAULT_GRADING_SCALE, defaultScanQuality: DEFAULT_SCAN_QUALITY } };
 };
 
 const saveGradingScale = async (user: any, body: any) => {
@@ -181,4 +184,40 @@ const saveCrossCheck = async (user: any, body: any) => {
   return { error: false, statusCode: httpStatus.OK, message: mode === "off" ? "Cross-check disabled." : "Cross-check policy saved.", data: { crossCheck: rule } };
 };
 
-export default { getSettings, saveGradingScale, saveMarksDefaults, saveCrossCheck };
+/**
+ * When an uploaded answer sheet is flagged as a poor scan. Applies to sheets uploaded
+ * from now on; sheets already checked keep their flag until they are replaced.
+ */
+const saveScanQuality = async (user: any, body: any) => {
+  const instituteId = String(user?.instituteId ?? "");
+  const num = (v: unknown) => (v === null || v === undefined || v === "" ? NaN : Number(v));
+  const rule: ScanQualityRule = {
+    enabled: body?.enabled !== false,
+    minDpi: num(body?.minDpi),
+    warnDpi: num(body?.warnDpi),
+    minSharpness: num(body?.minSharpness),
+    warnSharpness: num(body?.warnSharpness),
+    minContrast: num(body?.minContrast),
+  };
+  const checks: [string, number, number, number][] = [
+    ["Low-quality DPI", rule.minDpi, 30, 600],
+    ["Warning DPI", rule.warnDpi, 30, 600],
+    ["Low-quality sharpness", rule.minSharpness, 0, 100],
+    ["Warning sharpness", rule.warnSharpness, 0, 100],
+    ["Lowest contrast", rule.minContrast, 0, 255],
+  ];
+  for (const [label, v, lo, hi] of checks) {
+    if (!Number.isInteger(v) || v < lo || v > hi) return fail(httpStatus.BAD_REQUEST, `${label}: give a whole number from ${lo} to ${hi}.`);
+  }
+  if (rule.warnDpi < rule.minDpi) return fail(httpStatus.BAD_REQUEST, "The warning DPI can't be lower than the low-quality DPI.");
+  if (rule.warnSharpness < rule.minSharpness) return fail(httpStatus.BAD_REQUEST, "The warning sharpness can't be lower than the low-quality sharpness.");
+  await upsert(instituteId, user.userId, { scanQuality: rule });
+  return {
+    error: false,
+    statusCode: httpStatus.OK,
+    message: rule.enabled ? "Scan quality check saved. Sheets uploaded from now on are checked with it." : "Scan quality check turned off.",
+    data: { scanQuality: rule },
+  };
+};
+
+export default { getSettings, saveGradingScale, saveMarksDefaults, saveCrossCheck, saveScanQuality };

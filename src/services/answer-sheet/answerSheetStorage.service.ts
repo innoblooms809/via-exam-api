@@ -38,6 +38,13 @@ import { ANSWER_SHEET_DETECTED_TYPES } from "../../utils/fileSignature";
 import { newId } from "../../utils/idGenerator";
 import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
 import { rosterRolls, rosterSectionsByRoll, sheetWhereForExam } from "../exam/examRoster.service";
+import {
+  beginQualityCheck,
+  qualitySummary,
+  scanQualityRule,
+  settleQualityCheck,
+  type QualitySummary,
+} from "./sheetQuality.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,6 +57,9 @@ export interface SheetResult {
   sheetId: string | null;
   reason: string | null;
   bytes: number;
+  /** Scan quality of a stored sheet; null while it is still being checked (or the check is off). */
+  quality: QualitySummary | null;
+  qualityPending: boolean;
 }
 
 // How many sheets travel to Cloudinary at once. Four keeps a batch moving
@@ -218,6 +228,7 @@ export const uploadSheets = async (
     } catch (err: any) {
       return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
     }
+    const qualityRule = await scanQualityRule(instituteId);
 
     // No section sent (a whole-class exam): each sheet takes its student's own section,
     // and the sheets already in are the exam's own, whatever section they carry.
@@ -259,6 +270,8 @@ export const uploadSheets = async (
         sheetId: null,
         reason: null,
         bytes: file.size ?? 0,
+        quality: null,
+        qualityPending: false,
       };
 
       if (!rollNo) {
@@ -303,6 +316,13 @@ export const uploadSheets = async (
 
       const sheetId = existing ? existing.sheetId : await generateSheetId(takenSheetIds);
 
+      // Measured while the file travels to Cloudinary.
+      const qualityCheck = beginQualityCheck(file.path, qualityRule);
+      const withQuality = async (result: SheetResult, publicId: string): Promise<SheetResult> => {
+        const report = await settleQualityCheck(sheetId, publicId, qualityCheck);
+        return { ...result, quality: qualitySummary(report), qualityPending: qualityRule.enabled && !report };
+      };
+
       let stored = null as Awaited<ReturnType<typeof uploadAnswerSheet>> | null;
       try {
         stored = await uploadAnswerSheet({
@@ -334,6 +354,8 @@ export const uploadSheets = async (
                 fileSize: file.size ?? stored!.bytes,
                 fileBuffer: null, // a replaced legacy sheet sheds its blob
                 status: "Pending",
+                qualityFlag: null, // measured again for the new scan
+                qualityReport: null,
                 uploadedBy: uploadedBy.userId,
               },
               { transaction: t },
@@ -348,7 +370,7 @@ export const uploadSheets = async (
             supersededAssets.push(previous);
           }
 
-          return { ...base, outcome: "replaced", sheetId };
+          return withQuality({ ...base, outcome: "replaced", sheetId }, stored.publicId);
         }
 
         await Scanner.create({
@@ -371,7 +393,7 @@ export const uploadSheets = async (
         });
         await clearAbsentForRoll(matchingExam?.examId, rollNo, uploadedBy.userId);
 
-        return { ...base, outcome: "saved", sheetId };
+        return withQuality({ ...base, outcome: "saved", sheetId }, stored.publicId);
       } catch (err: any) {
         // The row never landed, so the asset just uploaded is an orphan.
         if (stored?.publicId) {
@@ -401,6 +423,7 @@ export const uploadSheets = async (
       duplicate: results.filter((r) => r.outcome === "duplicate").length,
       rejected: results.filter((r) => r.outcome === "rejected").length,
       failed: results.filter((r) => r.outcome === "failed").length,
+      poorScans: results.filter((r) => r.quality?.flag === "warn" || r.quality?.flag === "low").length,
     };
     const stored = counts.saved + counts.replaced;
     const notStored = results.length - stored;
@@ -414,6 +437,9 @@ export const uploadSheets = async (
           : notStored === 0
             ? `${stored} sheet${stored === 1 ? "" : "s"} stored successfully.`
             : `${stored} of ${results.length} sheets stored. ${notStored} need attention.`,
+      ...(counts.poorScans
+        ? { qualityMessage: `${counts.poorScans} sheet${counts.poorScans === 1 ? " looks" : "s look"} like a poor scan. Rescan ${counts.poorScans === 1 ? "it" : "them"} if you can.` }
+        : {}),
       data: { counts, results, limits: ANSWER_SHEET_LIMITS },
     };
   } catch (e: any) {
@@ -462,6 +488,9 @@ export const replaceSheet = async (
       resourceType: sheet.fileResourceType,
     };
 
+    const qualityRule = await scanQualityRule(sheet.instituteId);
+    const qualityCheck = beginQualityCheck(file.path, qualityRule);
+
     // Its own address, so nothing cached can show the old scan; the old file is deleted below.
     const stored = await uploadAnswerSheet({
       filePath: file.path,
@@ -484,6 +513,8 @@ export const replaceSheet = async (
             fileSize: file.size ?? stored.bytes,
             fileBuffer: null,
             status: "Pending",
+            qualityFlag: null,
+            qualityReport: null,
             uploadedBy: requestedBy.userId,
           },
           { transaction: t },
@@ -501,11 +532,19 @@ export const replaceSheet = async (
       await destroyAnswerSheet(previous.publicId, previous.resourceType, `replaced ${sheetId}`);
     }
 
+    const report = await settleQualityCheck(sheet.sheetId, stored.publicId, qualityCheck);
+
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: `Sheet for roll number ${sheet.rollNo} replaced. Any earlier evaluation was cleared.`,
-      data: { sheetId: sheet.sheetId, rollNo: sheet.rollNo, fileName: file.originalname },
+      data: {
+        sheetId: sheet.sheetId,
+        rollNo: sheet.rollNo,
+        fileName: file.originalname,
+        quality: qualitySummary(report),
+        qualityPending: qualityRule.enabled && !report,
+      },
     };
   } catch (e: any) {
     logger.error(`[AnswerSheets] Replace ${sheetId} failed: ${e?.message || e}`);
