@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
+import type { QuestionChange, RecheckDraft } from "./RecheckAssignment.model";
 
 // Cross-checking: after an exam's evaluator confirms the marks, a second teacher checks the
 // marks of chosen answer sheets before results are published (Master Data → Cross-checking
@@ -7,7 +8,10 @@ import { sequelize } from "../config/sequelize";
 //
 //   CrossCheckRound  one per exam at a time: the rule used, the cross-checker, open → done.
 //   CrossCheckItem   one per chosen sheet: why it was chosen, its marks before, and the
-//                    checker's outcome (confirmed, or changed with a reason).
+//                    checker's outcome (confirmed, or changed with a reason). While it is
+//                    pending, the checker's AI re-run and question-wise edits are a draft on
+//                    the item (services/evaluation/crossCheckDraft.service); the evaluator's
+//                    marks stay live until the checker's verdict.
 // See services/exam/crossCheck.service.
 
 export const CROSS_CHECK_REASON = {
@@ -103,6 +107,10 @@ interface CrossCheckItemAttributes {
   marksAfter: number | null;
   /** The checker's reason when the marks changed (or a remark). */
   note: string | null;
+  /** The checker's re-evaluation before the verdict (AI re-run, question-wise marks). */
+  draft: RecheckDraft | null;
+  /** What the verdict changed, question by question. */
+  changes: QuestionChange[] | null;
   status: CrossCheckItemStatus;
   checkedBy: string | null;
   checkedAt: Date | null;
@@ -111,7 +119,7 @@ interface CrossCheckItemAttributes {
 }
 
 interface CrossCheckItemCreation
-  extends Optional<CrossCheckItemAttributes, "id" | "evaluationId" | "studentId" | "marksBefore" | "marksAfter" | "note" | "status" | "checkedBy" | "checkedAt"> {}
+  extends Optional<CrossCheckItemAttributes, "id" | "evaluationId" | "studentId" | "marksBefore" | "marksAfter" | "note" | "draft" | "changes" | "status" | "checkedBy" | "checkedAt"> {}
 
 export class CrossCheckItem extends Model<CrossCheckItemAttributes, CrossCheckItemCreation> implements CrossCheckItemAttributes {
   public id!: number;
@@ -126,6 +134,8 @@ export class CrossCheckItem extends Model<CrossCheckItemAttributes, CrossCheckIt
   public marksBefore!: number | null;
   public marksAfter!: number | null;
   public note!: string | null;
+  public draft!: RecheckDraft | null;
+  public changes!: QuestionChange[] | null;
   public status!: CrossCheckItemStatus;
   public checkedBy!: string | null;
   public checkedAt!: Date | null;
@@ -157,6 +167,8 @@ CrossCheckItem.init(
     marksBefore: decimal("marksBefore"),
     marksAfter: decimal("marksAfter"),
     note: { type: DataTypes.TEXT, allowNull: true },
+    draft: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
+    changes: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
     status: { type: DataTypes.STRING(16), allowNull: false, defaultValue: "pending" },
     checkedBy: { type: DataTypes.STRING, allowNull: true },
     checkedAt: { type: DataTypes.DATE, allowNull: true },

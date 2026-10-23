@@ -10,7 +10,9 @@
  *   2. The admin starts a round: the sheets the rule chooses (or the ones they pick) and a
  *      cross-checker who teaches the subject and isn't the evaluator. The checker is told.
  *   3. The checker confirms each sheet's marks, or changes them with a reason; changes go
- *      to the marks log (Marks & grading → Changes).
+ *      to the marks log (Marks & grading → Changes). On the evaluation screen they may also run
+ *      the AI again and change question-wise marks: a draft on the item until their verdict
+ *      (evaluation/crossCheckDraft.service), which then goes live question by question.
  *   4. The last sheet checked closes the round; the admins hear what changed, and results
  *      can be published.
  *
@@ -39,6 +41,7 @@ import { logMarksChange } from "../academic/marks.service";
 import { subjectTeacherIn } from "../academic/sessionSetup.service";
 import { EXAM_INCLUDES, buildRoster, type RosterRow } from "./examRoster.service";
 import { examLabel, instituteAdminIds, notifyAll } from "../notification/notifyPeople";
+import { questionChanges } from "../../utils/questionMarks";
 
 const clean = (v: unknown) => String(v ?? "").trim();
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -82,6 +85,16 @@ const REASON_TEXT: Record<CrossCheckReason, (rule: CrossCheckRule | null) => str
 // ─── The rule, and what it chooses ────────────────────────────────────────────
 
 const ruleOf = async (instituteId: string) => (await settingsOf(instituteId)).crossCheck;
+
+/** Why a sheet is in the round, in words ("Below 33%"). */
+export const reasonTextOf = (item: CrossCheckItem, round: CrossCheckRound) =>
+  REASON_TEXT[item.reason]?.((round.rule as CrossCheckRule) ?? null) ?? item.reason;
+
+/** The checker's draft, when they have re-evaluated (or the AI is at it). */
+const draftOfItem = (item: CrossCheckItem) => {
+  const d = item.draft;
+  return d && (d.evaluations?.length || d.status === "Pending") ? d : null;
+};
 
 /** Sheets with marks (uploaded and evaluated). */
 const markedRows = (rows: RosterRow[]) => rows.filter((r) => r.state === "UPLOADED" && r.sheetId && r.evaluationStatus === "Success" && r.score != null);
@@ -515,8 +528,9 @@ const myRounds = async (teacher: any, query: any) => {
     Exam.findAll({ where: { examId: { [Op.in]: rounds.map((r) => r.examId) } }, include: EXAM_INCLUDES }),
     CrossCheckItem.findAll({ where: { roundId: { [Op.in]: rounds.map((r) => r.roundId) } }, order: [["id", "ASC"]] }),
   ]);
-  const evaluations = items.length ? await AIEvaluation.findAll({ where: { sheetId: { [Op.in]: items.map((i) => i.sheetId) } }, attributes: ["sheetId", "totalScore"] }) : [];
+  const evaluations = items.length ? await AIEvaluation.findAll({ where: { sheetId: { [Op.in]: items.map((i) => i.sheetId) } }, attributes: ["sheetId", "totalScore", "evaluations"] }) : [];
   const scoreOf = new Map(evaluations.map((e: any) => [e.sheetId, e.totalScore == null ? null : Number(e.totalScore)]));
+  const evaluationOf = new Map(evaluations.map((e: any) => [e.sheetId, e]));
   const examOf = new Map(exams.map((e: any) => [e.examId, e]));
   const rosters = new Map<string, Map<string, RosterRow>>();
   for (const exam of exams as any[]) rosters.set(exam.examId, new Map((await buildRoster(exam)).rows.filter((r) => r.sheetId).map((r) => [r.sheetId as string, r])));
@@ -549,13 +563,14 @@ const myRounds = async (teacher: any, query: any) => {
             paper: n + 1,
             name: maskName(row?.name),
             rollNo: maskRoll(row?.rollNo),
-            reasonText: REASON_TEXT[i.reason]?.((r.rule as CrossCheckRule) ?? null) ?? i.reason,
+            reasonText: reasonTextOf(i, r),
             marksBefore: i.marksBefore,
             currentMarks: scoreOf.get(i.sheetId) ?? null,
             marksAfter: i.marksAfter,
             status: i.status,
             note: i.note,
             checkedAt: i.checkedAt,
+            ...draftSummary(i, evaluationOf.get(i.sheetId)),
           };
         }),
       };
@@ -563,9 +578,23 @@ const myRounds = async (teacher: any, query: any) => {
   };
 };
 
-/** { marks, note } — the cross-checker's verdict on one paper: the same marks, or new ones with a reason. */
+/** The checker's re-evaluation of a pending sheet (from the evaluation screen), or what their verdict changed. */
+const draftSummary = (item: CrossCheckItem, evaluation: any) => {
+  if (item.status !== CROSS_CHECK_ITEM_STATUS.PENDING) return { draftScore: null, aiStatus: null, changes: item.changes ?? [] };
+  const draft = draftOfItem(item);
+  return {
+    draftScore: draft?.totalScore ?? null,
+    aiStatus: draft?.status ?? null,
+    changes: draft?.evaluations?.length ? questionChanges(evaluation?.evaluations, draft.evaluations) : [],
+  };
+};
+
+/**
+ * { marks, note } — the cross-checker's verdict on one paper: the same marks, or new ones with a
+ * reason. When they re-evaluated on the evaluation screen, the verdict is that draft (its
+ * question-wise marks and total), and it goes live question by question.
+ */
 const checkItem = async (teacher: any, itemId: string, body: any) => {
-  const marksIn = Number(body?.marks);
   const note = clean(body?.note).slice(0, 1000);
   const outcome = await sequelize.transaction(async (t) => {
     const item = await CrossCheckItem.findOne({ where: { itemId: clean(itemId), instituteId: teacher.instituteId }, transaction: t, lock: t.LOCK.UPDATE });
@@ -579,7 +608,10 @@ const checkItem = async (teacher: any, itemId: string, body: any) => {
     if (await StudentResult.count({ where: { examId: exam.examId, isDeleted: false }, transaction: t })) {
       throw new ApiError(httpStatus.CONFLICT, "This exam's results are already published.");
     }
-    if (body?.marks === undefined || body?.marks === null || body?.marks === "" || !Number.isFinite(marksIn) || marksIn < 0 || marksIn > exam.totalMarks) {
+    const draft = draftOfItem(item);
+    if (draft?.status === "Pending") throw new ApiError(httpStatus.CONFLICT, "The AI is still re-evaluating this sheet. Give your verdict once it has finished.");
+    const marksIn = draft ? Number(draft.totalScore) : Number(body?.marks);
+    if ((!draft && (body?.marks === undefined || body?.marks === null || body?.marks === "")) || !Number.isFinite(marksIn) || marksIn < 0 || marksIn > exam.totalMarks) {
       throw new ApiError(httpStatus.BAD_REQUEST, `Marks must be between 0 and ${exam.totalMarks}.`);
     }
     const marks = round2(marksIn);
@@ -587,11 +619,15 @@ const checkItem = async (teacher: any, itemId: string, body: any) => {
     if (!evaluation) throw new ApiError(httpStatus.NOT_FOUND, "This answer sheet has no marks to verify.");
     const current = evaluation.totalScore == null ? null : Number(evaluation.totalScore);
     const before = item.marksBefore ?? current;
-    const changed = before == null || Math.abs(marks - before) >= 0.005;
+    const changes = draft ? questionChanges(evaluation.evaluations, draft.evaluations) : [];
+    const changed = before == null || Math.abs(marks - before) >= 0.005 || changes.length > 0;
     if (changed && note.length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Give a reason for the revision; the admin and the evaluator can see it.");
 
-    if (current == null || Math.abs(marks - current) >= 0.005) {
-      await evaluation.update({ totalScore: marks }, { transaction: t });
+    if (current == null || Math.abs(marks - current) >= 0.005 || changes.length) {
+      await evaluation.update(
+        draft ? { evaluations: draft.evaluations, totalScore: marks, feedback: draft.feedback ?? evaluation.feedback } : { totalScore: marks },
+        { transaction: t }
+      );
       await logMarksChange(
         {
           instituteId: exam.instituteId,
@@ -600,6 +636,7 @@ const checkItem = async (teacher: any, itemId: string, body: any) => {
           changedBy: teacher.userId,
           oldValue: current,
           newValue: marks,
+          details: changes,
           reason: note || "Cross-check",
           sessionId: exam.sessionId,
           examType: exam.examType,
@@ -612,7 +649,14 @@ const checkItem = async (teacher: any, itemId: string, body: any) => {
       );
     }
     await item.update(
-      { status: changed ? CROSS_CHECK_ITEM_STATUS.CHANGED : CROSS_CHECK_ITEM_STATUS.CONFIRMED, marksAfter: marks, note: note || null, checkedBy: teacher.userId, checkedAt: new Date() },
+      {
+        status: changed ? CROSS_CHECK_ITEM_STATUS.CHANGED : CROSS_CHECK_ITEM_STATUS.CONFIRMED,
+        marksAfter: marks,
+        note: note || null,
+        changes: changes.length ? changes : null,
+        checkedBy: teacher.userId,
+        checkedAt: new Date(),
+      },
       { transaction: t }
     );
 

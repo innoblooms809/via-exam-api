@@ -25,6 +25,7 @@ import { EXAM_TYPES, normalizeExamType } from "../../utils/examTypes";
 import { newId } from "../../utils/idGenerator";
 import { findSession } from "./sessionSetup.service";
 import { settingsOf } from "./instituteSettings.service";
+import type { QuestionChange } from "../../models/RecheckAssignment.model";
 
 const fail = (statusCode: number, message: string, data?: unknown) => ({ error: true, statusCode, message, ...(data ? { data } : {}) });
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -51,6 +52,8 @@ export const logMarksChange = (
     sheetId?: string | null;
     /** The admin who approved it (a recheck decision). */
     approvedBy?: string | null;
+    /** A student's marks: the questions whose marks changed. */
+    details?: QuestionChange[] | null;
   },
   transaction?: Transaction
 ) =>
@@ -61,6 +64,7 @@ export const logMarksChange = (
       source: entry.source,
       changedBy: entry.changedBy,
       approvedBy: entry.approvedBy ?? null,
+      details: entry.details?.length ? entry.details : null,
       oldValue: entry.oldValue === undefined || entry.oldValue === null ? null : String(entry.oldValue).slice(0, 255),
       newValue: entry.newValue === undefined || entry.newValue === null ? null : String(entry.newValue).slice(0, 255),
       reason: entry.reason ? String(entry.reason).slice(0, 2000) : null,

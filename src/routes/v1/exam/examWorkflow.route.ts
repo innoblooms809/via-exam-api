@@ -53,6 +53,10 @@ router.post("/student/rechecks", authorize(["STUDENT"]), validate(Validation.cre
 
 // ── Rechecks: admin assigns / rejects, teacher decides, admin approves ───────
 router.get("/rechecks", admin, validate(Validation.listRechecks), Controller.listRechecks);
+// One answer sheet's marks history: evaluator, cross-check, recheck, who changed what.
+router.get("/sheets/:sheetId/history", admin, validate(Validation.sheetParam), Controller.sheetHistory);
+// An exam's full report: every student from scanning to result and recheck.
+router.get("/exams/:examId/report", admin, validate(Validation.examParam), Controller.examReport);
 router.post("/rechecks/:requestId/assign", admin, validate(Validation.assignRecheck), Controller.assignRecheck);
 router.post("/rechecks/:requestId/reject", admin, validate(Validation.rejectRecheck), Controller.rejectRecheck);
 // The teacher's decision reaches the result only once an admin approves it.

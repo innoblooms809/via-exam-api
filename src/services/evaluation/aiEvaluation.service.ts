@@ -20,6 +20,7 @@ import { sequelize } from "../../config/sequelize";
 import { logMarksChange } from "../academic/marks.service";
 import { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
 import { sheetHeldForCrossCheck } from "../exam/crossCheck.service";
+import { questionChanges } from "../../utils/questionMarks";
 
 // ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
 const triggerEvaluation = async (sheetId: string, force: boolean = false): Promise<any> => {
@@ -321,9 +322,41 @@ const getEvaluationBySheetId = async (sheetId: string): Promise<any> => {
       logger.error("Failed to resolve class name for evaluation details:", err);
     }
 
+    // The exam the sheet was uploaded for: its real subject, class, section and session.
+    let examInfo: any = null;
+    try {
+      const sheet = await Scanner.findOne({ where: { sheetId }, attributes: ["examId", "section"] });
+      const exam: any = await Exam.findOne({
+        where: { examId: sheet?.examId || aiEval.examId },
+        attributes: ["examId", "examType"],
+        include: [
+          { association: "subject", attributes: ["subjectName"] },
+          { association: "class", attributes: ["className"] },
+          { association: "section", attributes: ["sectionName"] },
+          { association: "session", attributes: ["sessionName"] },
+        ],
+      });
+      if (exam) {
+        examInfo = {
+          examId: exam.examId,
+          examType: exam.examType,
+          subjectName: exam.subject?.subjectName ?? null,
+          className: exam.class?.className ?? null,
+          // A whole-class exam has no section: the sheet's own section.
+          sectionName: exam.section?.sectionName ?? sheet?.section ?? null,
+          sessionName: exam.session?.sessionName ?? null,
+        };
+      }
+    } catch (err) {
+      logger.error("Failed to resolve the exam for evaluation details:", err);
+    }
+
     const evalDataJson = aiEval.toJSON() as any;
     evalDataJson.studentName = studentName;
-    evalDataJson.className = className;
+    evalDataJson.className = examInfo?.className || className;
+    evalDataJson.exam = examInfo;
+    evalDataJson.subjectName = examInfo?.subjectName ?? null;
+    evalDataJson.sessionName = examInfo?.sessionName ?? null;
     // While Pending: where the sheet is in the Pipeline 6 queue (stage + place in line).
     evalDataJson.queue = getSheetQueueInfo(sheetId);
 
@@ -417,6 +450,8 @@ const updateEvaluationBySheetId = async (
     }
 
     const before = aiEval.totalScore == null ? null : Number(aiEval.totalScore);
+    // Which questions' marks this edit changes (the marks history shows them).
+    const details = Array.isArray(data.evaluations) ? questionChanges(aiEval.evaluations, data.evaluations) : [];
     // Whose marks these are, from the sheet's enrolment (the evaluation's own studentId can be
     // someone else's), so the marks history names the right student.
     const ownerId = sheet ? await studentForSheet(sheet) : null;
@@ -429,7 +464,8 @@ const updateEvaluationBySheetId = async (
         },
         { transaction: t }
       );
-      if (score !== null && (before === null || Math.abs(before - score) >= 0.005) && user?.userId) {
+      const totalChanged = score !== null && (before === null || Math.abs(before - score) >= 0.005);
+      if ((totalChanged || details.length) && user?.userId) {
         await logMarksChange(
           {
             instituteId: sheet?.instituteId ?? exam?.instituteId ?? user.instituteId,
@@ -437,7 +473,8 @@ const updateEvaluationBySheetId = async (
             source: MARKS_SOURCE.EVALUATION,
             changedBy: user.userId,
             oldValue: before,
-            newValue: score,
+            newValue: score ?? before,
+            details,
             reason: data.reason ?? null,
             sessionId: exam?.sessionId ?? null,
             examType: exam?.examType ?? null,

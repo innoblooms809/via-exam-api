@@ -111,8 +111,13 @@ export interface TeacherScope {
   ownClassKeys: Set<string>;
   /** Exams this teacher was assigned to evaluate → masked data. */
   assignedExams: AssignedExamScope[];
-  /** Sheets of open recheck requests the admin gave this teacher → masked data. */
+  /** Sheets of open recheck requests the admin gave this teacher → masked data, evaluate. */
   recheckSheetIds: Set<string>;
+  /**
+   * Sheets of every recheck still with this teacher: open, or their decision awaiting the
+   * admin's approval → masked data, view only once the decision is sent.
+   */
+  recheckViewSheetIds: Set<string>;
   /** Sheets in this teacher's open cross-check rounds → masked data, view only. */
   crossCheckSheetIds: Set<string>;
   /**
@@ -122,23 +127,36 @@ export interface TeacherScope {
   blindSheetIds: Set<string>;
 }
 
-/** Sheet ids behind the recheck requests assigned to this teacher and not yet completed. */
-async function openRecheckSheetIds(instituteId: string, teacherId: string): Promise<Set<string>> {
-  const open = await RecheckAssignment.findAll({
-    where: { instituteId, teacherId, completedAt: null },
-    attributes: ["requestId"],
+/**
+ * Sheet ids behind the recheck requests assigned to this teacher that are still with them:
+ * `open` while they re-evaluate (assignment not completed), `withTeacher` also while their
+ * decision awaits the admin's approval (the same window recheckFor shows the recheck in).
+ */
+async function recheckSheetIdsOf(instituteId: string, teacherId: string): Promise<{ open: Set<string>; withTeacher: Set<string> }> {
+  const ids = { open: new Set<string>(), withTeacher: new Set<string>() };
+  const assignments = await RecheckAssignment.findAll({
+    where: { instituteId, teacherId },
+    attributes: ["requestId", "completedAt"],
   });
-  if (!open.length) return new Set();
+  if (!assignments.length) return ids;
   const requests = await RecheckRequest.findAll({
-    where: { requestId: { [Op.in]: open.map((a) => a.requestId) } },
-    attributes: ["evaluationId"],
+    where: { requestId: { [Op.in]: assignments.map((a) => a.requestId) }, status: { [Op.in]: ["Under Review", "Awaiting Approval"] } },
+    attributes: ["requestId", "evaluationId"],
   });
-  if (!requests.length) return new Set();
+  if (!requests.length) return ids;
   const evaluations = await AIEvaluation.findAll({
     where: { evaluationId: { [Op.in]: requests.map((r) => r.evaluationId) } },
-    attributes: ["sheetId"],
+    attributes: ["evaluationId", "sheetId"],
   });
-  return new Set(evaluations.map((e) => String(e.sheetId)));
+  const sheetOf = new Map(evaluations.map((e) => [String(e.evaluationId), String(e.sheetId)]));
+  const openRequests = new Set(assignments.filter((a) => !a.completedAt).map((a) => a.requestId));
+  for (const r of requests) {
+    const sheetId = sheetOf.get(String(r.evaluationId));
+    if (!sheetId) continue;
+    ids.withTeacher.add(sheetId);
+    if (openRequests.has(r.requestId)) ids.open.add(sheetId);
+  }
+  return ids;
 }
 
 /** Every sheet of a recheck given to this teacher or a cross-check round they hold, open or done. */
@@ -169,7 +187,7 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
   const userId = String(user?.userId ?? "");
   const instituteId = String(user?.instituteId ?? "");
 
-  const [subjects, assignments, recheckSheetIds, crossCheckSheetIds, blindSheetIds] = await Promise.all([
+  const [subjects, assignments, rechecks, crossCheckSheetIds, blindSheetIds] = await Promise.all([
     Subject.findAll({
       where: { instituteId, teacherId: userId, isDeleted: false },
       attributes: ["subjectId", "classId"],
@@ -179,7 +197,7 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
       where: { instituteId, teacherId: userId, isActive: true },
       attributes: ["examId"],
     }),
-    openRecheckSheetIds(instituteId, userId),
+    recheckSheetIdsOf(instituteId, userId),
     openCrossCheckSheetIds(instituteId, userId),
     blindSheetIdsOf(instituteId, userId),
   ]);
@@ -203,7 +221,8 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
     instituteId,
     ownSubjectIds: new Set(subjects.map((s: any) => String(s.subjectId))),
     ownClassKeys,
-    recheckSheetIds,
+    recheckSheetIds: rechecks.open,
+    recheckViewSheetIds: rechecks.withTeacher,
     crossCheckSheetIds,
     blindSheetIds,
     assignedExams: exams.map((e: any) => ({
@@ -232,12 +251,19 @@ export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAcce
         a.classKeys.has(String(sheet.classId ?? "")))
   );
   const crossChecking = Boolean(sheet.sheetId) && scope.crossCheckSheetIds.has(String(sheet.sheetId));
-  return assigned || isRecheckSheet(scope, sheet) || crossChecking ? "masked" : "none";
+  // A recheck stays viewable after the teacher sends their decision, until the admin settles it.
+  const rechecking = Boolean(sheet.sheetId) && scope.recheckViewSheetIds.has(String(sheet.sheetId));
+  return assigned || rechecking || crossChecking ? "masked" : "none";
 }
 
-/** Is this teacher the admin-assigned evaluator of the sheet's exam? */
+/**
+ * Is this teacher the admin-assigned evaluator of the sheet's exam? The teacher rechecking or
+ * cross-checking the sheet also evaluates it, into their own draft (recheckDraft /
+ * crossCheckDraft services).
+ */
 export function isAssignedEvaluator(scope: TeacherScope, sheet: SheetLike): boolean {
   if (isRecheckSheet(scope, sheet)) return true;
+  if (sheet.sheetId && scope.crossCheckSheetIds.has(String(sheet.sheetId))) return true;
   return scope.assignedExams.some(
     (a) =>
       (sheet.examId && a.examId === String(sheet.examId)) ||

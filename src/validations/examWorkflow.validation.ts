@@ -11,6 +11,7 @@ const cacheBuster = Joi.any();
 
 const examParam = { params: Joi.object({ examId: id.required() }) };
 const requestParam = { params: Joi.object({ requestId: id.required() }) };
+const sheetParam = { params: Joi.object({ sheetId: id.required() }) };
 
 const listPipeline = {
   query: Joi.object({
@@ -127,7 +128,8 @@ const requestReopen = { ...examParam, body: Joi.object({ reason: Joi.string().tr
 const listReopenRequests = { query: Joi.object({ status: Joi.string().valid("PENDING", "DECIDED", "ALL", "").insensitive(), _t: cacheBuster }) };
 const decideReopen = { ...requestParam, body: Joi.object({ note: text(500) }) };
 
-export default {
+export default {  sheetParam,
+
   classResults,
   examParam,
   listPipeline,

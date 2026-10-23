@@ -6,8 +6,12 @@ import Pipeline6Controller from "../../../controllers/evaluation/pipeline6.contr
 import { authenticate, authorize } from "../../../middlewares/auth";
 import { ACADEMIC } from "../../../config/roles";
 import { requireSheetAccessMiddleware, requireSheetEvaluateMiddleware } from "../../../services/evaluation/evaluationAccess.service";
+import { evaluationRunGuard } from "../../../services/evaluation/recheckDraft.service";
 
 const router = Router();
+
+// Every route that runs the AI: the assigned evaluator only, and never on published results,
+// except a recheck teacher's run, which goes into their recheck draft (evaluationRunGuard).
 
 // Trigger evaluation (legacy — uses old port 8002 API)
 router.post(
@@ -15,6 +19,7 @@ router.post(
   authenticate,
   authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
+  evaluationRunGuard,
   Controller.evaluateSheet
 );
 
@@ -24,6 +29,7 @@ router.post(
   authenticate,
   authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
+  evaluationRunGuard,
   NewController.evaluateSheet2
 );
 
@@ -33,6 +39,7 @@ router.post(
   authenticate,
   authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
+  evaluationRunGuard,
   OCRNew5Controller.evaluateSheetOCRNew5
 );
 
@@ -42,6 +49,7 @@ router.post(
   authenticate,
   authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
+  evaluationRunGuard,
   Pipeline6Controller.evaluateSheetPipeline6
 );
 
@@ -50,6 +58,7 @@ router.post(
   authenticate,
   authorize(ACADEMIC),
   requireSheetEvaluateMiddleware,
+  evaluationRunGuard,
   Pipeline6Controller.evaluateSheetPipeline6
 );
 

@@ -26,6 +26,7 @@ import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import RecheckRequest, { RECHECK_CATEGORIES, RECHECK_OPEN_STATUSES, recheckCategoryLabel, type ClaimedQuestion, type RecheckCategory } from "../../models/RecheckRequest.model";
 import RecheckAssignment from "../../models/RecheckAssignment.model";
+import { describeChanges, questionChanges, questionLabel } from "../../utils/questionMarks";
 import { printBitsOf, resultTemplateOf } from "../academic/reportTemplate.service";
 import ClassResultsService from "./classResults.service";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
@@ -56,13 +57,6 @@ const isAdmin = (user: any) => ["ADMIN", "INSTITUTEADMIN", "SUPERADMIN"].include
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const numOrNull = (v: unknown) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : round2(Number(v)));
 const textList = (v: unknown) => (Array.isArray(v) ? v.map((s) => clean(s)).filter(Boolean).slice(0, 12) : []);
-
-/** "1" → "Q1", "q2b" → "Q2b", "Q3(a)" stays. */
-const questionLabel = (id: string, n: number) => {
-  const raw = clean(id);
-  if (!raw) return `Q${n}`;
-  return /^\d/.test(raw) ? `Q${raw}` : raw.replace(/^q(?=\d)/, "Q");
-};
 
 /**
  * An evaluation's questions in paper order, as students, admins and teachers see them.
@@ -1339,7 +1333,17 @@ const claimedDetail = (claimed: ClaimedQuestion[] | null | undefined, paper: Pap
     };
   });
 
-const recheckRow = (r: any, exam: any, assignment: any, names: Map<string, string>, masked = false, paper: PaperQuestion[] = [], sheetId: string | null = null) => {
+const recheckRow = (
+  r: any,
+  exam: any,
+  assignment: any,
+  names: Map<string, string>,
+  masked = false,
+  paper: PaperQuestion[] = [],
+  sheetId: string | null = null,
+  /** The published evaluation's question-wise marks (what a draft is compared with). */
+  paperEvaluations: unknown = []
+) => {
   const studentName = names.get(r.studentId) ?? "";
   return {
     requestId: r.requestId,
@@ -1381,6 +1385,18 @@ const recheckRow = (r: any, exam: any, assignment: any, names: Map<string, strin
           /** The admin's note when they last sent the decision back. */
           returnNote: assignment.returnNote ?? null,
           returnedAt: assignment.returnedAt ?? null,
+          /** What the decision changes (or changed), question by question. */
+          changes: assignment.changes ?? [],
+          /** The teacher's re-evaluation on the evaluation screen, before they decide. */
+          draft: assignment.draft
+            ? {
+                totalScore: assignment.draft.totalScore ?? null,
+                status: assignment.draft.status,
+                aiRunAt: assignment.draft.aiRunAt ?? null,
+                editedAt: assignment.draft.editedAt ?? null,
+                changes: questionChanges(paperEvaluations, assignment.draft.evaluations),
+              }
+            : null,
         }
       : null,
   };
@@ -1402,7 +1418,7 @@ const decorateRechecks = async (requests: any[], masked = false) => {
   const names = new Map((await UserModal.findAll({ where: { userId: { [Op.in]: userIds } }, attributes: ["userId", "userName"] })).map((u) => [u.userId, u.userName]));
   return requests.map((r) => {
     const ev = evaluationOf.get(r.evaluationId);
-    return recheckRow(r, examById.get(r.examId), assignmentByRequest.get(r.requestId), names, masked, ev ? questionsOf(ev.evaluations) : [], ev?.sheetId ?? null);
+    return recheckRow(r, examById.get(r.examId), assignmentByRequest.get(r.requestId), names, masked, ev ? questionsOf(ev.evaluations) : [], ev?.sheetId ?? null, ev?.evaluations ?? []);
   });
 };
 
@@ -1457,7 +1473,7 @@ const assignRecheck = async (admin: any, requestId: string, body: any) => {
     const before = existing?.teacherId ?? null;
     if (existing) {
       // Another teacher starts afresh (no earlier send-back note or half decision).
-      const fresh = before !== teacherId ? { revisedScore: null, teacherNote: null, completedAt: null, returnNote: null, returnedAt: null } : {};
+      const fresh = before !== teacherId ? { revisedScore: null, teacherNote: null, completedAt: null, returnNote: null, returnedAt: null, draft: null, changes: null } : {};
       await existing.update({ teacherId, assignedBy: admin.userId, assignedAt: new Date(), ...fresh }, { transaction: t });
     } else {
       await RecheckAssignment.create(
@@ -1564,13 +1580,9 @@ const myRechecks = async (teacher: any, query: any) => {
 const completeRecheck = async (teacher: any, requestId: string, body: any) => {
   const instituteId = teacher.instituteId;
   const note = clean(body?.note).slice(0, 1000) || null;
-  const revised = Number(body?.revisedScore);
   const request = await RecheckRequest.findOne({ where: { requestId: clean(requestId), instituteId } });
   if (!request) throw new ApiError(httpStatus.NOT_FOUND, "Recheck request not found.");
   const exam = await requireExam(instituteId, request.examId);
-  if (!Number.isFinite(revised) || revised < 0 || revised > exam.totalMarks) {
-    throw new ApiError(httpStatus.BAD_REQUEST, `Marks must be between 0 and ${exam.totalMarks}.`);
-  }
 
   const outcome = await sequelize.transaction(async (t) => {
     const locked = await RecheckRequest.findOne({ where: { id: request.id }, transaction: t, lock: t.LOCK.UPDATE });
@@ -1579,13 +1591,26 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
     // Only the teacher it was sent to decides; the admin approves.
     if (!assignment || assignment.teacherId !== teacher.userId) throw new ApiError(httpStatus.FORBIDDEN, "This recheck is not assigned to you.");
 
-    const evaluation = await AIEvaluation.findOne({ where: { evaluationId: request.evaluationId }, attributes: ["totalScore"], transaction: t });
+    // Re-evaluated on the evaluation screen: the decision is that draft (its question-wise
+    // marks and total). Otherwise the teacher gives the final total here.
+    const draft = assignment.draft?.evaluations?.length || assignment.draft?.status === "Pending" ? assignment.draft : null;
+    if (draft?.status === "Pending") throw new ApiError(httpStatus.CONFLICT, "The AI is still re-evaluating this sheet. Send your decision once it has finished.");
+    const revised = draft ? Number(draft.totalScore) : Number(body?.revisedScore);
+    if (!Number.isFinite(revised) || revised < 0 || revised > exam.totalMarks) {
+      throw new ApiError(httpStatus.BAD_REQUEST, `Marks must be between 0 and ${exam.totalMarks}.`);
+    }
+
+    const evaluation = await AIEvaluation.findOne({ where: { evaluationId: request.evaluationId }, attributes: ["totalScore", "evaluations"], transaction: t });
     const previous = evaluation?.totalScore == null ? null : Number(evaluation.totalScore);
     const marks = round2(revised);
+    const changes = draft ? questionChanges(evaluation?.evaluations, draft.evaluations) : [];
     const changed = previous == null || Math.abs(previous - marks) >= 0.005;
     // Every change of a published mark says why (Marks & grading → Changes).
-    if (changed && (note ?? "").length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Say why the marks change; the admin approves it and the student reads it.");
-    await assignment.update({ previousScore: assignment.previousScore ?? previous, revisedScore: marks, teacherNote: note, completedAt: new Date() }, { transaction: t });
+    if ((changed || changes.length) && (note ?? "").length < 3) throw new ApiError(httpStatus.BAD_REQUEST, "Say why the marks change; the admin approves it and the student reads it.");
+    await assignment.update(
+      { previousScore: assignment.previousScore ?? previous, revisedScore: marks, teacherNote: note, changes: changes.length ? changes : null, completedAt: new Date() },
+      { transaction: t }
+    );
     await locked.update({ status: "Awaiting Approval" }, { transaction: t });
 
     const label = examLabel(exam);
@@ -1596,12 +1621,12 @@ const completeRecheck = async (teacher: any, requestId: string, body: any) => {
         userId,
         type: "RECHECK_DECIDED",
         title: "Recheck decision to approve",
-        message: `${teacher.userName ?? "The teacher"} rechecked ${label}: ${changed ? `${previous ?? "—"} → ${marks}` : `marks stay at ${marks}`}. Approve it to publish, or send it back.`,
+        message: `${teacher.userName ?? "The teacher"} rechecked ${label}: ${changed ? `${previous ?? "—"} → ${marks}` : `marks stay at ${marks}`}${changes.length ? ` (${describeChanges(changes)})` : ""}. Approve it to publish, or send it back.`,
         referenceId: request.requestId,
       })),
       t
     );
-    return { previous, proposed: marks, changed };
+    return { previous, proposed: marks, changed, changes };
   });
   return { requestId: request.requestId, status: "Awaiting Approval", ...outcome };
 };
@@ -1628,7 +1653,14 @@ const approveRecheck = async (admin: any, requestId: string) => {
     const previous = evaluation?.totalScore == null ? null : Number(evaluation.totalScore);
     const marks = round2(Number(assignment.revisedScore));
     const changed = previous == null || Math.abs(previous - marks) >= 0.005;
-    if (evaluation && changed) await evaluation.update({ totalScore: marks }, { transaction: t });
+    // A re-evaluation on the evaluation screen brings its question-wise marks too.
+    const draft = assignment.draft?.evaluations?.length ? assignment.draft : null;
+    const changes = draft ? questionChanges(evaluation?.evaluations, draft.evaluations) : [];
+    if (evaluation && draft && (changed || changes.length)) {
+      await evaluation.update({ totalScore: marks, evaluations: draft.evaluations, feedback: draft.feedback ?? evaluation.feedback }, { transaction: t });
+    } else if (evaluation && changed) {
+      await evaluation.update({ totalScore: marks }, { transaction: t });
+    }
 
     const result = await StudentResult.findOne({ where: { examId: request.examId, studentId: request.studentId, isDeleted: false }, transaction: t, lock: t.LOCK.UPDATE });
     if (result && changed) {
@@ -1637,8 +1669,9 @@ const approveRecheck = async (admin: any, requestId: string) => {
         { transaction: t }
       );
     }
-    // Who changed the student's marks (the teacher), who approved it, from what, and why.
-    if (changed) {
+    // Who changed the student's marks (the teacher), who approved it, from what, in which
+    // questions, and why.
+    if (changed || changes.length) {
       await logMarksChange(
         {
           instituteId,
@@ -1648,6 +1681,7 @@ const approveRecheck = async (admin: any, requestId: string) => {
           approvedBy: admin.userId,
           oldValue: previous,
           newValue: marks,
+          details: changes,
           reason: assignment.teacherNote ?? "Recheck",
           sessionId: exam.sessionId,
           examType: exam.examType,
@@ -1659,7 +1693,8 @@ const approveRecheck = async (admin: any, requestId: string) => {
         t
       );
     }
-    await assignment.update({ approvedBy: admin.userId, approvedAt: new Date() }, { transaction: t });
+    // The draft is now the live evaluation; what it changed stays on the recheck.
+    await assignment.update({ approvedBy: admin.userId, approvedAt: new Date(), changes: changes.length ? changes : assignment.changes, draft: null }, { transaction: t });
     await locked.update(
       { status: "Completed", decisionNote: assignment.teacherNote, reviewedBy: admin.userId, reviewedAt: new Date(), completedAt: new Date() },
       { transaction: t }
@@ -1709,7 +1744,8 @@ const returnRecheck = async (admin: any, requestId: string, body: any) => {
     const assignment = await RecheckAssignment.findOne({ where: { requestId: request.requestId }, transaction: t, lock: t.LOCK.UPDATE });
     if (!assignment) throw new ApiError(httpStatus.CONFLICT, "This recheck isn't with a teacher.");
     const proposed = assignment.revisedScore == null ? null : Number(assignment.revisedScore);
-    await assignment.update({ revisedScore: null, teacherNote: null, completedAt: null, returnNote: note, returnedAt: new Date() }, { transaction: t });
+    // The teacher's draft stays, so they carry on from their own re-evaluation.
+    await assignment.update({ revisedScore: null, teacherNote: null, changes: null, completedAt: null, returnNote: note, returnedAt: new Date() }, { transaction: t });
     await locked.update({ status: "Under Review" }, { transaction: t });
     await notifyAll(
       [

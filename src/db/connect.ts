@@ -79,6 +79,16 @@ const connectDB = async (fn: any) => {
       `ALTER TABLE "viaexam_answer_sheets" ADD COLUMN IF NOT EXISTS "qualityFlag" VARCHAR(16), ADD COLUMN IF NOT EXISTS "qualityReport" JSONB;`
     ).catch(() => null);
     await sequelize.query(`ALTER TABLE "viaexam_institute_settings" ADD COLUMN IF NOT EXISTS "scanQuality" JSONB;`).catch(() => null);
+    // A recheck teacher's re-evaluation (a draft until the admin approves) and what it changes,
+    // question by question; the same per-question detail on every change of a student's marks.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_recheck_assignments" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`
+    ).catch(() => null);
+    await sequelize.query(`ALTER TABLE "viaexam_marks_audit" ADD COLUMN IF NOT EXISTS "details" JSONB;`).catch(() => null);
+    // A cross-checker's re-evaluation (a draft until their verdict) and what the verdict changed.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_cross_check_items" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`
+    ).catch(() => null);
 
     await sequelize.sync({ force: false });
     logger.info("Models synced with PostgreSQL");
