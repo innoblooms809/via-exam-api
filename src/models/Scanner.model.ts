@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
+import type { SheetQualityReport } from "../utils/sheetQuality";
 
 interface AnswerSheetAttributes {
   id: number;
@@ -24,6 +25,10 @@ interface AnswerSheetAttributes {
   fileMimeType: string;
   fileSize: number;
   status: string; // Pending, Evaluated, UPLOADED
+  /** Scan quality (utils/sheetQuality): ok, warn, low or unchecked; null until checked. */
+  qualityFlag: string | null;
+  /** Per-page DPI, sharpness and contrast behind qualityFlag (SheetQualityReport). */
+  qualityReport: SheetQualityReport | null;
   isDeleted: boolean;
   uploadedBy: string;
   createdAt?: Date;
@@ -41,6 +46,8 @@ interface AnswerSheetCreationAttributes
     | "fileUrl"
     | "filePublicId"
     | "fileResourceType"
+    | "qualityFlag"
+    | "qualityReport"
   > {}
 
 class Scanner extends Model<
@@ -65,6 +72,8 @@ class Scanner extends Model<
   public fileMimeType!: string;
   public fileSize!: number;
   public status!: string;
+  public qualityFlag!: string | null;
+  public qualityReport!: SheetQualityReport | null;
   public isDeleted!: boolean;
   public uploadedBy!: string;
   public readonly createdAt!: Date;
@@ -96,6 +105,8 @@ Scanner.init(
       allowNull: false,
       defaultValue: "Pending",
     },
+    qualityFlag: { type: DataTypes.STRING(16), allowNull: true, defaultValue: null },
+    qualityReport: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
     isDeleted: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

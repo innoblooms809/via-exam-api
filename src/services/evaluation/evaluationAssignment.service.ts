@@ -46,6 +46,7 @@ import {
   maskRoll,
   type SheetAccess,
 } from "./evaluationAccess.service";
+import { scanQualityView } from "../answer-sheet/sheetQuality.service";
 
 /** Exams whose paper is approved can be evaluated. */
 export const EVALUATION_READY_STATUSES = ["Approved", "Live", "Completed"];
@@ -583,6 +584,8 @@ const getRoster = async (user: any, query: any) => {
       sheetStatus: sheet ? (ev ? EVAL_STATUS[ev.status] ?? sheet.status : sheet.status) : "Missing",
       aiScore: ev?.status === "Success" ? ev.totalScore : null,
       evaluationStatus: ev?.status ?? null,
+      // A poor scan: the AI may have misread it, so its marks need a careful look.
+      scanQuality: scanQualityView(sheet),
       identityMasked: masked,
     };
   };

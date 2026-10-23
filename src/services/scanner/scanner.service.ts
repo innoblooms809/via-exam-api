@@ -22,6 +22,7 @@ import {
   removeTempFile,
   uploadAnswerSheet,
 } from "../../utils/answerSheetStorage";
+import { beginQualityCheck, qualitySummary, scanQualityRule, settleQualityCheck } from "../answer-sheet/sheetQuality.service";
 
 // Exam-table statuses reached only after the QP + answer key pair is approved.
 const APPROVED_EXAM_STATUSES = ["Approved", "Live", "Completed"];
@@ -518,6 +519,8 @@ const uploadStudentAnswerPaper = async (
     }
 
     const sheetId = newId("answerSheet");
+    const qualityRule = await scanQualityRule(instituteId);
+    const qualityCheck = beginQualityCheck(file.path, qualityRule);
 
     // Same storage path as the batch upload: bytes go to Cloudinary, the row
     // keeps a URL. Multer wrote the file to disk, so nothing is held in memory.
@@ -555,12 +558,13 @@ const uploadStudentAnswerPaper = async (
       throw err;
     }
     await clearAbsentForRoll(body.examId, body.rollNumber, uploadedBy.userId);
+    const report = await settleQualityCheck(sheetId, stored.publicId, qualityCheck);
 
     return {
       error: false,
       statusCode: httpStatus.CREATED,
       message: "Student answer paper uploaded successfully.",
-      data: { sheetId },
+      data: { sheetId, quality: qualitySummary(report), qualityPending: qualityRule.enabled && !report },
     };
   } catch (e: any) {
     return {

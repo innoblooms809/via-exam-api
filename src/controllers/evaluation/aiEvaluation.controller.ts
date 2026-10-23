@@ -2,6 +2,7 @@ import { Response } from "express";
 import httpStatus from "http-status";
 import AIEvaluationService from "../../services/evaluation/aiEvaluation.service";
 import { maskEvaluationIdentity, scopeEvaluationRows } from "../../services/evaluation/evaluationAccess.service";
+import { ensureSheetQuality, scanQualityView } from "../../services/answer-sheet/sheetQuality.service";
 
 // POST /v1/ai-evaluation/evaluate
 const evaluateSheet = async (req: any, res: Response): Promise<any> => {
@@ -45,8 +46,11 @@ const getEvaluation = async (req: any, res: Response): Promise<any> => {
     }
     if (!result.error && result.data) {
       const plain = typeof result.data.toJSON === "function" ? result.data.toJSON() : result.data;
-      result.data = { ...plain, canEvaluate: req.canEvaluate !== false };
+      // A poor scan means the AI may have misread it; the evaluator checks the marks harder.
+      result.data = { ...plain, canEvaluate: req.canEvaluate !== false, scanQuality: scanQualityView(req.accessSheet) };
     }
+    // Sheets uploaded before the quality check get checked the first time they're opened.
+    ensureSheetQuality(req.accessSheet);
     return res.status(result.statusCode).send(result);
   } catch (error: any) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

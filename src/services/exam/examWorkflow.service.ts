@@ -586,6 +586,8 @@ const scanRoster = async (user: any, examId: string) => {
       fileName: r.fileName,
       uploadedAt: r.uploadedAt,
       absentMarkedAt: r.absentMarkedAt,
+      // Everyone sees a poor scan: the scanner to rescan it, the admin to know the AI marks need a look.
+      quality: r.quality,
       // Marks are for the admin; the scanner only needs to know a sheet is in.
       ...(isAdmin(user) ? { evaluationId: r.evaluationId, evaluationStatus: r.evaluationStatus, score: r.score } : {}),
     })),
