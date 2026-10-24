@@ -36,7 +36,7 @@ import { requireSheetAccess } from "../evaluation/evaluationAccess.service";
 import { inspectDiskFile } from "../../middlewares/verifyUpload";
 import { ANSWER_SHEET_DETECTED_TYPES } from "../../utils/fileSignature";
 import { newId } from "../../utils/idGenerator";
-import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
+import { assertSheetWritable, clearAbsentForRoll, sheetsChangedAfterReview } from "../exam/examWorkflow.service";
 import { rosterRolls, rosterSectionsByRoll, sheetWhereForExam } from "../exam/examRoster.service";
 import {
   beginQualityCheck,
@@ -427,6 +427,8 @@ export const uploadSheets = async (
     };
     const stored = counts.saved + counts.replaced;
     const notStored = results.length - stored;
+    // New or replaced scans: marks confirmed before no longer cover the exam.
+    if (stored > 0) await sheetsChangedAfterReview(matchingExam.examId).catch((e) => logger.error(`[AnswerSheets] Batch upload: could not reopen the review: ${e?.message || e}`));
 
     return {
       error: false,
@@ -532,6 +534,9 @@ export const replaceSheet = async (
       await destroyAnswerSheet(previous.publicId, previous.resourceType, `replaced ${sheetId}`);
     }
 
+    // The scan behind the confirmed marks is gone.
+    await sheetsChangedAfterReview(sheet.examId).catch((e) => logger.error(`[AnswerSheets] Replace ${sheetId}: could not reopen the review: ${e?.message || e}`));
+
     const report = await settleQualityCheck(sheet.sheetId, stored.publicId, qualityCheck);
 
     return {
@@ -586,6 +591,8 @@ export const deleteSheet = async (sheetId: string, requestedBy: any): Promise<an
 
     // Committed — the asset can no longer be reached through the app.
     await destroyAnswerSheet(asset.publicId, asset.resourceType, `deleted sheet ${sheetId}`);
+    // A sheet behind the confirmed marks (and maybe a cross-check item) is gone.
+    await sheetsChangedAfterReview(sheet.examId).catch((e) => logger.error(`[AnswerSheets] Delete ${sheetId}: could not reopen the review: ${e?.message || e}`));
 
     return {
       error: false,

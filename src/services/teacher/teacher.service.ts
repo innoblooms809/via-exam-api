@@ -772,6 +772,77 @@ const getMyTeaching = async (user: any): Promise<any> => {
   }
 };
 
+// ─── My students, per class ─────────────────────────────────────────────────────
+// The students enrolled that session in a class the teacher teaches a subject of (every
+// section, or one), or in a section they are class teacher of. Real names and contacts:
+// this is the class list, not marking, which stays blind (evaluationAccess.service).
+
+const MY_STUDENTS_SQL = `
+SELECT en."studentId", en."rollNumber", en."sectionId", sec."sectionName",
+       u."userName", u."emailId", u."phoneNumber", u."profileUrl", u.status,
+       p."fatherName", p.gender
+FROM viaexam_student_enrollments en
+JOIN viaexam_users u ON u."userId" = en."studentId" AND u."isDeleted" = false
+LEFT JOIN viaexam_student_profiles p ON p."userId" = en."studentId"
+LEFT JOIN viaexam_sections sec ON sec."sectionId" = en."sectionId"
+WHERE en."instituteId" = :inst AND en."sessionId" = :session AND en."classId" = :class AND en."isActive" = true
+  AND (:section = '' OR en."sectionId" = :section)
+ORDER BY sec."sectionName", NULLIF(regexp_replace(en."rollNumber", '\\D', '', 'g'), '')::numeric NULLS LAST, en."rollNumber", u."userName"`;
+
+const getMyStudents = async (user: any, query: any): Promise<any> => {
+  try {
+    const inst = String(user?.instituteId ?? "");
+    const uid = String(user?.userId ?? "");
+    const session = String(query?.sessionId ?? "").trim();
+    const classId = String(query?.classId ?? "").trim();
+    const section = String(query?.sectionId ?? "").trim();
+    if (!session || !classId) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Pick a session and a class." };
+    }
+
+    // A subject of the class (any section), or the class teacher of this section.
+    const [teachesSubject, classTeacher] = await Promise.all([
+      sequelize.query<any>(`SELECT 1 FROM viaexam_session_subjects WHERE "instituteId" = :inst AND "sessionId" = :session AND "classId" = :classId AND "teacherId" = :uid LIMIT 1`, {
+        type: QueryTypes.SELECT,
+        replacements: { inst, session, classId, uid },
+      }),
+      section
+        ? sequelize.query<any>(
+            `SELECT 1 FROM viaexam_session_sections WHERE "instituteId" = :inst AND "sessionId" = :session AND "classId" = :classId AND "sectionId" = :section AND "classTeacherId" = :uid LIMIT 1`,
+            { type: QueryTypes.SELECT, replacements: { inst, session, classId, section, uid } }
+          )
+        : Promise.resolve([]),
+    ]);
+    if (!teachesSubject.length && !classTeacher.length) {
+      return { error: true, statusCode: httpStatus.FORBIDDEN, message: "You can see the students of the classes you teach a subject in, and of the sections you are class teacher of." };
+    }
+
+    const rows = await sequelize.query<any>(MY_STUDENTS_SQL, { type: QueryTypes.SELECT, replacements: { inst, session, class: classId, section } });
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Students enrolled.",
+      data: {
+        students: rows.map((r: any) => ({
+          studentId: r.studentId,
+          rollNumber: r.rollNumber ?? "",
+          userName: r.userName ?? "",
+          sectionId: r.sectionId ?? null,
+          sectionName: r.sectionName ?? "",
+          gender: r.gender ?? "",
+          fatherName: r.fatherName ?? "",
+          phoneNumber: r.phoneNumber ?? "",
+          emailId: r.emailId ?? "",
+          profileUrl: r.profileUrl ?? null,
+          active: Number(r.status) === 1,
+        })),
+      },
+    };
+  } catch (e: any) {
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `The students couldn't be loaded: ${e.message}` };
+  }
+};
+
 const getMyAssignments = async (teacherId: string): Promise<any> => {
   try {
     const user = await UserModal.findOne({ where: { userId: teacherId } });
@@ -1139,6 +1210,7 @@ export default {
   reactivateTeacher,
   getMyAssignments,
   getMyTeaching,
+  getMyStudents,
   getTeacherQuestionPapers,
   getTeacherExamsWithApprovalStatus: async (
     teacherUser: any,

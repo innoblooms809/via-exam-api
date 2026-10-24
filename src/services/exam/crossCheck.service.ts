@@ -184,20 +184,28 @@ export const sheetHeldForCrossCheck = async (sheetId: string) => {
   return round ? { item, round } : null;
 };
 
-/** The evaluator reopened the marks: the cross-check starts over once they confirm again. */
-export const closeRoundForReopen = async (examId: string) => {
+/**
+ * The evaluator reopened the marks, or a sheet was added, replaced or deleted after they confirmed them
+ * ("sheets"): the cross-check starts over once they confirm again. A round left open would hold items for
+ * sheets that are gone or carry new, unevaluated scans, and block publishing with nothing to check.
+ */
+export const closeRoundForReopen = async (examId: string, why: "marks" | "sheets" = "marks") => {
   const round = await activeRound(examId);
   if (!round) return;
   await round.update({ isActive: false });
   if (round.checkerId && round.status === "open") {
     const exam: any = await Exam.findOne({ where: { examId }, include: EXAM_INCLUDES });
+    const label = exam ? examLabel(exam) : "an exam";
     await notifyAll([
       {
         instituteId: round.instituteId,
         userId: round.checkerId,
         type: "CROSS_CHECK_UNASSIGNED",
         title: "Cross-check cancelled",
-        message: `The evaluator reopened the marks of ${exam ? examLabel(exam) : "an exam"}, so its cross-check was cancelled. You will be notified if it is assigned again.`,
+        message:
+          why === "sheets"
+            ? `The answer sheets of ${label} changed after its marks were confirmed, so its cross-check was cancelled. You will be notified if it is assigned again.`
+            : `The evaluator reopened the marks of ${label}, so its cross-check was cancelled. You will be notified if it is assigned again.`,
         referenceId: examId,
       },
     ]).catch(() => undefined);
