@@ -14,7 +14,8 @@ import RegHelper from "../../utils/helper";
 import { isScannerRequester, isTeacherRequester, requireSheetAccess, scopeSheetRows } from "../evaluation/evaluationAccess.service";
 import AnswerSheetStorage from "../answer-sheet/answerSheetStorage.service";
 import { newId } from "../../utils/idGenerator";
-import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
+import { assertSheetWritable, clearAbsentForRoll, sheetsChangedAfterReview } from "../exam/examWorkflow.service";
+import logger from "../../config/logger";
 import { rosterRolls } from "../exam/examRoster.service";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 import {
@@ -558,6 +559,8 @@ const uploadStudentAnswerPaper = async (
       throw err;
     }
     await clearAbsentForRoll(body.examId, body.rollNumber, uploadedBy.userId);
+    // A new sheet: marks confirmed before no longer cover the exam.
+    await sheetsChangedAfterReview(exam.examId).catch((e) => logger.error(`[Scanner] Upload ${sheetId}: could not reopen the review: ${e?.message || e}`));
     const report = await settleQualityCheck(sheetId, stored.publicId, qualityCheck);
 
     return {

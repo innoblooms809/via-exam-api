@@ -47,7 +47,7 @@ import TeacherProfile from "../../models/TeacherProfile.model";
 import { specialisesIn } from "../../utils/specialization";
 import { subjectTeacherIn } from "../academic/sessionSetup.service";
 import { checkExamEvaluated } from "./examProgress";
-import { assertCrossCheckDone, crossCheckStates, type CrossCheckState } from "./crossCheck.service";
+import { assertCrossCheckDone, closeRoundForReopen, crossCheckStates, type CrossCheckState } from "./crossCheck.service";
 
 // ─── Small helpers ───────────────────────────────────────────────────────────
 
@@ -717,6 +717,31 @@ export const assertSheetWritable = async (user: any, examId: string | null | und
   if (await publishedCount(exam.examId)) {
     throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published, so its sheets can't change.");
   }
+};
+
+/**
+ * Called by the upload paths once a sheet of this exam was added, replaced or deleted. Marks the evaluator
+ * confirmed before then no longer cover the exam's sheets: the review is cleared (they evaluate the new scan
+ * and confirm again), and its cross-check round is cancelled, to start over after that.
+ */
+export const sheetsChangedAfterReview = async (examId: string | null | undefined) => {
+  if (!examId) return;
+  const evaluator = await activeEvaluator(examId);
+  if (evaluator?.reviewedAt) {
+    await evaluator.update({ reviewedAt: null, reviewedBy: null });
+    const exam: any = await Exam.findOne({ where: { examId }, include: EXAM_INCLUDES });
+    await notifyAll([
+      {
+        instituteId: evaluator.instituteId,
+        userId: evaluator.teacherId,
+        type: "EVALUATION_REOPENED",
+        title: "Answer sheets changed",
+        message: `The answer sheets of ${exam ? examLabel(exam) : "an exam"} changed after you confirmed its marks. Evaluate the new sheets and mark it reviewed again.`,
+        referenceId: examId,
+      },
+    ]).catch(() => undefined);
+  }
+  await closeRoundForReopen(examId, "sheets");
 };
 
 /** A sheet arriving for a student marked absent proves they sat the exam. */

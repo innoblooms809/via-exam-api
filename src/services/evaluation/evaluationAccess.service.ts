@@ -3,8 +3,9 @@
 //   Admin / super admin  → every sheet and its AI marks, real names, view only (never evaluates)
 //   Scanner  → the scans they handle, view only
 //   Teacher who teaches the subject of that class (Subject.teacherId)  → view only, real names,
-//     except the sheets they recheck or cross-check (those stay masked, see below)
-//   Teacher assigned by the admin to evaluate the exam  → names masked ("R**** S*****", roll "1**"), may evaluate
+//     except the exams they evaluate and the sheets they recheck or cross-check (those stay masked)
+//   Teacher assigned by the admin to evaluate the exam  → names masked ("R**** S*****", roll "1**"), may evaluate,
+//     even when they also teach the subject: marking is always blind
 //   Teacher cross-checking a paper (open round)  → names masked, view only (the verdict changes marks)
 //   Any other teacher (e.g. only set the question paper)  → no access
 //
@@ -239,17 +240,21 @@ type SheetLike = { subjectId?: unknown; classId?: unknown; examType?: unknown; e
 const isRecheckSheet = (scope: TeacherScope, sheet: SheetLike) =>
   Boolean(sheet.sheetId) && scope.recheckSheetIds.has(String(sheet.sheetId));
 
-export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAccess {
-  // A sheet this teacher rechecks or cross-checks is never shown with its owner's name or roll.
-  const blind = Boolean(sheet.sheetId) && scope.blindSheetIds.has(String(sheet.sheetId));
-  if (scope.ownSubjectIds.has(String(sheet.subjectId ?? ""))) return blind ? "masked" : "full";
-  const assigned = scope.assignedExams.some(
+const isAssignedExam = (scope: TeacherScope, sheet: SheetLike) =>
+  scope.assignedExams.some(
     (a) =>
       (sheet.examId && a.examId === String(sheet.examId)) ||
       (a.subjectId === String(sheet.subjectId ?? "") &&
         a.examType === String(sheet.examType ?? "") &&
         a.classKeys.has(String(sheet.classId ?? "")))
   );
+
+export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAccess {
+  const assigned = isAssignedExam(scope, sheet);
+  // A sheet this teacher evaluates, rechecks or cross-checks is never shown with its owner's name or
+  // roll, even when they teach the subject: marking stays blind.
+  const blind = Boolean(sheet.sheetId) && scope.blindSheetIds.has(String(sheet.sheetId));
+  if (scope.ownSubjectIds.has(String(sheet.subjectId ?? ""))) return assigned || blind ? "masked" : "full";
   const crossChecking = Boolean(sheet.sheetId) && scope.crossCheckSheetIds.has(String(sheet.sheetId));
   // A recheck stays viewable after the teacher sends their decision, until the admin settles it.
   const rechecking = Boolean(sheet.sheetId) && scope.recheckViewSheetIds.has(String(sheet.sheetId));
@@ -264,18 +269,13 @@ export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAcce
 export function isAssignedEvaluator(scope: TeacherScope, sheet: SheetLike): boolean {
   if (isRecheckSheet(scope, sheet)) return true;
   if (sheet.sheetId && scope.crossCheckSheetIds.has(String(sheet.sheetId))) return true;
-  return scope.assignedExams.some(
-    (a) =>
-      (sheet.examId && a.examId === String(sheet.examId)) ||
-      (a.subjectId === String(sheet.subjectId ?? "") &&
-        a.examType === String(sheet.examType ?? "") &&
-        a.classKeys.has(String(sheet.classId ?? "")))
-  );
+  return isAssignedExam(scope, sheet);
 }
 
 export function accessForExam(scope: TeacherScope, exam: { examId: string; subjectId: string }): SheetAccess {
-  if (scope.ownSubjectIds.has(String(exam.subjectId))) return "full";
-  return scope.assignedExams.some((a) => a.examId === exam.examId) ? "masked" : "none";
+  // The evaluator marks blind, even of a subject they teach.
+  if (scope.assignedExams.some((a) => a.examId === exam.examId)) return "masked";
+  return scope.ownSubjectIds.has(String(exam.subjectId)) ? "full" : "none";
 }
 
 /** Masks the identity fields of one sheet row (plain object). */

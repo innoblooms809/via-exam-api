@@ -125,6 +125,15 @@ const getMyTeaching = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const getMyStudents = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await TeacherService.getMyStudents(req.viaExamUser, req.query);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
 const getMyAssignments = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await TeacherService.getMyAssignments(req.viaExamUser.userId);
@@ -199,6 +208,7 @@ export default {
   reactivateTeacher,
   getMyAssignments,
   getMyTeaching,
+  getMyStudents,
   getTeacherQuestionPapers,
   getTeacherExamsWithApprovalStatus,
 };
