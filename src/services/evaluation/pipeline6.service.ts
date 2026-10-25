@@ -37,6 +37,7 @@ import { newId } from "../../utils/idGenerator";
 import { failRecheckAiRun, finishRecheckAiRun, startRecheckAiRun, type RecheckContext } from "./recheckDraft.service";
 import RecheckAssignment from "../../models/RecheckAssignment.model";
 import { failCrossCheckAiRun, failInterruptedCrossCheckRuns, finishCrossCheckAiRun, startCrossCheckAiRun, type CrossCheckContext } from "./crossCheckDraft.service";
+import { restoreFullAnswers } from "../../utils/answerSnippets";
 
 const EVAL_TIMEOUT_MS = 3600000; // 1 hour — CPU inference on long papers is slow
 
@@ -270,7 +271,7 @@ async function runEvaluationStage(job: EvaluationJob) {
 
     // Map the pipeline response to the AIEvaluation DB schema.
     const rawQuestions = evalResult.questions || evalResult.evaluations || [];
-    const mappedQuestions = rawQuestions.map((q: any) => ({
+    const pipelineQuestions = rawQuestions.map((q: any) => ({
       questionId: q.questionId || q.question_id || "",
       questionText: q.questionText || q.question_text || q.question || "",
       studentAnswer: q.studentAnswer || q.student_answer_snippet || "",
@@ -301,6 +302,8 @@ async function runEvaluationStage(job: EvaluationJob) {
         },
       },
     }));
+    // The pipeline cuts each answer at 300 characters; keep them whole, from the texts it was given.
+    const mappedQuestions = restoreFullAnswers(pipelineQuestions, { student: job.studentText, answerKey: job.answerKeyText });
 
     const totalObtainedScore = evalResult.summary ? evalResult.summary.obtainedMarks : (evalResult.total_score || 0);
     const overall = typeof evalResult.feedback === "object"

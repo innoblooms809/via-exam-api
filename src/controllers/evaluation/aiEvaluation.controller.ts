@@ -1,7 +1,8 @@
 import { Response } from "express";
 import httpStatus from "http-status";
 import AIEvaluationService from "../../services/evaluation/aiEvaluation.service";
-import { maskEvaluationIdentity, scopeEvaluationRows } from "../../services/evaluation/evaluationAccess.service";
+import { maskAnswerTexts, maskEvaluationIdentity, scopeEvaluationRows } from "../../services/evaluation/evaluationAccess.service";
+import { restoreFullAnswers } from "../../utils/answerSnippets";
 import { ensureSheetQuality, scanQualityView } from "../../services/answer-sheet/sheetQuality.service";
 import Pipeline6Service from "../../services/evaluation/pipeline6.service";
 import { recheckFor, recheckView, saveRecheckDraft, sheetPublished } from "../../services/evaluation/recheckDraft.service";
@@ -47,6 +48,8 @@ const getEvaluation = async (req: any, res: Response): Promise<any> => {
     }
 
     const result = await AIEvaluationService.getEvaluationBySheetId(sheetId);
+    // Before masking: the full texts the cut answers are restored from, and who wrote the sheet.
+    const source: any = !result.error && result.data ? (typeof result.data.toJSON === "function" ? result.data.toJSON() : result.data) : null;
     // Assigned evaluators never receive the student's identity.
     if (!result.error && req.sheetAccess === "masked" && result.data) {
       result.data = maskEvaluationIdentity(result.data, req.accessSheet);
@@ -72,6 +75,11 @@ const getEvaluation = async (req: any, res: Response): Promise<any> => {
         scanQuality: scanQualityView(req.accessSheet),
       };
       result.data = recheck ? recheckView(base, recheck) : crossCheck && !published ? crossCheckView(base, crossCheck) : base;
+      // The evaluation service keeps only the first 300 characters of each answer: show them whole.
+      result.data.evaluations = restoreFullAnswers(result.data.evaluations, { student: source?.studentAnsOcr, answerKey: source?.standardAnsOcr });
+      if (req.sheetAccess === "masked") {
+        result.data.evaluations = maskAnswerTexts(result.data.evaluations, [source?.studentName, req.accessSheet?.studentName, req.accessSheet?.rollNo]);
+      }
     }
     // Sheets uploaded before the quality check get checked the first time they're opened.
     ensureSheetQuality(req.accessSheet);
