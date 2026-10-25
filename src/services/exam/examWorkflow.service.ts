@@ -27,6 +27,7 @@ import AIEvaluation from "../../models/AIEvaluation.model";
 import RecheckRequest, { RECHECK_CATEGORIES, RECHECK_OPEN_STATUSES, recheckCategoryLabel, type ClaimedQuestion, type RecheckCategory } from "../../models/RecheckRequest.model";
 import RecheckAssignment from "../../models/RecheckAssignment.model";
 import { describeChanges, questionChanges, questionLabel } from "../../utils/questionMarks";
+import { restoreFullAnswers } from "../../utils/answerSnippets";
 import { printBitsOf, resultTemplateOf } from "../academic/reportTemplate.service";
 import ClassResultsService from "./classResults.service";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
@@ -61,11 +62,13 @@ const textList = (v: unknown) => (Array.isArray(v) ? v.map((s) => clean(s)).filt
 /**
  * An evaluation's questions in paper order, as students, admins and teachers see them.
  * `key` is unique within the paper (the evaluation's question id, numbered again when two
- * share one); `label` is what people read ("Q3(b)").
+ * share one); `label` is what people read ("Q3(b)"). With the evaluation's full texts (`texts`), answers
+ * the evaluation service cut at 300 characters are shown whole.
  */
-export const questionsOf = (evaluations: unknown) => {
+export const questionsOf = (evaluations: unknown, texts?: { student?: string | null; answerKey?: string | null }) => {
   const seen = new Set<string>();
-  return (Array.isArray(evaluations) ? evaluations : []).map((q: any, i: number) => {
+  const list = Array.isArray(evaluations) ? evaluations : [];
+  return (texts ? restoreFullAnswers(list, texts) : list).map((q: any, i: number) => {
     const label = questionLabel(q?.questionId ?? q?.question_id, i + 1);
     let key = label;
     if (seen.has(key)) key = `${label}#${i + 1}`;
@@ -83,7 +86,7 @@ export const questionsOf = (evaluations: unknown) => {
       strengths: textList(q?.evaluation?.strengths),
       improvements: textList(q?.evaluation?.improvements),
       /** What was read from the student's own sheet for this answer. */
-      studentAnswer: clean(q?.studentAnswer ?? q?.student_answer_snippet).slice(0, 1500) || null,
+      studentAnswer: clean(q?.studentAnswer ?? q?.student_answer_snippet).slice(0, 6000) || null,
     };
   });
 };
@@ -1170,13 +1173,15 @@ const myResultDetail = async (student: any, resultId: string) => {
   // The result names its evaluation (the evaluation's own studentId isn't always the student's).
   const [template, evaluation, request, averages] = await Promise.all([
     resultTemplateOf(student.instituteId),
-    r.evaluationId ? AIEvaluation.findOne({ where: { evaluationId: r.evaluationId }, attributes: ["evaluations", "feedback"] }) : null,
+    r.evaluationId ? AIEvaluation.findOne({ where: { evaluationId: r.evaluationId }, attributes: ["evaluations", "feedback", "studentAnsOcr", "standardAnsOcr"] }) : null,
     RecheckRequest.findOne({ where: { studentId: student.userId, examId: r.examId } }),
     classAverages([r.examId]),
   ]);
   const assignment = request ? await RecheckAssignment.findOne({ where: { requestId: request.requestId } }) : null;
   const view = template.studentView;
-  const questions = view.questionMarks && evaluation ? questionsOf(evaluation.evaluations) : null;
+  const questions = view.questionMarks && evaluation
+    ? questionsOf(evaluation.evaluations, { student: evaluation.studentAnsOcr, answerKey: evaluation.standardAnsOcr })
+    : null;
   const blocked = recheckBlockedReason(r, request);
 
   return {

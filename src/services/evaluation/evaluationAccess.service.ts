@@ -392,6 +392,12 @@ export function maskEvaluationIdentity(data: any, sheet: any): any {
   return masked;
 }
 
+/** Hides who wrote the sheet in each question's answer text (read from the OCR, which can carry the name). */
+export function maskAnswerTexts<T>(evaluations: T, words: unknown[]): T {
+  if (!Array.isArray(evaluations)) return evaluations;
+  return evaluations.map((q: any) => (q && typeof q.studentAnswer === "string" ? { ...q, studentAnswer: maskInText(q.studentAnswer, words) } : q)) as T;
+}
+
 /** Filters / masks a list of AI evaluation records for the requester (by the sheet each belongs to). */
 export async function scopeEvaluationRows(user: any, rows: any[]): Promise<any[]> {
   const sheetIds = Array.from(new Set(rows.map((r) => String(r?.sheetId ?? "")).filter(Boolean)));

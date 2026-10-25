@@ -12,6 +12,7 @@ import { pythonServices } from "../../config/pythonServices";
 import { formatQuestionPaper } from "../../utils/questionPaperText";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
+import { restoreFullAnswers } from "../../utils/answerSnippets";
 
 // ─── TRIGGER EVALUATION V2 (OCR Pipeline on port 8002) ──────────────────────
 const triggerEvaluationV2 = async (
@@ -356,7 +357,7 @@ const runBackgroundEvaluationV2 = async (
 
     // 3. Map pipeline response to clean AIEvaluation DB schema without duplication
     const rawQuestions = evalResult.questions || evalResult.evaluations || [];
-    const mappedQuestions = rawQuestions.map((q: any) => ({
+    const pipelineQuestions = rawQuestions.map((q: any) => ({
       questionId: q.questionId || q.question_id || "",
       questionText: q.questionText || q.question_text || q.question || "",
       studentAnswer: q.studentAnswer || q.student_answer_snippet || "",
@@ -390,6 +391,8 @@ const runBackgroundEvaluationV2 = async (
         }
       }
     }));
+    // The pipeline cuts each answer at 300 characters; keep them whole, from the texts it was given.
+    const mappedQuestions = restoreFullAnswers(pipelineQuestions, { student: studentAnsOcr, answerKey: finalAnswerKeyText });
 
 
     const totalObtainedScore = evalResult.summary ? evalResult.summary.obtainedMarks : (evalResult.total_score || 0);
