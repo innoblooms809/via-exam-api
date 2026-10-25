@@ -64,6 +64,8 @@ const PERFORMANCE_INDEXES = [
     `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_recheck_requests_student_idx" ON "viaexam_recheck_requests" ("studentId")`,
     `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exam_attendance_student_idx" ON "viaexam_exam_attendance" ("studentId")`,
     `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_ai_evaluations_student_idx" ON "viaexam_ai_evaluations" ("studentId")`,
+    // "Low quality" filter on an exam's sheets.
+    `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_exam_quality_idx" ON "viaexam_answer_sheets" ("examId", "qualityFlag") WHERE "isDeleted" = false`,
 ];
 const ensurePerformanceIndexes = () => __awaiter(void 0, void 0, void 0, function* () {
     for (const sql of PERFORMANCE_INDEXES) {
@@ -89,6 +91,15 @@ const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_recheck_assignments" ADD COLUMN IF NOT EXISTS "approvedBy" VARCHAR(255), ADD COLUMN IF NOT EXISTS "approvedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "returnNote" TEXT, ADD COLUMN IF NOT EXISTS "returnedAt" TIMESTAMP WITH TIME ZONE;`).catch(() => null);
         // Who approved a change of marks (a recheck decision), beside who made it.
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_marks_audit" ADD COLUMN IF NOT EXISTS "approvedBy" VARCHAR(255);`).catch(() => null);
+        // Scan quality of each uploaded sheet, and the thresholds the school flags it by.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_answer_sheets" ADD COLUMN IF NOT EXISTS "qualityFlag" VARCHAR(16), ADD COLUMN IF NOT EXISTS "qualityReport" JSONB;`).catch(() => null);
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_institute_settings" ADD COLUMN IF NOT EXISTS "scanQuality" JSONB;`).catch(() => null);
+        // A recheck teacher's re-evaluation (a draft until the admin approves) and what it changes,
+        // question by question; the same per-question detail on every change of a student's marks.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_recheck_assignments" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`).catch(() => null);
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_marks_audit" ADD COLUMN IF NOT EXISTS "details" JSONB;`).catch(() => null);
+        // A cross-checker's re-evaluation (a draft until their verdict) and what the verdict changed.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_cross_check_items" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`).catch(() => null);
         yield sequelize_1.sequelize.sync({ force: false });
         logger_1.default.info("Models synced with PostgreSQL");
         // Once per database: fill the per-session tables (setup, enrolments) from existing data.
