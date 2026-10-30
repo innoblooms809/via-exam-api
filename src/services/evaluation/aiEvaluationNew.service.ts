@@ -4,7 +4,7 @@ import Exam from "../../models/Exam.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
-import StudentProfile from "../../models/Student.model";
+import { studentForSheet } from "../student/enrollment.service";
 import logger from "../../config/logger";
 import axios from "axios";
 import FormData from "form-data";
@@ -12,6 +12,7 @@ import { pythonServices } from "../../config/pythonServices";
 import { formatQuestionPaper } from "../../utils/questionPaperText";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
+import { restoreFullAnswers } from "../../utils/answerSnippets";
 
 // ─── TRIGGER EVALUATION V2 (OCR Pipeline on port 8002) ──────────────────────
 const triggerEvaluationV2 = async (
@@ -61,15 +62,9 @@ const triggerEvaluationV2 = async (
     }
 
     // Lookup Student
-    const student = await StudentProfile.findOne({
-      where: {
-        rollNumber: sheet.rollNo,
-        instituteId: sheet.instituteId,
-        classId: sheet.classId,
-      },
-    });
-
-    const studentId = student ? student.userId : `STUDENT-${sheet.rollNo}`;
+    // The student with this roll number in the sheet's class and section, in its exam's session.
+    const ownerId = await studentForSheet(sheet);
+    const studentId = ownerId ?? `STUDENT-${sheet.rollNo}`;
 
     // 3. Find or Create AIEvaluation record as Pending
     const evaluationId = newId("evaluation");
@@ -362,7 +357,7 @@ const runBackgroundEvaluationV2 = async (
 
     // 3. Map pipeline response to clean AIEvaluation DB schema without duplication
     const rawQuestions = evalResult.questions || evalResult.evaluations || [];
-    const mappedQuestions = rawQuestions.map((q: any) => ({
+    const pipelineQuestions = rawQuestions.map((q: any) => ({
       questionId: q.questionId || q.question_id || "",
       questionText: q.questionText || q.question_text || q.question || "",
       studentAnswer: q.studentAnswer || q.student_answer_snippet || "",
@@ -396,6 +391,8 @@ const runBackgroundEvaluationV2 = async (
         }
       }
     }));
+    // The pipeline cuts each answer at 300 characters; keep them whole, from the texts it was given.
+    const mappedQuestions = restoreFullAnswers(pipelineQuestions, { student: studentAnsOcr, answerKey: finalAnswerKeyText });
 
 
     const totalObtainedScore = evalResult.summary ? evalResult.summary.obtainedMarks : (evalResult.total_score || 0);

@@ -7,138 +7,77 @@ import EncryptPassword from "../../utils/encryption";
 import RegHelper from "../../utils/helper";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
+import { findStaff, scannerOpenWork } from "../academic/academicGuards.service";
 import { newId } from "../../utils/idGenerator";
+import { cleanEmail, contactTakenMessage, emailChange, staffAgeProblem, staffInputProblem } from "../../utils/staffInput";
+import { photoChange, uploadedPhoto } from "../../utils/profilePhoto";
+import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 
 // ─── CREATE SCANNER ───────────────────────────────────────────────────────────
+// Checks run before the transaction opens, so they never wait on its connection.
 const createScanner = async (
   body: any,
   files: any,
   createdBy: any,
 ): Promise<any> => {
-  const t = await sequelize.transaction();
+  const instituteId = createdBy.instituteId;
+  if (!instituteId) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Institute not found for this admin." };
+  const problem = staffInputProblem(body, { requireDob: false });
+  if (problem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: problem };
+  const email = cleanEmail(body.emailId ?? body.email);
+  const phone = String(body.phoneNumber ?? body.mobile).trim();
+
+  const institute = await Institute.findOne({ where: { instituteId, isDeleted: false, status: 1 } });
+  if (!institute) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Institute not found or inactive." };
+  const taken = await contactTakenMessage(email, phone, instituteId);
+  if (taken) return { error: true, statusCode: httpStatus.CONFLICT, message: taken };
+  const scannerRole = await Role.findOne({ where: { role: "SCANNER" } });
+  if (!scannerRole) return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: "SCANNER role not found. Please seed roles." };
+
   try {
-    const instituteId = createdBy.instituteId;
-    if (!instituteId) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Institute not found for this admin.",
-      };
-    }
-
-    // 1. Check institute active
-    const institute = await Institute.findOne({
-      where: { instituteId, isDeleted: false, status: 1 },
-    });
-    if (!institute) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Institute not found or inactive.",
-      };
-    }
-
-    // 2. Check email unique
-    const emailExists = await UserModal.findOne({
-      where: { emailId: body.emailId || body.email },
-    });
-    if (emailExists) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Email is already registered.",
-      };
-    }
-
-    // 3. Check phone unique
-    const phoneExists = await UserModal.findOne({
-      where: { phoneNumber: body.phoneNumber || body.mobile },
-    });
-    if (phoneExists) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Phone number is already registered.",
-      };
-    }
-
-    // 4. Find SCANNER role
-    const scannerRole = await Role.findOne({ where: { role: "SCANNER" } });
-    if (!scannerRole) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-        message: "SCANNER role not found. Please seed roles.",
-      };
-    }
-
-    // 5. Profile photo
-    const profileUrl = files?.profilePhoto?.[0]
-      ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
-      : null;
-
-    // 6. Create user record
+    const profileUrl = uploadedPhoto(files);
     const plainPassword = body.password || (await RegHelper.generatePassword());
-    const encryptedPassword = await EncryptPassword.encryptPassword(
-      plainPassword,
-    );
+    const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
     const userId = newId("user");
 
-    const newUser = await UserModal.create(
-      {
-        userId,
-        userName: `${body.firstName} ${body.lastName}`,
-        emailId: body.emailId || body.email,
-        phoneNumber: body.phoneNumber || body.mobile,
-        password: encryptedPassword,
-        roleId: scannerRole.id,
-        instituteId,
-        status: 1,
-      },
-      { transaction: t },
-    );
-
-    // 7. Create scanner profile record
-    await ScannerProfile.create(
-      {
-        userId: newUser.userId,
-        instituteId,
-        address: body.address || null,
-        dob: body.dob ? new Date(body.dob) : null,
-        gender: body.gender || null,
-        aadhar: body.aadhar || null,
-        profileUrl,
-      },
-      { transaction: t },
-    );
-
-    // 8. Commit
-    await t.commit();
+    await sequelize.transaction(async (t) => {
+      await UserModal.create(
+        {
+          userId,
+          userName: `${String(body.firstName).trim()} ${String(body.lastName).trim()}`,
+          emailId: email,
+          phoneNumber: phone,
+          password: encryptedPassword,
+          roleId: scannerRole.id,
+          instituteId,
+          status: 1,
+          profileUrl,
+        },
+        { transaction: t },
+      );
+      await ScannerProfile.create(
+        {
+          userId,
+          instituteId,
+          address: body.address || null,
+          dob: body.dob ? new Date(body.dob) : null,
+          gender: body.gender || null,
+          aadhar: body.aadhar || null,
+          profileUrl,
+        },
+        { transaction: t },
+      );
+    });
 
     return {
       error: false,
       statusCode: httpStatus.CREATED,
-      message: "Scanner created successfully.",
-      data: {
-        userId: newUser.userId,
-        plainPassword,
-        instituteName: institute.instituteName,
-        instituteSlug: institute.slug,
-      },
+      message: "Scanner staff added.",
+      data: { userId, email, plainPassword, instituteName: institute.instituteName, instituteSlug: institute.slug },
     };
   } catch (e: any) {
-    await t.rollback();
     console.error(e);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Something went wrong: ${e.message}` };
   }
 };
 
@@ -175,7 +114,17 @@ const getAllScanners = async (createdBy: any, query: any): Promise<any> => {
       order: [["userName", "ASC"]],
     });
 
+    const ids = scanners.map((u: any) => u.userId);
+    const assignments = ids.length
+      ? ((await ExamScannerAssignment.findAll({
+          where: { instituteId: createdBy.instituteId, scannerId: { [Op.in]: ids }, isActive: true },
+          attributes: ["scannerId", "status"],
+          raw: true,
+        })) as any[])
+      : [];
+
     const result = scanners.map((u: any) => {
+      const mine = assignments.filter((a) => a.scannerId === u.userId);
       const [first, ...lastParts] = u.userName ? u.userName.split(" ") : ["Scanner"];
       const last = lastParts.join(" ");
       return {
@@ -191,7 +140,10 @@ const getAllScanners = async (createdBy: any, query: any): Promise<any> => {
         dob: u.scannerProfile?.dob ?? null,
         gender: u.scannerProfile?.gender ?? null,
         aadhar: u.scannerProfile?.aadhar ?? null,
-        profileUrl: u.scannerProfile?.profileUrl ?? null,
+        // Their own photo (from their profile) first, then the one the admin added.
+        profileUrl: u.profileUrl ?? u.scannerProfile?.profileUrl ?? null,
+        examsAssigned: mine.length,
+        examsOpen: mine.filter((a) => a.status === "ASSIGNED").length,
       };
     });
 
@@ -249,145 +201,93 @@ const getScannerById = async (userId: string, createdBy: any): Promise<any> => {
 };
 
 // ─── UPDATE SCANNER ───────────────────────────────────────────────────────────
+// Details only. Deactivating goes through deleteScanner, which checks open work.
 const updateScanner = async (
   userId: string,
   body: any,
   files: any,
   createdBy: any,
 ): Promise<any> => {
-  const t = await sequelize.transaction();
+  const instituteId = createdBy.instituteId;
+  const user = await findStaff(userId, instituteId, "SCANNER");
+  if (!user) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Scanner not found." };
+  const profile = await ScannerProfile.findOne({ where: { userId } });
+
+  const first = String(body.firstName ?? "").trim();
+  const last = String(body.lastName ?? "").trim();
+  const nameRule = /^[A-Za-z][A-Za-z.'’ -]{0,49}$/;
+  if ((first || last) && (!nameRule.test(first) || !nameRule.test(last))) {
+    return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "First and last name can only have letters, spaces, dots, apostrophes and hyphens." };
+  }
+  const phone = body.phoneNumber !== undefined ? String(body.phoneNumber).trim() : undefined;
+  if (phone !== undefined && phone !== user.phoneNumber) {
+    if (!/^[6-9]\d{9}$/.test(phone)) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a 10-digit mobile number starting with 6, 7, 8 or 9." };
+    const taken = await contactTakenMessage("", phone, instituteId, userId);
+    if (taken) return { error: true, statusCode: httpStatus.CONFLICT, message: taken };
+  }
+  const nextEmail = await emailChange(body.emailId ?? body.email, user, instituteId);
+  if (nextEmail.problem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: nextEmail.problem };
+  const dob = body.dob ? new Date(body.dob) : null;
+  if (dob && Number.isNaN(dob.getTime())) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a valid date of birth." };
+  const ageProblem = dob ? staffAgeProblem(dob) : null;
+  if (ageProblem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: ageProblem };
+  const photo = photoChange(files, body);
+
   try {
-    const user = await UserModal.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-    });
-
-    if (!user) {
-      await t.rollback();
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Scanner not found.",
-      };
-    }
-
-    const profile = await ScannerProfile.findOne({ where: { userId } });
-
-    // Update user
-    await user.update(
-      {
-        userName:
-          body.firstName && body.lastName
-            ? `${body.firstName} ${body.lastName}`
-            : user.userName,
-        phoneNumber: body.phoneNumber ?? user.phoneNumber,
-        status: body.status !== undefined ? parseInt(body.status, 10) : user.status,
-      },
-      { transaction: t },
-    );
-
-    // Update profile
-    if (profile) {
-      const profileUrl = files?.profilePhoto?.[0]
-        ? `/${files.profilePhoto[0].path.replace(/\\/g, "/")}`
-        : profile.profileUrl;
-
-      await profile.update(
-        {
-          address: body.address ?? profile.address,
-          dob: body.dob ? new Date(body.dob) : profile.dob,
-          gender: body.gender ?? profile.gender,
-          aadhar: body.aadhar ?? profile.aadhar,
-          profileUrl,
-        },
+    await sequelize.transaction(async (t) => {
+      await user.update(
+        { userName: first && last ? `${first} ${last}` : user.userName, phoneNumber: phone ?? user.phoneNumber, emailId: nextEmail.email ?? user.emailId, ...(photo !== undefined ? { profileUrl: photo } : {}) },
         { transaction: t },
       );
-    }
-
-    await t.commit();
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Scanner updated successfully.",
-      data: { userId, userName: user.userName },
-    };
+      if (profile) {
+        const profileUrl = photo !== undefined ? photo : profile.profileUrl;
+        await profile.update(
+          {
+            address: body.address ?? profile.address,
+            dob: dob ?? profile.dob,
+            gender: body.gender ?? profile.gender,
+            aadhar: body.aadhar ?? profile.aadhar,
+            profileUrl,
+          },
+          { transaction: t },
+        );
+      }
+    });
+    return { error: false, statusCode: httpStatus.OK, message: "Scanner staff saved.", data: { userId, userName: user.userName } };
   } catch (e: any) {
-    await t.rollback();
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Something went wrong: ${e.message}` };
   }
 };
 
 // ─── SOFT DELETE SCANNER ──────────────────────────────────────────────────────
+// Refused while the scanner still has exams to upload.
 const deleteScanner = async (userId: string, createdBy: any): Promise<any> => {
   try {
-    const user = await UserModal.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-    });
+    const instituteId = createdBy.instituteId;
+    const user = await findStaff(userId, instituteId, "SCANNER");
+    if (!user) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Scanner not found." };
 
-    if (!user) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Scanner not found.",
-      };
-    }
+    const work = await scannerOpenWork(userId, instituteId);
+    if (work.total) return { error: true, statusCode: httpStatus.CONFLICT, message: work.message };
 
-    console.log("Before deactivation - Scanner status:", user.status);
-    await user.update({ status: 0 });
-    console.log("After deactivation - Scanner status:", user.status);
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Scanner deactivated successfully.",
-      data: {},
-    };
+    await user.update({ status: 0, refreshToken: null });
+    return { error: false, statusCode: httpStatus.OK, message: `${user.userName} deactivated.`, data: {} };
   } catch (e: any) {
     console.error("Delete scanner error:", e);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Something went wrong: ${e.message}` };
   }
 };
 
 // ─── REACTIVATE SCANNER ──────────────────────────────────────────────────────
 const reactivateScanner = async (userId: string, createdBy: any): Promise<any> => {
   try {
-    const user = await UserModal.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-    });
-
-    if (!user) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Scanner not found.",
-      };
-    }
-
-    console.log("Before reactivation - Scanner status:", user.status);
+    const user = await findStaff(userId, createdBy.instituteId, "SCANNER");
+    if (!user) return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Scanner not found." };
     await user.update({ status: 1 });
-    console.log("After reactivation - Scanner status:", user.status);
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Scanner reactivated successfully.",
-      data: {},
-    };
+    return { error: false, statusCode: httpStatus.OK, message: `${user.userName} reactivated.`, data: {} };
   } catch (e: any) {
     console.error("Reactivate scanner error:", e);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Something went wrong: ${e.message}` };
   }
 };
 

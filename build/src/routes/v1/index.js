@@ -11,8 +11,12 @@ const docs_route_1 = __importDefault(require("./system/docs.route"));
 const institute_route_1 = __importDefault(require("./institute/institute.route"));
 const teacher_route_1 = __importDefault(require("./teacher/teacher.route"));
 const exam_route_1 = __importDefault(require("./exam/exam.route"));
+const examWorkflow_route_1 = __importDefault(require("./exam/examWorkflow.route"));
+const crossCheck_route_1 = __importDefault(require("./exam/crossCheck.route"));
 const questionPaper_route_1 = __importDefault(require("./question-paper/questionPaper.route"));
 const session_route_1 = __importDefault(require("./academic/session.route"));
+const sessionSetup_route_1 = __importDefault(require("./academic/sessionSetup.route"));
+const marks_route_1 = require("./academic/marks.route");
 const class_route_1 = __importDefault(require("./academic/class.route"));
 const section_route_1 = __importDefault(require("./academic/section.route"));
 const subject_route_1 = __importDefault(require("./academic/subject.route"));
@@ -30,9 +34,11 @@ const adminDashboard_route_1 = __importDefault(require("./dashboard/adminDashboa
 const teacherDashboard_route_1 = __importDefault(require("./teacher/teacherDashboard.route"));
 const studentDashboard_route_1 = __importDefault(require("./student/studentDashboard.route"));
 const scannerDashboard_route_1 = __importDefault(require("./scanner/scannerDashboard.route"));
+const home_route_1 = __importDefault(require("./dashboard/home.route"));
 const monitoring_route_1 = __importDefault(require("./monitoring/monitoring.route"));
 const recheckRequest_route_1 = __importDefault(require("./evaluation/recheckRequest.route"));
 const evaluationAssignment_route_1 = __importDefault(require("./evaluation/evaluationAssignment.route"));
+const subscription_route_1 = __importDefault(require("./subscription/subscription.route"));
 const router = express_1.default.Router();
 const defaultRoutes = [
     {
@@ -68,8 +74,24 @@ const defaultRoutes = [
         route: scannerDashboard_route_1.default,
     },
     {
+        path: "/home",
+        route: home_route_1.default,
+    },
+    {
         path: "/sessions",
         route: session_route_1.default,
+    },
+    {
+        path: "/session-setup",
+        route: sessionSetup_route_1.default,
+    },
+    {
+        path: "/marks",
+        route: marks_route_1.marksRoutes,
+    },
+    {
+        path: "/institute-settings",
+        route: marks_route_1.settingsRoutes,
     },
     {
         path: "/class",
@@ -90,6 +112,14 @@ const defaultRoutes = [
     {
         path: "/exam",
         route: exam_route_1.default,
+    },
+    {
+        path: "/exam-workflow",
+        route: examWorkflow_route_1.default,
+    },
+    {
+        path: "/cross-checks",
+        route: crossCheck_route_1.default,
     },
     {
         path: "/question-papers",
@@ -146,6 +176,10 @@ const defaultRoutes = [
     {
         path: "/evaluation-assignments",
         route: evaluationAssignment_route_1.default,
+    },
+    {
+        path: "/subscription",
+        route: subscription_route_1.default,
     },
     // {
     //   path: '/captcha',

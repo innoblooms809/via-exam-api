@@ -1,8 +1,11 @@
 import { Response } from "express";
 import httpStatus from "http-status";
 import ExamWorkflowService from "../../services/exam/examWorkflow.service";
+import ClassResultsService from "../../services/exam/classResults.service";
 import logger from "../../config/logger";
 import { logActivity } from "../../utils/activityLogger";
+import SheetHistoryService from "../../services/exam/sheetHistory.service";
+import ExamReportService from "../../services/exam/examReport.service";
 
 const send = (res: Response, message: string, data: unknown, statusCode: number = httpStatus.OK) =>
   res.status(statusCode).json({ error: false, statusCode, message, data });
@@ -18,7 +21,7 @@ const fail = (res: Response, err: any) => {
   });
 };
 
-type Audit = { event: string; entity: "EXAM" | "RECHECK"; param: "examId" | "requestId" };
+type Audit = { event: string; entity: "EXAM" | "RECHECK" | "SCAN_REOPEN"; param: "examId" | "requestId" };
 
 const handle =
   (message: string, run: (req: any) => Promise<unknown>, statusCode: number = httpStatus.OK, audit?: Audit) =>
@@ -47,10 +50,15 @@ const handle =
 
 const exam = (event: string): Audit => ({ event, entity: "EXAM", param: "examId" });
 const recheck = (event: string): Audit => ({ event, entity: "RECHECK", param: "requestId" });
+const reopen = (event: string): Audit => ({ event, entity: "SCAN_REOPEN", param: "requestId" });
 
 const user = (req: any) => req.viaExamUser;
 
 export default {
+  // Admin — one answer sheet's marks history
+  sheetHistory: handle("Marks history fetched.", (req) => SheetHistoryService.sheetHistory(user(req), req.params.sheetId)),
+  examReport: handle("Exam report fetched.", (req) => ExamReportService.examReport(user(req), req.params.examId)),
+
   // Admin — pipeline
   listPipeline: handle("Exams fetched.", (req) => ExamWorkflowService.listPipeline(user(req), req.query)),
   getTimeline: handle("Timeline fetched.", (req) => ExamWorkflowService.getTimeline(user(req), req.params.examId)),
@@ -65,14 +73,24 @@ export default {
   scanRoster: handle("Roster fetched.", (req) => ExamWorkflowService.scanRoster(user(req), req.params.examId)),
   setAttendance: handle("Attendance saved.", (req) => ExamWorkflowService.setAttendance(user(req), req.params.examId, req.body), httpStatus.OK, exam("ATTENDANCE_MARKED")),
   completeScan: handle("Upload marked complete.", (req) => ExamWorkflowService.completeScan(user(req), req.params.examId), httpStatus.OK, exam("SCAN_COMPLETED")),
+  requestReopen: handle("Re-open requested.", (req) => ExamWorkflowService.requestReopen(user(req), req.params.examId, req.body), httpStatus.CREATED, exam("SCAN_REOPEN_REQUESTED")),
+
+  // Admin — re-open requests
+  listReopenRequests: handle("Re-open requests fetched.", (req) => ExamWorkflowService.listReopenRequests(user(req), req.query)),
+  approveReopen: handle("Upload re-opened.", (req) => ExamWorkflowService.approveReopen(user(req), req.params.requestId, req.body), httpStatus.OK, reopen("SCAN_REOPEN_APPROVED")),
+  rejectReopen: handle("Re-open request rejected.", (req) => ExamWorkflowService.rejectReopen(user(req), req.params.requestId, req.body), httpStatus.OK, reopen("SCAN_REOPEN_REJECTED")),
 
   // Admin — results
   publishResults: handle("Results published.", (req) => ExamWorkflowService.publishResults(user(req), req.params.examId), httpStatus.OK, exam("RESULTS_PUBLISHED")),
   unpublishResults: handle("Results withdrawn.", (req) => ExamWorkflowService.unpublishResults(user(req), req.params.examId), httpStatus.OK, exam("RESULTS_UNPUBLISHED")),
   listResults: handle("Results fetched.", (req) => ExamWorkflowService.listResults(user(req), req.query)),
+  classResults: handle("Class results fetched.", (req) => ClassResultsService.classResults(user(req), req.query)),
 
   // Student
   myResults: handle("Results fetched.", (req) => ExamWorkflowService.myResults(user(req), req.query)),
+  myResultDetail: handle("Result fetched.", (req) => ExamWorkflowService.myResultDetail(user(req), req.params.resultId)),
+  myReportCard: handle("Report card fetched.", (req) => ExamWorkflowService.myReportCard(user(req), req.query)),
+  myClaims: handle("Recheck claims fetched.", (req) => ExamWorkflowService.myClaims(user(req))),
   createRecheck: handle("Recheck requested.", (req) => ExamWorkflowService.createRecheck(user(req), req.body), httpStatus.CREATED),
 
   // Rechecks — admin / teacher
@@ -80,5 +98,7 @@ export default {
   assignRecheck: handle("Recheck assigned.", (req) => ExamWorkflowService.assignRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_ASSIGNED")),
   rejectRecheck: handle("Recheck rejected.", (req) => ExamWorkflowService.rejectRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_REJECTED")),
   myRechecks: handle("Recheck requests fetched.", (req) => ExamWorkflowService.myRechecks(user(req), req.query)),
-  completeRecheck: handle("Recheck completed.", (req) => ExamWorkflowService.completeRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_COMPLETED")),
+  completeRecheck: handle("Recheck decision sent for approval.", (req) => ExamWorkflowService.completeRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_DECIDED")),
+  approveRecheck: handle("Recheck decision approved and published.", (req) => ExamWorkflowService.approveRecheck(user(req), req.params.requestId), httpStatus.OK, recheck("RECHECK_APPROVED")),
+  returnRecheck: handle("Recheck decision sent back.", (req) => ExamWorkflowService.returnRecheck(user(req), req.params.requestId, req.body), httpStatus.OK, recheck("RECHECK_RETURNED")),
 };

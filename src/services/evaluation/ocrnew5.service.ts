@@ -5,7 +5,7 @@ import Exam from "../../models/Exam.model";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
-import StudentProfile from "../../models/Student.model";
+import { studentForSheet } from "../student/enrollment.service";
 import ApiError from "../../utils/ApiError";
 import logger from "../../config/logger";
 import axios from "axios";
@@ -62,10 +62,9 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   }
 
   // 3. Resolve Student, Question Paper, Answer Key
-  const student = await StudentProfile.findOne({
-    where: { rollNumber: sheet.rollNo, instituteId: sheet.instituteId, classId: sheet.classId },
-  });
-  const studentId = student ? student.userId : (sheet.studentId || `STUDENT-${sheet.rollNo}`);
+  // The student with this roll number in the sheet's class and section, in its exam's session.
+  const ownerId = await studentForSheet(sheet);
+  const studentId = ownerId ?? (sheet.studentId || `STUDENT-${sheet.rollNo}`);
   let examId = sheet.examType;
   let maxMarks = 10;
   let questionText = "Evaluate student answer sheet.";

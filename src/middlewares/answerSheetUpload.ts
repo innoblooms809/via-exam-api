@@ -23,13 +23,7 @@ import { randomUUID } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 
-import {
-  ANSWER_SHEET_EXTENSIONS,
-  ANSWER_SHEET_LIMITS,
-  ANSWER_SHEET_MIME_TYPES,
-  answerSheetLimitSummary,
-  formatBytes,
-} from "../config/uploadLimits";
+import { ANSWER_SHEET_LIMITS, answerSheetLimitSummary, formatBytes } from "../config/uploadLimits";
 import { removeTempFile } from "../utils/answerSheetStorage";
 import logger from "../config/logger";
 import { ANSWER_SHEET_DETECTED_TYPES } from "../utils/fileSignature";
@@ -58,22 +52,16 @@ const storage = multer.diskStorage({
 
 const fileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
   const ext = path.extname(file.originalname || "").toLowerCase();
-  const mimeOk = Boolean(ANSWER_SHEET_MIME_TYPES[file.mimetype]);
-  const extOk = ANSWER_SHEET_EXTENSIONS.includes(ext);
-
-  // Browsers mislabel some scanner output as application/octet-stream, so a
-  // recognised extension is accepted even when the mime type is unhelpful.
-  if (mimeOk || extOk) {
+  // Answer sheets are PDFs only. Browsers mislabel some scanner output as
+  // application/octet-stream, so a .pdf name with an unhelpful type passes here;
+  // the file's bytes are checked after upload (ANSWER_SHEET_DETECTED_TYPES).
+  const mimeOk = file.mimetype === "application/pdf" || file.mimetype === "application/octet-stream" || !file.mimetype;
+  if (ext === ".pdf" && mimeOk) {
     cb(null, true);
     return;
   }
 
-  cb(
-    new multer.MulterError(
-      "LIMIT_UNEXPECTED_FILE",
-      `${file.originalname}: only PDF, JPG, PNG, WEBP, TIFF and HEIC files are accepted`,
-    ),
-  );
+  cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", `${file.originalname}: only PDF files are accepted`));
 };
 
 const uploader = multer({

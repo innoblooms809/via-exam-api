@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TEACHER_QUICK_ACTIONS = exports.getTrend = exports.mapExamUiStatus = exports.computeScannerStatusBreakdown = exports.mapSheetStatus = exports.getSubjectPerformanceStyle = exports.getGradeFromPercentage = exports.getSubjectIcon = exports.getExamStyle = exports.getRoleColor = exports.getPlanMonthlyRevenue = exports.toLakhs = exports.formatInrShort = exports.formatCount = exports.timeAgo = exports.formatDate = exports.percentValue = exports.percentLabel = exports.countInBucket = exports.getYearMonthBuckets = exports.getMonthBuckets = exports.DASHBOARD_COLORS = exports.MONTH_LABELS = void 0;
+exports.TEACHER_QUICK_ACTIONS = exports.mapExamUiStatus = exports.computeScannerStatusBreakdown = exports.mapSheetStatus = exports.getSubjectPerformanceStyle = exports.getGradeFromPercentage = exports.getSubjectIcon = exports.getExamStyle = exports.getRoleColor = exports.formatCount = exports.timeAgo = exports.formatDate = exports.percentValue = exports.percentLabel = exports.countInBucket = exports.getMonthBuckets = exports.DASHBOARD_COLORS = exports.MONTH_LABELS = void 0;
 exports.MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 exports.DASHBOARD_COLORS = {
     BLUE: "#4F6EF7",
@@ -35,11 +35,6 @@ const EXAM_PALETTE = [
         chipColor: exports.DASHBOARD_COLORS.INDIGO,
     },
 ];
-const PLAN_MONTHLY_INR = {
-    starter: 12000,
-    pro: 48000,
-    enterprise: 86000,
-};
 const getMonthBuckets = (count, from = new Date()) => {
     const buckets = [];
     for (let i = count - 1; i >= 0; i -= 1) {
@@ -57,21 +52,6 @@ const getMonthBuckets = (count, from = new Date()) => {
     return buckets;
 };
 exports.getMonthBuckets = getMonthBuckets;
-const getYearMonthBuckets = (year) => {
-    return exports.MONTH_LABELS.map((_, monthIndex) => {
-        const start = new Date(year, monthIndex, 1);
-        const end = new Date(year, monthIndex + 1, 1);
-        return {
-            key: `${year}-${String(monthIndex + 1).padStart(2, "0")}`,
-            month: exports.MONTH_LABELS[monthIndex],
-            year,
-            monthIndex,
-            start,
-            end,
-        };
-    });
-};
-exports.getYearMonthBuckets = getYearMonthBuckets;
 const countInBucket = (dates, bucket) => {
     return dates.filter((date) => date >= bucket.start && date < bucket.end).length;
 };
@@ -127,27 +107,6 @@ const formatCount = (value) => {
     return value.toLocaleString("en-IN");
 };
 exports.formatCount = formatCount;
-const formatInrShort = (value) => {
-    if (value >= 100000) {
-        const lakhs = value / 100000;
-        return `₹${lakhs % 1 === 0 ? lakhs.toFixed(0) : lakhs.toFixed(1)}L`;
-    }
-    if (value >= 1000) {
-        return `₹${Math.round(value / 1000)}K`;
-    }
-    return `₹${value}`;
-};
-exports.formatInrShort = formatInrShort;
-const toLakhs = (value) => {
-    return Number((value / 100000).toFixed(1));
-};
-exports.toLakhs = toLakhs;
-const getPlanMonthlyRevenue = (plan) => {
-    var _a;
-    const key = String(plan || "starter").toLowerCase();
-    return (_a = PLAN_MONTHLY_INR[key]) !== null && _a !== void 0 ? _a : PLAN_MONTHLY_INR.starter;
-};
-exports.getPlanMonthlyRevenue = getPlanMonthlyRevenue;
 const getRoleColor = (role, index) => {
     if (ROLE_COLORS[role])
         return ROLE_COLORS[role];
@@ -237,21 +196,6 @@ const mapExamUiStatus = (status) => {
     return "Upcoming";
 };
 exports.mapExamUiStatus = mapExamUiStatus;
-const getTrend = (current, previous) => {
-    if (!previous) {
-        return {
-            trend: current ? "+100%" : "0%",
-            up: current >= previous,
-        };
-    }
-    const change = ((current - previous) / previous) * 100;
-    const rounded = Math.abs(change) >= 10 ? change.toFixed(0) : change.toFixed(1);
-    return {
-        trend: `${change >= 0 ? "+" : ""}${rounded}%`,
-        up: change >= 0,
-    };
-};
-exports.getTrend = getTrend;
 exports.TEACHER_QUICK_ACTIONS = [
     {
         title: "Reports",

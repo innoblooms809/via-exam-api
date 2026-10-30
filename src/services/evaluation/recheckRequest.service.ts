@@ -128,66 +128,18 @@ const getRecheckRequestById = async (requestId: string, requestedBy: any): Promi
   }
 };
 
+// Setting a status by hand would skip the recheck's steps (a teacher's decision, the admin's
+// approval, the result update and the notifications), so it is refused: rechecks move
+// through /exam-workflow/rechecks (send to a teacher, approve or send back, turn down).
 const updateRecheckRequestStatus = async (
-  requestId: string,
-  body: { status: string; reviewerId: string },
-  requestedBy: any
-): Promise<any> => {
-  try {
-    const recheckRequest = await RecheckRequest.findOne({ where: { requestId } });
-
-    if (!recheckRequest) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Recheck request not found.",
-      };
-    }
-
-    if (recheckRequest.instituteId !== requestedBy.instituteId) {
-      return {
-        error: true,
-        statusCode: httpStatus.FORBIDDEN,
-        message: "Access denied.",
-      };
-    }
-
-    const allowedStatuses = ["Under Review", "Approved", "Rejected", "Completed"];
-    if (!allowedStatuses.includes(body.status)) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: `Invalid status. Allowed: ${allowedStatuses.join(", ")}`,
-      };
-    }
-
-    const updateData: any = {
-      status: body.status,
-      reviewedBy: body.reviewerId,
-      reviewedAt: new Date(),
-    };
-
-    if (body.status === "Completed") {
-      updateData.completedAt = new Date();
-    }
-
-    await recheckRequest.update(updateData);
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: `Recheck request status updated to ${body.status}.`,
-      data: recheckRequest,
-    };
-  } catch (error: any) {
-    console.error("updateRecheckRequestStatus error:", error);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${error.message}`,
-    };
-  }
-};
+  _requestId: string,
+  _body: { status: string; reviewerId: string },
+  _requestedBy: any
+): Promise<any> => ({
+  error: true,
+  statusCode: httpStatus.CONFLICT,
+  message: "Rechecks move through Results → Recheck requests: send one to a teacher, approve or send back their decision, or turn it down.",
+});
 
 export default {
   createRecheckRequest,

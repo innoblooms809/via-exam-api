@@ -200,7 +200,7 @@ const getTeacherAnalytics = async (instituteId: string) => {
     const attendance = percentValue(activeStudents, totalStudents);
     const kpiData = [
       {
-        title: "Total Students",
+        title: "Students",
         value: formatCount(totalStudents),
         icon: "Groups",
         bg: "#eff6ff",
@@ -241,9 +241,9 @@ const getTeacherAnalytics = async (instituteId: string) => {
     const evaluationProgress = percentValue(processedSheets, totalSheets || 1);
     const paperProgress = papers.length
       ? percentValue(
-          papers.filter((row: any) => ["APPROVED", "PUBLISHED"].includes(row.status)).length,
-          papers.length
-        )
+        papers.filter((row: any) => ["APPROVED", "PUBLISHED"].includes(row.status)).length,
+        papers.length
+      )
       : 0;
 
     const upcomingWork = [
@@ -344,21 +344,21 @@ const getScannerAnalytics = async (instituteId: string) => {
     const [subjects, classes, uploaders] = await Promise.all([
       subjectIds.length
         ? Subject.findAll({
-            where: { subjectId: { [Op.in]: subjectIds } },
-            attributes: ["subjectId", "subjectName"],
-          })
+          where: { subjectId: { [Op.in]: subjectIds } },
+          attributes: ["subjectId", "subjectName"],
+        })
         : [],
       classIds.length
         ? Class.findAll({
-            where: { classId: { [Op.in]: classIds } },
-            attributes: ["classId", "className"],
-          })
+          where: { classId: { [Op.in]: classIds } },
+          attributes: ["classId", "className"],
+        })
         : [],
       uploaderIds.length
         ? User.findAll({
-            where: { userId: { [Op.in]: uploaderIds } },
-            attributes: ["userId", "userName"],
-          })
+          where: { userId: { [Op.in]: uploaderIds } },
+          attributes: ["userId", "userName"],
+        })
         : [],
     ]);
 

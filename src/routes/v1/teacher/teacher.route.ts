@@ -20,6 +20,10 @@ router.patch("/updateTeacherToRemoveExaminer/:userId/remove-examiner", authentic
 
 // The signed-in teacher's own work.
 router.get("/my-assignments", authenticate, authorize(ACADEMIC), Controller.getMyAssignments);
+// Subjects and class-teacher sections per session (Session setup).
+router.get("/my-teaching", authenticate, authorize(ACADEMIC), Controller.getMyTeaching);
+// The students of one of those classes or sections.
+router.get("/my-teaching/students", authenticate, authorize(ACADEMIC), Controller.getMyStudents);
 router.get("/approval-workflow-exams", authenticate, authorize(ACADEMIC), Controller.getTeacherExamsWithApprovalStatus);
 router.get("/my-question-papers", authenticate, authorize(ACADEMIC), Controller.getTeacherQuestionPapers);
 router.get("/:userId/question-papers", authenticate, authorize(ADMINS), Controller.getTeacherQuestionPapers);

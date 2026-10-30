@@ -8,6 +8,9 @@ import {
 import { ANSWER_SHEET_LIMITS, answerSheetLimitSummary } from "../../../config/uploadLimits";
 import { ACADEMIC, STAFF, UPLOADERS } from "../../../config/roles";
 
+// Answer sheets go in, are replaced or removed by scanner staff only; the admin views them.
+const SCANNERS = ["SCANNER"];
+
 const router = Router();
 
 // Answer sheets are buffered to disk and streamed to Cloudinary; the row keeps
@@ -17,7 +20,7 @@ const router = Router();
 
 // What the client may send in one batch. The scanner UI reads this to split a
 // large selection into batches instead of guessing.
-router.get("/uploadLimits", authenticate, authorize(UPLOADERS), (_req, res) => {
+router.get("/uploadLimits", authenticate, authorize(SCANNERS), (_req, res) => {
   res.status(200).send({
     error: false,
     statusCode: 200,
@@ -27,13 +30,13 @@ router.get("/uploadLimits", authenticate, authorize(UPLOADERS), (_req, res) => {
 });
 
 // Upload one or many sheets (multipart, field: "sheets")
-router.post("/uploadSheets", authenticate, authorize(UPLOADERS), ...answerSheetBatchUpload, Controller.uploadSheets);
+router.post("/uploadSheets", authenticate, authorize(SCANNERS), ...answerSheetBatchUpload, Controller.uploadSheets);
 
 // Replace the scan behind an existing sheet (multipart, field: "sheet")
 router.put(
   "/replaceSheet/:sheetId",
   authenticate,
-  authorize(UPLOADERS),
+  authorize(SCANNERS),
   ...answerSheetSingleUpload("sheet"),
   Controller.replaceSheet
 );
@@ -51,7 +54,7 @@ router.get("/summary", authenticate, authorize(STAFF), Controller.getSheetSummar
 router.patch("/updateStatus/:sheetId", authenticate, authorize(ACADEMIC), Controller.updateSheetStatus);
 
 // Soft delete
-router.delete("/deleteSheet/:sheetId", authenticate, authorize(UPLOADERS), Controller.deleteSheet);
+router.delete("/deleteSheet/:sheetId", authenticate, authorize(SCANNERS), Controller.deleteSheet);
 
 // ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────
 
@@ -62,7 +65,7 @@ router.get("/approved-exams", authenticate, authorize(UPLOADERS), Controller.get
 router.post(
   "/upload-student-answer",
   authenticate,
-  authorize(UPLOADERS),
+  authorize(SCANNERS),
   ...answerSheetSingleUpload("answerPaperFile"),
   Controller.uploadStudentAnswerPaper
 );

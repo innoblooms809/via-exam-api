@@ -1,7 +1,7 @@
 import httpStatus from "http-status";
 import { Response } from "express";
 import StudentService from "../../services/student/student.service";
-import { getTeacherScope, isTeacherRequester, maskStudentRecord } from "../../services/evaluation/evaluationAccess.service";
+import { getTeacherScope, isScannerRequester, isTeacherRequester, maskStudentRecord } from "../../services/evaluation/evaluationAccess.service";
 import config from "../../config/config";
 import { sendUserCredentials } from "../../utils/mailHelper";
 
@@ -53,6 +53,10 @@ const getAllStudents = async (req: any, res: Response): Promise<any> => {
         scope.ownClassKeys.has(String(s.className ?? "")) ? s : maskStudentRecord(s)
       );
     }
+    // Scanners get names and personal details masked; roll numbers stay visible.
+    if (!result.error && isScannerRequester(req.viaExamUser) && Array.isArray(result.data?.students)) {
+      result.data.students = result.data.students.map((s: any) => maskStudentRecord(s, { keepRoll: true }));
+    }
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
@@ -83,6 +87,15 @@ const updateStudent = async (req: any, res: Response): Promise<any> => {
 const deleteStudent = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await StudentService.deleteStudent(req.params.userId, req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
+const promoteStudents = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await StudentService.promoteStudents(req.body, req.viaExamUser);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
@@ -143,5 +156,6 @@ export default {
   getStudentById,
   updateStudent,
   deleteStudent,
+  promoteStudents,
   bulkCreateStudents,
 };

@@ -28,8 +28,23 @@ class QuestionPaperAnswerService {
   // CREATE ANSWER KEY
   // ─────────────────────────────────────────────
 
-  static async createQuestionPaperAnswer(data: any) {
-    try {
+  static async createQuestionPaperAnswer(data: any, user?: any) {
+    const paper = await QuestionPaper.findOne({ where: { paperId: data.paperId } });
+    if (!paper || (data.instituteId && paper.instituteId !== data.instituteId)) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Question paper not found");
+    }
+    if (data.examId && paper.examId !== data.examId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "This question paper belongs to a different exam.");
+    }
+    if (String(data.paperSet ?? "").toUpperCase() !== paper.paperSet) {
+      throw new ApiError(httpStatus.BAD_REQUEST, `This question paper is Set ${paper.paperSet}.`);
+    }
+    if (isTeacherUser(user) && paper.teacherId !== user.userId) {
+      throw new ApiError(httpStatus.FORBIDDEN, "You can only add the model answer to your own question paper");
+    }
+    assertEditableStatus(paper.status, "question paper", "edited");
+
+    {
       const existing = await QuestionPaperAnswer.findOne({
         where: {
           paperId: data.paperId,
@@ -38,9 +53,7 @@ class QuestionPaperAnswerService {
       });
 
       if (existing) {
-        throw new Error(
-          "Answer key already exists for this paper set"
-        );
+        throw new ApiError(httpStatus.CONFLICT, "Answer key already exists for this paper set");
       }
 
       const answerId = newId("answerKey");
@@ -49,20 +62,16 @@ class QuestionPaperAnswerService {
         answerId,
         instituteId: data.instituteId,
         paperId: data.paperId,
-        examId: data.examId,
-        teacherId: data.teacherId,
-        paperSet: data.paperSet,
+        examId: paper.examId,
+        teacherId: paper.teacherId,
+        paperSet: paper.paperSet,
         answers: await withQuestionSnapshots(data.answers, data.paperId),
-        status: data.status || "DRAFT",
+        status: "DRAFT",
       });
 
-      if (data.examId) {
-        await markExamPaperCreated(data.examId);
-      }
+      await markExamPaperCreated(paper.examId);
 
       return result;
-    } catch (error: any) {
-      throw new Error(error.message);
     }
   }
 

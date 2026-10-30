@@ -31,24 +31,25 @@ const bulkCreateStudents = {
 
 // ─── Per-row schema (used inside the service, not as middleware) ──────────────
 
-const personName = (label: string) =>
+// Last names may be a single initial ("Ravi K"), so the minimum is per field.
+const personName = (label: string, min = 2) =>
   Joi.string()
     .trim()
-    .min(2)
+    .min(min)
     .max(100)
     .pattern(/^[A-Za-z][A-Za-z.'’ -]*$/)
     .messages({
       "string.base": `${label} is required.`,
       "string.empty": `${label} is required.`,
       "any.required": `${label} is required.`,
-      "string.min": `${label} must be at least 2 characters.`,
+      "string.min": `${label} must be at least ${min} character${min === 1 ? "" : "s"}.`,
       "string.max": `${label} must not exceed 100 characters.`,
       "string.pattern.base": `${label} may only contain letters, dots, apostrophes, hyphens and spaces.`,
     });
 
 export const bulkStudentRowSchema = Joi.object({
   firstName: personName("First name").required(),
-  lastName: personName("Last name").required(),
+  lastName: personName("Last name", 1).required(),
   fatherName: personName("Father's name").allow("", null).optional(),
 
   email: Joi.string()

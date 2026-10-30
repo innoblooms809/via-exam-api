@@ -24,6 +24,8 @@ import ApiError from "../../utils/ApiError";
 import { refreshExamStatus } from "../exam/exam.service";
 import { assertReadyForReview } from "../exam/examWorkflow.service";
 import StudentResult from "../../models/StudentResult.model";
+import { examLabel, instituteAdminIds, notifyAll } from "../notification/notifyPeople";
+import { closeRoundForReopen } from "../exam/crossCheck.service";
 
 /** Once results are out the evaluator can't change; unpublish first. */
 async function assertNotPublished(examId: string) {
@@ -44,6 +46,7 @@ import {
   maskRoll,
   type SheetAccess,
 } from "./evaluationAccess.service";
+import { scanQualityView } from "../answer-sheet/sheetQuality.service";
 
 /** Exams whose paper is approved can be evaluated. */
 export const EVALUATION_READY_STATUSES = ["Approved", "Live", "Completed"];
@@ -101,8 +104,6 @@ async function notify(instituteId: string, userId: string, type: string, title: 
   }
 }
 
-const examLabel = (exam: any) =>
-  `${exam.subject?.subjectName ?? "Subject"} · ${exam.examType} · Class ${exam.class?.className ?? exam.classId}`;
 
 // ── Admin: approved exams with their evaluator ───────────────────────────────
 
@@ -583,6 +584,8 @@ const getRoster = async (user: any, query: any) => {
       sheetStatus: sheet ? (ev ? EVAL_STATUS[ev.status] ?? sheet.status : sheet.status) : "Missing",
       aiScore: ev?.status === "Success" ? ev.totalScore : null,
       evaluationStatus: ev?.status ?? null,
+      // A poor scan: the AI may have misread it, so its marks need a careful look.
+      scanQuality: scanQualityView(sheet),
       identityMasked: masked,
     };
   };
@@ -640,19 +643,25 @@ const markReviewed = async (user: any, examId: string, reviewed: boolean = true)
     reviewedAt: updatedReviewedAt,
     reviewedBy: updatedReviewedBy,
   });
+  // Marks reopened: a cross-check in progress stops; it starts over after the next review.
+  if (!reviewed) await closeRoundForReopen(cleanExamId);
 
+  // Every admin hears the marks are confirmed: the next step is theirs (publish).
   const exam: any = await Exam.findOne({ where: { examId: cleanExamId }, include: EXAM_INCLUDES });
-  if (reviewed && exam && assignment.assignedBy) {
+  if (reviewed && exam) {
     const label = examLabel(exam);
-    const teacherName = user.userName || "The evaluator teacher";
-    await notify(
-      instituteId,
-      assignment.assignedBy,
-      "EVALUATION_REVIEWED",
-      "Evaluation marked as reviewed",
-      `${teacherName} has completed and reviewed the evaluation for ${label}.`,
-      cleanExamId
-    );
+    const teacherName = user.userName || "The evaluator";
+    const admins = [assignment.assignedBy, ...(await instituteAdminIds(instituteId))].filter((id): id is string => Boolean(id) && id !== user.userId);
+    await notifyAll(
+      [...new Set(admins)].map((userId) => ({
+        instituteId,
+        userId,
+        type: "EVALUATION_REVIEWED",
+        title: "Ready to publish",
+        message: `${teacherName} checked the marks of ${label} and marked it reviewed. You can publish the results.`,
+        referenceId: cleanExamId,
+      }))
+    ).catch(() => undefined);
   }
 
   return {

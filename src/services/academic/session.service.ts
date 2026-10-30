@@ -4,8 +4,13 @@ import Session from "../../models/Session.model";
 import Institute from "../../models/Institute.model";
 import Exam from "../../models/Exam.model";
 import StudentProfile from "../../models/Student.model";
+import StudentEnrollment from "../../models/StudentEnrollment.model";
+import SessionSection from "../../models/SessionSection.model";
+import SessionSubject from "../../models/SessionSubject.model";
 import { sequelize } from "../../config/sequelize";
 import { newId } from "../../utils/idGenerator";
+import SessionSetupService, { startFromMasterData, syncCurrentMirrors } from "./sessionSetup.service";
+import { syncStudentProfiles } from "../student/enrollment.service";
 
 const fail = (statusCode: number, message: string) => ({ error: true, statusCode, message });
 
@@ -117,11 +122,29 @@ const createSession = async (body: any, createdBy: any): Promise<any> => {
       );
     }
 
+    // A school's first session starts with everything in the master data, as it is today.
+    const others = await Session.count({ where: { instituteId, isDeleted: false, sessionId: { [Op.ne]: session.sessionId } }, transaction: t });
+    if (!others) await startFromMasterData(instituteId, session.sessionId, t);
+    if (makeActive) {
+      await syncCurrentMirrors(instituteId, t);
+      await syncStudentProfiles(instituteId, null, t);
+    }
     await t.commit();
+
+    // Later sessions: copy the classes, sections, subjects (and teachers, if asked) of another one.
+    let copied = "";
+    if (others && body.copyFrom) {
+      const res: any = await SessionSetupService.copySetup(createdBy, session.sessionId, {
+        fromSessionId: String(body.copyFrom),
+        classTeachers: body.copyTeachers !== false && body.copyTeachers !== "false",
+        subjectTeachers: body.copyTeachers !== false && body.copyTeachers !== "false",
+      });
+      copied = res?.error ? ` Its setup couldn't be copied: ${res.message}` : ` ${res.message}`;
+    }
     return {
       error: false,
       statusCode: httpStatus.CREATED,
-      message: makeActive ? `Session ${sessionName} created and set as current.` : `Session ${sessionName} created.`,
+      message: `${makeActive ? `Session ${sessionName} created and set as current.` : `Session ${sessionName} created.`}${copied}`,
       data: session,
     };
   } catch (e: any) {
@@ -144,10 +167,10 @@ const getAllSessions = async (createdBy: any, query: any): Promise<any> => {
 
     // How much each session is used, so the UI can explain why one can't be deleted.
     const [studentRows, examRows] = await Promise.all([
-      StudentProfile.findAll({
-        attributes: ["session", [sequelize.fn("COUNT", sequelize.col("id")), "count"]],
-        where: { instituteId },
-        group: ["session"],
+      StudentEnrollment.findAll({
+        attributes: ["sessionId", [sequelize.fn("COUNT", sequelize.col("id")), "count"]],
+        where: { instituteId, isActive: true },
+        group: ["sessionId"],
         raw: true,
       }) as any,
       Exam.findAll({
@@ -157,12 +180,12 @@ const getAllSessions = async (createdBy: any, query: any): Promise<any> => {
         raw: true,
       }) as any,
     ]);
-    const students = new Map<string, number>(studentRows.map((r: any) => [r.session, Number(r.count)]));
+    const students = new Map<string, number>(studentRows.map((r: any) => [r.sessionId, Number(r.count)]));
     const exams = new Map<string, number>(examRows.map((r: any) => [r.sessionId, Number(r.count)]));
 
     const rows = sessions.map((s) => ({
       ...s.toJSON(),
-      studentCount: students.get(s.sessionName) ?? 0,
+      studentCount: students.get(s.sessionId) ?? 0,
       examCount: exams.get(s.sessionId) ?? 0,
     }));
 
@@ -232,6 +255,8 @@ const activateSession = async (sessionId: string, createdBy: any): Promise<any> 
       { where: { instituteId: createdBy.instituteId, isDeleted: false }, transaction: t },
     );
     await session.update({ isActive: true }, { transaction: t });
+    await syncCurrentMirrors(createdBy.instituteId, t);
+    await syncStudentProfiles(createdBy.instituteId, null, t);
     await t.commit();
 
     return {
@@ -320,7 +345,7 @@ const deleteSession = async (sessionId: string, createdBy: any): Promise<any> =>
     }
 
     const [students, exams] = await Promise.all([
-      StudentProfile.count({ where: { instituteId, session: session.sessionName } }),
+      StudentEnrollment.count({ where: { instituteId, sessionId } }),
       Exam.count({ where: { instituteId, sessionId, isDeleted: false } }),
     ]);
     if (students || exams) {
@@ -330,7 +355,11 @@ const deleteSession = async (sessionId: string, createdBy: any): Promise<any> =>
       return fail(httpStatus.CONFLICT, `${session.sessionName} can't be deleted because ${used} belong to it.`);
     }
 
-    await session.update({ isDeleted: true, isActive: false });
+    await sequelize.transaction(async (t) => {
+      await session.update({ isDeleted: true, isActive: false }, { transaction: t });
+      await SessionSection.destroy({ where: { sessionId }, transaction: t });
+      await SessionSubject.destroy({ where: { sessionId }, transaction: t });
+    });
     return { error: false, statusCode: httpStatus.OK, message: `Session ${session.sessionName} deleted.`, data: {} };
   } catch (e: any) {
     return fail(httpStatus.INTERNAL_SERVER_ERROR, `Something went wrong: ${e.message}`);

@@ -7,8 +7,11 @@ import instituteRoutes from "./institute/institute.route";
 import teacherRoutes from "./teacher/teacher.route";
 import examRoutes from "./exam/exam.route";
 import examWorkflowRoutes from "./exam/examWorkflow.route";
+import crossCheckRoutes from "./exam/crossCheck.route";
 import questionPaperRoutes from "./question-paper/questionPaper.route";
 import sessionRoutes from "./academic/session.route";
+import sessionSetupRoutes from "./academic/sessionSetup.route";
+import { marksRoutes, settingsRoutes } from "./academic/marks.route";
 import classRoutes from "./academic/class.route";
 import sectionRoutes from "./academic/section.route";
 import subjectRoutes from "./academic/subject.route";
@@ -27,6 +30,7 @@ import adminDashboardRoutes from "./dashboard/adminDashboard.route";
 import teacherDashboardRoutes from "./teacher/teacherDashboard.route";
 import studentDashboardRoutes from "./student/studentDashboard.route";
 import scannerDashboardRoutes from "./scanner/scannerDashboard.route";
+import homeRoutes from "./dashboard/home.route";
 import monitoringRoutes from "./monitoring/monitoring.route";
 import recheckRequestRoutes from "./evaluation/recheckRequest.route";
 import evaluationAssignmentRoutes from "./evaluation/evaluationAssignment.route";
@@ -67,8 +71,24 @@ const defaultRoutes = [
     route: scannerDashboardRoutes,
   },
   {
+    path: "/home",
+    route: homeRoutes,
+  },
+  {
     path: "/sessions",
     route: sessionRoutes,
+  },
+  {
+    path: "/session-setup",
+    route: sessionSetupRoutes,
+  },
+  {
+    path: "/marks",
+    route: marksRoutes,
+  },
+  {
+    path: "/institute-settings",
+    route: settingsRoutes,
   },
   {
     path: "/class",
@@ -93,6 +113,10 @@ const defaultRoutes = [
   {
     path: "/exam-workflow",
     route: examWorkflowRoutes,
+  },
+  {
+    path: "/cross-checks",
+    route: crossCheckRoutes,
   },
   {
     path: "/question-papers",

@@ -350,16 +350,51 @@ export const sendEmailToNewUser = async (requestBody: any) => {
     return false;
   }
 };
-// ─── Send credentials to newly created non-admin users (student, teacher, etc.) ─
+// ─── Login details for teachers, scanner staff and students ────────────────────
+// kind: "created" (new account), "reset" (a new password was set for them) or
+// "details" (their login email and sign-in link only; the password is unchanged and is
+// not in the email, because it is stored encrypted and can't be read back).
+
+/** Text from the database or a form, safe to put inside the email's HTML. */
+const escapeHtml = (v: unknown) =>
+  String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+
 export const sendUserCredentials = async (data: {
   userName: string;
   email: string;
   phone: string;
-  password: string;
+  /** The new password; null for "details" (no password in the email). */
+  password?: string | null;
   role: string;
   loginUrl: string;
+  kind?: "created" | "reset" | "details";
 }): Promise<boolean> => {
   try {
+    const kind = data.kind ?? "created";
+    const e = {
+      name: escapeHtml(data.userName),
+      email: escapeHtml(data.email),
+      phone: escapeHtml(data.phone),
+      password: escapeHtml(data.password ?? ""),
+      role: escapeHtml(data.role),
+      url: escapeHtml(data.loginUrl),
+    };
+    const intro =
+      kind === "details"
+        ? `Here are the login details for your <strong>${e.role}</strong> account on ViaExam. Your password has not changed.`
+        : kind === "reset"
+          ? `Your school has set a new password for your <strong>${e.role}</strong> account on ViaExam. Your old password no longer works.`
+          : `Your <strong>${e.role}</strong> account has been successfully created on ViaExam. Below are your login credentials.`;
+    const note =
+      kind === "details"
+        ? "Sign in with your current password. If you have forgotten it, use “Forgot password” on the sign-in page, or ask your school to send you a new one."
+        : "⚠️ Please change your password immediately after your first login.";
+    const subject =
+      kind === "details"
+        ? `Your ViaExam login details (${data.role})`
+        : kind === "reset"
+          ? `Your new ViaExam password (${data.role})`
+          : `Welcome to ViaExam — Your ${data.role} Account Credentials`;
     const html = `
       <!DOCTYPE html>
       <html>
@@ -394,37 +429,34 @@ export const sendUserCredentials = async (data: {
             <p>Institute Management Platform</p>
           </div>
           <div class="body">
-            <p class="greeting">Hello ${data.userName},</p>
-            <p class="text">
-              Your <strong>${data.role}</strong> account has been successfully created on ViaExam.
-              Below are your login credentials.
-            </p>
+            <p class="greeting">Hello ${e.name},</p>
+            <p class="text">${intro}</p>
             <div class="cred-box">
               <h3>Login Credentials</h3>
               <div class="cred-row">
                 <span class="cred-label">Email: </span>
-                <span class="cred-value">${data.email}</span>
+                <span class="cred-value">${e.email}</span>
               </div>
               <div class="cred-row">
                 <span class="cred-label">Mobile: </span>
-                <span class="cred-value">${data.phone}</span>
+                <span class="cred-value">${e.phone}</span>
               </div>
               <div class="cred-row">
                 <span class="cred-label">Username: </span>
-                <span class="cred-value">${data.userName}</span>
+                <span class="cred-value">${e.name}</span>
               </div>
               <div class="cred-row">
                 <span class="cred-label">Password: </span>
-                <span class="cred-value">${data.password}</span>
+                <span class="cred-value">${kind === "details" ? "Your current password (unchanged)" : e.password}</span>
               </div>
               <div class="cred-row">
                 <span class="cred-label">Login URL: </span>
-                <span class="cred-value" style="font-size:11px">${data.loginUrl}</span>
+                <span class="cred-value" style="font-size:11px">${e.url}</span>
               </div>
             </div>
-            <a href="${data.loginUrl}" class="btn">Login to Dashboard →</a>
+            <a href="${e.url}" class="btn">Login to Dashboard →</a>
             <div class="warning">
-              <p>⚠️ Please change your password immediately after your first login.</p>
+              <p>${note}</p>
             </div>
           </div>
           <div class="footer">
@@ -438,10 +470,9 @@ export const sendUserCredentials = async (data: {
     await transporter.sendMail({
       from: `"ViaExam" <${config.email.smtp.auth.user}>`,
       to: data.email,
-      subject: `Welcome to ViaExam — Your ${data.role} Account Credentials`,
+      subject,
       html,
     });
-
 
     return true;
   } catch (e: any) {

@@ -90,6 +90,9 @@ class StudentResult
   public isDeleted!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public exam?: any;
+  public subject?: any;
+  public student?: any;
 }
 
 StudentResult.init(

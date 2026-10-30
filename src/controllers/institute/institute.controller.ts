@@ -24,8 +24,8 @@ const registerInstitute = async (req: any, res: Response): Promise<any> => {
 // RESEND ADMIN CREDENTIALS
 const resendAdminCredentials = async (req: any, res: Response): Promise<any> => {
   try {
-    // The password is always generated on the server; a client-chosen one is never accepted.
-    const result = await InstituteService.resendAdminCredentials(req.params.instituteId);
+    // Super admin only: the password they typed (validated by the route), or a generated one.
+    const result = await InstituteService.resendAdminCredentials(req.params.instituteId, req.body?.password);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
