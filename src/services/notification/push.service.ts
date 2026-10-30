@@ -34,13 +34,9 @@ const registerToken = async (body: any, requestedBy: any, userAgent?: string): P
     };
 
     // One row per browser and user: several users logged in on one browser each keep their pushes.
-    // Logging out removes only that user's row.
-    const existing = await PushToken.findOne({ where: { token, userId: requestedBy.userId } });
-    if (existing) {
-      await existing.update(values);
-    } else {
-      await PushToken.create(values);
-    }
+    // Logging out removes only that user's row. An atomic upsert: the UI registers on mount and
+    // again on click (React StrictMode runs effects twice), and a find-then-create race hits the unique index.
+    await PushToken.upsert(values, { conflictFields: ["token", "userId"] });
 
     return { error: false, statusCode: httpStatus.OK, message: "Push notifications enabled." };
   } catch (e: any) {

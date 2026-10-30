@@ -112,6 +112,8 @@ const uploadsPath = path.resolve(process.cwd(), 'uploads');
 // not sniff them into another type, and the sandbox CSP stops anything that
 // slips through from running script on this origin.
 const SERVABLE_UPLOAD = /(^[^.]*$)|\.(png|jpe?g|webp|pdf)$/i;
+// The app's own front ends preview uploads (PDFs) in iframes; no other site may frame them.
+const uploadFrameAncestors = ["'self'", ...allowedOrigins].join(' ');
 const uploadsStatic = [
   allowCrossOriginUploads,
   (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -128,11 +130,20 @@ const uploadsStatic = [
     dotfiles: 'deny',
     index: false,
     redirect: false,
-    setHeaders: (res) => {
+    setHeaders: (res, filePath) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
+      // frame-ancestors below decides who may frame it (helmet's SAMEORIGIN would block the app).
+      res.removeHeader('X-Frame-Options');
+      // Chrome won't render a PDF in a sandboxed or 'none'-restricted document ("This content
+      // is blocked"), so PDFs only limit framing; every other file keeps the strict sandbox.
+      res.setHeader(
+        'Content-Security-Policy',
+        /\.pdf$/i.test(filePath)
+          ? `frame-ancestors ${uploadFrameAncestors}`
+          : `default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors ${uploadFrameAncestors}; sandbox`,
+      );
     },
   }),
 ];

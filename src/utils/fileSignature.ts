@@ -17,14 +17,11 @@ export interface DetectedType {
 }
 
 export const IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-export const ANSWER_SHEET_DETECTED_TYPES = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/tiff",
-  "image/heic",
-] as const;
+/**
+ * What a new answer sheet may be, by its bytes: a PDF only (one file per student, every page
+ * in it). Older sheets stored as images still open; only new uploads are held to this.
+ */
+export const ANSWER_SHEET_DETECTED_TYPES = ["application/pdf"] as const;
 
 const startsWith = (buf: Buffer, bytes: number[], offset = 0): boolean =>
   buf.length >= offset + bytes.length && bytes.every((b, i) => buf[offset + i] === b);

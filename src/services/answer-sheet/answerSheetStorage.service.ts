@@ -36,7 +36,15 @@ import { requireSheetAccess } from "../evaluation/evaluationAccess.service";
 import { inspectDiskFile } from "../../middlewares/verifyUpload";
 import { ANSWER_SHEET_DETECTED_TYPES } from "../../utils/fileSignature";
 import { newId } from "../../utils/idGenerator";
-import { assertSheetWritable, clearAbsentForRoll } from "../exam/examWorkflow.service";
+import { assertSheetWritable, clearAbsentForRoll, sheetsChangedAfterReview } from "../exam/examWorkflow.service";
+import { rosterRolls, rosterSectionsByRoll, sheetWhereForExam } from "../exam/examRoster.service";
+import {
+  beginQualityCheck,
+  qualitySummary,
+  scanQualityRule,
+  settleQualityCheck,
+  type QualitySummary,
+} from "./sheetQuality.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,6 +57,9 @@ export interface SheetResult {
   sheetId: string | null;
   reason: string | null;
   bytes: number;
+  /** Scan quality of a stored sheet; null while it is still being checked (or the check is off). */
+  quality: QualitySummary | null;
+  qualityPending: boolean;
 }
 
 // How many sheets travel to Cloudinary at once. Four keeps a batch moving
@@ -138,9 +149,14 @@ export const uploadSheets = async (
       };
     }
 
-    const missing = (["classId", "section", "subjectId", "examType"] as const).filter(
-      (key) => !String((body as any)?.[key] ?? "").trim(),
-    );
+    // The exam these sheets belong to: the one the client names, else the newest
+    // exam of this class / subject / type that covers the section.
+    const requestedExamId = String((body as any)?.examId ?? "").trim();
+    // A named exam says who sits it; a whole-class exam has no section to send.
+    const needed = requestedExamId
+      ? (["classId", "subjectId", "examType"] as const)
+      : (["classId", "section", "subjectId", "examType"] as const);
+    const missing = needed.filter((key) => !String((body as any)?.[key] ?? "").trim());
     if (missing.length > 0) {
       return {
         error: true,
@@ -170,9 +186,6 @@ export const uploadSheets = async (
 
     const replaceExisting = isTruthyFlag(body.replace) || isTruthyFlag(body.overwrite);
 
-    // The exam these sheets belong to: the one the client names, else the newest
-    // exam of this class / subject / type that covers the section.
-    const requestedExamId = String((body as any)?.examId ?? "").trim();
     // Sheets carry the section as a name or an id; exams store the id.
     const sectionRow = await Section.findOne({
       where: { instituteId, classId: body.classId, isDeleted: false, [Op.or]: [{ sectionId: body.section }, { sectionName: body.section }] },
@@ -199,6 +212,14 @@ export const uploadSheets = async (
         message: "This exam doesn't match the class, subject and exam type you picked.",
       };
     }
+    if (!matchingExam) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "There is no exam for this class, subject and exam type. Create the exam first, then upload its sheets.",
+      };
+    }
+    const examRolls = await rosterRolls(instituteId, matchingExam.examId);
 
     // Only the scanner the admin assigned (or an admin) may add sheets, and not
     // after the upload is marked complete or results are published.
@@ -207,12 +228,21 @@ export const uploadSheets = async (
     } catch (err: any) {
       return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
     }
+    const qualityRule = await scanQualityRule(instituteId);
+
+    // No section sent (a whole-class exam): each sheet takes its student's own section,
+    // and the sheets already in are the exam's own, whatever section they carry.
+    const sectionGiven = Boolean(String(body.section ?? "").trim());
+    const sectionByRoll = sectionGiven ? null : await rosterSectionsByRoll(instituteId, matchingExam.examId);
+    const sectionOf = (rollNo: string) => (sectionByRoll ? (sectionByRoll.get(rollNo) ?? "") : body.section);
 
     // One query instead of one per file.
     const rollNos = files.map((f) => rollNoFromFileName(f.originalname)).filter(Boolean);
     const existingRows = rollNos.length
       ? await Scanner.findAll({
-          where: {
+        where: sectionByRoll
+          ? { ...sheetWhereForExam(matchingExam), rollNo: { [Op.in]: rollNos } }
+          : {
             instituteId,
             classId: body.classId,
             section: body.section,
@@ -221,7 +251,7 @@ export const uploadSheets = async (
             rollNo: { [Op.in]: rollNos },
             isDeleted: false,
           },
-        })
+      })
       : [];
     const existingByRoll = new Map(existingRows.map((r) => [String(r.rollNo), r]));
 
@@ -240,6 +270,8 @@ export const uploadSheets = async (
         sheetId: null,
         reason: null,
         bytes: file.size ?? 0,
+        quality: null,
+        qualityPending: false,
       };
 
       if (!rollNo) {
@@ -250,6 +282,9 @@ export const uploadSheets = async (
           ...base,
           reason: `"${fileName}" is not named after a roll number. Rename it to the student's roll number, for example 101.pdf.`,
         };
+      }
+      if (examRolls && !examRolls.has(rollNo)) {
+        return { ...base, reason: `Roll number ${rollNo} is not on this exam's roster.` };
       }
 
       // The file's bytes decide its type; a PDF carrying scripts never reaches storage.
@@ -281,6 +316,13 @@ export const uploadSheets = async (
 
       const sheetId = existing ? existing.sheetId : await generateSheetId(takenSheetIds);
 
+      // Measured while the file travels to Cloudinary.
+      const qualityCheck = beginQualityCheck(file.path, qualityRule);
+      const withQuality = async (result: SheetResult, publicId: string): Promise<SheetResult> => {
+        const report = await settleQualityCheck(sheetId, publicId, qualityCheck);
+        return { ...result, quality: qualitySummary(report), qualityPending: qualityRule.enabled && !report };
+      };
+
       let stored = null as Awaited<ReturnType<typeof uploadAnswerSheet>> | null;
       try {
         stored = await uploadAnswerSheet({
@@ -289,6 +331,8 @@ export const uploadSheets = async (
           mimeType: file.mimetype,
           instituteId,
           sheetId,
+          // A replacement gets its own address; the old file is deleted once the row points here.
+          ...(existing ? { revision: Date.now().toString(36) } : {}),
         });
 
         if (existing) {
@@ -310,6 +354,8 @@ export const uploadSheets = async (
                 fileSize: file.size ?? stored!.bytes,
                 fileBuffer: null, // a replaced legacy sheet sheds its blob
                 status: "Pending",
+                qualityFlag: null, // measured again for the new scan
+                qualityReport: null,
                 uploadedBy: uploadedBy.userId,
               },
               { transaction: t },
@@ -324,7 +370,7 @@ export const uploadSheets = async (
             supersededAssets.push(previous);
           }
 
-          return { ...base, outcome: "replaced", sheetId };
+          return withQuality({ ...base, outcome: "replaced", sheetId }, stored.publicId);
         }
 
         await Scanner.create({
@@ -332,7 +378,7 @@ export const uploadSheets = async (
           instituteId,
           examId: matchingExam ? matchingExam.examId : undefined,
           classId: body.classId,
-          section: body.section,
+          section: sectionOf(rollNo),
           subjectId: body.subjectId,
           examType: body.examType,
           rollNo,
@@ -347,7 +393,7 @@ export const uploadSheets = async (
         });
         await clearAbsentForRoll(matchingExam?.examId, rollNo, uploadedBy.userId);
 
-        return { ...base, outcome: "saved", sheetId };
+        return withQuality({ ...base, outcome: "saved", sheetId }, stored.publicId);
       } catch (err: any) {
         // The row never landed, so the asset just uploaded is an orphan.
         if (stored?.publicId) {
@@ -377,9 +423,12 @@ export const uploadSheets = async (
       duplicate: results.filter((r) => r.outcome === "duplicate").length,
       rejected: results.filter((r) => r.outcome === "rejected").length,
       failed: results.filter((r) => r.outcome === "failed").length,
+      poorScans: results.filter((r) => r.quality?.flag === "warn" || r.quality?.flag === "low").length,
     };
     const stored = counts.saved + counts.replaced;
     const notStored = results.length - stored;
+    // New or replaced scans: marks confirmed before no longer cover the exam.
+    if (stored > 0) await sheetsChangedAfterReview(matchingExam.examId).catch((e) => logger.error(`[AnswerSheets] Batch upload: could not reopen the review: ${e?.message || e}`));
 
     return {
       error: false,
@@ -390,6 +439,9 @@ export const uploadSheets = async (
           : notStored === 0
             ? `${stored} sheet${stored === 1 ? "" : "s"} stored successfully.`
             : `${stored} of ${results.length} sheets stored. ${notStored} need attention.`,
+      ...(counts.poorScans
+        ? { qualityMessage: `${counts.poorScans} sheet${counts.poorScans === 1 ? " looks" : "s look"} like a poor scan. Rescan ${counts.poorScans === 1 ? "it" : "them"} if you can.` }
+        : {}),
       data: { counts, results, limits: ANSWER_SHEET_LIMITS },
     };
   } catch (e: any) {
@@ -438,12 +490,17 @@ export const replaceSheet = async (
       resourceType: sheet.fileResourceType,
     };
 
+    const qualityRule = await scanQualityRule(sheet.instituteId);
+    const qualityCheck = beginQualityCheck(file.path, qualityRule);
+
+    // Its own address, so nothing cached can show the old scan; the old file is deleted below.
     const stored = await uploadAnswerSheet({
       filePath: file.path,
       originalName: file.originalname,
       mimeType: file.mimetype,
       instituteId: sheet.instituteId,
       sheetId: sheet.sheetId,
+      revision: Date.now().toString(36),
     });
 
     try {
@@ -458,6 +515,8 @@ export const replaceSheet = async (
             fileSize: file.size ?? stored.bytes,
             fileBuffer: null,
             status: "Pending",
+            qualityFlag: null,
+            qualityReport: null,
             uploadedBy: requestedBy.userId,
           },
           { transaction: t },
@@ -475,11 +534,22 @@ export const replaceSheet = async (
       await destroyAnswerSheet(previous.publicId, previous.resourceType, `replaced ${sheetId}`);
     }
 
+    // The scan behind the confirmed marks is gone.
+    await sheetsChangedAfterReview(sheet.examId).catch((e) => logger.error(`[AnswerSheets] Replace ${sheetId}: could not reopen the review: ${e?.message || e}`));
+
+    const report = await settleQualityCheck(sheet.sheetId, stored.publicId, qualityCheck);
+
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: `Sheet for roll number ${sheet.rollNo} replaced. Any earlier evaluation was cleared.`,
-      data: { sheetId: sheet.sheetId, rollNo: sheet.rollNo, fileName: file.originalname },
+      data: {
+        sheetId: sheet.sheetId,
+        rollNo: sheet.rollNo,
+        fileName: file.originalname,
+        quality: qualitySummary(report),
+        qualityPending: qualityRule.enabled && !report,
+      },
     };
   } catch (e: any) {
     logger.error(`[AnswerSheets] Replace ${sheetId} failed: ${e?.message || e}`);
@@ -521,6 +591,8 @@ export const deleteSheet = async (sheetId: string, requestedBy: any): Promise<an
 
     // Committed — the asset can no longer be reached through the app.
     await destroyAnswerSheet(asset.publicId, asset.resourceType, `deleted sheet ${sheetId}`);
+    // A sheet behind the confirmed marks (and maybe a cross-check item) is gone.
+    await sheetsChangedAfterReview(sheet.examId).catch((e) => logger.error(`[AnswerSheets] Delete ${sheetId}: could not reopen the review: ${e?.message || e}`));
 
     return {
       error: false,

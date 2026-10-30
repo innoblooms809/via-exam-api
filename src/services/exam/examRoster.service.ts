@@ -4,8 +4,8 @@
  * evaluated" check and result publishing all read from here, so the three
  * always agree on who counts.
  *
- * Who sits an exam: active students of the exam's class (and section, when
- * the exam has one) in the exam's session.
+ * Who sits an exam: students enrolled in the exam's class (and section, when
+ * the exam has one) in the exam's session (services/student/enrollment.service).
  * Which sheets belong to it: rows tagged with the exam id, plus older rows that
  * were stored without one but match the exam's class / section / subject /
  * exam type and were uploaded after the exam was created.
@@ -18,16 +18,17 @@ import Section from "../../models/Section.model";
 import Subject from "../../models/Subject.model";
 import Session from "../../models/Session.model";
 import UserModal from "../../models/User.model";
-import StudentProfile from "../../models/Student.model";
 import Scanner from "../../models/Scanner.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import ExamAttendance, { ATTENDANCE_STATUS } from "../../models/ExamAttendance.model";
+import { scanQualityView, type QualitySummary } from "../answer-sheet/sheetQuality.service";
+import { studentsIn } from "../student/enrollment.service";
 
 export const EXAM_INCLUDES = [
   { model: Class, as: "class", attributes: ["classId", "className"], required: false },
   { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
   { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: false },
-  { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
+  { model: Session, as: "session", attributes: ["sessionId", "sessionName", "isActive"], required: false },
   { model: UserModal, as: "teacher", attributes: ["userId", "userName"], required: false },
 ];
 
@@ -44,6 +45,8 @@ export interface RosterRow {
   evaluationId: string | null;
   evaluationStatus: string | null; // Success | Pending | Failed | null
   score: number | null;
+  /** Scan quality of the sheet (ok / warn / low / unchecked), why, and each page's numbers; null until checked. */
+  quality: QualitySummary | null;
   absentMarkedBy: string | null;
   absentMarkedAt: Date | null;
 }
@@ -60,6 +63,8 @@ export interface RosterCounts {
   evaluationFailed: number;
   /** evaluated / uploaded, 100 when nothing was uploaded. */
   evaluationPercent: number;
+  /** Sheets flagged as a poor scan (warn or low). */
+  poorScans: number;
 }
 
 export interface Roster {
@@ -96,33 +101,44 @@ export const sheetWhereForExam = (exam: any) => {
   };
 };
 
-/** Active students who should sit this exam. */
+/**
+ * Students who sit this exam: those in its class (and section) in its own session, with
+ * the roll number they have in that session. Promotion adds next year's enrolment and
+ * leaves this one alone, so an exam's roster never changes after the year ends.
+ */
 export const studentsForExam = async (exam: any) => {
-  if (!exam.classId) return [];
-  const className = exam.class?.className;
-  const where: any = {
-    instituteId: exam.instituteId,
-    isActive: true,
-    [Op.or]: [{ classId: exam.classId }, ...(className ? [{ className }] : [])],
-  };
-  const sectionKeys = [exam.sectionId, exam.section?.sectionName].filter(Boolean);
-  if (sectionKeys.length) where.sectionId = { [Op.in]: sectionKeys };
-  if (exam.session?.sessionName) where.session = exam.session.sessionName;
+  if (!exam.classId || !exam.sessionId) return [];
+  const students = await studentsIn({ instituteId: exam.instituteId, sessionId: exam.sessionId, classId: exam.classId, section: exam.sectionId || null });
+  return students.map((s) => ({ studentId: s.studentId, name: s.name, rollNo: s.rollNo }));
+};
 
-  const profiles: any[] = await StudentProfile.findAll({
-    where,
-    attributes: ["userId", "rollNumber"],
-    include: [
-      {
-        model: UserModal,
-        as: "user",
-        attributes: ["userId", "userName"],
-        where: { status: 1, isDeleted: false },
-        required: true,
-      },
-    ],
-  });
-  return profiles.map((p) => ({ studentId: p.userId as string, name: p.user?.userName ?? "", rollNo: clean(p.rollNumber) }));
+/** Roll numbers of the students who sit this exam (uploads for anyone else are refused). */
+export const rosterRolls = async (instituteId: string, examId: string): Promise<Set<string> | null> => {
+  const exam = await loadExam(instituteId, examId);
+  if (!exam) return null;
+  return new Set((await studentsForExam(exam)).map((s) => s.rollNo).filter(Boolean));
+};
+
+/**
+ * Each roll number on an exam's roster and its student's section, by name as sheets carry
+ * it: a sheet of a whole-class exam takes its student's own section. A roll number found in
+ * two sections maps to "" (whose it is can't be told from the roll alone).
+ */
+export const rosterSectionsByRoll = async (instituteId: string, examId: string): Promise<Map<string, string>> => {
+  const exam = await loadExam(instituteId, examId);
+  if (!exam?.classId || !exam.sessionId) return new Map();
+  const students = await studentsIn({ instituteId: exam.instituteId, sessionId: exam.sessionId, classId: exam.classId, section: exam.sectionId || null });
+  const ids = [...new Set(students.map((s) => s.sectionId).filter(Boolean))] as string[];
+  const nameOf = new Map(
+    ids.length ? (await Section.findAll({ where: { sectionId: { [Op.in]: ids } }, attributes: ["sectionId", "sectionName"] })).map((s) => [s.sectionId, s.sectionName]) : []
+  );
+  const byRoll = new Map<string, string>();
+  for (const s of students) {
+    if (!s.rollNo) continue;
+    const name = (s.sectionId && nameOf.get(s.sectionId)) || "";
+    byRoll.set(s.rollNo, byRoll.has(s.rollNo) && byRoll.get(s.rollNo) !== name ? "" : name);
+  }
+  return byRoll;
 };
 
 export const buildRoster = async (exam: any): Promise<Roster> => {
@@ -130,7 +146,7 @@ export const buildRoster = async (exam: any): Promise<Roster> => {
     studentsForExam(exam),
     Scanner.findAll({
       where: sheetWhereForExam(exam),
-      attributes: ["sheetId", "rollNo", "studentName", "fileName", "createdAt"],
+      attributes: ["sheetId", "rollNo", "studentName", "fileName", "createdAt", "qualityFlag", "qualityReport"],
       order: [["createdAt", "DESC"]],
     }),
     ExamAttendance.findAll({ where: { examId: exam.examId, status: ATTENDANCE_STATUS.ABSENT } }),
@@ -165,6 +181,7 @@ export const buildRoster = async (exam: any): Promise<Roster> => {
       evaluationId: ev?.evaluationId ?? null,
       evaluationStatus: ev?.status ?? null,
       score: ev?.status === "Success" && ev.totalScore != null ? Number(ev.totalScore) : null,
+      quality: scanQualityView(sheet),
       absentMarkedBy: absent?.markedBy ?? null,
       absentMarkedAt: absent?.updatedAt ?? null,
     };
@@ -190,6 +207,7 @@ export const buildRoster = async (exam: any): Promise<Roster> => {
     evaluated,
     evaluationFailed: rows.filter((r) => r.evaluationStatus === "Failed").length,
     evaluationPercent: pct(evaluated, uploaded),
+    poorScans: rows.filter((r) => r.quality?.flag === "warn" || r.quality?.flag === "low").length,
   };
   return { rows, counts };
 };

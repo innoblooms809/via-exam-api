@@ -1,12 +1,16 @@
 // Who may see which student answer sheets, and whether names are masked.
 //
-//   Admin / super admin / scanner / examiner  → everything, real names, may evaluate
-//   Teacher who teaches the subject of that class (Subject.teacherId)  → view only, real names
-//   Teacher assigned by the admin to evaluate the exam  → names masked ("R**** S*****", roll "1**"), may evaluate
+//   Admin / super admin  → every sheet and its AI marks, real names, view only (never evaluates)
+//   Scanner  → the scans they handle, view only
+//   Teacher who teaches the subject of that class (Subject.teacherId)  → view only, real names,
+//     except the exams they evaluate and the sheets they recheck or cross-check (those stay masked)
+//   Teacher assigned by the admin to evaluate the exam  → names masked ("R**** S*****", roll "1**"), may evaluate,
+//     even when they also teach the subject: marking is always blind
+//   Teacher cross-checking a paper (open round)  → names masked, view only (the verdict changes marks)
 //   Any other teacher (e.g. only set the question paper)  → no access
 //
-// Running AI evaluation or changing marks is allowed only for the assigned evaluator
-// (and admins): an exam nobody is assigned to cannot be evaluated by a teacher.
+// Running AI evaluation or changing marks is allowed only for the assigned evaluator: an exam
+// nobody is assigned to cannot be evaluated, and the admin views sheets and marks, never edits.
 //
 // Masking is applied here, on the server, so a masked teacher's browser never
 // receives the real name or roll number.
@@ -21,12 +25,17 @@ import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import RecheckAssignment from "../../models/RecheckAssignment.model";
 import RecheckRequest from "../../models/RecheckRequest.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
+import { CrossCheckItem, CrossCheckRound } from "../../models/CrossCheck.model";
 import ApiError from "../../utils/ApiError";
 
 export type SheetAccess = "full" | "masked" | "none";
 
 export const isTeacherRequester = (user: any): boolean =>
   String(user?.role?.role ?? user?.role ?? "").toUpperCase().includes("TEACH");
+
+/** Scanners see names and personal details masked like the teacher panel, but keep roll numbers (they match physical sheets by roll). */
+export const isScannerRequester = (user: any): boolean =>
+  String(user?.role?.role ?? user?.role ?? "").toUpperCase().includes("SCAN");
 
 export const isAdminRequester = (user: any): boolean => {
   const role = String(user?.role?.role ?? user?.role ?? "").toUpperCase().replace(/[\s_-]+/g, "");
@@ -103,34 +112,83 @@ export interface TeacherScope {
   ownClassKeys: Set<string>;
   /** Exams this teacher was assigned to evaluate → masked data. */
   assignedExams: AssignedExamScope[];
-  /** Sheets of open recheck requests the admin gave this teacher → masked data. */
+  /** Sheets of open recheck requests the admin gave this teacher → masked data, evaluate. */
   recheckSheetIds: Set<string>;
+  /**
+   * Sheets of every recheck still with this teacher: open, or their decision awaiting the
+   * admin's approval → masked data, view only once the decision is sent.
+   */
+  recheckViewSheetIds: Set<string>;
+  /** Sheets in this teacher's open cross-check rounds → masked data, view only. */
+  crossCheckSheetIds: Set<string>;
+  /**
+   * Every sheet this teacher rechecks or cross-checks (open or done): always masked, even
+   * when they teach the subject, so a re-evaluation or second check stays blind.
+   */
+  blindSheetIds: Set<string>;
 }
 
-/** Sheet ids behind the recheck requests assigned to this teacher and not yet completed. */
-async function openRecheckSheetIds(instituteId: string, teacherId: string): Promise<Set<string>> {
-  const open = await RecheckAssignment.findAll({
-    where: { instituteId, teacherId, completedAt: null },
-    attributes: ["requestId"],
+/**
+ * Sheet ids behind the recheck requests assigned to this teacher that are still with them:
+ * `open` while they re-evaluate (assignment not completed), `withTeacher` also while their
+ * decision awaits the admin's approval (the same window recheckFor shows the recheck in).
+ */
+async function recheckSheetIdsOf(instituteId: string, teacherId: string): Promise<{ open: Set<string>; withTeacher: Set<string> }> {
+  const ids = { open: new Set<string>(), withTeacher: new Set<string>() };
+  const assignments = await RecheckAssignment.findAll({
+    where: { instituteId, teacherId },
+    attributes: ["requestId", "completedAt"],
   });
-  if (!open.length) return new Set();
+  if (!assignments.length) return ids;
   const requests = await RecheckRequest.findAll({
-    where: { requestId: { [Op.in]: open.map((a) => a.requestId) } },
-    attributes: ["evaluationId"],
+    where: { requestId: { [Op.in]: assignments.map((a) => a.requestId) }, status: { [Op.in]: ["Under Review", "Awaiting Approval"] } },
+    attributes: ["requestId", "evaluationId"],
   });
-  if (!requests.length) return new Set();
+  if (!requests.length) return ids;
   const evaluations = await AIEvaluation.findAll({
     where: { evaluationId: { [Op.in]: requests.map((r) => r.evaluationId) } },
-    attributes: ["sheetId"],
+    attributes: ["evaluationId", "sheetId"],
   });
-  return new Set(evaluations.map((e) => String(e.sheetId)));
+  const sheetOf = new Map(evaluations.map((e) => [String(e.evaluationId), String(e.sheetId)]));
+  const openRequests = new Set(assignments.filter((a) => !a.completedAt).map((a) => a.requestId));
+  for (const r of requests) {
+    const sheetId = sheetOf.get(String(r.evaluationId));
+    if (!sheetId) continue;
+    ids.withTeacher.add(sheetId);
+    if (openRequests.has(r.requestId)) ids.open.add(sheetId);
+  }
+  return ids;
+}
+
+/** Every sheet of a recheck given to this teacher or a cross-check round they hold, open or done. */
+async function blindSheetIdsOf(instituteId: string, teacherId: string): Promise<Set<string>> {
+  const [assignments, rounds] = await Promise.all([
+    RecheckAssignment.findAll({ where: { instituteId, teacherId }, attributes: ["requestId"] }),
+    CrossCheckRound.findAll({ where: { instituteId, checkerId: teacherId }, attributes: ["roundId"] }),
+  ]);
+  const [requests, items] = await Promise.all([
+    assignments.length ? RecheckRequest.findAll({ where: { requestId: { [Op.in]: assignments.map((a) => a.requestId) } }, attributes: ["evaluationId"] }) : [],
+    rounds.length ? CrossCheckItem.findAll({ where: { roundId: { [Op.in]: rounds.map((r) => r.roundId) } }, attributes: ["sheetId"] }) : [],
+  ]);
+  const evaluations = requests.length
+    ? await AIEvaluation.findAll({ where: { evaluationId: { [Op.in]: requests.map((r) => r.evaluationId) } }, attributes: ["sheetId"] })
+    : [];
+  return new Set([...evaluations.map((e) => String(e.sheetId)), ...items.map((i) => String(i.sheetId))]);
+}
+
+/** Sheets in the open cross-check rounds this teacher checks. */
+async function openCrossCheckSheetIds(instituteId: string, teacherId: string): Promise<Set<string>> {
+  const rounds = await CrossCheckRound.findAll({ where: { instituteId, checkerId: teacherId, isActive: true, status: "open" }, attributes: ["roundId"] });
+  if (!rounds.length) return new Set();
+  const items = await CrossCheckItem.findAll({ where: { roundId: { [Op.in]: rounds.map((r) => r.roundId) } }, attributes: ["sheetId"] });
+  return new Set(items.map((i) => String(i.sheetId)));
 }
 
 export async function getTeacherScope(user: any): Promise<TeacherScope> {
   const userId = String(user?.userId ?? "");
   const instituteId = String(user?.instituteId ?? "");
 
-  const [subjects, assignments, recheckSheetIds] = await Promise.all([
+  const [subjects, assignments, rechecks, crossCheckSheetIds, blindSheetIds] = await Promise.all([
     Subject.findAll({
       where: { instituteId, teacherId: userId, isDeleted: false },
       attributes: ["subjectId", "classId"],
@@ -140,7 +198,9 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
       where: { instituteId, teacherId: userId, isActive: true },
       attributes: ["examId"],
     }),
-    openRecheckSheetIds(instituteId, userId),
+    recheckSheetIdsOf(instituteId, userId),
+    openCrossCheckSheetIds(instituteId, userId),
+    blindSheetIdsOf(instituteId, userId),
   ]);
 
   const exams = assignments.length
@@ -162,7 +222,10 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
     instituteId,
     ownSubjectIds: new Set(subjects.map((s: any) => String(s.subjectId))),
     ownClassKeys,
-    recheckSheetIds,
+    recheckSheetIds: rechecks.open,
+    recheckViewSheetIds: rechecks.withTeacher,
+    crossCheckSheetIds,
+    blindSheetIds,
     assignedExams: exams.map((e: any) => ({
       examId: String(e.examId),
       subjectId: String(e.subjectId),
@@ -177,40 +240,49 @@ type SheetLike = { subjectId?: unknown; classId?: unknown; examType?: unknown; e
 const isRecheckSheet = (scope: TeacherScope, sheet: SheetLike) =>
   Boolean(sheet.sheetId) && scope.recheckSheetIds.has(String(sheet.sheetId));
 
-export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAccess {
-  if (scope.ownSubjectIds.has(String(sheet.subjectId ?? ""))) return "full";
-  const assigned = scope.assignedExams.some(
+const isAssignedExam = (scope: TeacherScope, sheet: SheetLike) =>
+  scope.assignedExams.some(
     (a) =>
       (sheet.examId && a.examId === String(sheet.examId)) ||
       (a.subjectId === String(sheet.subjectId ?? "") &&
         a.examType === String(sheet.examType ?? "") &&
         a.classKeys.has(String(sheet.classId ?? "")))
   );
-  return assigned || isRecheckSheet(scope, sheet) ? "masked" : "none";
+
+export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAccess {
+  const assigned = isAssignedExam(scope, sheet);
+  // A sheet this teacher evaluates, rechecks or cross-checks is never shown with its owner's name or
+  // roll, even when they teach the subject: marking stays blind.
+  const blind = Boolean(sheet.sheetId) && scope.blindSheetIds.has(String(sheet.sheetId));
+  if (scope.ownSubjectIds.has(String(sheet.subjectId ?? ""))) return assigned || blind ? "masked" : "full";
+  const crossChecking = Boolean(sheet.sheetId) && scope.crossCheckSheetIds.has(String(sheet.sheetId));
+  // A recheck stays viewable after the teacher sends their decision, until the admin settles it.
+  const rechecking = Boolean(sheet.sheetId) && scope.recheckViewSheetIds.has(String(sheet.sheetId));
+  return assigned || rechecking || crossChecking ? "masked" : "none";
 }
 
-/** Is this teacher the admin-assigned evaluator of the sheet's exam? */
+/**
+ * Is this teacher the admin-assigned evaluator of the sheet's exam? The teacher rechecking or
+ * cross-checking the sheet also evaluates it, into their own draft (recheckDraft /
+ * crossCheckDraft services).
+ */
 export function isAssignedEvaluator(scope: TeacherScope, sheet: SheetLike): boolean {
   if (isRecheckSheet(scope, sheet)) return true;
-  return scope.assignedExams.some(
-    (a) =>
-      (sheet.examId && a.examId === String(sheet.examId)) ||
-      (a.subjectId === String(sheet.subjectId ?? "") &&
-        a.examType === String(sheet.examType ?? "") &&
-        a.classKeys.has(String(sheet.classId ?? "")))
-  );
+  if (sheet.sheetId && scope.crossCheckSheetIds.has(String(sheet.sheetId))) return true;
+  return isAssignedExam(scope, sheet);
 }
 
 export function accessForExam(scope: TeacherScope, exam: { examId: string; subjectId: string }): SheetAccess {
-  if (scope.ownSubjectIds.has(String(exam.subjectId))) return "full";
-  return scope.assignedExams.some((a) => a.examId === exam.examId) ? "masked" : "none";
+  // The evaluator marks blind, even of a subject they teach.
+  if (scope.assignedExams.some((a) => a.examId === exam.examId)) return "masked";
+  return scope.ownSubjectIds.has(String(exam.subjectId)) ? "full" : "none";
 }
 
 /** Masks the identity fields of one sheet row (plain object). */
-export function maskSheetRow<T extends Record<string, any>>(row: T): T {
+export function maskSheetRow<T extends Record<string, any>>(row: T, options: { keepRoll?: boolean } = {}): T {
   return {
     ...row,
-    rollNo: maskRoll(row.rollNo),
+    rollNo: options.keepRoll ? row.rollNo : maskRoll(row.rollNo),
     studentName: row.studentName ? maskName(row.studentName) : row.studentName,
     // Uploaded file names often carry the roll number or name.
     fileName: row.fileName ? `answer-sheet${fileExtension(row.fileName)}` : row.fileName,
@@ -220,6 +292,7 @@ export function maskSheetRow<T extends Record<string, any>>(row: T): T {
 
 /** Filters a sheet list to what the requester may see, masking where needed. */
 export async function scopeSheetRows<T extends Record<string, any>>(user: any, rows: T[]): Promise<T[]> {
+  if (isScannerRequester(user)) return rows.map((row) => maskSheetRow(row, { keepRoll: true }));
   if (!isTeacherRequester(user)) return rows;
   const scope = await getTeacherScope(user);
   return rows.flatMap((row) => {
@@ -244,9 +317,14 @@ export async function requireSheetAccess(
     throw new ApiError(httpStatus.FORBIDDEN, "Access denied.");
   }
   if (!isTeacherRequester(user)) {
-    if (isAdminRequester(user)) return { access: "full", sheet, canEvaluate: true };
-    // Scanners may open the scans they handle; nobody but an admin or the
-    // assigned evaluator may evaluate or change marks (students least of all).
+    // The admin sees every sheet and its AI marks; running AI evaluation and changing marks
+    // are the assigned evaluator's work.
+    if (isAdminRequester(user)) {
+      if (options.evaluate) throw new ApiError(httpStatus.FORBIDDEN, "Only the evaluator assigned to this exam runs AI evaluation or changes marks. You can view the sheet and its marks.");
+      return { access: "full", sheet, canEvaluate: false };
+    }
+    // Scanners may open the scans they handle; nobody but the assigned evaluator may
+    // evaluate or change marks (students least of all).
     const role = String(user?.role?.role ?? user?.role ?? "").toUpperCase();
     if (role !== "SCANNER" || options.evaluate) {
       throw new ApiError(httpStatus.FORBIDDEN, "You do not have access to evaluate this answer sheet.");
@@ -314,6 +392,12 @@ export function maskEvaluationIdentity(data: any, sheet: any): any {
   return masked;
 }
 
+/** Hides who wrote the sheet in each question's answer text (read from the OCR, which can carry the name). */
+export function maskAnswerTexts<T>(evaluations: T, words: unknown[]): T {
+  if (!Array.isArray(evaluations)) return evaluations;
+  return evaluations.map((q: any) => (q && typeof q.studentAnswer === "string" ? { ...q, studentAnswer: maskInText(q.studentAnswer, words) } : q)) as T;
+}
+
 /** Filters / masks a list of AI evaluation records for the requester (by the sheet each belongs to). */
 export async function scopeEvaluationRows(user: any, rows: any[]): Promise<any[]> {
   const sheetIds = Array.from(new Set(rows.map((r) => String(r?.sheetId ?? "")).filter(Boolean)));
@@ -337,13 +421,13 @@ export async function scopeEvaluationRows(user: any, rows: any[]): Promise<any[]
   });
 }
 
-/** A student list entry with every identifying field hidden. */
-export function maskStudentRecord(s: any) {
+/** A student list entry with every identifying field hidden (roll number too, unless keepRoll). */
+export function maskStudentRecord(s: any, options: { keepRoll?: boolean } = {}) {
   return {
     ...s,
     userId: maskId(s.userId),
     userName: maskName(s.userName),
-    rollNumber: s.rollNumber ? maskRoll(s.rollNumber) : s.rollNumber,
+    rollNumber: options.keepRoll || !s.rollNumber ? s.rollNumber : maskRoll(s.rollNumber),
     emailId: s.emailId ? "****" : s.emailId,
     phoneNumber: s.phoneNumber ? "****" : s.phoneNumber,
     fatherName: s.fatherName ? maskName(s.fatherName) : s.fatherName,

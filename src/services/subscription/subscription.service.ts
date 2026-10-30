@@ -580,7 +580,8 @@ const getInstituteSubscription = async (instituteId: string): Promise<any> => {
 
 /**
  * Super admin changes an institute's subscription by hand: switch plan, grant or
- * extend access, record an offline payment, suspend or reactivate.
+ * extend access, record an offline payment, cancel or reactivate. (This is the
+ * subscription only; suspending the institute itself is institute.service.)
  */
 const updateInstituteSubscription = async (instituteId: string, body: any, requestedBy: any): Promise<any> => {
   try {
@@ -660,7 +661,7 @@ const updateInstituteSubscription = async (instituteId: string, body: any, reque
     const statusText: Record<SubscriptionStatus, string> = {
       active: `active until ${formatDate(periodEnd)}`,
       trialing: `on a free trial until ${formatDate(periodEnd)}`,
-      cancelled: "suspended",
+      cancelled: "cancelled",
       expired: "marked as expired",
     };
     await SubscriptionNotifier.notifyInstituteAdmins(instituteId, {

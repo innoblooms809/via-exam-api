@@ -8,6 +8,9 @@ import Institute from "../../models/Institute.model";
 import Class from "../../models/Class.model";
 import Section from "../../models/Section.model";
 import Session from "../../models/Session.model";
+import StudentEnrollment from "../../models/StudentEnrollment.model";
+import { placeStudent, syncStudentProfiles } from "./enrollment.service";
+import { sessionKey } from "../academic/sessionSetup.service";
 
 import EncryptPassword from "../../utils/encryption";
 import RegHelper from "../../utils/helper";
@@ -80,13 +83,9 @@ const classKeys = (className: string): string[] => {
   return [...keys].filter(Boolean);
 };
 
-const rollKeyOf = (
-  rollNumber: string,
-  className: string,
-  sectionId: string,
-  session: string,
-): string =>
-  `${norm(rollNumber)}::${norm(className)}::${norm(sectionId)}::${norm(session)}`;
+/** A roll number is used once per section per session. */
+const rollKeyOf = (rollNumber: string, sectionId: string, sessionId: string): string =>
+  `${norm(rollNumber)}::${norm(sectionId)}::${norm(sessionId)}`;
 
 const buildError = (
   rowNumber: number,
@@ -257,6 +256,7 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
     const sessionByName = new Map<string, any>();
     for (const s of sessionRows) {
       sessionByName.set(norm(s.sessionName), s);
+      sessionByName.set(sessionKey(s.sessionName), s);
       sessionByName.set(norm(s.sessionId), s);
     }
 
@@ -280,20 +280,16 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
           })
         : Promise.resolve([] as any[]),
       candidateRolls.length
-        ? StudentProfile.findAll({
-            where: { instituteId, rollNumber: { [Op.in]: candidateRolls } },
-            attributes: ["rollNumber", "className", "sectionId", "session"],
+        ? StudentEnrollment.findAll({
+            where: { instituteId, rollNumber: { [Op.in]: candidateRolls }, isActive: true },
+            attributes: ["rollNumber", "sectionId", "sessionId"],
           })
         : Promise.resolve([] as any[]),
     ]);
 
     const dbEmails = new Set(existingUsers.map((u: any) => norm(u.emailId)));
     const dbMobiles = new Set(existingUsers.map((u: any) => asString(u.phoneNumber)));
-    const dbRollKeys = new Set(
-      existingProfiles.map((p: any) =>
-        rollKeyOf(p.rollNumber, p.className, p.sectionId, p.session),
-      ),
-    );
+    const dbRollKeys = new Set(existingProfiles.map((p: any) => rollKeyOf(p.rollNumber, p.sectionId, p.sessionId)));
 
     // 5 ── Walk the rows ──────────────────────────────────────────────────────
     const errors: BulkRowError[] = [];
@@ -385,7 +381,7 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
         continue;
       }
 
-      const sessionRecord = sessionByName.get(norm(row.session));
+      const sessionRecord = sessionByName.get(norm(row.session)) ?? sessionByName.get(sessionKey(row.session));
       if (!sessionRecord) {
         errors.push(
           buildError(
@@ -407,7 +403,7 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
 
       const emailKey = norm(row.email);
       const mobileKey = asString(row.mobile);
-      const rollKey = rollKeyOf(row.rollNumber, className, sectionId, sessionName);
+      const rollKey = rollKeyOf(row.rollNumber, sectionId, sessionRecord.sessionId);
 
       // 5c ── Duplicates inside the uploaded file ─────────────────────────────
       if (seenEmails.has(emailKey)) {
@@ -529,6 +525,23 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
           },
           { transaction: t },
         );
+        await placeStudent(
+          {
+            instituteId,
+            studentId: newUser.userId,
+            place: {
+              classId: classRecord.classId,
+              className,
+              sectionId,
+              sectionName: sectionRecord.sectionName,
+              sessionId: sessionRecord.sessionId,
+              sessionName,
+            },
+            rollNumber: row.rollNumber,
+          },
+          t,
+        );
+        await syncStudentProfiles(instituteId, [newUser.userId], t);
 
         await t.commit();
         nextUserId++; // only consume the id once the row is safely committed

@@ -62,4 +62,18 @@ router.get(
   Controller.getRecentActivity
 );
 
+router.get(
+  "/set-questions",
+  authenticate,
+  authorize(["TEACHER"]),
+  Controller.getSetQuestions
+);
+
+router.get(
+  "/set-answer-sheets",
+  authenticate,
+  authorize(["TEACHER"]),
+  Controller.getSetAnswerSheets
+);
+
 export default router;

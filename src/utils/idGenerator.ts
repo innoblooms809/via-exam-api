@@ -31,11 +31,16 @@ export const ID_KINDS = {
   evaluation: "EVL",
   assignment: "ASN",
   scannerAssignment: "SCA",
+  scanReopen: "SRO",
   attendance: "ATT",
   result: "RES",
   recheck: "RCK",
   notification: "NTF",
   event: "EVT",
+  enrollment: "ENR",
+  paperComment: "PCM",
+  crossCheckRound: "XCR",
+  crossCheckItem: "XCI",
 } as const;
 
 export type IdKind = keyof typeof ID_KINDS;

@@ -10,7 +10,7 @@ import Session from "../../models/Session.model"
 import Institute from "../../models/Institute.model"
 
 
-  export const getExamBySelection = async (
+export const getExamBySelection = async (
   req: any,
   res: Response
 ): Promise<any> => {
@@ -129,7 +129,8 @@ import Institute from "../../models/Institute.model"
 
         examType,
 
-      
+        // A class can have one exam per section; the exam id picks the exact one.
+        ...(req.body.examId ? { examId: String(req.body.examId) } : {}),
 
         instituteId,
 
@@ -158,7 +159,7 @@ import Institute from "../../models/Institute.model"
     // ─────────────────────────────────────────────
     // Fetch Institute Details for auto-fill
     // ─────────────────────────────────────────────
-    
+
     const institute = await Institute.findOne({
       where: {
         instituteId: exam.instituteId,

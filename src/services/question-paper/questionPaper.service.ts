@@ -13,6 +13,11 @@ import { cleanupUploadsInBackground, collectUploadRefs } from "../answer-sheet/u
 import { countUnlinkedAnswers, reconcileTypedAnswers } from "../../utils/answerSheetReconcile";
 import logger from "../../config/logger";
 import { newId } from "../../utils/idGenerator";
+import { examUsage } from "../academic/academicGuards.service";
+import { EXAM_INCLUDES } from "../exam/examRoster.service";
+import { examLabel, instituteAdminIds, notifyAll, preview } from "../notification/notifyPeople";
+import { recordPaperEvent } from "./paperDiscussion.service";
+import { PAPER_EVENT } from "../../models/PaperComment.model";
 
 /** What happened to the set's typed answers when its paper changed. */
 export interface AnswerSheetLinkSummary {
@@ -28,6 +33,8 @@ interface CreateQuestionPaperDTO {
   teacherId?: string;
   paperSet: "A" | "B" | "C" | "D";
   content: object;
+  /** The signed-in user creating the paper (decides who owns it). */
+  user?: any;
 }
 
 type PaperSet = "A" | "B" | "C" | "D";
@@ -64,6 +71,59 @@ export const normalizePaperSet = (value: unknown): PaperSet | null => {
   return letter && PAPER_SETS.includes(letter) ? letter : null;
 };
 
+// ─── Marks ────────────────────────────────────────────────────────────────────
+// A paper is out of its exam's maximum marks, which the school sets (Master Data → Marks
+// & grading): the server writes them into the paper, so a teacher can't change them, and a
+// set is only sent for approval when its questions add up to exactly that.
+
+const isObj = (v: unknown): v is Record<string, any> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
+
+const asContent = (content: unknown): Record<string, any> | null => {
+  let data = content;
+  for (let i = 0; i < 2 && typeof data === "string"; i++) {
+    try {
+      data = JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+  return isObj(data) ? data : null;
+};
+
+/** A question's marks as the paper builder counts them: sub-parts add up; "attempt any N" counts the best N. */
+const partMarks = (part: Record<string, any>): number => {
+  const parts: Record<string, any>[] = Array.isArray(part.parts) ? part.parts.filter(isObj) : [];
+  if (!parts.length) return Number(part.marks ?? part.maxMarks) || 0;
+  const values = parts.map(partMarks).sort((a, b) => b - a);
+  const n = Number(part.attemptAny) > 0 ? Math.min(Number(part.attemptAny), values.length) : values.length;
+  return values.slice(0, n).reduce((s, v) => s + v, 0);
+};
+
+/** What a paper's questions add up to (each question once; an OR alternative doesn't add), or null for an uploaded file. */
+export const paperTotal = (content: unknown): number | null => {
+  const c = asContent(content);
+  if (!c) return null;
+  const seen = new Set<unknown>();
+  const questions: Record<string, any>[] = [];
+  const add = (q: unknown) => {
+    if (!isObj(q)) return;
+    const key = q.id ?? q.questionId ?? q;
+    if (seen.has(key)) return;
+    seen.add(key);
+    questions.push(q);
+  };
+  (Array.isArray(c.questions) ? c.questions : []).forEach(add);
+  (Array.isArray(c.sections) ? c.sections : []).forEach((s: any) => (Array.isArray(s?.questions) ? s.questions : []).forEach(add));
+  if (!questions.length) return null;
+  return Math.round(questions.reduce((sum, q) => sum + partMarks(q), 0) * 100) / 100;
+};
+
+/** The paper with the exam's maximum marks written in (whatever was typed there). */
+const withExamMarks = (content: unknown, maxMarks: number) => {
+  const c = asContent(content);
+  return c ? { ...c, meta: { ...(isObj(c.meta) ? c.meta : {}), maxMarks: String(maxMarks) } } : content;
+};
+
 export class QuestionPaperService {
   // ─────────────────────────────────────────────
   // CREATE QUESTION PAPER
@@ -80,16 +140,30 @@ export class QuestionPaperService {
       content,
     } = data;
 
-    if (!teacherId) {
-      throw new Error("teacherId is required");
-    }
-
+    const { user } = data;
     const exam = await Exam.findOne({
-      where: { examId },
+      where: { examId, isDeleted: false, ...(instituteId ? { instituteId } : {}) },
     });
 
     if (!exam) {
-      throw new Error("Exam not found");
+      throw new ApiError(httpStatus.NOT_FOUND, "Exam not found");
+    }
+
+    // Only the exam's assigned teacher sets its paper (an admin may set it on their behalf).
+    if (isTeacherUser(user) && exam.teacherId !== user.userId) {
+      throw new ApiError(httpStatus.FORBIDDEN, "Only the teacher assigned to this exam can set its question paper.");
+    }
+    // An admin writes on the assigned teacher's behalf: the paper stays the teacher's, so they
+    // can still edit and submit it. (The UI sends the signed-in user as teacherId.)
+    const ownerId = isTeacherUser(user) ? user.userId : exam.teacherId || teacherId;
+    if (!ownerId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "teacherId is required");
+    }
+
+    // Once students have written the exam, its papers are fixed.
+    const usage = await examUsage(examId);
+    if (usage.sheets || usage.results) {
+      throw new ApiError(httpStatus.CONFLICT, "Answer sheets are already uploaded for this exam, so no new paper set can be added.");
     }
 
     const resolvedInstituteId =
@@ -112,9 +186,10 @@ export class QuestionPaperService {
       paperId: resolvedPaperId,
       instituteId: resolvedInstituteId,
       examId,
-      teacherId,
+      teacherId: ownerId,
       paperSet,
-      content,
+      // Out of the exam's maximum marks, as the school set them.
+      content: withExamMarks(content, exam.totalMarks) as object,
       status: "DRAFT",
     });
 
@@ -226,7 +301,9 @@ export class QuestionPaperService {
       if (!data.content || typeof data.content !== "object" || Array.isArray(data.content)) {
         throw new ApiError(httpStatus.BAD_REQUEST, "content must be an object");
       }
-      updates.content = data.content as object;
+      // The maximum marks stay the exam's, whatever the editor sent.
+      const exam = await Exam.findOne({ where: { examId: paper.examId }, attributes: ["totalMarks"] });
+      updates.content = (exam ? withExamMarks(data.content, exam.totalMarks) : data.content) as object;
     }
 
     if (data.paperSet !== undefined) {
@@ -415,11 +492,36 @@ export class QuestionPaperService {
       );
     }
 
+    // The questions must add up to the exam's maximum marks (set by the school).
+    const exam: any = await Exam.findOne({ where: { examId }, include: EXAM_INCLUDES });
+    const total = paperTotal(paper.content);
+    if (exam && total !== null && Math.abs(total - exam.totalMarks) > 0.001) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Set ${paperSet}'s questions add up to ${total} marks, but this paper is out of ${exam.totalMarks} (set by the school). ` +
+          `Make them add up to ${exam.totalMarks} before sending it for approval.`
+      );
+    }
+
     const now = new Date();
     await sequelize.transaction(async (transaction) => {
       await paper.update({ status: "PENDING_APPROVAL", submittedAt: now }, { transaction });
       await answer.update({ status: "PENDING_APPROVAL", submittedAt: now, examId }, { transaction });
+      await recordPaperEvent({ instituteId: paper.instituteId, examId, paperSet, kind: PAPER_EVENT.SUBMITTED, author: user }, transaction);
     });
+
+    // The admins hear that a paper waits for them.
+    const admins = (await instituteAdminIds(paper.instituteId)).filter((id) => id !== user?.userId);
+    await notifyAll(
+      admins.map((userId) => ({
+        instituteId: paper.instituteId,
+        userId,
+        type: "PAPER_SUBMITTED",
+        title: "Paper waiting for approval",
+        message: `${user?.userName || "The paper setter"} sent set ${paperSet} of ${exam ? examLabel(exam) : "an exam"} for approval.`,
+        referenceId: examId,
+      }))
+    ).catch(() => undefined);
 
     await refreshExamStatus(examId);
     return { paperSet, paper, answer };
@@ -444,13 +546,15 @@ export class QuestionPaperService {
       if (answer) {
         await answer.update({ status: "APPROVED", approvedAt: now, rejectionNote: null, examId }, { transaction });
       }
+      await recordPaperEvent({ instituteId: paper.instituteId, examId, paperSet, kind: PAPER_EVENT.APPROVED, author: reviewer }, transaction);
     });
 
+    const exam: any = await Exam.findOne({ where: { examId }, include: EXAM_INCLUDES });
     await QuestionPaperService.notifyTeacher(
       paper,
       "PAPER_APPROVED",
-      "Question Paper Approved",
-      `Your question paper and answer sheet for Set ${paperSet} have been approved.`
+      "Question paper approved",
+      `Set ${paperSet} of ${exam ? examLabel(exam) : "your exam"} is approved, with its model answer.`
     );
     await refreshExamStatus(examId);
     return { paperSet, paper, answer };
@@ -478,13 +582,15 @@ export class QuestionPaperService {
       if (answer) {
         await answer.update({ status: "REJECTED", rejectedAt: now, rejectionNote: note }, { transaction });
       }
+      await recordPaperEvent({ instituteId: paper.instituteId, examId, paperSet, kind: PAPER_EVENT.REJECTED, author: reviewer, body: note }, transaction);
     });
 
+    const exam: any = await Exam.findOne({ where: { examId }, include: EXAM_INCLUDES });
     await QuestionPaperService.notifyTeacher(
       paper,
       "PAPER_REJECTED",
-      "Question Paper Rejected",
-      `Set ${paperSet} was rejected. Reason: ${note}`
+      "Question paper sent back",
+      `Set ${paperSet} of ${exam ? examLabel(exam) : "your exam"} was sent back: ${preview(note, 300)}`
     );
     await refreshExamStatus(examId);
     return { paperSet, paper, answer };
@@ -627,146 +733,4 @@ export class QuestionPaperService {
 
     return QuestionPaper.findAll({ where, order: [["createdAt", "DESC"]] });
   }
-
-
-  // ─────────────────────────────────────────────
-  // GET EXAM REMARKS (CHAT HISTORY)
-  // ─────────────────────────────────────────────
-
-  static async getExamRemarks(examId: string) {
-    const QuestionPaperAnswer = (await import(
-      "../../models/question-paper/StandardAnswer.model"
-    )).default;
-
-    const paper = await QuestionPaper.findOne({ where: { examId } });
-    const answer = await QuestionPaperAnswer.findOne({
-      where: paper
-        ? { [Op.or]: [{ examId }, { paperId: paper.paperId }] }
-        : { examId },
-    });
-
-    // Pick whichever has a rejectionNote
-    const noteSource = paper?.rejectionNote
-      ? paper.rejectionNote
-      : answer?.rejectionNote || null;
-
-    let remarks: any[] = [];
-    if (noteSource) {
-      try {
-        const parsed = JSON.parse(noteSource);
-        if (Array.isArray(parsed)) {
-          remarks = parsed;
-        } else {
-          remarks = [
-            {
-              sender: "Admin Reviewer",
-              role: "ADMIN",
-              text: noteSource,
-              time: (paper as any)?.rejectedAt || (answer as any)?.rejectedAt || new Date().toISOString(),
-            },
-          ];
-        }
-      } catch {
-        remarks = [
-          {
-            sender: "Admin Reviewer",
-            role: "ADMIN",
-            text: noteSource,
-            time: (paper as any)?.rejectedAt || (answer as any)?.rejectedAt || new Date().toISOString(),
-          },
-        ];
-      }
-    }
-
-    return { remarks };
-  }
-
-  // ─────────────────────────────────────────────
-  // ADD EXAM REMARK (CHAT MESSAGE)
-  // ─────────────────────────────────────────────
-
-  static async addExamRemark(
-    examId: string,
-    remark: string,
-    senderRole: string = "ADMIN",
-    senderName: string = "Admin Reviewer"
-  ) {
-    if (!remark || !remark.trim()) {
-      throw new Error("Remark text is required.");
-    }
-
-    const QuestionPaperAnswer = (await import(
-      "../../models/question-paper/StandardAnswer.model"
-    )).default;
-
-    let paper = await QuestionPaper.findOne({ where: { examId } });
-    let answer = await QuestionPaperAnswer.findOne({
-      where: paper
-        ? { [Op.or]: [{ examId }, { paperId: paper.paperId }] }
-        : { examId },
-    });
-
-    if (!paper && !answer) {
-      // Remarks are stored on the exam's paper/answer sheet. Creating a placeholder
-      // paper here used to add a fake, rejected "Set A" to the exam.
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        "Remarks can be added once a question paper or answer sheet exists for this exam."
-      );
-    }
-
-    // Parse existing remarks from whichever source has them
-    const noteSource = paper?.rejectionNote
-      ? paper.rejectionNote
-      : answer?.rejectionNote || null;
-
-    let remarks: any[] = [];
-    if (noteSource) {
-      try {
-        const parsed = JSON.parse(noteSource);
-        if (Array.isArray(parsed)) {
-          remarks = parsed;
-        } else {
-          remarks = [
-            {
-              sender: "Admin Reviewer",
-              role: "ADMIN",
-              text: noteSource,
-              time: (paper as any)?.rejectedAt || (answer as any)?.rejectedAt || new Date().toISOString(),
-            },
-          ];
-        }
-      } catch {
-        remarks = [
-          {
-            sender: "Admin Reviewer",
-            role: "ADMIN",
-            text: noteSource,
-            time: (paper as any)?.rejectedAt || (answer as any)?.rejectedAt || new Date().toISOString(),
-          },
-        ];
-      }
-    }
-
-    // Append new remark
-    remarks.push({
-      sender: senderName,
-      role: senderRole,
-      text: remark.trim(),
-      time: new Date().toISOString(),
-    });
-
-    const serialized = JSON.stringify(remarks);
-
-    // Persist on both models if they exist
-    if (paper) {
-      await paper.update({ rejectionNote: serialized });
-    }
-    if (answer) {
-      await answer.update({ rejectionNote: serialized });
-    }
-
-    return { remarks };
-  }
 }
-

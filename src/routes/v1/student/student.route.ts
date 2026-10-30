@@ -25,5 +25,7 @@ router.get("/getAllStudents", authenticate, authorize(STAFF), Controller.getAllS
 router.get("/getStudentById/:userId", authenticate, authorize(STAFF), Controller.getStudentById);
 router.put("/updateStudent/:userId", authenticate, authorize(ADMINS), studentUpload, Controller.updateStudent);
 router.delete("/deleteStudent/:userId", authenticate, authorize(ADMINS), Controller.deleteStudent);
+// Year end: move chosen students to a class / section of the next session.
+router.post("/promote", authenticate, authorize(ADMINS), Controller.promoteStudents);
 
 export default router;

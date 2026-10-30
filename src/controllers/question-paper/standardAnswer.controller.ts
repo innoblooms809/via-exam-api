@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Op } from "sequelize";
 import QuestionPaperAnswerService from "../../services/question-paper/standardAnswer.service";
+import { QuestionPaperService } from "../../services/question-paper/questionPaper.service";
 import Session from "../../models/Session.model";
 import Class from "../../models/Class.model";
 import Subject from "../../models/Subject.model";
@@ -51,8 +52,8 @@ export const createQuestionPaperAnswer = async (
           teacherId,
           paperSet,
           answers,
-          status,
-        }
+        },
+        req.viaExamUser
       );
 
     return res.status(201).json({
@@ -61,7 +62,7 @@ export const createQuestionPaperAnswer = async (
       data: result,
     });
   } catch (error: any) {
-    return res.status(500).json({
+    return res.status(error?.statusCode || 500).json({
       success: false,
       message: error.message,
     });
@@ -140,11 +141,17 @@ export const uploadPdfController = async (
 
     const { paperId, examId, paperSet } = req.body;
     const instituteId = req.viaExamUser?.instituteId || req.body.instituteId;
-    const teacherId = req.viaExamUser?.userId || req.body.teacherId;
+    let teacherId = req.viaExamUser?.userId || req.body.teacherId;
     const linkToPaper = Boolean(paperId && examId && paperSet && instituteId && teacherId);
 
-    // Refuse before uploading if this set's answer sheet is already under review/approved.
     if (linkToPaper) {
+      // The paper must be in this institute, of this exam and set, and (for a teacher) their own.
+      const paper = await QuestionPaperService.findPaperForUser(paperId, req.viaExamUser);
+      if (paper.examId !== examId || paper.paperSet !== String(paperSet).toUpperCase()) {
+        return res.status(httpStatus.BAD_REQUEST).json({ error: true, message: "This question paper belongs to a different exam or set." });
+      }
+      teacherId = paper.teacherId;
+      // Refuse before uploading if this set's answer sheet is already under review/approved.
       await QuestionPaperAnswerService.assertReplaceable(paperId, paperSet, examId);
     }
 

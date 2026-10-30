@@ -14,7 +14,7 @@ interface ClassAttributes {
 }
 
 interface ClassCreationAttributes
-  extends Optional<ClassAttributes, "id" | "classId" | "classTeacherId" | "isActive" | "isDeleted"> {}
+  extends Optional<ClassAttributes, "id" | "classId" | "classTeacherId" | "isActive" | "isDeleted"> { }
 
 class Class extends Model<ClassAttributes, ClassCreationAttributes> {
   public id!: number;
@@ -71,7 +71,7 @@ Class.init(
     timestamps: true,
     indexes: [
       {
-        // Unique: one section per class per year per institute
+        // One class of a name per institute; the sessions it runs in are Session setup's rows.
         unique: true,
         fields: ["instituteId", "className"],
       },

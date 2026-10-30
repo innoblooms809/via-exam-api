@@ -1,6 +1,8 @@
 import logger from "../config/logger";
 import { sequelize } from "../config/sequelize";
 import '../models/index'
+import { ensureEveryStudentEnrolled, runSessionScopeBackfill } from "./sessionScopeBackfill";
+import { watchEvaluationProgress } from "../services/exam/examProgress";
 
 // Indexes for hot read paths (notification polling, per-institute counts, dashboard trends).
 // sync() never adds indexes to existing tables, so they are created here. CONCURRENTLY
@@ -15,6 +17,19 @@ const PERFORMANCE_INDEXES = [
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_created_at_idx" ON "viaexam_answer_sheets" ("createdAt")`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_ai_evaluations_created_at_idx" ON "viaexam_ai_evaluations" ("createdAt")`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_subscription_transactions_paid_at_idx" ON "viaexam_subscription_transactions" ("paidAt") WHERE "status" = 'paid'`,
+  // One person's page (services/dashboard/person.service): every list is filtered by the person.
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exams_teacher_session_idx" ON "viaexam_exams" ("teacherId", "sessionId") WHERE "isDeleted" = false`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exams_class_section_idx" ON "viaexam_exams" ("classId", "sectionId") WHERE "isDeleted" = false`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exams_session_class_idx" ON "viaexam_exams" ("sessionId", "classId") WHERE "isDeleted" = false`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_activity_logs_user_event_created_idx" ON "viaexam_activity_logs" ("userId", "eventType", "createdAt" DESC)`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_uploader_created_idx" ON "viaexam_answer_sheets" ("uploadedBy", "createdAt" DESC) WHERE "isDeleted" = false`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_class_roll_idx" ON "viaexam_answer_sheets" ("classId", "rollNo") WHERE "isDeleted" = false`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_recheck_assignments_teacher_idx" ON "viaexam_recheck_assignments" ("teacherId")`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_recheck_requests_student_idx" ON "viaexam_recheck_requests" ("studentId")`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exam_attendance_student_idx" ON "viaexam_exam_attendance" ("studentId")`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_ai_evaluations_student_idx" ON "viaexam_ai_evaluations" ("studentId")`,
+  // "Low quality" filter on an exam's sheets.
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_exam_quality_idx" ON "viaexam_answer_sheets" ("examId", "qualityFlag") WHERE "isDeleted" = false`,
 ];
 
 const ensurePerformanceIndexes = async () => {
@@ -46,10 +61,45 @@ const connectDB = async (fn: any) => {
     await sequelize.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS "viaexam_push_tokens_token_user_id" ON "viaexam_push_tokens" ("token", "userId");`
     ).catch(() => null);
+    // Recheck claims: the kind of marking concern, the questions it is about, the decision's words.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_recheck_requests" ADD COLUMN IF NOT EXISTS "category" VARCHAR(40), ADD COLUMN IF NOT EXISTS "questions" JSONB, ADD COLUMN IF NOT EXISTS "decisionNote" TEXT;`
+    ).catch(() => null);
+    // A teacher's recheck decision waits for the admin's approval before it reaches the result.
+    await sequelize.query(
+      `ALTER TYPE "enum_viaexam_recheck_requests_status" ADD VALUE IF NOT EXISTS 'Awaiting Approval' AFTER 'Under Review';`
+    ).catch(() => null);
+    await sequelize.query(
+      `ALTER TABLE "viaexam_recheck_assignments" ADD COLUMN IF NOT EXISTS "approvedBy" VARCHAR(255), ADD COLUMN IF NOT EXISTS "approvedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "returnNote" TEXT, ADD COLUMN IF NOT EXISTS "returnedAt" TIMESTAMP WITH TIME ZONE;`
+    ).catch(() => null);
+    // Who approved a change of marks (a recheck decision), beside who made it.
+    await sequelize.query(`ALTER TABLE "viaexam_marks_audit" ADD COLUMN IF NOT EXISTS "approvedBy" VARCHAR(255);`).catch(() => null);
+    // Scan quality of each uploaded sheet, and the thresholds the school flags it by.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_answer_sheets" ADD COLUMN IF NOT EXISTS "qualityFlag" VARCHAR(16), ADD COLUMN IF NOT EXISTS "qualityReport" JSONB;`
+    ).catch(() => null);
+    await sequelize.query(`ALTER TABLE "viaexam_institute_settings" ADD COLUMN IF NOT EXISTS "scanQuality" JSONB;`).catch(() => null);
+    // A recheck teacher's re-evaluation (a draft until the admin approves) and what it changes,
+    // question by question; the same per-question detail on every change of a student's marks.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_recheck_assignments" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`
+    ).catch(() => null);
+    await sequelize.query(`ALTER TABLE "viaexam_marks_audit" ADD COLUMN IF NOT EXISTS "details" JSONB;`).catch(() => null);
+    // A cross-checker's re-evaluation (a draft until their verdict) and what the verdict changed.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_cross_check_items" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`
+    ).catch(() => null);
 
     await sequelize.sync({ force: false });
-    
     logger.info("Models synced with PostgreSQL");
+
+    // Once per database: fill the per-session tables (setup, enrolments) from existing data.
+    await runSessionScopeBackfill();
+    // Every start: a student without any enrolment is placed by their profile.
+    await ensureEveryStudentEnrolled();
+    // "100% evaluated" notifications follow each sheet that gets its marks.
+    watchEvaluationProgress();
+
     fn();
     void ensurePerformanceIndexes();
   } catch (err: any) {

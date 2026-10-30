@@ -119,6 +119,13 @@ const INDEXES = [
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_question_paper_answers_exam_idx" ON "viaexam_question_paper_answers" ("examId")`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_evaluation_assignments_institute_active_idx" ON "viaexam_evaluation_assignments" ("instituteId", "isActive")`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_activity_logs_institute_created_idx" ON "viaexam_activity_logs" ("instituteId", "createdAt" DESC)`,
+
+  // Role home pages (dashboard/home.service): daily upload series, timetables, queues
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_institute_created_idx" ON "viaexam_answer_sheets" ("instituteId", "createdAt" DESC) WHERE "isDeleted" = false`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_uploader_created_idx" ON "viaexam_answer_sheets" ("uploadedBy", "createdAt" DESC) WHERE "isDeleted" = false`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exams_institute_date_idx" ON "viaexam_exams" ("instituteId", "examDate") WHERE "isDeleted" = false`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_question_papers_institute_status_idx" ON "viaexam_question_papers" ("instituteId", "status")`,
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_recheck_requests_institute_status_idx" ON "viaexam_recheck_requests" ("instituteId", "status")`,
 ];
 
 const RECHECK_ONCE_INDEX = `CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_recheck_requests_student_exam_once" ON "viaexam_recheck_requests" ("studentId", "examId")`;

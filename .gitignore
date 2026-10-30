@@ -79,13 +79,14 @@ next-env.d.ts
 # Misc
 # =========================
 *.pem
+# Markdown files
+*.md
+
+# Log files
+*.log
 logs/
 
 
 # Firebase service-account key (secret)
 firebase-service-account*.json
 *-firebase-adminsdk-*.json
-
-# Local secrets: never commit
-.env
-.env.*
