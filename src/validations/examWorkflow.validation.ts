@@ -25,10 +25,18 @@ const listPipeline = {
   }),
 };
 
+// A section of an exam: its id, or "" for students without a section.
+const sectionId = id.allow("");
+
+// sectionIds: the sections to give (none = all of them).
 const assignScanner = {
   ...examParam,
-  body: Joi.object({ scannerId: id.required(), note: text(500) }),
+  body: Joi.object({ scannerId: id.required(), sectionIds: Joi.array().items(sectionId).max(100).unique(), note: text(500) }),
 };
+
+// One section of the exam (or, left out, every section the requester has).
+const sectionQuery = { ...examParam, query: Joi.object({ sectionId, _t: cacheBuster }) };
+const sectionBody = { ...examParam, body: Joi.object({ sectionId }) };
 
 const myScanExams = {
   query: Joi.object({ page, limit, status: Joi.string().valid("ASSIGNED", "COMPLETED", "").insensitive(), sessionId: id.allow(""), _t: cacheBuster }),
@@ -40,6 +48,7 @@ const setAttendance = {
     studentIds: Joi.array().items(id.required()).min(1).max(500).unique().required(),
     absent: Joi.boolean().required(),
     note: text(500),
+    sectionId,
   }),
 };
 
@@ -124,7 +133,7 @@ const completeRecheck = {
 
 // A scanner's request to re-open a completed upload, and the admin's answer (a note is
 // required to reject; the service checks that, since approve and reject share the shape).
-const requestReopen = { ...examParam, body: Joi.object({ reason: Joi.string().trim().min(5).max(500).required() }) };
+const requestReopen = { ...examParam, body: Joi.object({ reason: Joi.string().trim().min(5).max(500).required(), sectionId }) };
 const listReopenRequests = { query: Joi.object({ status: Joi.string().valid("PENDING", "DECIDED", "ALL", "").insensitive(), _t: cacheBuster }) };
 const decideReopen = { ...requestParam, body: Joi.object({ note: text(500) }) };
 
@@ -134,6 +143,8 @@ export default {  sheetParam,
   examParam,
   listPipeline,
   assignScanner,
+  sectionQuery,
+  sectionBody,
   myScanExams,
   setAttendance,
   listResults,

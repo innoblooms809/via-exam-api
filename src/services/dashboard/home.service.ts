@@ -107,8 +107,11 @@ const IN_OPEN = `e."sessionId" IN (:open)`;
 /** Each exam's stage (as examWorkflow.stageOf) for the exams of a CTE `ex`, as `st`. */
 const EXAM_STAGES = `
 pub AS (SELECT DISTINCT "examId" FROM viaexam_student_results WHERE "instituteId" = :inst AND "isDeleted" = false),
-sc AS (SELECT "examId", status FROM viaexam_exam_scanner_assignments WHERE "instituteId" = :inst AND "isActive" = true),
-ev AS (SELECT "examId", "reviewedAt" FROM viaexam_evaluation_assignments WHERE "instituteId" = :inst AND "isActive" = true),
+-- One scanner / evaluator row per section given out: done only when all of them are.
+sc AS (SELECT "examId", CASE WHEN bool_and(status = 'COMPLETED') THEN 'COMPLETED' ELSE 'ASSIGNED' END AS status
+       FROM viaexam_exam_scanner_assignments WHERE "instituteId" = :inst AND "isActive" = true GROUP BY "examId"),
+ev AS (SELECT "examId", CASE WHEN bool_and("reviewedAt" IS NOT NULL) THEN MAX("reviewedAt") END AS "reviewedAt"
+       FROM viaexam_evaluation_assignments WHERE "instituteId" = :inst AND "isActive" = true GROUP BY "examId"),
 up AS (SELECT DISTINCT "examId" FROM viaexam_answer_sheets WHERE "instituteId" = :inst AND "isDeleted" = false AND "examId" IS NOT NULL),
 xr AS (
   SELECT r."examId", COUNT(i."id") FILTER (WHERE i.status = 'pending')::int AS pending
@@ -803,7 +806,7 @@ mev AS (
            WHEN EXISTS (SELECT 1 FROM viaexam_student_results r WHERE r."examId" = a."examId" AND r."isDeleted" = false) THEN 'PUBLISHED'
            WHEN a."reviewedAt" IS NOT NULL THEN 'CONFIRMED'
            WHEN (SELECT sc.status FROM viaexam_exam_scanner_assignments sc
-                 WHERE sc."examId" = a."examId" AND sc."isActive" = true LIMIT 1) = 'COMPLETED' THEN 'ALL_IN'
+                 WHERE sc."examId" = a."examId" AND sc."isActive" = true AND sc."sectionId" IS NOT DISTINCT FROM a."sectionId" LIMIT 1) = 'COMPLETED' THEN 'ALL_IN'
            WHEN EXISTS (SELECT 1 FROM viaexam_answer_sheets s WHERE s."examId" = a."examId" AND s."isDeleted" = false) THEN 'UPLOADING'
            ELSE 'NO_SHEETS'
          END AS stage
@@ -849,11 +852,14 @@ SELECT t.* FROM (
   WHERE e."instituteId" = :inst AND e."teacherId" = :uid AND e."isDeleted" = false AND e."sessionId" = :ses
     AND e.status IN ('Draft', 'Paper Created', 'Rejected')
   UNION ALL
-  SELECT 'EVALUATE', NULL, a."createdAt", ${EXAM_COLUMNS}
-  FROM viaexam_evaluation_assignments a
+  SELECT 'EVALUATE', NULL, a."assignedAt", ${EXAM_COLUMNS}
+  FROM (
+    SELECT "examId", MIN("createdAt") AS "assignedAt" FROM viaexam_evaluation_assignments
+    WHERE "instituteId" = :inst AND "teacherId" = :uid AND "isActive" = true AND "reviewedAt" IS NULL
+    GROUP BY "examId"
+  ) a
   JOIN viaexam_exams e ON e."examId" = a."examId" AND e."isDeleted" = false AND e."sessionId" = :ses
   ${EXAM_NAMES}
-  WHERE a."instituteId" = :inst AND a."teacherId" = :uid AND a."isActive" = true AND a."reviewedAt" IS NULL
   UNION ALL
   SELECT 'RECHECK', ra."requestId", ra."assignedAt", ${EXAM_COLUMNS}
   FROM viaexam_recheck_assignments ra
@@ -892,14 +898,14 @@ SELECT e."examId", e."examType", e.status, ${EXAM_SESSION_COLUMNS}, e."classId",
        sec."sectionName", e."subjectId", sub."subjectName",
        (e."teacherId" = :uid) AS "isPaperSetter",
        ev."examId" IS NOT NULL AS "isEvaluator",
-       ev."reviewedAt" IS NOT NULL AS "isReviewed"
+       COALESCE(ev.reviewed, false) AS "isReviewed"
 FROM viaexam_exams e
 ${EXAM_NAMES}
 ${EXAM_SESSION}
 LEFT JOIN LATERAL (
-  SELECT a."examId", a."reviewedAt" FROM viaexam_evaluation_assignments a
+  SELECT a."examId", bool_and(a."reviewedAt" IS NOT NULL) AS reviewed FROM viaexam_evaluation_assignments a
   WHERE a."examId" = e."examId" AND a."teacherId" = :uid AND a."isActive" = true
-  LIMIT 1
+  GROUP BY a."examId"
 ) ev ON true
 WHERE e."instituteId" = :inst AND e."isDeleted" = false AND e."sessionId" = :ses
   AND (e."teacherId" = :uid OR ev."examId" IS NOT NULL)
@@ -907,11 +913,12 @@ ORDER BY e."createdAt" DESC
 LIMIT 500`;
 
 const OPEN_EVALUATIONS_SQL = `
-SELECT a."examId", a."createdAt" AS "assignedAt"
+SELECT a."examId", MIN(a."createdAt") AS "assignedAt"
 FROM viaexam_evaluation_assignments a
 JOIN viaexam_exams e ON e."examId" = a."examId" AND e."isDeleted" = false AND e."sessionId" = :ses
 WHERE a."instituteId" = :inst AND a."teacherId" = :uid AND a."isActive" = true AND a."reviewedAt" IS NULL
-ORDER BY e."examDate" NULLS LAST, a."createdAt"
+GROUP BY a."examId", e."examDate"
+ORDER BY e."examDate" NULLS LAST, MIN(a."createdAt")
 LIMIT 4`;
 
 /** Roster numbers (uploaded / evaluated) of a few exams — same counting as the evaluation pages. */

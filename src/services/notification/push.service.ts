@@ -2,6 +2,8 @@ import httpStatus from "http-status";
 import PushToken from "../../models/PushToken.model";
 import { getFirebaseMessaging } from "../../config/firebase";
 import logger from "../../config/logger";
+import { defineQueue } from "../../queue";
+import { positiveInt } from "../../queue/config";
 
 // FCM answers with these when a token will never work again — drop it.
 const DEAD_TOKEN_CODES = new Set([
@@ -64,51 +66,99 @@ type PushNotification = {
 };
 
 // ─── SEND TO EVERY BROWSER OF A USER ──────────────────────────────────────────
+// Throws when FCM could not be reached at all (the push queue then retries the job). A token
+// FCM refused for good is dropped; other per-browser failures are only logged, because
+// retrying the whole job would push again to the browsers that did get it.
+const deliver = async (notification: PushNotification): Promise<{ sent: number; failed: number }> => {
+  const messaging = getFirebaseMessaging();
+  if (!messaging) return { sent: 0, failed: 0 };
+
+  const tokens = await PushToken.findAll({ where: { userId: notification.userId } });
+  if (tokens.length === 0) return { sent: 0, failed: 0 };
+
+  // Data-only message: the service worker / open tab decides how to show it.
+  const messages = tokens.map((t) => ({
+    token: t.token,
+    data: {
+      notificationId: notification.notificationId,
+      // Lets an open tab ignore pushes meant for another user logged in on the same browser.
+      userId: notification.userId,
+      type: notification.type,
+      title: notification.title,
+      body: notification.message,
+      referenceId: notification.referenceId || "",
+      link: t.appUrl || "",
+    },
+    webpush: { headers: { Urgency: "high", TTL: String(60 * 60 * 24) } },
+  }));
+
+  const response = await messaging.sendEach(messages);
+
+  const dead = response.responses
+    .map((r, i) => (!r.success && DEAD_TOKEN_CODES.has(r.error?.code || "") ? tokens[i].token : null))
+    .filter((t): t is string => !!t);
+
+  if (dead.length) {
+    await PushToken.destroy({ where: { token: dead } });
+  }
+  if (response.failureCount > dead.length) {
+    const other = response.responses.find((r) => !r.success && !DEAD_TOKEN_CODES.has(r.error?.code || ""));
+    logger.warn(`Push to user ${notification.userId}: ${response.failureCount} failed (${other?.error?.code || "unknown"}).`);
+  }
+  return { sent: response.successCount, failed: response.failureCount };
+};
+
 // Never throws: a failed push must not break the action that created the notification.
 const sendToUser = async (notification: PushNotification): Promise<void> => {
   try {
-    const messaging = getFirebaseMessaging();
-    if (!messaging) return;
-
-    const tokens = await PushToken.findAll({ where: { userId: notification.userId } });
-    if (tokens.length === 0) return;
-
-    // Data-only message: the service worker / open tab decides how to show it.
-    const messages = tokens.map((t) => ({
-      token: t.token,
-      data: {
-        notificationId: notification.notificationId,
-        // Lets an open tab ignore pushes meant for another user logged in on the same browser.
-        userId: notification.userId,
-        type: notification.type,
-        title: notification.title,
-        body: notification.message,
-        referenceId: notification.referenceId || "",
-        link: t.appUrl || "",
-      },
-      webpush: { headers: { Urgency: "high", TTL: String(60 * 60 * 24) } },
-    }));
-
-    const response = await messaging.sendEach(messages);
-
-    const dead = response.responses
-      .map((r, i) => (!r.success && DEAD_TOKEN_CODES.has(r.error?.code || "") ? tokens[i].token : null))
-      .filter((t): t is string => !!t);
-
-    if (dead.length) {
-      await PushToken.destroy({ where: { token: dead } });
-    }
-    if (response.failureCount > dead.length) {
-      const other = response.responses.find((r) => !r.success && !DEAD_TOKEN_CODES.has(r.error?.code || ""));
-      logger.warn(`Push to user ${notification.userId}: ${response.failureCount} failed (${other?.error?.code || "unknown"}).`);
-    }
+    await deliver(notification);
   } catch (err: any) {
     logger.error(`Push to user ${notification.userId} failed: ${err?.message || err}`);
   }
+};
+
+// ─── PUSH QUEUE ───────────────────────────────────────────────────────────────
+// Every notification's push is a job: the request that created the notification never waits
+// for FCM, a burst (an exam's 500 students) is sent a few at a time, and an FCM outage is
+// retried with backoff instead of losing the pushes.
+
+const pushQueue = defineQueue<PushNotification>({
+  name: "notifications-push",
+  concurrency: positiveInt(process.env.PUSH_QUEUE_CONCURRENCY, 5),
+  defaults: { attempts: 5, backoff: { type: "exponential", delayMs: 15_000 }, keepCompletedSec: 24 * 3600, keepFailedSec: 7 * 24 * 3600 },
+  processor: async (job) => deliver(job.data),
+});
+
+let pending: PushNotification[] = [];
+
+const flush = () => {
+  const batch = pending;
+  pending = [];
+  pushQueue
+    .addBulk(batch.map((n) => ({ name: "push", data: n, opts: { jobId: `push-${n.notificationId}` } })))
+    .catch((err) => {
+      logger.warn(`Push queue unavailable (${err?.message || err}); sending ${batch.length} push(es) directly.`);
+      batch.forEach((n) => void sendToUser(n));
+    });
+};
+
+/** Queues the push of a notification. Notifications created together are queued in one batch. */
+const enqueuePush = (notification: PushNotification): void => {
+  if (!getFirebaseMessaging()) return; // pushes are not configured
+  pending.push({
+    notificationId: notification.notificationId,
+    userId: notification.userId,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    referenceId: notification.referenceId ?? null,
+  });
+  if (pending.length === 1) setImmediate(flush);
 };
 
 export default {
   registerToken,
   removeToken,
   sendToUser,
+  enqueuePush,
 };

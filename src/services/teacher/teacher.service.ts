@@ -19,6 +19,8 @@ import { findStaff, teacherOpenWork } from "../academic/academicGuards.service";
 import { newId } from "../../utils/idGenerator";
 import { cleanEmail, contactTakenMessage, emailChange, staffAgeProblem, staffInputProblem } from "../../utils/staffInput";
 import { photoChange, uploadedPhoto } from "../../utils/profilePhoto";
+import { decryptField } from "../../utils/dataProtection";
+import { NAME_RULE } from "../../utils/textRules";
 import { TEACHER_TYPES, checkClassTeacherPost, isTeacherType } from "./classTeacher.service";
 import SessionSection from "../../models/SessionSection.model";
 import { activeSession, addToCurrentSession, releaseTeacher } from "../academic/sessionSetup.service";
@@ -394,8 +396,7 @@ const updateTeacher = async (
 
   const first = String(body.firstName ?? "").trim();
   const last = String(body.lastName ?? "").trim();
-  const nameRule = /^[A-Za-z][A-Za-z.'’ -]{0,49}$/;
-  if ((first || last) && (!nameRule.test(first) || !nameRule.test(last))) {
+  if ((first || last) && (!NAME_RULE.test(first) || !NAME_RULE.test(last))) {
     return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "First and last name can only have letters, spaces, dots, apostrophes and hyphens." };
   }
   const phone = body.phoneNumber !== undefined ? String(body.phoneNumber).trim() : undefined;
@@ -833,7 +834,7 @@ const getMyStudents = async (user: any, query: any): Promise<any> => {
           fatherName: r.fatherName ?? "",
           phoneNumber: r.phoneNumber ?? "",
           emailId: r.emailId ?? "",
-          profileUrl: r.profileUrl ?? null,
+          profileUrl: decryptField(r.profileUrl, "profileUrl") ?? null,
           active: Number(r.status) === 1,
         })),
       },

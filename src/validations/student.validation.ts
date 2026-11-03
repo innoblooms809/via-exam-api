@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { NAME_CHARS } from "../utils/textRules";
 
 /**
  * Hard cap on how many rows a single bulk-upload request may carry.
@@ -37,7 +38,7 @@ const personName = (label: string, min = 2) =>
     .trim()
     .min(min)
     .max(100)
-    .pattern(/^[A-Za-z][A-Za-z.'’ -]*$/)
+    .pattern(NAME_CHARS)
     .messages({
       "string.base": `${label} is required.`,
       "string.empty": `${label} is required.`,

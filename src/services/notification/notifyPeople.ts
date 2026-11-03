@@ -50,6 +50,13 @@ export const examLabel = (exam: any) =>
     exam.section?.sectionName ? `-${exam.section.sectionName}` : ""
   }`;
 
+/** examLabel with the sections of a whole-class exam someone was given ("Maths · Final · Class 10 · Sections A, B"). */
+export const workLabel = (exam: any, sectionNames: string[]) => {
+  const names = sectionNames.filter(Boolean);
+  if (exam.section?.sectionName || !names.length) return examLabel(exam);
+  return `${examLabel(exam)} · ${names.length === 1 ? "Section" : "Sections"} ${names.join(", ")}`;
+};
+
 /** "Diya Patel: The diagram in Q4 is blurred…", short enough for a notification. */
 export const preview = (text: string, max = 160) => {
   const flat = String(text ?? "").replace(/\s+/g, " ").trim();

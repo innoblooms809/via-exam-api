@@ -6,6 +6,11 @@
  *   admin PUBLISHES results ─► students see them ─► a student may ask for ONE recheck
  *   admin assigns the recheck (same evaluator or another teacher) ─► teacher completes it
  *
+ * Scanning and evaluation go section by section, as papers are handed out and collected per
+ * classroom: the admin gives a scanner and an evaluator all of an exam's sections or some of
+ * them, each section is completed and reviewed on its own, and the exam is published once
+ * every section is done (one paper, one result list for the class).
+ *
  * Every multi-row change runs in one transaction and locks the row it decides
  * on (SELECT … FOR UPDATE), so two admins clicking at once can't publish twice
  * or leave two active scanners. Notifications are written in the same
@@ -33,6 +38,7 @@ import ClassResultsService from "./classResults.service";
 import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
 import Subject from "../../models/Subject.model";
 import Session from "../../models/Session.model";
+import Section from "../../models/Section.model";
 import ExamScannerAssignment, { SCAN_STATUS } from "../../models/ExamScannerAssignment.model";
 import ScanReopenRequest, { REOPEN_STATUS } from "../../models/ScanReopenRequest.model";
 import { invalidate } from "../../utils/memoCache";
@@ -41,9 +47,9 @@ import StudentResult, { RESULT_STATUS } from "../../models/StudentResult.model";
 import ApiError from "../../utils/ApiError";
 import { newId } from "../../utils/idGenerator";
 import { refreshExamStatus } from "./exam.service";
-import { EXAM_INCLUDES, buildRoster, loadExam } from "./examRoster.service";
+import { EXAM_INCLUDES, buildRoster, countsOf, loadExam, sectionKey, sectionsOfExam, type ExamSection, type Roster } from "./examRoster.service";
 import { maskName } from "../evaluation/evaluationAccess.service";
-import { examLabel, instituteAdminIds, notifyAll, preview } from "../notification/notifyPeople";
+import { examLabel, instituteAdminIds, notifyAll, preview, workLabel } from "../notification/notifyPeople";
 import TeacherProfile from "../../models/TeacherProfile.model";
 import { specialisesIn } from "../../utils/specialization";
 import { subjectTeacherIn } from "../academic/sessionSetup.service";
@@ -58,6 +64,16 @@ const isAdmin = (user: any) => ["ADMIN", "INSTITUTEADMIN", "SUPERADMIN"].include
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const numOrNull = (v: unknown) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : round2(Number(v)));
 const textList = (v: unknown) => (Array.isArray(v) ? v.map((s) => clean(s)).filter(Boolean).slice(0, 12) : []);
+const groupBy = <T>(list: T[], keyOf: (item: T) => string) => {
+  const map = new Map<string, T[]>();
+  for (const item of list) map.set(keyOf(item), [...(map.get(keyOf(item)) ?? []), item]);
+  return map;
+};
+/** The latest of some dates (null when there are none). */
+const latest = (dates: (Date | null | undefined)[]) => {
+  const times = dates.filter(Boolean).map((d) => new Date(d as Date).getTime());
+  return times.length ? new Date(Math.max(...times)) : null;
+};
 
 /**
  * An evaluation's questions in paper order, as students, admins and teachers see them.
@@ -124,11 +140,54 @@ const isPaperApproved = async (exam: any) => {
 const publishedCount = (examId: string, transaction?: Transaction) =>
   StudentResult.count({ where: { examId, isDeleted: false }, transaction });
 
-const activeScanner = (examId: string, transaction?: Transaction, lock = false) =>
-  ExamScannerAssignment.findOne({ where: { examId, isActive: true }, transaction, ...(lock ? { lock: Transaction.LOCK.UPDATE } : {}) });
+/** The exam's active scanners: one row per section given out. */
+const activeScanners = (examId: string, transaction?: Transaction, lock = false) =>
+  ExamScannerAssignment.findAll({ where: { examId, isActive: true }, order: [["createdAt", "ASC"]], transaction, ...(lock ? { lock: Transaction.LOCK.UPDATE } : {}) });
 
-const activeEvaluator = (examId: string, transaction?: Transaction) =>
-  EvaluationAssignment.findOne({ where: { examId, isActive: true }, transaction });
+/** The active scanner of one section of the exam (null: students without a section). */
+const scannerOfSection = (examId: string, sectionId: string | null, transaction?: Transaction, lock = false) =>
+  ExamScannerAssignment.findOne({ where: { examId, sectionId, isActive: true }, transaction, ...(lock ? { lock: Transaction.LOCK.UPDATE } : {}) });
+
+/** The exam's active evaluators: one row per section given out. */
+export const activeEvaluators = (examId: string, transaction?: Transaction) =>
+  EvaluationAssignment.findAll({ where: { examId, isActive: true }, order: [["createdAt", "ASC"]], transaction });
+
+/** The sections a request names: `sectionIds` (ids; "" = no section) or, when it names none, all of them. */
+export const pickSections = (all: ExamSection[], raw: unknown): ExamSection[] => {
+  const wanted = Array.isArray(raw) ? [...new Set(raw.map((v) => clean(v)))] : [];
+  if (!wanted.length) return all;
+  const byKey = new Map(all.map((s) => [sectionKey(s.sectionId), s]));
+  const picked = wanted.map((key) => byKey.get(key));
+  if (picked.some((s) => !s)) throw new ApiError(httpStatus.BAD_REQUEST, "One of the chosen sections isn't part of this exam. Reload and choose again.");
+  return picked as ExamSection[];
+};
+
+/** "Section A", for messages about one section of a whole-class exam ("" for a section exam). */
+const sectionText = (exam: any, s: { sectionId: string | null; sectionName: string }) =>
+  exam.sectionId ? "" : s.sectionId ? `Section ${s.sectionName}` : "students without a section";
+
+/**
+ * Where scanning stands, section by section: a section is done when its scanner marked it
+ * complete or — with no scanner given that section — every student in it has a sheet or is
+ * absent. The exam is done when every section is.
+ */
+export const scanState = (roster: Roster, scanners: ExamScannerAssignment[]) => {
+  const byKey = new Map(scanners.map((s) => [sectionKey(s.sectionId), s]));
+  const sections = roster.sections.map((s) => {
+    const scanner = byKey.get(sectionKey(s.sectionId)) ?? null;
+    return { ...s, scanner, done: scanFinished(scanner, s.counts.pending, s.counts.total) };
+  });
+  return { sections, done: roster.counts.total > 0 && sections.every((s) => s.done) };
+};
+
+/** Where evaluation stands: every section needs its evaluator, and their review. */
+export const reviewState = (roster: Roster, evaluators: EvaluationAssignment[]) => {
+  const byKey = new Map(evaluators.map((e) => [sectionKey(e.sectionId), e]));
+  const sections = roster.sections.map((s) => ({ ...s, evaluator: byKey.get(sectionKey(s.sectionId)) ?? null }));
+  const reviewed = sections.length > 0 && sections.every((s) => Boolean(s.evaluator?.reviewedAt));
+  const reviewedAt = reviewed ? new Date(Math.max(...sections.map((s) => new Date(s.evaluator!.reviewedAt as Date).getTime()))) : null;
+  return { sections, reviewed, reviewedAt };
+};
 
 // ─── Stage of an exam (one word for lists and badges) ────────────────────────
 
@@ -143,8 +202,10 @@ export type ExamStage =
 
 const stageOf = (args: {
   paperApproved: boolean;
-  scanner: ExamScannerAssignment | null;
-  evaluator: EvaluationAssignment | null;
+  /** A scanner has at least one section. */
+  scannerAssigned: boolean;
+  /** Every section's evaluator marked it reviewed. */
+  reviewed: boolean;
   published: boolean;
   scanDone: boolean;
   /** The school cross-checks, and this exam's cross-check isn't done. */
@@ -152,9 +213,9 @@ const stageOf = (args: {
 }): ExamStage => {
   if (args.published) return "PUBLISHED";
   if (!args.paperApproved) return "PAPER_PENDING";
-  if (args.evaluator?.reviewedAt) return args.crossCheckWaiting ? "CROSS_CHECK" : "REVIEWED";
+  if (args.reviewed) return args.crossCheckWaiting ? "CROSS_CHECK" : "REVIEWED";
   if (args.scanDone) return "EVALUATING";
-  if (args.scanner) return "SCANNING";
+  if (args.scannerAssigned) return "SCANNING";
   return "READY_TO_SCAN";
 };
 
@@ -210,8 +271,8 @@ const listPipeline = async (admin: any, query: any) => {
         }) as unknown as Promise<{ examId: string; publishedAt: Date }[]>,
       ])
     : [[], [], []];
-  const scannerByExam = new Map(scanners.map((s) => [s.examId, s]));
-  const evaluatorByExam = new Map(evaluators.map((e) => [e.examId, e]));
+  const scannersByExam = groupBy(scanners, (s) => s.examId);
+  const evaluatorsByExam = groupBy(evaluators, (e) => e.examId);
   const publishedByExam = new Map(published.map((p) => [p.examId, p.publishedAt]));
   const crossCheck = await crossCheckStates(instituteId, examIds);
 
@@ -223,14 +284,17 @@ const listPipeline = async (admin: any, query: any) => {
   const rows = await Promise.all(
     exams.map(async (exam: any) => {
       const roster = await buildRoster(exam);
-      const scanner = scannerByExam.get(exam.examId) ?? null;
-      const evaluator = evaluatorByExam.get(exam.examId) ?? null;
+      const examScanners = scannersByExam.get(exam.examId) ?? [];
+      const examEvaluators = evaluatorsByExam.get(exam.examId) ?? [];
+      const scan = scanState(roster, examScanners);
+      const review = reviewState(roster, examEvaluators);
       const paperApproved = PAPER_APPROVED_STATUSES.includes(exam.status);
       const publishedAt = publishedByExam.get(exam.examId) ?? null;
-      const scanDone = scanFinished(scanner, roster.counts.pending, roster.counts.total);
       const check = crossCheck.byExam.get(exam.examId);
       const crossCheckCovered = crossCheck.covers(exam.subjectId);
-      const crossCheckWaiting = crossCheckCovered && Boolean(evaluator?.reviewedAt) && !publishedAt && (!check || check.pending > 0);
+      const crossCheckWaiting = crossCheckCovered && review.reviewed && !publishedAt && (!check || check.pending > 0);
+      const scannerView = (s: ExamScannerAssignment) => ({ scannerId: s.scannerId, name: names.get(s.scannerId) ?? "", status: s.status, assignedAt: s.createdAt, completedAt: s.completedAt });
+      const evaluatorView = (e: EvaluationAssignment) => ({ teacherId: e.teacherId, name: names.get(e.teacherId) ?? "", assignedAt: e.createdAt, reviewedAt: e.reviewedAt });
       return {
         examId: exam.examId,
         examType: exam.examType,
@@ -251,18 +315,37 @@ const listPipeline = async (admin: any, query: any) => {
         subjectName: exam.subject?.subjectName ?? "",
         sessionName: exam.session?.sessionName ?? "",
         paperSetter: exam.teacher?.userName ?? "",
-        stage: stageOf({ paperApproved, scanner, evaluator, published: Boolean(publishedAt), scanDone, crossCheckWaiting }),
+        stage: stageOf({ paperApproved, scannerAssigned: examScanners.length > 0, reviewed: review.reviewed, published: Boolean(publishedAt), scanDone: scan.done, crossCheckWaiting }),
         // The policy covers this exam's subject: its round (null until it starts).
         crossCheck: crossCheckCovered
           ? { started: Boolean(check), total: check?.total ?? 0, pending: check?.pending ?? 0, changed: check?.changed ?? 0, checkerId: check?.checkerId ?? null }
           : null,
         counts: roster.counts,
-        scanner: scanner
-          ? { scannerId: scanner.scannerId, name: names.get(scanner.scannerId) ?? "", status: scanner.status, assignedAt: scanner.createdAt, completedAt: scanner.completedAt }
+        // The whole exam at a glance: everyone on it (names joined), done only when every section is.
+        scanner: examScanners.length
+          ? {
+              ...scannerView(examScanners[0]),
+              name: [...new Set(examScanners.map((s) => names.get(s.scannerId) ?? ""))].filter(Boolean).join(", "),
+              status: scan.done ? SCAN_STATUS.COMPLETED : SCAN_STATUS.ASSIGNED,
+              completedAt: scan.done ? latest(examScanners.map((s) => s.completedAt)) : null,
+            }
           : null,
-        evaluator: evaluator
-          ? { teacherId: evaluator.teacherId, name: names.get(evaluator.teacherId) ?? "", assignedAt: evaluator.createdAt, reviewedAt: evaluator.reviewedAt }
+        evaluator: examEvaluators.length
+          ? {
+              ...evaluatorView(examEvaluators[0]),
+              name: [...new Set(examEvaluators.map((e) => names.get(e.teacherId) ?? ""))].filter(Boolean).join(", "),
+              reviewedAt: review.reviewedAt,
+            }
           : null,
+        // Section by section: who scans and evaluates it, and how far each has got.
+        sections: scan.sections.map((s, i) => ({
+          sectionId: s.sectionId,
+          sectionName: s.sectionName,
+          counts: s.counts,
+          scanDone: s.done,
+          scanner: s.scanner ? scannerView(s.scanner) : null,
+          evaluator: review.sections[i].evaluator ? evaluatorView(review.sections[i].evaluator as EvaluationAssignment) : null,
+        })),
         publishedAt,
         createdAt: exam.createdAt,
       };
@@ -287,6 +370,10 @@ const crossCheckDetail = (cc: CrossCheckState | null): string | null => {
   return `${cc.total - cc.pending} of ${papers(cc.total)} checked`;
 };
 
+/** "2 of 3 sections done", under a step of an exam with more than one section. */
+const sectionsDetail = (flags: boolean[], word: string) =>
+  flags.length > 1 ? `${flags.filter(Boolean).length} of ${flags.length} sections ${word}` : null;
+
 const getTimeline = async (user: any, examId: string) => {
   const exam = await requireExam(user.instituteId, examId);
   const [papers, scanners, evaluators, firstResult, rechecks, roster, { covers, byExam }] = await Promise.all([
@@ -300,8 +387,11 @@ const getTimeline = async (user: any, examId: string) => {
   ]);
   const first = (dates: (Date | null | undefined)[]) =>
     dates.filter(Boolean).sort((a, b) => new Date(a as Date).getTime() - new Date(b as Date).getTime())[0] ?? null;
-  const activeScan = scanners.find((s) => s.isActive) ?? null;
-  const activeEval = evaluators.find((e) => e.isActive) ?? null;
+  const activeScans = scanners.filter((s) => s.isActive);
+  const activeEvals = evaluators.filter((e) => e.isActive);
+  const scan = scanState(roster, activeScans);
+  const review = reviewState(roster, activeEvals);
+  const sectionNameOf = new Map(roster.sections.map((s) => [sectionKey(s.sectionId), s.sectionName]));
 
   // The cross-check step: shown when the policy covers the subject, or when the exam had one.
   // It stays out for schools that never cross-checked, and for exams published before it.
@@ -312,10 +402,15 @@ const getTimeline = async (user: any, examId: string) => {
     { key: "CREATED", label: "Exam created and assigned to the subject teacher", at: exam.createdAt, detail: null },
     { key: "PAPER_SUBMITTED", label: "Question paper and model answer submitted", at: first(papers.map((p) => p.submittedAt)), detail: null },
     { key: "PAPER_APPROVED", label: "Approved by admin", at: first(papers.map((p) => p.approvedAt)), detail: null },
-    { key: "SCANNER_ASSIGNED", label: "Scanner assigned", at: activeScan?.createdAt ?? null, detail: null },
-    { key: "SCAN_COMPLETED", label: "All answer sheets uploaded / absentees marked", at: activeScan?.completedAt ?? null, detail: null },
-    { key: "EVALUATOR_ASSIGNED", label: "Evaluator assigned", at: activeEval?.createdAt ?? null, detail: null },
-    { key: "EVALUATION_REVIEWED", label: "Evaluation completed and reviewed", at: activeEval?.reviewedAt ?? null, detail: null },
+    { key: "SCANNER_ASSIGNED", label: "Scanner assigned", at: first(activeScans.map((s) => s.createdAt)), detail: sectionsDetail(scan.sections.map((s) => Boolean(s.scanner)), "assigned") },
+    {
+      key: "SCAN_COMPLETED",
+      label: "All answer sheets uploaded / absentees marked",
+      at: scan.done ? latest(activeScans.map((s) => s.completedAt)) ?? first(activeScans.map((s) => s.createdAt)) : null,
+      detail: sectionsDetail(scan.sections.map((s) => s.done), "done"),
+    },
+    { key: "EVALUATOR_ASSIGNED", label: "Evaluator assigned", at: first(activeEvals.map((e) => e.createdAt)), detail: sectionsDetail(review.sections.map((s) => Boolean(s.evaluator)), "assigned") },
+    { key: "EVALUATION_REVIEWED", label: "Evaluation completed and reviewed", at: review.reviewedAt, detail: sectionsDetail(review.sections.map((s) => Boolean(s.evaluator?.reviewedAt)), "reviewed") },
     ...(crossCheckStep ? [crossCheckStep] : []),
     { key: "RESULTS_PUBLISHED", label: "Results published to students", at: firstResult?.publishedAt ?? null, detail: null },
   ];
@@ -327,8 +422,25 @@ const getTimeline = async (user: any, examId: string) => {
     rechecks,
     steps,
     history: {
-      scanners: scanners.map((s) => ({ scannerId: s.scannerId, status: s.status, isActive: s.isActive, assignedAt: s.createdAt, completedAt: s.completedAt, unassignedAt: s.unassignedAt })),
-      evaluators: evaluators.map((e) => ({ teacherId: e.teacherId, isActive: e.isActive, assignedAt: e.createdAt, reviewedAt: e.reviewedAt, unassignedAt: e.unassignedAt })),
+      scanners: scanners.map((s) => ({
+        scannerId: s.scannerId,
+        sectionId: s.sectionId,
+        sectionName: sectionNameOf.get(sectionKey(s.sectionId)) ?? "",
+        status: s.status,
+        isActive: s.isActive,
+        assignedAt: s.createdAt,
+        completedAt: s.completedAt,
+        unassignedAt: s.unassignedAt,
+      })),
+      evaluators: evaluators.map((e) => ({
+        teacherId: e.teacherId,
+        sectionId: e.sectionId,
+        sectionName: sectionNameOf.get(sectionKey(e.sectionId)) ?? "",
+        isActive: e.isActive,
+        assignedAt: e.createdAt,
+        reviewedAt: e.reviewedAt,
+        unassignedAt: e.unassignedAt,
+      })),
     },
   };
 };
@@ -342,7 +454,7 @@ const listScanners = async (admin: any, examId: string) => {
   const instituteId = admin.instituteId;
   const exam = await requireExam(instituteId, examId);
   const scannerRole = await Role.findOne({ where: { role: "SCANNER" }, attributes: ["id"] });
-  const [scanners, load, current] = await Promise.all([
+  const [scanners, load, current, sections] = await Promise.all([
     scannerRole
       ? UserModal.findAll({
           where: { instituteId, roleId: scannerRole.id, status: 1, isDeleted: false },
@@ -356,27 +468,43 @@ const listScanners = async (admin: any, examId: string) => {
       group: ["scannerId"],
       raw: true,
     }) as unknown as Promise<{ scannerId: string; count: string }[]>,
-    activeScanner(exam.examId),
+    activeScanners(exam.examId),
+    sectionsOfExam(exam),
   ]);
   const loadById = new Map(load.map((l) => [l.scannerId, Number(l.count) || 0]));
+  const currentBySection = new Map(current.map((c) => [sectionKey(c.sectionId), c]));
+  const nameOf = new Map((scanners as any[]).map((s) => [s.userId, s.userName]));
+  const onExam = new Set(current.map((c) => c.scannerId));
   return {
-    exam: { examId: exam.examId, label: examLabel(exam) },
-    current: current ? { scannerId: current.scannerId, status: current.status, assignedAt: current.createdAt } : null,
+    exam: { examId: exam.examId, label: examLabel(exam), wholeClass: !exam.sectionId },
+    // Each section of the exam and who scans it now.
+    sections: sections.map((s) => {
+      const c = currentBySection.get(sectionKey(s.sectionId));
+      return {
+        sectionId: s.sectionId,
+        sectionName: s.sectionName,
+        students: s.students,
+        scanner: c ? { scannerId: c.scannerId, name: nameOf.get(c.scannerId) ?? "", status: c.status, assignedAt: c.createdAt } : null,
+      };
+    }),
+    current: current[0] ? { scannerId: current[0].scannerId, status: current[0].status, assignedAt: current[0].createdAt } : null,
     scanners: (scanners as any[])
       .map((s) => ({
         userId: s.userId,
         userName: s.userName,
         emailId: s.emailId,
+        // Sections still to finish, across exams (each section is a piece of work).
         openExams: loadById.get(s.userId) ?? 0,
-        isCurrent: current?.scannerId === s.userId,
+        isCurrent: onExam.has(s.userId),
       }))
       .sort((a, b) => Number(b.isCurrent) - Number(a.isCurrent) || a.openExams - b.openExams || a.userName.localeCompare(b.userName)),
   };
 };
 
 /**
- * Gives the exam's sheet upload to a scanner. Assigning the same scanner again
- * re-opens a completed scan (e.g. a late sheet turned up).
+ * Gives the upload of some sections of the exam (`sectionIds`; all of them when it names
+ * none) to a scanner. Giving a section to the scanner who already has it re-opens it if it
+ * was completed (e.g. a late sheet turned up); a section another scanner had moves over.
  */
 const assignScanner = async (admin: any, examId: string, body: any) => {
   const instituteId = admin.instituteId;
@@ -395,87 +523,132 @@ const assignScanner = async (admin: any, examId: string, body: any) => {
   });
   if (!scanner) throw new ApiError(httpStatus.BAD_REQUEST, "That scanner account is not active in your institute.");
 
-  let previousScannerId: string | null = null;
-  let reopened = false;
-  const result = await sequelize.transaction(async (t) => {
+  const wanted = pickSections(await sectionsOfExam(exam), body?.sectionIds);
+
+  const given: string[] = []; // sections new to this scanner
+  const reopened: string[] = []; // sections of theirs that were completed and open again
+  const movedFrom = new Map<string, string[]>(); // previous scanner → their sections that moved
+  const rows = await sequelize.transaction(async (t) => {
     // Lock the exam row so publish / assign can't interleave.
     await Exam.findOne({ where: { examId: exam.examId }, transaction: t, lock: t.LOCK.UPDATE });
     if (await publishedCount(exam.examId, t)) {
       throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published. Unpublish them first.");
     }
-    const previous = await activeScanner(exam.examId, t, true);
-    if (previous?.scannerId === scannerId) {
-      reopened = previous.status === SCAN_STATUS.COMPLETED;
-      await previous.update(
-        { note, assignedBy: admin.userId, status: SCAN_STATUS.ASSIGNED, completedAt: null, completedBy: null },
-        { transaction: t }
+    const out: ExamScannerAssignment[] = [];
+    for (const section of wanted) {
+      const previous = await scannerOfSection(exam.examId, section.sectionId, t, true);
+      if (previous?.scannerId === scannerId) {
+        const wasDone = previous.status === SCAN_STATUS.COMPLETED;
+        await previous.update(
+          { note, assignedBy: admin.userId, status: SCAN_STATUS.ASSIGNED, completedAt: null, completedBy: null },
+          { transaction: t }
+        );
+        // Re-opening here answers the scanner's open request, if they had asked.
+        if (wasDone) {
+          reopened.push(section.sectionName);
+          await settleOpenReopen(previous.assignmentId, admin.userId, true, "Re-opened under Scanning.", t);
+        }
+        out.push(previous);
+        continue;
+      }
+      if (previous) {
+        movedFrom.set(previous.scannerId, [...(movedFrom.get(previous.scannerId) ?? []), section.sectionName]);
+        await previous.update({ isActive: false, unassignedAt: new Date() }, { transaction: t });
+        await settleOpenReopen(previous.assignmentId, admin.userId, false, "The section was given to another scanner.", t);
+      }
+      out.push(
+        await ExamScannerAssignment.create(
+          { assignmentId: newId("scannerAssignment"), instituteId, examId: exam.examId, sectionId: section.sectionId, scannerId, assignedBy: admin.userId, note },
+          { transaction: t }
+        )
       );
-      // Re-opening here answers the scanner's open request, if they had asked.
-      if (reopened) await settleOpenReopen(exam.examId, admin.userId, true, "Re-opened under Scanning.", t);
-      return previous;
+      given.push(section.sectionName);
     }
-    if (previous) {
-      previousScannerId = previous.scannerId;
-      await previous.update({ isActive: false, unassignedAt: new Date() }, { transaction: t });
-      await settleOpenReopen(exam.examId, admin.userId, false, "The exam was given to another scanner.", t);
-    }
-    const created = await ExamScannerAssignment.create(
-      { assignmentId: newId("scannerAssignment"), instituteId, examId: exam.examId, scannerId, assignedBy: admin.userId, note },
-      { transaction: t }
-    );
 
-    const label = examLabel(exam);
     await notifyAll(
       [
-        {
-          instituteId,
-          userId: scannerId,
-          type: "SCAN_ASSIGNED",
-          title: "Answer sheets to upload",
-          message: `Upload the answer sheets of ${label}. Mark students without a sheet as absent, then mark the upload complete.`,
-          referenceId: exam.examId,
-        },
-        ...(previousScannerId
-          ? [{ instituteId, userId: previousScannerId, type: "SCAN_UNASSIGNED", title: "Scanning reassigned", message: `Uploading for ${label} was given to another scanner.`, referenceId: exam.examId }]
+        ...(given.length
+          ? [
+              {
+                instituteId,
+                userId: scannerId,
+                type: "SCAN_ASSIGNED",
+                title: "Answer sheets to upload",
+                message: `Upload the answer sheets of ${workLabel(exam, given)}. Mark students without a sheet as absent, then mark the upload complete.`,
+                referenceId: exam.examId,
+              },
+            ]
           : []),
+        ...[...movedFrom].map(([userId, names]) => ({
+          instituteId,
+          userId,
+          type: "SCAN_UNASSIGNED",
+          title: "Scanning reassigned",
+          message: `Uploading for ${workLabel(exam, names)} was given to another scanner.`,
+          referenceId: exam.examId,
+        })),
       ],
       t
     );
-    return created;
+    return out;
   });
 
-  if (reopened) {
+  if (reopened.length) {
     await notifyAll([
-      { instituteId, userId: scannerId, type: "SCAN_REOPENED", title: "Upload re-opened", message: `The admin re-opened uploading for ${examLabel(exam)}.`, referenceId: exam.examId },
+      { instituteId, userId: scannerId, type: "SCAN_REOPENED", title: "Upload re-opened", message: `The admin re-opened uploading for ${workLabel(exam, reopened)}.`, referenceId: exam.examId },
     ]);
   }
   refreshHomes(instituteId);
-  return { examId: exam.examId, scannerId: result.scannerId, status: result.status, assignedAt: result.createdAt };
+  return {
+    examId: exam.examId,
+    scannerId,
+    status: rows[0]?.status ?? SCAN_STATUS.ASSIGNED,
+    assignedAt: rows[0]?.createdAt ?? null,
+    sections: rows.map((r) => ({ sectionId: r.sectionId, status: r.status, assignedAt: r.createdAt })),
+  };
 };
 
-const unassignScanner = async (admin: any, examId: string) => {
+/** Takes the scanner off one section (`?sectionId=`, "" = students without a section) or, without it, off every section. */
+const unassignScanner = async (admin: any, examId: string, query: any = {}) => {
   const instituteId = admin.instituteId;
   const exam = await requireExam(instituteId, examId);
-  const scannerId = await sequelize.transaction(async (t) => {
-    const active = await activeScanner(exam.examId, t, true);
-    if (!active) throw new ApiError(httpStatus.NOT_FOUND, "No scanner is assigned to this exam.");
-    await active.update({ isActive: false, unassignedAt: new Date() }, { transaction: t });
-    await settleOpenReopen(exam.examId, admin.userId, false, "The scanner was removed from this exam.", t);
+  const only = query && Object.prototype.hasOwnProperty.call(query, "sectionId") ? sectionKey(query.sectionId) : null;
+  const nameOf = new Map((await sectionsOfExam(exam)).map((s) => [sectionKey(s.sectionId), s.sectionName]));
+  const removed = await sequelize.transaction(async (t) => {
+    const active = (await activeScanners(exam.examId, t, true)).filter((a) => only === null || sectionKey(a.sectionId) === only);
+    if (!active.length) throw new ApiError(httpStatus.NOT_FOUND, only === null ? "No scanner is assigned to this exam." : "No scanner is assigned to that section.");
+    const byScanner = new Map<string, string[]>();
+    for (const a of active) {
+      await a.update({ isActive: false, unassignedAt: new Date() }, { transaction: t });
+      await settleOpenReopen(a.assignmentId, admin.userId, false, "The scanner was removed from this section.", t);
+      byScanner.set(a.scannerId, [...(byScanner.get(a.scannerId) ?? []), nameOf.get(sectionKey(a.sectionId)) ?? ""]);
+    }
     await notifyAll(
-      [{ instituteId, userId: active.scannerId, type: "SCAN_UNASSIGNED", title: "Scanning unassigned", message: `You no longer upload sheets for ${examLabel(exam)}.`, referenceId: exam.examId }],
+      [...byScanner].map(([userId, names]) => ({
+        instituteId,
+        userId,
+        type: "SCAN_UNASSIGNED",
+        title: "Scanning unassigned",
+        message: `You no longer upload sheets for ${workLabel(exam, names)}.`,
+        referenceId: exam.examId,
+      })),
       t
     );
-    return active.scannerId;
+    return active;
   });
   refreshHomes(instituteId);
-  return { examId: exam.examId, scannerId };
+  return { examId: exam.examId, scannerId: removed[0].scannerId, removed: removed.length };
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
 // SCANNER — assigned exams, roster, absentees, completion
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** The scanner's own active assignments (admins see every active one); `sessionId` keeps one session's exams. */
+/**
+ * The scanner's own active assignments (admins see every active one), one per exam section:
+ * a whole-class exam given in sections is that many pieces of work. `sessionId` keeps one
+ * session's exams.
+ */
 const myScanExams = async (user: any, query: any) => {
   const instituteId = user.instituteId;
   const { page, limit, offset } = paging(query, 10);
@@ -494,21 +667,31 @@ const myScanExams = async (user: any, query: any) => {
     ? await Exam.findAll({ where: { examId: { [Op.in]: rows.map((r) => r.examId) }, isDeleted: false }, include: EXAM_INCLUDES })
     : [];
   const examById = new Map(exams.map((e: any) => [e.examId, e]));
+  // One roster per exam, however many of its sections are on this page.
+  const rosters = new Map<string, Promise<Roster>>();
+  const rosterOf = (exam: any) => {
+    if (!rosters.has(exam.examId)) rosters.set(exam.examId, buildRoster(exam));
+    return rosters.get(exam.examId) as Promise<Roster>;
+  };
 
   const items = await Promise.all(
     rows.map(async (a) => {
       const exam: any = examById.get(a.examId);
       if (!exam) return null;
-      const roster = await buildRoster(exam);
+      const section = (await rosterOf(exam)).sections.find((s) => sectionKey(s.sectionId) === sectionKey(a.sectionId));
+      const sectionName = section?.sectionName ?? (sectionKey(a.sectionId) === sectionKey(exam.sectionId) ? exam.section?.sectionName ?? "" : "");
       return {
         examId: exam.examId,
-        label: examLabel(exam),
+        assignmentId: a.assignmentId,
+        label: workLabel(exam, [sectionName]),
         examType: exam.examType,
         examDate: exam.examDate,
         classId: exam.classId,
         className: exam.class?.className ?? "",
-        sectionId: exam.sectionId,
-        sectionName: exam.section?.sectionName ?? "",
+        // The section this piece of work covers (for a whole-class exam: one of its sections).
+        sectionId: a.sectionId ?? exam.sectionId ?? null,
+        sectionName,
+        wholeClass: !exam.sectionId,
         subjectId: exam.subjectId,
         subjectName: exam.subject?.subjectName ?? "",
         sessionName: exam.session?.sessionName ?? "",
@@ -517,67 +700,107 @@ const myScanExams = async (user: any, query: any) => {
         assignedAt: a.createdAt,
         completedAt: a.completedAt,
         note: a.note,
-        counts: scanCountsFor(user, roster.counts),
+        counts: scanCountsFor(user, section?.counts ?? countsOf([])),
       };
     })
   );
   const list = items.filter(Boolean) as NonNullable<(typeof items)[number]>[];
-  // The scanner sees where their re-open request for each exam stands.
+  // The scanner sees where their re-open request for each section stands.
   if (!isAdmin(user)) {
-    const latest = await latestReopenRequests(list.map((e) => e.examId), user.userId);
-    return { exams: list.map((e) => ({ ...e, reopenRequest: reopenInfo(latest.get(e.examId)) })), pagination: pageInfo(count, page, limit) };
+    const requests = await latestReopenRequests(list.map((e) => e.assignmentId), user.userId);
+    return { exams: list.map((e) => ({ ...e, reopenRequest: reopenInfo(requests.get(e.assignmentId)) })), pagination: pageInfo(count, page, limit) };
   }
   return { exams: list, pagination: pageInfo(count, page, limit) };
 };
 
-/** The scanner (or an admin) may work on this exam's sheets. */
-const requireScanAccess = async (user: any, examId: string, { forWrite }: { forWrite: boolean }) => {
+/**
+ * What of this exam the requester may work on. A scanner: the sections given to them, or the
+ * one they name (`sectionId`, "" = students without a section). An admin: every section, or
+ * the one they name. `scope` is the section keys in view (null: the whole exam) and
+ * `assignments` the active scanner rows of those sections.
+ */
+const requireScanAccess = async (user: any, examId: string, sectionRaw: unknown, { forWrite }: { forWrite: boolean }) => {
   const exam = await requireExam(user.instituteId, examId);
-  const assignment = await activeScanner(exam.examId);
+  const [all, sections] = await Promise.all([activeScanners(exam.examId), sectionsOfExam(exam)]);
+  const named = sectionRaw !== undefined && sectionRaw !== null;
+  const key = named ? sectionKey(sectionRaw as string) : "";
+  if (named && !sections.some((s) => sectionKey(s.sectionId) === key)) throw new ApiError(httpStatus.NOT_FOUND, "That section isn't part of this exam.");
+
+  const mine = isAdmin(user) ? all : all.filter((a) => a.scannerId === user.userId);
   if (!isAdmin(user)) {
-    if (!assignment || assignment.scannerId !== user.userId) {
-      throw new ApiError(httpStatus.FORBIDDEN, "This exam is not assigned to you for scanning.");
+    if (!mine.length) throw new ApiError(httpStatus.FORBIDDEN, "This exam is not assigned to you for scanning.");
+    if (named && !mine.some((a) => sectionKey(a.sectionId) === key)) {
+      throw new ApiError(httpStatus.FORBIDDEN, "This section of the exam is not assigned to you for scanning.");
     }
   }
-  if (forWrite) {
-    if (assignment?.status === SCAN_STATUS.COMPLETED) {
-      throw new ApiError(httpStatus.CONFLICT, "Uploading for this exam is marked complete. Ask the admin to re-open it.");
-    }
-    if (await publishedCount(exam.examId)) {
-      throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published.");
-    }
+  const scope: string[] | null = named ? [key] : isAdmin(user) ? null : mine.map((a) => sectionKey(a.sectionId));
+  const assignments = mine.filter((a) => scope === null || scope.includes(sectionKey(a.sectionId)));
+  if (forWrite && (await publishedCount(exam.examId))) {
+    throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published.");
   }
-  return { exam, assignment };
+  return { exam, sections, assignments, scope };
 };
 
-const scanRoster = async (user: any, examId: string) => {
-  const { exam, assignment } = await requireScanAccess(user, examId, { forWrite: false });
-  const [roster, latest] = await Promise.all([
-    buildRoster(exam),
-    isAdmin(user) ? Promise.resolve(new Map<string, ScanReopenRequest>()) : latestReopenRequests([exam.examId], user.userId),
+/** Throws if uploading for any of these sections (keys) is marked complete. */
+const assertSectionsOpen = (exam: any, assignments: ExamScannerAssignment[], sections: ExamSection[], keys: Iterable<string>) => {
+  const wanted = new Set(keys);
+  const closed = assignments.find((a) => wanted.has(sectionKey(a.sectionId)) && a.status === SCAN_STATUS.COMPLETED);
+  if (closed) {
+    const section = sections.find((s) => sectionKey(s.sectionId) === sectionKey(closed.sectionId));
+    const where = section ? sectionText(exam, section) : "";
+    throw new ApiError(httpStatus.CONFLICT, `Uploading for ${where || "this exam"} is marked complete. Ask the admin to re-open it.`);
+  }
+};
+
+const scanRoster = async (user: any, examId: string, query: any = {}) => {
+  const { exam, sections, assignments, scope } = await requireScanAccess(user, examId, query?.sectionId, { forWrite: false });
+  const [roster, requests] = await Promise.all([
+    buildRoster(exam, { sections: scope }),
+    isAdmin(user) ? Promise.resolve(new Map<string, ScanReopenRequest>()) : latestReopenRequests(assignments.map((a) => a.assignmentId), user.userId),
   ]);
+  const inView = sections.filter((s) => scope === null || scope.includes(sectionKey(s.sectionId)));
+  // One section in view (a section exam, or one tab of a whole-class exam): its own state.
+  const single = inView.length === 1 ? inView[0] : null;
+  const one = single ? assignments.find((a) => sectionKey(a.sectionId) === sectionKey(single.sectionId)) ?? null : null;
+  const allDone = assignments.length > 0 && assignments.every((a) => a.status === SCAN_STATUS.COMPLETED);
   return {
     exam: {
       examId: exam.examId,
-      label: examLabel(exam),
+      label: workLabel(exam, inView.map((s) => s.sectionName)),
       classId: exam.classId,
       className: exam.class?.className ?? "",
-      sectionId: exam.sectionId,
-      sectionName: exam.section?.sectionName ?? "",
+      sectionId: single ? single.sectionId : exam.sectionId,
+      sectionName: single ? single.sectionName : exam.section?.sectionName ?? "",
+      wholeClass: !exam.sectionId,
       subjectId: exam.subjectId,
       subjectName: exam.subject?.subjectName ?? "",
       examType: exam.examType,
       sessionName: exam.session?.sessionName ?? "",
-      scanStatus: assignment?.status ?? null,
-      completedAt: assignment?.completedAt ?? null,
+      scanStatus: one ? one.status : assignments.length ? (allDone ? SCAN_STATUS.COMPLETED : SCAN_STATUS.ASSIGNED) : null,
+      completedAt: one ? one.completedAt : allDone ? latest(assignments.map((a) => a.completedAt)) : null,
       // The scanner's latest request to re-open it (scanner staff only).
-      reopenRequest: reopenInfo(latest.get(exam.examId)),
+      reopenRequest: one ? reopenInfo(requests.get(one.assignmentId)) : null,
     },
+    // The sections in view, each with its own upload state: the tabs of the scanner's page.
+    sections: inView.map((s) => {
+      const a = assignments.find((x) => sectionKey(x.sectionId) === sectionKey(s.sectionId));
+      return {
+        sectionId: s.sectionId,
+        sectionName: s.sectionName,
+        students: s.students,
+        scanStatus: a?.status ?? null,
+        completedAt: a?.completedAt ?? null,
+        reopenRequest: a ? reopenInfo(requests.get(a.assignmentId)) : null,
+        counts: scanCountsFor(user, roster.sections.find((x) => sectionKey(x.sectionId) === sectionKey(s.sectionId))?.counts ?? countsOf([])),
+      };
+    }),
     rows: roster.rows.map((r) => ({
       studentId: r.studentId,
       // Scanners see the name masked (as in the teacher panel); the roll number stays visible.
       name: isAdmin(user) ? r.name : maskName(r.name),
       rollNo: r.rollNo,
+      sectionId: r.sectionId,
+      sectionName: r.sectionName,
       state: r.state,
       sheetId: r.sheetId,
       fileName: r.fileName,
@@ -600,12 +823,15 @@ const setAttendance = async (user: any, examId: string, body: any) => {
   if (!studentIds.length) throw new ApiError(httpStatus.BAD_REQUEST, "Choose at least one student.");
   if (studentIds.length > 500) throw new ApiError(httpStatus.BAD_REQUEST, "Too many students in one request.");
 
-  const { exam } = await requireScanAccess(user, examId, { forWrite: true });
-  const roster = await buildRoster(exam);
+  const { exam, sections, assignments, scope } = await requireScanAccess(user, examId, body?.sectionId, { forWrite: true });
+  const roster = await buildRoster(exam, { sections: scope });
   const byStudent = new Map(roster.rows.filter((r) => r.studentId).map((r) => [r.studentId as string, r]));
 
   const unknown = studentIds.filter((id) => !byStudent.has(id));
-  if (unknown.length) throw new ApiError(httpStatus.BAD_REQUEST, `${unknown.length} of the chosen students don't sit this exam.`);
+  if (unknown.length) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `${unknown.length} of the chosen students ${scope ? "aren't in your sections of this exam" : "don't sit this exam"}.`);
+  }
+  assertSectionsOpen(exam, assignments, sections, studentIds.map((id) => sectionKey(byStudent.get(id)?.sectionId)));
   const withSheet = studentIds.filter((id) => byStudent.get(id)?.state === "UPLOADED");
   if (absent && withSheet.length) {
     const rolls = withSheet.map((id) => byStudent.get(id)?.rollNo).join(", ");
@@ -642,34 +868,59 @@ const setAttendance = async (user: any, examId: string, body: any) => {
     }
   });
 
-  return { examId: exam.examId, updated: studentIds.length, absent, counts: scanCountsFor(user, (await buildRoster(exam)).counts) };
+  return { examId: exam.examId, updated: studentIds.length, absent, counts: scanCountsFor(user, (await buildRoster(exam, { sections: scope })).counts) };
 };
 
-/** Scanner marks the upload done; allowed only when every student has a sheet or is absent. */
-const completeScan = async (user: any, examId: string) => {
-  const { exam } = await requireScanAccess(user, examId, { forWrite: true });
-  const roster = await buildRoster(exam);
-  if (roster.counts.total === 0) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "This exam has no students and no uploaded sheets yet.");
-  }
-  if (roster.counts.pending > 0) {
-    throw new ApiError(
-      httpStatus.CONFLICT,
-      `${roster.counts.pending} student${roster.counts.pending === 1 ? " has" : "s have"} neither a sheet nor an absent mark. Upload or mark them first.`
-    );
+/**
+ * Scanner marks the upload of a section done (`sectionId`; without it, every open section of
+ * theirs); allowed only when every student in it has a sheet or is absent.
+ */
+const completeScan = async (user: any, examId: string, body: any = {}) => {
+  const { exam, assignments, scope } = await requireScanAccess(user, examId, body?.sectionId, { forWrite: true });
+  const open = assignments.filter((a) => a.status !== SCAN_STATUS.COMPLETED);
+  if (!open.length) throw new ApiError(httpStatus.CONFLICT, "Uploading is already marked complete.");
+  const roster = await buildRoster(exam, { sections: scope });
+  const sectionOf = (a: ExamScannerAssignment) => roster.sections.find((s) => sectionKey(s.sectionId) === sectionKey(a.sectionId));
+  for (const a of open) {
+    const section = sectionOf(a);
+    const where = section ? sectionText(exam, section) : "";
+    const counts = section?.counts ?? countsOf([]);
+    if (counts.total === 0) {
+      throw new ApiError(httpStatus.BAD_REQUEST, `${where ? `${where[0].toUpperCase()}${where.slice(1)} has` : "This exam has"} no students and no uploaded sheets yet.`);
+    }
+    if (counts.pending > 0) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `${where ? `In ${where}, ` : ""}${counts.pending} student${counts.pending === 1 ? " has" : "s have"} neither a sheet nor an absent mark. Upload or mark them first.`
+      );
+    }
   }
 
-  const evaluator = await activeEvaluator(exam.examId);
+  const evaluators = await activeEvaluators(exam.examId);
   const completedAt = new Date();
   await sequelize.transaction(async (t) => {
-    const assignment = await activeScanner(exam.examId, t, true);
-    if (!assignment) throw new ApiError(httpStatus.CONFLICT, "No scanner is assigned to this exam.");
-    if (assignment.status === SCAN_STATUS.COMPLETED) throw new ApiError(httpStatus.CONFLICT, "Uploading is already marked complete.");
-    await assignment.update({ status: SCAN_STATUS.COMPLETED, completedAt, completedBy: user.userId }, { transaction: t });
+    const done: ExamScannerAssignment[] = [];
+    for (const a of open) {
+      const row = await scannerOfSection(exam.examId, a.sectionId, t, true);
+      if (!row || row.assignmentId !== a.assignmentId) throw new ApiError(httpStatus.CONFLICT, "This section was just given to another scanner. Reload the page.");
+      if (row.status === SCAN_STATUS.COMPLETED) continue;
+      await row.update({ status: SCAN_STATUS.COMPLETED, completedAt, completedBy: user.userId }, { transaction: t });
+      done.push(row);
+    }
+    if (!done.length) throw new ApiError(httpStatus.CONFLICT, "Uploading is already marked complete.");
 
-    const label = examLabel(exam);
-    const summary = `${roster.counts.uploaded} sheet${roster.counts.uploaded === 1 ? "" : "s"}, ${roster.counts.absent} absent`;
-    const adminIds = [assignment.assignedBy, ...(await instituteAdminIds(exam.instituteId, t))];
+    const names = done.map((a) => sectionOf(a)?.sectionName ?? "");
+    const counts = done.map((a) => sectionOf(a)?.counts ?? countsOf([]));
+    const uploaded = counts.reduce((n, c) => n + c.uploaded, 0);
+    const absent = counts.reduce((n, c) => n + c.absent, 0);
+    const summary = `${uploaded} sheet${uploaded === 1 ? "" : "s"}, ${absent} absent`;
+    const adminIds = [...done.map((a) => a.assignedBy), ...(await instituteAdminIds(exam.instituteId, t))];
+    // Each evaluator hears about the sections they evaluate.
+    const forEvaluator = new Map<string, string[]>();
+    for (const a of done) {
+      const evaluator = evaluators.find((e) => sectionKey(e.sectionId) === sectionKey(a.sectionId));
+      if (evaluator) forEvaluator.set(evaluator.teacherId, [...(forEvaluator.get(evaluator.teacherId) ?? []), sectionOf(a)?.sectionName ?? ""]);
+    }
     await notifyAll(
       [
         ...Array.from(new Set(adminIds)).map((userId) => ({
@@ -677,12 +928,17 @@ const completeScan = async (user: any, examId: string) => {
           userId,
           type: "SCAN_COMPLETED",
           title: "Answer sheets uploaded",
-          message: `Uploading for ${label} is complete (${summary}).`,
+          message: `Uploading for ${workLabel(exam, names)} is complete (${summary}).`,
           referenceId: exam.examId,
         })),
-        ...(evaluator
-          ? [{ instituteId: exam.instituteId, userId: evaluator.teacherId, type: "SCAN_COMPLETED", title: "Sheets ready to evaluate", message: `All answer sheets of ${label} are uploaded (${summary}).`, referenceId: exam.examId }]
-          : []),
+        ...[...forEvaluator].map(([userId, sectionNames]) => ({
+          instituteId: exam.instituteId,
+          userId,
+          type: "SCAN_COMPLETED",
+          title: "Sheets ready to evaluate",
+          message: `All answer sheets of ${workLabel(exam, sectionNames)} are uploaded.`,
+          referenceId: exam.examId,
+        })),
       ],
       t
     );
@@ -693,12 +949,13 @@ const completeScan = async (user: any, examId: string) => {
 };
 
 /**
- * Called by the upload paths before a sheet of this exam is added, replaced or
- * deleted: only the assigned scanner (or an admin) may, and not once the scan
- * is complete or results are out. Exams without a scanner assignment keep the
- * old behaviour (any uploader of the institute).
+ * Called by the upload paths before a sheet of this exam is added, replaced or deleted: only
+ * the scanner given the sheet's section (or an admin) may, and not once that section's upload
+ * is complete or results are out. Exams without any scanner keep the old behaviour (admins
+ * only). `sectionId` is the sheet's section (null: no section); left out when it isn't known
+ * yet, any open section of the scanner's will do.
  */
-export const assertSheetWritable = async (user: any, examId: string | null | undefined) => {
+export const assertSheetWritable = async (user: any, examId: string | null | undefined, sectionId?: string | null) => {
   if (!examId) return;
   const exam = await Exam.findOne({ where: { examId, instituteId: user.instituteId, isDeleted: false }, attributes: ["examId", "status"] });
   if (!exam) return;
@@ -706,12 +963,23 @@ export const assertSheetWritable = async (user: any, examId: string | null | und
   if (!(await isPaperApproved(exam))) {
     throw new ApiError(httpStatus.CONFLICT, "The question paper of this exam isn't approved yet, so answer sheets can't be uploaded.");
   }
-  const assignment = await activeScanner(exam.examId);
-  if (assignment) {
-    if (!isAdmin(user) && assignment.scannerId !== user.userId) {
-      throw new ApiError(httpStatus.FORBIDDEN, "This exam is assigned to another scanner.");
+  const scanners = await activeScanners(exam.examId);
+  if (scanners.length && sectionId !== undefined) {
+    const assignment = scanners.find((a) => sectionKey(a.sectionId) === sectionKey(sectionId));
+    if (!assignment) {
+      if (!isAdmin(user)) throw new ApiError(httpStatus.FORBIDDEN, "This section of the exam isn't assigned to you. Ask the admin to assign it to you under Exam Workflow.");
+    } else {
+      if (!isAdmin(user) && assignment.scannerId !== user.userId) {
+        throw new ApiError(httpStatus.FORBIDDEN, "This section of the exam is assigned to another scanner.");
+      }
+      if (assignment.status === SCAN_STATUS.COMPLETED) {
+        throw new ApiError(httpStatus.CONFLICT, "Uploading for this section is marked complete. Ask the admin to re-open it.");
+      }
     }
-    if (assignment.status === SCAN_STATUS.COMPLETED) {
+  } else if (scanners.length) {
+    const mine = scanners.filter((a) => a.scannerId === user.userId);
+    if (!isAdmin(user) && !mine.length) throw new ApiError(httpStatus.FORBIDDEN, "This exam is assigned to another scanner.");
+    if (!isAdmin(user) && mine.every((a) => a.status === SCAN_STATUS.COMPLETED)) {
       throw new ApiError(httpStatus.CONFLICT, "Uploading for this exam is marked complete. Ask the admin to re-open it.");
     }
   } else if (!isAdmin(user)) {
@@ -723,36 +991,43 @@ export const assertSheetWritable = async (user: any, examId: string | null | und
 };
 
 /**
- * Called by the upload paths once a sheet of this exam was added, replaced or deleted. Marks the evaluator
- * confirmed before then no longer cover the exam's sheets: the review is cleared (they evaluate the new scan
- * and confirm again), and its cross-check round is cancelled, to start over after that.
+ * Called by the upload paths once a sheet of this exam was added, replaced or deleted. Marks the evaluators
+ * of those sections (all of them when none are named) confirmed before then no longer cover the sheets: the
+ * review is cleared (they evaluate the new scan and confirm again), and the exam's cross-check round is
+ * cancelled, to start over after that.
  */
-export const sheetsChangedAfterReview = async (examId: string | null | undefined) => {
+export const sheetsChangedAfterReview = async (examId: string | null | undefined, sections?: (string | null)[]) => {
   if (!examId) return;
-  const evaluator = await activeEvaluator(examId);
-  if (evaluator?.reviewedAt) {
-    await evaluator.update({ reviewedAt: null, reviewedBy: null });
+  const keys = sections ? new Set(sections.map(sectionKey)) : null;
+  const reviewed = (await activeEvaluators(examId)).filter((e) => e.reviewedAt && (!keys || keys.has(sectionKey(e.sectionId))));
+  if (reviewed.length) {
     const exam: any = await Exam.findOne({ where: { examId }, include: EXAM_INCLUDES });
-    await notifyAll([
-      {
-        instituteId: evaluator.instituteId,
-        userId: evaluator.teacherId,
+    const nameOf = exam ? new Map((await sectionsOfExam(exam)).map((s) => [sectionKey(s.sectionId), s.sectionName])) : new Map<string, string>();
+    const byTeacher = new Map<string, string[]>();
+    for (const e of reviewed) {
+      await e.update({ reviewedAt: null, reviewedBy: null });
+      byTeacher.set(e.teacherId, [...(byTeacher.get(e.teacherId) ?? []), nameOf.get(sectionKey(e.sectionId)) ?? ""]);
+    }
+    await notifyAll(
+      [...byTeacher].map(([userId, names]) => ({
+        instituteId: reviewed[0].instituteId,
+        userId,
         type: "EVALUATION_REOPENED",
         title: "Answer sheets changed",
-        message: `The answer sheets of ${exam ? examLabel(exam) : "an exam"} changed after you confirmed its marks. Evaluate the new sheets and mark it reviewed again.`,
+        message: `The answer sheets of ${exam ? workLabel(exam, names) : "an exam"} changed after you confirmed its marks. Evaluate the new sheets and mark it reviewed again.`,
         referenceId: examId,
-      },
-    ]).catch(() => undefined);
+      }))
+    ).catch(() => undefined);
   }
   await closeRoundForReopen(examId, "sheets");
 };
 
 /** A sheet arriving for a student marked absent proves they sat the exam. */
-export const clearAbsentForRoll = async (examId: string | null | undefined, rollNo: string, userId: string) => {
-  if (!examId || !rollNo) return;
+export const clearAbsentFor = async (examId: string | null | undefined, studentId: string | null | undefined, userId: string) => {
+  if (!examId || !studentId) return;
   await ExamAttendance.update(
     { status: ATTENDANCE_STATUS.PRESENT, markedBy: userId },
-    { where: { examId, rollNo: clean(rollNo), status: ATTENDANCE_STATUS.ABSENT } }
+    { where: { examId, studentId, status: ATTENDANCE_STATUS.ABSENT } }
   ).catch(() => undefined);
 };
 
@@ -760,31 +1035,37 @@ export const clearAbsentForRoll = async (examId: string | null | undefined, roll
 // EVALUATOR — the "100% evaluated" rule used when marking reviewed
 // ═════════════════════════════════════════════════════════════════════════════
 
-/** Throws unless scanning is finished and every uploaded sheet is evaluated. */
-export const assertReadyForReview = async (instituteId: string, examId: string) => {
+/** Throws unless these sections (all, when none are named) are fully uploaded and every sheet in them is evaluated. */
+export const assertReadyForReview = async (instituteId: string, examId: string, sections?: (string | null)[]) => {
   const exam = await requireExam(instituteId, examId);
-  const [roster, scanner] = await Promise.all([buildRoster(exam), activeScanner(exam.examId)]);
-  const { counts } = roster;
-  if (!scanFinished(scanner, counts.pending, counts.total)) {
-    throw new ApiError(
-      httpStatus.CONFLICT,
-      scanner
-        ? "The scanner hasn't finished uploading this exam's answer sheets yet."
-        : `${counts.pending} student${counts.pending === 1 ? " has" : "s have"} no answer sheet or absent mark yet.`
-    );
-  }
-  if (counts.evaluated < counts.uploaded) {
-    throw new ApiError(
-      httpStatus.CONFLICT,
-      `${counts.uploaded - counts.evaluated} of ${counts.uploaded} answer sheets are not evaluated yet${
-        counts.evaluationFailed ? ` (${counts.evaluationFailed} failed — re-run them)` : ""
-      }. Evaluate every sheet before marking the exam reviewed.`
-    );
+  const [roster, scanners] = await Promise.all([buildRoster(exam), activeScanners(exam.examId)]);
+  const keys = sections ? new Set(sections.map(sectionKey)) : null;
+  const targets = scanState(roster, scanners).sections.filter((s) => !keys || keys.has(sectionKey(s.sectionId)));
+  if (!targets.length) throw new ApiError(httpStatus.CONFLICT, "There are no students or answer sheets to review yet.");
+  for (const s of targets) {
+    const where = sectionText(exam, s);
+    const { counts } = s;
+    if (!s.done) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        s.scanner
+          ? `The scanner hasn't finished uploading ${where ? `the answer sheets of ${where}` : "this exam's answer sheets"} yet.`
+          : `${where ? `In ${where}, ` : ""}${counts.pending} student${counts.pending === 1 ? " has" : "s have"} no answer sheet or absent mark yet.`
+      );
+    }
+    if (counts.evaluated < counts.uploaded) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `${where ? `In ${where}, ` : ""}${counts.uploaded - counts.evaluated} of ${counts.uploaded} answer sheets are not evaluated yet${
+          counts.evaluationFailed ? ` (${counts.evaluationFailed} failed — re-run them)` : ""
+        }. Evaluate every sheet before marking it reviewed.`
+      );
+    }
   }
   if (await publishedCount(exam.examId)) {
     throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published.");
   }
-  return { exam, counts };
+  return { exam, counts: countsOf(roster.rows.filter((r) => !keys || keys.has(sectionKey(r.sectionId)))) };
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -807,15 +1088,22 @@ const resultFor = (marks: number | null, totalMarks: number, passingMarks: numbe
 const publishResults = async (admin: any, examId: string) => {
   const instituteId = admin.instituteId;
   const exam = await requireExam(instituteId, examId);
-  const evaluator = await activeEvaluator(exam.examId);
-  if (!evaluator) throw new ApiError(httpStatus.CONFLICT, "Assign an evaluator first.");
-  if (!evaluator.reviewedAt) throw new ApiError(httpStatus.CONFLICT, "The evaluator hasn't marked this exam as reviewed yet.");
+  const [roster, scanners, evaluators] = await Promise.all([buildRoster(exam), activeScanners(exam.examId), activeEvaluators(exam.examId)]);
+  // One result list for the class: every section evaluated and reviewed, every section uploaded.
+  if (!evaluators.length) throw new ApiError(httpStatus.CONFLICT, "Assign an evaluator first.");
+  const review = reviewState(roster, evaluators);
+  const noEvaluator = review.sections.find((s) => !s.evaluator);
+  if (noEvaluator) throw new ApiError(httpStatus.CONFLICT, `Assign an evaluator for ${sectionText(exam, noEvaluator) || "this exam"} first.`);
+  const notReviewed = review.sections.find((s) => !s.evaluator?.reviewedAt);
+  if (notReviewed) {
+    throw new ApiError(httpStatus.CONFLICT, `The evaluator hasn't marked ${sectionText(exam, notReviewed) || "this exam"} as reviewed yet.`);
+  }
   await assertCrossCheckDone(exam);
 
-  const roster = await buildRoster(exam);
-  const scanner = await activeScanner(exam.examId);
-  if (!scanFinished(scanner, roster.counts.pending, roster.counts.total)) {
-    throw new ApiError(httpStatus.CONFLICT, "Answer sheet upload isn't complete for this exam.");
+  const scan = scanState(roster, scanners);
+  if (!scan.done) {
+    const notScanned = scan.sections.find((s) => !s.done);
+    throw new ApiError(httpStatus.CONFLICT, `Answer sheet upload isn't complete for ${(notScanned && sectionText(exam, notScanned)) || "this exam"}.`);
   }
   const students = roster.rows.filter((r) => r.studentId);
   const notEvaluated = students.filter((r) => r.state === "UPLOADED" && r.evaluationStatus !== "Success");
@@ -840,7 +1128,8 @@ const publishResults = async (admin: any, examId: string) => {
         studentId: r.studentId as string,
         rollNo: r.rollNo,
         classId: exam.classId,
-        sectionId: exam.sectionId,
+        // The student's own section (a whole-class exam has none of its own).
+        sectionId: r.sectionId ?? exam.sectionId,
         sessionId: exam.sessionId,
         subjectId: exam.subjectId,
         examType: exam.examType,
@@ -870,8 +1159,14 @@ const publishResults = async (admin: any, examId: string) => {
           message: `Your result for ${label} is out.`,
           referenceId: exam.examId,
         })),
-        { instituteId, userId: evaluator.teacherId, type: "RESULT_PUBLISHED", title: "Results published", message: `Results of ${label} were published.`, referenceId: exam.examId },
-        { instituteId, userId: exam.teacherId, type: "RESULT_PUBLISHED", title: "Results published", message: `Results of ${label} were published.`, referenceId: exam.examId },
+        ...[...new Set([...evaluators.map((e) => e.teacherId), exam.teacherId])].map((userId) => ({
+          instituteId,
+          userId,
+          type: "RESULT_PUBLISHED",
+          title: "Results published",
+          message: `Results of ${label} were published.`,
+          referenceId: exam.examId,
+        })),
       ],
       t
     );
@@ -915,7 +1210,8 @@ const toResultRow = (r: any, rank: number | null) => ({
   studentName: r.student?.userName ?? "",
   rollNo: r.rollNo,
   className: r.exam?.class?.className ?? "",
-  sectionName: r.exam?.section?.sectionName ?? "",
+  // The student's own section (a whole-class exam has none of its own).
+  sectionName: r.resultSection?.sectionName ?? r.exam?.section?.sectionName ?? "",
   subjectName: r.subject?.subjectName ?? r.exam?.subject?.subjectName ?? "",
   sessionName: r.exam?.session?.sessionName ?? "",
   examType: r.examType,
@@ -949,6 +1245,7 @@ const listResults = async (admin: any, query: any) => {
   const include: any[] = [
     { model: UserModal, as: "student", attributes: ["userId", "userName"], required: Boolean(studentWhere), where: studentWhere },
     { model: Subject, as: "subject", attributes: ["subjectName"], required: false },
+    { model: Section, as: "resultSection", attributes: ["sectionName"], required: false },
     { model: Exam, as: "exam", attributes: ["examId"], required: false, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") },
   ];
 
@@ -1003,6 +1300,7 @@ const myResults = async (student: any, query: any) => {
       where,
       include: [
         { model: Subject, as: "subject", attributes: ["subjectName"], required: false },
+        { model: Section, as: "resultSection", attributes: ["sectionName"], required: false },
         { model: Exam, as: "exam", attributes: ["examId", "examDate"], required: false, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") },
       ],
       order: [["publishedAt", "DESC"]],
@@ -1165,6 +1463,7 @@ const myResultDetail = async (student: any, resultId: string) => {
     where: { resultId: clean(resultId), studentId: student.userId, instituteId: student.instituteId, isDeleted: false },
     include: [
       { model: Subject, as: "subject", attributes: ["subjectName"], required: false },
+      { model: Section, as: "resultSection", attributes: ["sectionName"], required: false },
       { model: Exam, as: "exam", attributes: ["examId", "examDate"], required: false, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") },
     ],
   });
@@ -1474,7 +1773,12 @@ const assignRecheck = async (admin: any, requestId: string, body: any) => {
     throw new ApiError(httpStatus.CONFLICT, `This request is already ${request.status.toLowerCase()}.`);
   }
   const exam = await requireExam(instituteId, request.examId);
-  const evaluator = await activeEvaluator(exam.examId);
+  // By default the recheck goes to whoever evaluated the student's section.
+  const [evaluators, result] = await Promise.all([
+    activeEvaluators(exam.examId),
+    StudentResult.findOne({ where: { examId: exam.examId, studentId: request.studentId, isDeleted: false }, attributes: ["sectionId"] }),
+  ]);
+  const evaluator = evaluators.find((e) => sectionKey(e.sectionId) === sectionKey(result?.sectionId)) ?? evaluators[0] ?? null;
   const teacherId = clean(body?.teacherId) || evaluator?.teacherId || "";
   if (!teacherId) throw new ApiError(httpStatus.BAD_REQUEST, "Choose a teacher to recheck this answer sheet.");
 
@@ -1487,7 +1791,7 @@ const assignRecheck = async (admin: any, requestId: string, body: any) => {
   // Someone who knows the subject: the exam's evaluator, its subject teacher this session, or a teacher of it.
   const subjectName = exam.subject?.subjectName ?? "";
   const knowsSubject =
-    teacher.userId === evaluator?.teacherId ||
+    evaluators.some((e) => e.teacherId === teacher.userId) ||
     teacher.userId === (await subjectTeacherIn(exam.sessionId, exam.subjectId)) ||
     specialisesIn((await TeacherProfile.findOne({ where: { userId: teacher.userId, instituteId }, attributes: ["specialization"] }))?.specialization, subjectName) ||
     (await Subject.count({ where: { instituteId, teacherId: teacher.userId, isDeleted: false, subjectName: { [Op.iLike]: subjectName.replace(/[\\%_]/g, (ch: string) => `\\${ch}`) } } })) > 0;
@@ -1809,13 +2113,13 @@ const reopenInfo = (r: ScanReopenRequest | null | undefined) =>
     ? { requestId: r.requestId, status: r.status, reason: r.reason, requestedAt: r.createdAt, decidedAt: r.decidedAt, decisionNote: r.decisionNote }
     : null;
 
-/** Each exam's latest re-open request by this scanner. */
-const latestReopenRequests = async (examIds: string[], scannerId: string) => {
-  const latest = new Map<string, ScanReopenRequest>();
-  if (!examIds.length) return latest;
-  const rows = await ScanReopenRequest.findAll({ where: { examId: { [Op.in]: examIds }, scannerId }, order: [["createdAt", "DESC"]] });
-  for (const r of rows) if (!latest.has(r.examId)) latest.set(r.examId, r);
-  return latest;
+/** The latest re-open request by this scanner for each of these assignments (exam sections). */
+const latestReopenRequests = async (assignmentIds: string[], scannerId: string) => {
+  const found = new Map<string, ScanReopenRequest>();
+  if (!assignmentIds.length) return found;
+  const rows = await ScanReopenRequest.findAll({ where: { assignmentId: { [Op.in]: assignmentIds }, scannerId }, order: [["createdAt", "DESC"]] });
+  for (const r of rows) if (!found.has(r.assignmentId)) found.set(r.assignmentId, r);
+  return found;
 };
 
 /** The admin and scanner dashboards count open requests: show a change at once. */
@@ -1824,32 +2128,39 @@ const refreshHomes = (instituteId: string) => {
   invalidate(`home:scanner:${instituteId}`);
 };
 
-/** Closes an exam's open request when the admin re-opens or reassigns the exam under Scanning. */
-const settleOpenReopen = (examId: string, adminId: string, approved: boolean, note: string, transaction: Transaction) =>
+/** Closes a section's open request when the admin re-opens or reassigns it under Scanning. */
+const settleOpenReopen = (assignmentId: string, adminId: string, approved: boolean, note: string, transaction: Transaction) =>
   ScanReopenRequest.update(
     { status: approved ? REOPEN_STATUS.APPROVED : REOPEN_STATUS.REJECTED, decidedBy: adminId, decidedAt: new Date(), decisionNote: note },
-    { where: { examId, status: REOPEN_STATUS.PENDING }, transaction }
+    { where: { assignmentId, status: REOPEN_STATUS.PENDING }, transaction }
   );
 
-/** Scanner: asks the admin to re-open uploading for an exam they marked complete. */
+/** Scanner: asks the admin to re-open uploading for a section (`sectionId`) they marked complete. */
 const requestReopen = async (user: any, examId: string, body: any) => {
   const reason = clean(body?.reason).slice(0, 500);
   if (reason.length < 5) throw new ApiError(httpStatus.BAD_REQUEST, "Say in a few words why uploading should re-open.");
-  const exam = await requireExam(user.instituteId, examId);
+  const { exam, sections, assignments } = await requireScanAccess(user, examId, body?.sectionId, { forWrite: false });
+  // Without a section named: the one section of theirs that is complete.
+  const completed = assignments.filter((a) => a.status === SCAN_STATUS.COMPLETED);
+  if (!completed.length) throw new ApiError(httpStatus.CONFLICT, "Uploading for this exam is still open; there is nothing to re-open.");
+  if (completed.length > 1) throw new ApiError(httpStatus.BAD_REQUEST, "Choose the section to re-open.");
+  const target = completed[0];
+  const section = sections.find((s) => sectionKey(s.sectionId) === sectionKey(target.sectionId));
+  const label = workLabel(exam, [section?.sectionName ?? ""]);
 
   const request = await sequelize.transaction(async (t) => {
-    const assignment = await activeScanner(exam.examId, t, true);
+    const assignment = await scannerOfSection(exam.examId, target.sectionId, t, true);
     if (!assignment || assignment.scannerId !== user.userId) {
-      throw new ApiError(httpStatus.FORBIDDEN, "This exam is not assigned to you for scanning.");
+      throw new ApiError(httpStatus.FORBIDDEN, "This section of the exam is not assigned to you for scanning.");
     }
     if (assignment.status !== SCAN_STATUS.COMPLETED) {
-      throw new ApiError(httpStatus.CONFLICT, "Uploading for this exam is still open; there is nothing to re-open.");
+      throw new ApiError(httpStatus.CONFLICT, "Uploading for this section is still open; there is nothing to re-open.");
     }
     if (await publishedCount(exam.examId, t)) {
       throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published, so its sheets can't change.");
     }
-    const open = await ScanReopenRequest.findOne({ where: { examId: exam.examId, status: REOPEN_STATUS.PENDING }, transaction: t });
-    if (open) throw new ApiError(httpStatus.CONFLICT, "You already asked to re-open this exam. The admin hasn't answered yet.");
+    const open = await ScanReopenRequest.findOne({ where: { assignmentId: assignment.assignmentId, status: REOPEN_STATUS.PENDING }, transaction: t });
+    if (open) throw new ApiError(httpStatus.CONFLICT, "You already asked to re-open this section. The admin hasn't answered yet.");
 
     const created = await ScanReopenRequest.create(
       { requestId: newId("scanReopen"), instituteId: exam.instituteId, examId: exam.examId, assignmentId: assignment.assignmentId, scannerId: user.userId, reason },
@@ -1863,7 +2174,7 @@ const requestReopen = async (user: any, examId: string, body: any) => {
         userId,
         type: "SCAN_REOPEN_REQUESTED",
         title: "Request to re-open an upload",
-        message: `${scanner?.userName || "The scanner"} asks to re-open uploading for ${examLabel(exam)}: ${preview(reason)}`,
+        message: `${scanner?.userName || "The scanner"} asks to re-open uploading for ${label}: ${preview(reason)}`,
         referenceId: exam.examId,
       })),
       t
@@ -1896,34 +2207,41 @@ const listReopenRequests = async (admin: any, query: any) => {
   const [exams, users, assignments] = await Promise.all([
     examIds.length ? Exam.findAll({ where: { examId: { [Op.in]: examIds }, instituteId }, include: EXAM_INCLUDES }) : [],
     userIds.length ? UserModal.findAll({ where: { userId: { [Op.in]: userIds } }, attributes: ["userId", "userName"] }) : [],
-    examIds.length ? ExamScannerAssignment.findAll({ where: { examId: { [Op.in]: examIds }, isActive: true } }) : [],
+    rows.length ? ExamScannerAssignment.findAll({ where: { assignmentId: { [Op.in]: [...new Set(rows.map((r) => r.assignmentId))] } } }) : [],
   ]);
   const examById = new Map(exams.map((e: any) => [e.examId, e]));
   const nameOf = new Map(users.map((u: any) => [u.userId, u.userName]));
-  const activeByExam = new Map(assignments.map((a) => [a.examId, a]));
+  // A request is about one section: the one its assignment covered.
+  const assignmentOf = new Map(assignments.map((a) => [a.assignmentId, a]));
+  const sectionIds = [...new Set(assignments.map((a) => a.sectionId).filter(Boolean) as string[])];
+  const sectionNameOf = new Map(
+    sectionIds.length ? (await Section.findAll({ where: { sectionId: { [Op.in]: sectionIds } }, attributes: ["sectionId", "sectionName"] })).map((s) => [s.sectionId, s.sectionName]) : []
+  );
   const count = (s: string) => Number(byStatus.find((x) => x.status === s)?.n ?? 0);
 
   return {
     requests: rows.map((r) => {
       const exam: any = examById.get(r.examId);
-      const active = activeByExam.get(r.examId);
+      const assignment = assignmentOf.get(r.assignmentId);
+      const sectionName = exam?.section?.sectionName || (assignment?.sectionId ? sectionNameOf.get(assignment.sectionId) ?? "" : "");
       return {
         ...reopenInfo(r),
         examId: r.examId,
-        label: exam ? examLabel(exam) : "",
+        label: exam ? workLabel(exam, [sectionName]) : "",
         examType: exam?.examType ?? "",
         examDate: exam?.examDate ?? null,
         subjectName: exam?.subject?.subjectName ?? "",
         className: exam?.class?.className ?? "",
-        sectionName: exam?.section?.sectionName ?? "",
+        sectionId: assignment?.sectionId ?? exam?.sectionId ?? null,
+        sectionName,
         sessionId: exam?.sessionId ?? null,
         sessionName: exam?.session?.sessionName ?? "",
         scannerId: r.scannerId,
         scannerName: nameOf.get(r.scannerId) ?? "",
         decidedByName: r.decidedBy ? (nameOf.get(r.decidedBy) ?? "") : null,
-        // Approving needs the same scanner still on the exam (else reassign it under Scanning).
-        stillAssigned: Boolean(active && active.scannerId === r.scannerId),
-        scanStatus: active?.status ?? null,
+        // Approving needs the same scanner still on the section (else reassign it under Scanning).
+        stillAssigned: Boolean(assignment?.isActive && assignment.scannerId === r.scannerId),
+        scanStatus: assignment?.isActive ? assignment.status : null,
       };
     }),
     counts: { pending: count(REOPEN_STATUS.PENDING), approved: count(REOPEN_STATUS.APPROVED), rejected: count(REOPEN_STATUS.REJECTED) },
@@ -1943,6 +2261,8 @@ const decideReopen = async (admin: any, requestId: string, approve: boolean, bod
       throw new ApiError(httpStatus.CONFLICT, `This request was already ${request.status === REOPEN_STATUS.APPROVED ? "approved" : "rejected"}.`);
     }
     const exam = await requireExam(instituteId, request.examId);
+    const assignment = await ExamScannerAssignment.findOne({ where: { assignmentId: request.assignmentId }, transaction: t, lock: t.LOCK.UPDATE });
+    const section = assignment?.sectionId ? await Section.findOne({ where: { sectionId: assignment.sectionId }, attributes: ["sectionName"], transaction: t }) : null;
 
     if (approve) {
       // Lock the exam row so publishing can't slip in between.
@@ -1950,9 +2270,8 @@ const decideReopen = async (admin: any, requestId: string, approve: boolean, bod
       if (await publishedCount(exam.examId, t)) {
         throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published. Unpublish them first, or reject the request.");
       }
-      const assignment = await activeScanner(exam.examId, t, true);
-      if (!assignment || assignment.scannerId !== request.scannerId) {
-        throw new ApiError(httpStatus.CONFLICT, "This exam is no longer with that scanner. Reject the request, or give the exam to them again under Scanning.");
+      if (!assignment?.isActive || assignment.scannerId !== request.scannerId) {
+        throw new ApiError(httpStatus.CONFLICT, "This section is no longer with that scanner. Reject the request, or give the section to them again under Scanning.");
       }
       if (assignment.status === SCAN_STATUS.COMPLETED) {
         await assignment.update({ status: SCAN_STATUS.ASSIGNED, completedAt: null, completedBy: null }, { transaction: t });
@@ -1963,7 +2282,7 @@ const decideReopen = async (admin: any, requestId: string, approve: boolean, bod
       { status: approve ? REOPEN_STATUS.APPROVED : REOPEN_STATUS.REJECTED, decidedBy: admin.userId, decidedAt: new Date(), decisionNote: note },
       { transaction: t }
     );
-    const label = examLabel(exam);
+    const label = workLabel(exam, [section?.sectionName ?? ""]);
     await notifyAll(
       [
         approve

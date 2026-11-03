@@ -66,13 +66,13 @@ export default {
   // Admin — scanner assignment
   listScanners: handle("Scanners fetched.", (req) => ExamWorkflowService.listScanners(user(req), req.params.examId)),
   assignScanner: handle("Scanner assigned.", (req) => ExamWorkflowService.assignScanner(user(req), req.params.examId, req.body), httpStatus.OK, exam("SCANNER_ASSIGNED")),
-  unassignScanner: handle("Scanner unassigned.", (req) => ExamWorkflowService.unassignScanner(user(req), req.params.examId), httpStatus.OK, exam("SCANNER_UNASSIGNED")),
+  unassignScanner: handle("Scanner unassigned.", (req) => ExamWorkflowService.unassignScanner(user(req), req.params.examId, req.query), httpStatus.OK, exam("SCANNER_UNASSIGNED")),
 
   // Scanner
   myScanExams: handle("Assigned exams fetched.", (req) => ExamWorkflowService.myScanExams(user(req), req.query)),
-  scanRoster: handle("Roster fetched.", (req) => ExamWorkflowService.scanRoster(user(req), req.params.examId)),
+  scanRoster: handle("Roster fetched.", (req) => ExamWorkflowService.scanRoster(user(req), req.params.examId, req.query)),
   setAttendance: handle("Attendance saved.", (req) => ExamWorkflowService.setAttendance(user(req), req.params.examId, req.body), httpStatus.OK, exam("ATTENDANCE_MARKED")),
-  completeScan: handle("Upload marked complete.", (req) => ExamWorkflowService.completeScan(user(req), req.params.examId), httpStatus.OK, exam("SCAN_COMPLETED")),
+  completeScan: handle("Upload marked complete.", (req) => ExamWorkflowService.completeScan(user(req), req.params.examId, req.body), httpStatus.OK, exam("SCAN_COMPLETED")),
   requestReopen: handle("Re-open requested.", (req) => ExamWorkflowService.requestReopen(user(req), req.params.examId, req.body), httpStatus.CREATED, exam("SCAN_REOPEN_REQUESTED")),
 
   // Admin — re-open requests

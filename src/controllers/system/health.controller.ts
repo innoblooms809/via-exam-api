@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import os from "os";
 import { sequelize } from "../../config/sequelize";
+import { queueStatus } from "../../queue";
 
 /**
  * GET /v1/health
@@ -18,6 +19,8 @@ export const getHealth = async (_req: Request, res: Response): Promise<any> => {
   try {
     const uptimeSeconds = process.uptime();
     const memUsage = process.memoryUsage();
+    // Public endpoint: the queue's state only, never its connection details or job counts.
+    const queues = await queueStatus().catch(() => null);
 
     const isHealthy = dbStatus === "CONNECTED";
 
@@ -26,6 +29,9 @@ export const getHealth = async (_req: Request, res: Response): Promise<any> => {
       status: isHealthy ? "OK" : "DEGRADED",
       message: isHealthy ? "Server is healthy" : "Database connection is unhealthy",
       database: dbStatus,
+      queue: queues
+        ? { driver: queues.driver, ok: queues.ok, workers: queues.workers, durable: queues.driver === "postgres" }
+        : { driver: "none", ok: false, workers: false, durable: false },
       uptime: `${Math.floor(uptimeSeconds / 3600)}h ${Math.floor((uptimeSeconds % 3600) / 60)}m ${Math.floor(uptimeSeconds % 60)}s`,
       uptimeSeconds: Math.floor(uptimeSeconds),
       timestamp: new Date().toISOString(),

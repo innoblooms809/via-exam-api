@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize"; // same import as your boilerplate
+import { encryptedColumn } from "../utils/dataProtection";
 
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
@@ -128,15 +129,17 @@ User.init(
       allowNull: true,
       defaultValue: null,
     },
+    // HMAC digest of the current refresh token (utils/dataProtection), never the token itself.
     refreshToken: {
       type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: null,
     },
     profileUrl: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: null,
+      ...encryptedColumn("profileUrl", "profileUrl"),
     },
     isDeleted: {
       type: DataTypes.BOOLEAN,

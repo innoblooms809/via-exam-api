@@ -1,6 +1,7 @@
 // src/modals/TeacherProfile.modal.ts
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
+import { encryptedColumn } from "../utils/dataProtection";
 
 interface TeacherProfileAttributes {
   id: number;
@@ -62,7 +63,7 @@ TeacherProfile.init(
     address: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
     joiningDate: { type: DataTypes.DATE, allowNull: false },
     dob: { type: DataTypes.DATE, allowNull: false },
-    profileUrl: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
+    profileUrl: { type: DataTypes.TEXT, allowNull: true, defaultValue: null, ...encryptedColumn("profileUrl", "profileUrl") },
     isExaminer: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

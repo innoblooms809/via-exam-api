@@ -35,6 +35,7 @@ import monitoringRoutes from "./monitoring/monitoring.route";
 import recheckRequestRoutes from "./evaluation/recheckRequest.route";
 import evaluationAssignmentRoutes from "./evaluation/evaluationAssignment.route";
 import subscriptionRoutes from "./subscription/subscription.route";
+import { partnerKeyRoutes, partnerRoutes } from "./partner/partner.route";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -178,7 +179,16 @@ const defaultRoutes = [
     path: "/subscription",
     route: subscriptionRoutes,
   },
-  
+  // The evaluation API for partners (API keys), and its key management.
+  {
+    path: "/partner",
+    route: partnerRoutes,
+  },
+  {
+    path: "/partner-keys",
+    route: partnerKeyRoutes,
+  },
+
   // {
   //   path: '/captcha',
   //   route: captchaRoutes

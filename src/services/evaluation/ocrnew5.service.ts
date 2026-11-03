@@ -11,7 +11,7 @@ import logger from "../../config/logger";
 import axios from "axios";
 import FormData from "form-data";
 import { pythonServices } from "../../config/pythonServices";
-import { formatQuestionPaper } from "../../utils/questionPaperText";
+import { formatQuestionPaper, paperSetOf } from "../../utils/questionPaperText";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
 
@@ -78,7 +78,7 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
   if (exam) {
     examId = exam.examId;
     maxMarks = exam.totalMarks || 10;
-    const targetPaperSet = sheet.section || "A";
+    const targetPaperSet = paperSetOf(sheet.section);
 
     let questionPaper = await QuestionPaper.findOne({
       where: { examId: exam.examId, instituteId: sheet.instituteId, paperSet: targetPaperSet },

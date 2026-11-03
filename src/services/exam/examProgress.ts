@@ -19,26 +19,32 @@ import UserModal from "../../models/User.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import ExamScannerAssignment, { SCAN_STATUS } from "../../models/ExamScannerAssignment.model";
 import StudentResult from "../../models/StudentResult.model";
-import { EXAM_INCLUDES, buildRoster } from "./examRoster.service";
-import { examLabel, instituteAdminIds, notifyAll } from "../notification/notifyPeople";
+import { EXAM_INCLUDES, buildRoster, sectionKey } from "./examRoster.service";
+import { examLabel, instituteAdminIds, notifyAll, workLabel } from "../notification/notifyPeople";
 
 export const EVALUATION_DONE = "EVALUATION_DONE";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-/** Tells the evaluator and the admins when every uploaded sheet of the exam has its marks. */
+/** Tells the evaluators and the admins when every uploaded sheet of the exam has its marks. */
 export const checkExamEvaluated = async (examId: string) => {
   const exam: any = await Exam.findOne({ where: { examId, isDeleted: false }, include: EXAM_INCLUDES });
   if (!exam) return;
-  const [roster, scanner, evaluator, published] = await Promise.all([
+  const [roster, scanners, evaluators, published] = await Promise.all([
     buildRoster(exam),
-    ExamScannerAssignment.findOne({ where: { examId, isActive: true } }),
-    EvaluationAssignment.findOne({ where: { examId, isActive: true } }),
+    ExamScannerAssignment.findAll({ where: { examId, isActive: true } }),
+    EvaluationAssignment.findAll({ where: { examId, isActive: true } }),
     StudentResult.count({ where: { examId, isDeleted: false } }),
   ]);
   const { counts } = roster;
-  // Uploading must be finished: by the assigned scanner, or (no scanner) every student has a sheet or an absent mark.
-  const uploaded = scanner ? scanner.status === SCAN_STATUS.COMPLETED : counts.total > 0 && counts.pending === 0;
+  // Uploading must be finished in every section: by its scanner, or (no scanner) every student has a sheet or an absent mark.
+  const scannerOf = new Map(scanners.map((s) => [sectionKey(s.sectionId), s]));
+  const uploaded =
+    counts.total > 0 &&
+    roster.sections.every((s) => {
+      const scanner = scannerOf.get(sectionKey(s.sectionId));
+      return scanner ? scanner.status === SCAN_STATUS.COMPLETED : s.counts.total > 0 && s.counts.pending === 0;
+    });
   if (published || !uploaded || !counts.uploaded || counts.evaluated < counts.uploaded) return;
 
   // Once per round: not again unless sheets arrived after the last time.
@@ -51,25 +57,29 @@ export const checkExamEvaluated = async (examId: string) => {
 
   const label = examLabel(exam);
   const sheets = plural(counts.uploaded, "answer sheet");
-  const evaluatorName = evaluator ? (await UserModal.findOne({ where: { userId: evaluator.teacherId }, attributes: ["userName"] }))?.userName : null;
-  const next = !evaluator
+  // Each evaluator still to review hears about their own sections.
+  const nameOfSection = new Map(roster.sections.map((s) => [sectionKey(s.sectionId), s.sectionName]));
+  const toReview = new Map<string, string[]>();
+  for (const e of evaluators) {
+    if (!e.reviewedAt) toReview.set(e.teacherId, [...(toReview.get(e.teacherId) ?? []), nameOfSection.get(sectionKey(e.sectionId)) ?? ""]);
+  }
+  const names = toReview.size
+    ? (await UserModal.findAll({ where: { userId: [...toReview.keys()] }, attributes: ["userName"] })).map((u) => u.userName).filter(Boolean)
+    : [];
+  const next = !evaluators.length
     ? " Assign an evaluator to review them."
-    : evaluator.reviewedAt
+    : !toReview.size
       ? ""
-      : ` ${evaluatorName ?? "The evaluator"} reviews them next.`;
+      : ` ${names.length ? names.join(", ") : "The evaluator"} ${names.length > 1 ? "review" : "reviews"} them next.`;
   await notifyAll([
-    ...(evaluator && !evaluator.reviewedAt
-      ? [
-          {
-            instituteId: exam.instituteId,
-            userId: evaluator.teacherId,
-            type: EVALUATION_DONE,
-            title: "Every sheet has its marks",
-            message: `All ${sheets} of ${label} are evaluated. Check the marks, then mark the exam reviewed.`,
-            referenceId: examId,
-          },
-        ]
-      : []),
+    ...[...toReview].map(([userId, sectionNames]) => ({
+      instituteId: exam.instituteId,
+      userId,
+      type: EVALUATION_DONE,
+      title: "Every sheet has its marks",
+      message: `All answer sheets of ${workLabel(exam, sectionNames)} are evaluated. Check the marks, then mark it reviewed.`,
+      referenceId: examId,
+    })),
     ...(await instituteAdminIds(exam.instituteId)).map((userId) => ({
       instituteId: exam.instituteId,
       userId,

@@ -18,9 +18,61 @@ export const questionLabel = (id: string, n: number) => {
 export const obtainedOf = (q: any) => numOrNull(q?.marks?.obtained ?? q?.obtainedMarks ?? q?.score);
 export const maximumOf = (q: any) => numOrNull(q?.marks?.maximum ?? q?.maxMarks ?? q?.max_marks);
 
-/** The sum of a paper's question marks (null when none has marks). */
-export const totalOf = (evaluations: unknown): number | null => {
-  const list = Array.isArray(evaluations) ? evaluations : [];
+/**
+ * A structured paper's totals from its question tree (AIEvaluation.resultTree) and the parts'
+ * current marks: parents add up their parts, "attempt any N" keeps the best N, and a question
+ * with an OR counts the side the student answered (the better one when they answered both).
+ * Decided on the current marks, so a part an evaluator raises above a counted one replaces it.
+ */
+export const treeTotals = (tree: unknown, evaluations: unknown): { obtained: number; maximum: number } | null => {
+  const roots = Array.isArray(tree) ? tree : [];
+  if (!roots.length) return null;
+  const marksOf = new Map<string, { obtained: number | null; maximum: number | null }>();
+  (Array.isArray(evaluations) ? evaluations : []).forEach((q: any) => {
+    const id = clean(q?.questionId ?? q?.question_id);
+    if (id) marksOf.set(id, { obtained: obtainedOf(q), maximum: maximumOf(q) });
+  });
+
+  const side = (node: any): { obtained: number; maximum: number } => {
+    const parts: any[] = Array.isArray(node?.parts) ? node.parts : [];
+    if (!parts.length) {
+      const own = marksOf.get(clean(node?.id));
+      return {
+        obtained: own?.obtained ?? numOrNull(node?.marks?.obtained) ?? 0,
+        maximum: own?.maximum ?? numOrNull(node?.marks?.maximum) ?? 0,
+      };
+    }
+    const kids = parts.map(score);
+    const n = Number(node?.attemptAny);
+    if (Number.isFinite(n) && n > 0 && n < kids.length) {
+      const best = [...kids].sort((a, b) => b.obtained - a.obtained || b.maximum - a.maximum).slice(0, n);
+      const maxima = kids.map((k) => k.maximum).sort((a, b) => b - a).slice(0, n);
+      return { obtained: best.reduce((s, k) => s + k.obtained, 0), maximum: maxima.reduce((s, m) => s + m, 0) };
+    }
+    return { obtained: kids.reduce((s, k) => s + k.obtained, 0), maximum: kids.reduce((s, k) => s + k.maximum, 0) };
+  };
+
+  const score = (node: any): { obtained: number; maximum: number } => {
+    const main = side(node);
+    if (!node?.or) return main;
+    const alt = score(node.or);
+    if (node.chosen === "or") return alt;
+    if (node.chosen === "both") return alt.obtained > main.obtained ? alt : main;
+    return main;
+  };
+
+  const sum = roots.map(score).reduce((s, k) => ({ obtained: s.obtained + k.obtained, maximum: s.maximum + k.maximum }), { obtained: 0, maximum: 0 });
+  return { obtained: round2(sum.obtained), maximum: round2(sum.maximum) };
+};
+
+/**
+ * The total of a paper's question marks (null when none has marks). With the question tree,
+ * by its rules (treeTotals); without one, every part the evaluator counted.
+ */
+export const totalOf = (evaluations: unknown, tree?: unknown): number | null => {
+  const byTree = tree ? treeTotals(tree, evaluations) : null;
+  if (byTree) return byTree.obtained;
+  const list = (Array.isArray(evaluations) ? evaluations : []).filter((q: any) => q?.counted !== false);
   const marks = list.map(obtainedOf).filter((m): m is number => m != null);
   return marks.length ? round2(marks.reduce((a, b) => a + b, 0)) : null;
 };

@@ -1,0 +1,18 @@
+{
+  "Admin dashboard overview fetched successfully.": "Admin dashboard overview fetched successfully.",
+  "Could not load dashboard data.": "Could not load dashboard data.",
+  "Could not load the home page data.": "Could not load the home page data.",
+  "Could not load this report.": "Could not load this report.",
+  "Evaluated answer sheets statistics fetched successfully.": "Evaluated answer sheets statistics fetched successfully.",
+  "Exam statistics fetched successfully.": "Exam statistics fetched successfully.",
+  "History loaded.": "History loaded.",
+  "Institute statistics fetched successfully.": "Institute statistics fetched successfully.",
+  "Person loaded.": "Person loaded.",
+  "Scanner analytics fetched successfully.": "Scanner analytics fetched successfully.",
+  "status must be pending or done.": "status must be pending or done.",
+  "Student analytics fetched successfully.": "Student analytics fetched successfully.",
+  "Student statistics fetched successfully.": "Student statistics fetched successfully.",
+  "Teacher analytics fetched successfully.": "Teacher analytics fetched successfully.",
+  "This person was not found in your school.": "This person was not found in your school.",
+  "Work loaded.": "Work loaded."
+}

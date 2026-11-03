@@ -4,8 +4,8 @@
 import { Op } from "sequelize";
 import UserModal from "../models/User.model";
 import { sequelize } from "../config/sequelize";
+import { NAME_RULE as NAME } from "./textRules";
 
-const NAME = /^[A-Za-z][A-Za-z.'’ -]{0,49}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE = /^[6-9]\d{9}$/;
 

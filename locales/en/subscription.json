@@ -1,0 +1,22 @@
+{
+  "At least one plan must stay active.": "At least one plan must stay active.",
+  "Checkout started.": "Checkout started.",
+  "Could not start the payment. Please try again.": "Could not start the payment. Please try again.",
+  "Online payments are not set up yet. Please contact ViaExam support.": "Online payments are not set up yet. Please contact ViaExam support.",
+  "Online payments are not set up.": "Online payments are not set up.",
+  "Payment session not found.": "Payment session not found.",
+  "Plan activated.": "Plan activated.",
+  "Plan not found.": "Plan not found.",
+  "Plan updated successfully.": "Plan updated successfully.",
+  "Plans fetched successfully.": "Plans fetched successfully.",
+  "Quote calculated.": "Quote calculated.",
+  "Set when the trial ends.": "Set when the trial ends.",
+  "Subscription fetched successfully.": "Subscription fetched successfully.",
+  "Subscription overview fetched.": "Subscription overview fetched.",
+  "Subscriptions fetched successfully.": "Subscriptions fetched successfully.",
+  "The access end date must be in the future.": "The access end date must be in the future.",
+  "This payment belongs to another institute.": "This payment belongs to another institute.",
+  "This plan is not available.": "This plan is not available.",
+  "Transactions fetched successfully.": "Transactions fetched successfully.",
+  "Unknown plan.": "Unknown plan."
+}

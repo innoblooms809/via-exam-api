@@ -20,6 +20,7 @@ import httpStatus from "http-status";
 import Subject from "../../models/Subject.model";
 import Class from "../../models/Class.model";
 import Exam from "../../models/Exam.model";
+import Section from "../../models/Section.model";
 import Scanner from "../../models/Scanner.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import RecheckAssignment from "../../models/RecheckAssignment.model";
@@ -101,6 +102,9 @@ interface AssignedExamScope {
   subjectId: string;
   examType: string;
   classKeys: Set<string>; // classId and className (sheets store either)
+  /** The sections of the exam this teacher evaluates: ids ("" = no section) and lower-cased names (older sheets store either). */
+  sectionKeys: Set<string>;
+  sectionNames: Set<string>;
 }
 
 export interface TeacherScope {
@@ -196,7 +200,7 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
     }),
     EvaluationAssignment.findAll({
       where: { instituteId, teacherId: userId, isActive: true },
-      attributes: ["examId"],
+      attributes: ["examId", "sectionId"],
     }),
     recheckSheetIdsOf(instituteId, userId),
     openCrossCheckSheetIds(instituteId, userId),
@@ -210,6 +214,12 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
         include: [{ model: Class, as: "class", attributes: ["classId", "className"], required: false }],
       })
     : [];
+  // The sections given to this teacher, per exam.
+  const sectionIds = [...new Set(assignments.map((a) => a.sectionId).filter(Boolean) as string[])];
+  const sectionNameOf = new Map(
+    sectionIds.length ? (await Section.findAll({ where: { sectionId: { [Op.in]: sectionIds } }, attributes: ["sectionId", "sectionName"] })).map((s) => [s.sectionId, s.sectionName]) : []
+  );
+  const sectionsOf = (examId: string) => assignments.filter((a) => a.examId === examId).map((a) => String(a.sectionId ?? ""));
 
   const ownClassKeys = new Set<string>();
   subjects.forEach((s: any) => {
@@ -231,23 +241,44 @@ export async function getTeacherScope(user: any): Promise<TeacherScope> {
       subjectId: String(e.subjectId),
       examType: String(e.examType),
       classKeys: new Set([e.classId, e.class?.className].filter(Boolean).map(String)),
+      sectionKeys: new Set(sectionsOf(e.examId)),
+      sectionNames: new Set(sectionsOf(e.examId).map((id) => (sectionNameOf.get(id) ?? "").toLowerCase()).filter(Boolean)),
     })),
   };
 }
 
-type SheetLike = { subjectId?: unknown; classId?: unknown; examType?: unknown; examId?: unknown; sheetId?: unknown };
+/**
+ * A sheet, or an exam when `sheetId` is left out. `sectionId` / `section` say which section it is
+ * in; left out, any section of the exam will do (an exam-level check).
+ */
+type SheetLike = { subjectId?: unknown; classId?: unknown; examType?: unknown; examId?: unknown; sheetId?: unknown; sectionId?: unknown; section?: unknown };
 
 const isRecheckSheet = (scope: TeacherScope, sheet: SheetLike) =>
   Boolean(sheet.sheetId) && scope.recheckSheetIds.has(String(sheet.sheetId));
 
-const isAssignedExam = (scope: TeacherScope, sheet: SheetLike) =>
-  scope.assignedExams.some(
-    (a) =>
-      (sheet.examId && a.examId === String(sheet.examId)) ||
-      (a.subjectId === String(sheet.subjectId ?? "") &&
-        a.examType === String(sheet.examType ?? "") &&
-        a.classKeys.has(String(sheet.classId ?? "")))
-  );
+/** The section of a sheet as a key: its id, else the name an older sheet stored ("" = none), else undefined (not known). */
+const sheetSection = (sheet: SheetLike): string | undefined => {
+  if (sheet.sectionId) return String(sheet.sectionId);
+  if (sheet.section !== undefined && sheet.section !== null) return String(sheet.section).trim();
+  return sheet.sectionId === null ? "" : undefined;
+};
+
+/** The teacher evaluates the sheet's exam — the sheet's own exam, never another of its class — and its section. */
+const isAssignedExam = (scope: TeacherScope, sheet: SheetLike) => {
+  const section = sheetSection(sheet);
+  return scope.assignedExams.some((a) => {
+    const sameExam = sheet.examId
+      ? a.examId === String(sheet.examId)
+      : a.subjectId === String(sheet.subjectId ?? "") && a.examType === String(sheet.examType ?? "") && a.classKeys.has(String(sheet.classId ?? ""));
+    return sameExam && (section === undefined || a.sectionKeys.has(section) || a.sectionNames.has(section.toLowerCase()));
+  });
+};
+
+/** The sections (keys; "" = no section) of an exam this teacher evaluates, or null when they evaluate none of it. */
+export function assignedSectionsOf(scope: TeacherScope, examId: string): Set<string> | null {
+  const mine = scope.assignedExams.find((a) => a.examId === examId);
+  return mine ? mine.sectionKeys : null;
+}
 
 export function accessForSheet(scope: TeacherScope, sheet: SheetLike): SheetAccess {
   const assigned = isAssignedExam(scope, sheet);
@@ -302,6 +333,49 @@ export async function scopeSheetRows<T extends Record<string, any>>(user: any, r
   });
 }
 
+/** The requester's access to one loaded sheet (teachers: `scope` given), or the error refusing it. */
+function decideSheetAccess(
+  user: any,
+  sheet: any,
+  scope: TeacherScope | null,
+  evaluate: boolean
+): { access: SheetAccess; canEvaluate: boolean } | ApiError {
+  if (user?.instituteId && sheet.instituteId !== user.instituteId) {
+    return new ApiError(httpStatus.FORBIDDEN, "Access denied.");
+  }
+  if (!scope) {
+    // The admin sees every sheet and its AI marks; running AI evaluation and changing marks
+    // are the assigned evaluator's work.
+    if (isAdminRequester(user)) {
+      if (evaluate) return new ApiError(httpStatus.FORBIDDEN, "Only the evaluator assigned to this exam runs AI evaluation or changes marks. You can view the sheet and its marks.");
+      return { access: "full", canEvaluate: false };
+    }
+    // Scanners may open the scans they handle; nobody but the assigned evaluator may
+    // evaluate or change marks (students least of all).
+    const role = String(user?.role?.role ?? user?.role ?? "").toUpperCase();
+    if (role !== "SCANNER" || evaluate) {
+      return new ApiError(httpStatus.FORBIDDEN, "You do not have access to evaluate this answer sheet.");
+    }
+    return { access: "full", canEvaluate: false };
+  }
+
+  const access = accessForSheet(scope, sheet);
+  if (access === "none") {
+    return new ApiError(
+      httpStatus.FORBIDDEN,
+      "This answer sheet is not assigned to you. Only the class subject teacher or the assigned evaluator can open it."
+    );
+  }
+  const canEvaluate = isAssignedEvaluator(scope, sheet);
+  if (evaluate && !canEvaluate) {
+    return new ApiError(
+      httpStatus.FORBIDDEN,
+      "This exam is not assigned to you for evaluation. You can view the answer sheets and reports, but only the evaluator assigned by the admin can run AI evaluation or change marks."
+    );
+  }
+  return { access, canEvaluate };
+}
+
 /** Access level of the requester for one sheet; throws 403/404 when they have none. */
 export async function requireSheetAccess(
   user: any,
@@ -313,41 +387,40 @@ export async function requireSheetAccess(
     attributes: { exclude: ["fileBuffer"] },
   });
   if (!sheet) throw new ApiError(httpStatus.NOT_FOUND, "Answer sheet not found.");
-  if (user?.instituteId && sheet.instituteId !== user.instituteId) {
-    throw new ApiError(httpStatus.FORBIDDEN, "Access denied.");
-  }
-  if (!isTeacherRequester(user)) {
-    // The admin sees every sheet and its AI marks; running AI evaluation and changing marks
-    // are the assigned evaluator's work.
-    if (isAdminRequester(user)) {
-      if (options.evaluate) throw new ApiError(httpStatus.FORBIDDEN, "Only the evaluator assigned to this exam runs AI evaluation or changes marks. You can view the sheet and its marks.");
-      return { access: "full", sheet, canEvaluate: false };
-    }
-    // Scanners may open the scans they handle; nobody but the assigned evaluator may
-    // evaluate or change marks (students least of all).
-    const role = String(user?.role?.role ?? user?.role ?? "").toUpperCase();
-    if (role !== "SCANNER" || options.evaluate) {
-      throw new ApiError(httpStatus.FORBIDDEN, "You do not have access to evaluate this answer sheet.");
-    }
-    return { access: "full", sheet, canEvaluate: false };
-  }
+  const scope = isTeacherRequester(user) ? await getTeacherScope(user) : null;
+  const decision = decideSheetAccess(user, sheet, scope, Boolean(options.evaluate));
+  if (decision instanceof ApiError) throw decision;
+  return { ...decision, sheet };
+}
 
-  const scope = await getTeacherScope(user);
-  const access = accessForSheet(scope, sheet);
-  if (access === "none") {
-    throw new ApiError(
-      httpStatus.FORBIDDEN,
-      "This answer sheet is not assigned to you. Only the class subject teacher or the assigned evaluator can open it."
-    );
+/**
+ * requireSheetAccess for many sheets at once (one scope lookup, one query): the sheets the
+ * requester may view — or, with `evaluate`, evaluate — and the others with why not.
+ */
+export async function requireSheetsAccess(
+  user: any,
+  sheetIds: string[],
+  options: { evaluate?: boolean } = {}
+): Promise<{ allowed: Map<string, { access: SheetAccess; sheet: any; canEvaluate: boolean }>; refused: Map<string, string> }> {
+  const ids = [...new Set(sheetIds.map(String).filter(Boolean))];
+  const sheets: any[] = ids.length
+    ? await Scanner.findAll({ where: { sheetId: { [Op.in]: ids }, isDeleted: false }, attributes: { exclude: ["fileBuffer"] } })
+    : [];
+  const byId = new Map(sheets.map((s) => [String(s.sheetId), s]));
+  const scope = isTeacherRequester(user) ? await getTeacherScope(user) : null;
+  const allowed = new Map<string, { access: SheetAccess; sheet: any; canEvaluate: boolean }>();
+  const refused = new Map<string, string>();
+  for (const id of ids) {
+    const sheet = byId.get(id);
+    if (!sheet) {
+      refused.set(id, "Answer sheet not found.");
+      continue;
+    }
+    const decision = decideSheetAccess(user, sheet, scope, Boolean(options.evaluate));
+    if (decision instanceof ApiError) refused.set(id, decision.message);
+    else allowed.set(id, { ...decision, sheet });
   }
-  const canEvaluate = isAssignedEvaluator(scope, sheet);
-  if (options.evaluate && !canEvaluate) {
-    throw new ApiError(
-      httpStatus.FORBIDDEN,
-      "This exam is not assigned to you for evaluation. You can view the answer sheets and reports, but only the evaluator assigned by the admin can run AI evaluation or change marks."
-    );
-  }
-  return { access, sheet, canEvaluate };
+  return { allowed, refused };
 }
 
 const sheetAccessMiddleware = (evaluate: boolean) => async (req: any, res: any, next: any) => {

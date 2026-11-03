@@ -11,15 +11,25 @@
  *     to finish in the background.
  *   • A result is written only if the sheet still holds the file that was
  *     checked, so a slow check can't overwrite the report of a replacement scan.
+ *   • Every stored sheet also gets a queued check (the "sheet-quality" job queue): it
+ *     runs if the quick check didn't land (still running at a restart, skipped
+ *     because a bulk upload had a long backlog), and a 15-minute sweep queues any
+ *     sheet that was never checked. So 100 sheets at once never hold 100 PDFs in
+ *     memory, and no sheet is left unchecked.
  */
 
+import crypto from "crypto";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import { Op } from "sequelize";
 import { Worker } from "worker_threads";
 
 import Scanner from "../../models/Scanner.model";
 import logger from "../../config/logger";
+import { defineQueue } from "../../queue";
+import { positiveInt } from "../../queue/config";
+import { defineMaintenanceTask } from "../../queue/maintenance";
 import { settingsOf } from "../academic/instituteSettings.service";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import {
@@ -36,6 +46,9 @@ export const QUALITY_WAIT_MS = 4_000;
 // A check still running after this is given up (and its worker replaced).
 const JOB_TIMEOUT_MS = 3 * 60_000;
 const POOL_SIZE = Math.max(1, Number(process.env.SHEET_QUALITY_WORKERS) || Math.min(2, Math.max(1, os.cpus().length - 1)));
+// Beyond this many checks waiting in the pool, an upload leaves its sheet to the queued check
+// instead of holding one more PDF in memory.
+const MAX_POOL_BACKLOG = POOL_SIZE * 3;
 
 // ─── Worker pool ──────────────────────────────────────────────────────────────
 
@@ -174,10 +187,17 @@ export const scanQualityView = (sheet: { qualityFlag?: string | null; qualityRep
 
 /** Saves a report, unless the sheet has since been given another file. */
 const record = async (sheetId: string, publicId: string | null, report: SheetQualityReport) => {
-  const [count] = await Scanner.update(
-    { qualityFlag: report.flag, qualityReport: report },
-    { where: { sheetId, isDeleted: false, ...(publicId ? { filePublicId: publicId } : {}) } },
-  );
+  // The public id is stored encrypted (a fresh IV each time), so it is compared here, and the
+  // update is pinned to the stored value: a file swapped in meanwhile still drops the result.
+  const sheet = await Scanner.findOne({ where: { sheetId, isDeleted: false }, attributes: ["id", "filePublicId"] });
+  const stored = sheet?.getDataValue("filePublicId") ?? null;
+  const [count] =
+    sheet && (!publicId || sheet.filePublicId === publicId)
+      ? await Scanner.update(
+          { qualityFlag: report.flag, qualityReport: report },
+          { where: { id: sheet.id, isDeleted: false, ...(publicId ? { filePublicId: stored } : {}) } },
+        )
+      : [0];
   if (!count) logger.info(`[SheetQuality] ${sheetId}: file changed during the check, result dropped.`);
 };
 
@@ -189,7 +209,8 @@ const record = async (sheetId: string, publicId: string | null, report: SheetQua
  * the check turned off.
  */
 export const beginQualityCheck = (filePath: string, rule: ScanQualityRule): Promise<SheetQualityReport | null> => {
-  if (!rule.enabled) return Promise.resolve(null);
+  // Off, or a bulk upload already has the pool busy: the queued check covers this sheet.
+  if (!rule.enabled || queue.length >= MAX_POOL_BACKLOG) return Promise.resolve(null);
   return fs.promises
     .readFile(filePath)
     .then((buf) => checkPdf(buf, rule))
@@ -228,15 +249,17 @@ const running = new Set<string>();
 
 /**
  * Checks a stored sheet (downloads it from Cloudinary). Used for sheets uploaded
- * before the check existed. Returns null if it is already running, or the sheet
- * has no file.
+ * before the check existed, and by the queued check. Returns null if it is already
+ * running, the sheet has no file, or (`onlyIfUnchecked`) it already has a report.
+ * Throws when the file can't be fetched, so a queued check is retried.
  */
-export const checkStoredSheet = async (sheetId: string): Promise<SheetQualityReport | null> => {
+const checkSheet = async (sheetId: string, options: { onlyIfUnchecked?: boolean } = {}): Promise<SheetQualityReport | null> => {
   if (running.has(sheetId)) return null;
   running.add(sheetId);
   try {
     const sheet = await Scanner.findOne({ where: { sheetId, isDeleted: false } });
     if (!sheet || sheet.fileMimeType !== "application/pdf") return null;
+    if (options.onlyIfUnchecked && sheet.qualityFlag) return null;
     const rule = await scanQualityRule(sheet.instituteId);
     if (!rule.enabled) return null;
     const buf = await resolveSheetBuffer(sheet);
@@ -244,16 +267,71 @@ export const checkStoredSheet = async (sheetId: string): Promise<SheetQualityRep
     const report = await checkPdf(buf, rule);
     await record(sheet.sheetId, sheet.filePublicId, report);
     return report;
-  } catch (err: any) {
-    logger.warn(`[SheetQuality] Stored sheet ${sheetId}: ${err?.message || err}`);
-    return null;
   } finally {
     running.delete(sheetId);
   }
 };
 
-/** Fire and forget: a sheet opened for evaluation that was never checked gets checked now. */
-export const ensureSheetQuality = (sheet: { sheetId: string; qualityFlag?: string | null; fileMimeType?: string } | null | undefined) => {
-  if (!sheet || sheet.qualityFlag || sheet.fileMimeType !== "application/pdf") return;
-  void checkStoredSheet(sheet.sheetId);
+export const checkStoredSheet = async (sheetId: string): Promise<SheetQualityReport | null> => {
+  try {
+    return await checkSheet(sheetId);
+  } catch (err: any) {
+    logger.warn(`[SheetQuality] Stored sheet ${sheetId}: ${err?.message || err}`);
+    return null;
+  }
 };
+
+// ─── Queued checks ────────────────────────────────────────────────────────────
+
+const qualityQueue = defineQueue<{ sheetId: string }>({
+  name: "sheet-quality",
+  concurrency: positiveInt(process.env.SHEET_QUALITY_QUEUE_CONCURRENCY, POOL_SIZE),
+  defaults: { attempts: 3, backoff: { type: "exponential", delayMs: 60_000 }, keepCompletedSec: 24 * 3600, keepFailedSec: 7 * 24 * 3600 },
+  lockMs: JOB_TIMEOUT_MS + 60_000,
+  processor: async (job) => {
+    const report = await checkSheet(job.data.sheetId, { onlyIfUnchecked: true });
+    return report ? { flag: report.flag } : { skipped: true };
+  },
+});
+
+/**
+ * Queues a check of a stored sheet, `delayMs` from now. One per stored file: a replaced scan
+ * (new public id) gets its own; asking again for the same file is ignored.
+ */
+export const queueQualityCheck = (sheetId: string, publicId: string | null, delayMs = 0) => {
+  const fileKey = crypto.createHash("sha1").update(String(publicId ?? "")).digest("hex").slice(0, 12);
+  return qualityQueue
+    .add("check", { sheetId }, { jobId: `quality-${sheetId}-${fileKey}`, ...(delayMs ? { delayMs } : {}) })
+    .catch((err) => logger.warn(`[SheetQuality] Could not queue a check of ${sheetId}: ${err?.message || err}`));
+};
+
+/** A sheet opened for evaluation that was never checked gets checked (queued). */
+export const ensureSheetQuality = (sheet: { sheetId: string; qualityFlag?: string | null; fileMimeType?: string; filePublicId?: string | null } | null | undefined) => {
+  if (!sheet || sheet.qualityFlag || sheet.fileMimeType !== "application/pdf") return;
+  void queueQualityCheck(sheet.sheetId, sheet.filePublicId ?? null);
+};
+
+// Sheets stored more than 10 minutes ago and still never checked (an upload whose quick check
+// was skipped and whose queued one was lost, or sheets from before the check existed).
+defineMaintenanceTask("sheet-quality-sweep", { everyMs: 15 * 60_000 }, async () => {
+  const sheets = await Scanner.findAll({
+    where: {
+      isDeleted: false,
+      qualityFlag: null,
+      fileMimeType: "application/pdf",
+      createdAt: { [Op.lt]: new Date(Date.now() - 10 * 60_000) },
+    } as any,
+    attributes: ["sheetId", "instituteId", "filePublicId"],
+    order: [["createdAt", "DESC"]],
+    limit: 200,
+  });
+  const enabled = new Map<string, boolean>();
+  let queued = 0;
+  for (const s of sheets) {
+    if (!enabled.has(s.instituteId)) enabled.set(s.instituteId, (await scanQualityRule(s.instituteId)).enabled);
+    if (!enabled.get(s.instituteId)) continue;
+    await queueQualityCheck(s.sheetId, s.filePublicId ?? null);
+    queued++;
+  }
+  return { queued };
+});

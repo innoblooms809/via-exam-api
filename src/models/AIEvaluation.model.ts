@@ -21,6 +21,16 @@ interface AIEvaluationAttributes {
   questionOcr: string;
   status: string; // 'Pending', 'Success', 'Failed'
   error?: string;
+  /** The question tree with totals (sub-parts, OR, attempt any N), as the evaluator returned it. */
+  resultTree?: any;
+  /** Evaluation queue: when the current run was queued / its OCR started / it ended. */
+  queuedAt?: Date | null;
+  startedAt?: Date | null;
+  finishedAt?: Date | null;
+  /** Runs queued for this sheet (first evaluation, re-runs and automatic retries). */
+  runCount?: number;
+  /** Why the last run failed: "transient" (a service was down — retried automatically) or "permanent". */
+  failureKind?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -38,6 +48,12 @@ interface AIEvaluationCreationAttributes
     | "questionOcr"
     | "status"
     | "error"
+    | "resultTree"
+    | "queuedAt"
+    | "startedAt"
+    | "finishedAt"
+    | "runCount"
+    | "failureKind"
   > {}
 
 class AIEvaluation extends Model<
@@ -61,6 +77,12 @@ class AIEvaluation extends Model<
   public questionOcr!: string;
   public status!: string;
   public error!: string;
+  public resultTree!: any;
+  public queuedAt!: Date | null;
+  public startedAt!: Date | null;
+  public finishedAt!: Date | null;
+  public runCount!: number;
+  public failureKind!: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -92,6 +114,12 @@ AIEvaluation.init(
       defaultValue: "Pending",
     },
     error: { type: DataTypes.TEXT, allowNull: true },
+    resultTree: { type: DataTypes.JSONB, allowNull: true },
+    queuedAt: { type: DataTypes.DATE, allowNull: true },
+    startedAt: { type: DataTypes.DATE, allowNull: true },
+    finishedAt: { type: DataTypes.DATE, allowNull: true },
+    runCount: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    failureKind: { type: DataTypes.STRING(16), allowNull: true },
   },
   {
     sequelize,

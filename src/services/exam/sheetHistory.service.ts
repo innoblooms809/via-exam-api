@@ -82,7 +82,13 @@ export async function sheetHistory(admin: any, sheetId: string) {
     CrossCheckItem.findAll({ where: { sheetId }, order: [["createdAt", "ASC"]] }),
   ]);
   const [evaluator, rounds, requests, result, ownerId] = await Promise.all([
-    exam ? EvaluationAssignment.findOne({ where: { examId: exam.examId }, order: [["isActive", "DESC"], ["createdAt", "DESC"]] }) : null,
+    // The evaluator of the sheet's own section (an exam is evaluated section by section).
+    exam
+      ? EvaluationAssignment.findOne({
+          where: { examId: exam.examId, ...(sheet.sectionId || sheet.studentId ? { sectionId: sheet.sectionId ?? null } : {}) },
+          order: [["isActive", "DESC"], ["createdAt", "DESC"]],
+        })
+      : null,
     items.length ? CrossCheckRound.findAll({ where: { roundId: { [Op.in]: items.map((i) => i.roundId) } } }) : [],
     evaluation?.evaluationId ? RecheckRequest.findAll({ where: { evaluationId: evaluation.evaluationId }, order: [["createdAt", "ASC"]] }) : [],
     StudentResult.findOne({ where: { [Op.or]: [{ sheetId }, ...(evaluation?.evaluationId ? [{ evaluationId: evaluation.evaluationId }] : [])], isDeleted: false } }),

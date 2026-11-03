@@ -1,9 +1,10 @@
 import Joi from "joi";
+import { NAME_CHARS } from "../utils/textRules";
 
 const name = Joi.string()
   .trim()
   .max(60)
-  .pattern(/^[\p{L}][\p{L} .'-]*$/u)
+  .pattern(NAME_CHARS)
   .messages({ "string.pattern.base": "{{#label}} may contain letters, spaces, dots, apostrophes and hyphens only." });
 
 // Admin passwords chosen by the super admin: 8–64 characters with an uppercase letter,

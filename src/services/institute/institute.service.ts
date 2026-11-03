@@ -7,7 +7,7 @@ import RegHelper from "../../utils/helper";
 import exclude from "../../utils/exclude";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
-import { sendAdminCredentials } from "../../utils/mailHelper";
+import { composeAdminCredentials, queueEmail, type AdminCredentialsEmail } from "../../utils/mailHelper";
 import config from "../../config/config";
 import { destroyInstituteAsset, uploadInstituteAsset } from "../../utils/instituteStorage";
 import PlanService from "../subscription/plan.service";
@@ -29,6 +29,17 @@ import Notification from "../../models/Notification.model";
 import StudentResult from "../../models/StudentResult.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
+
+// A school's slug is the first part of its web address ("/gdmis/auth/signin"), so it can't be one of the
+// website's own: "en" and "ar" are the home page in each language ("/ar"), the rest are app pages.
+const RESERVED_SLUGS = ["en", "ar", "auth", "super-admin", "unauthorized", "api", "v1", "uploads"];
+const isReservedSlug = (slug: unknown) =>
+  typeof slug === "string" && RESERVED_SLUGS.includes(slug.trim().toLowerCase());
+const RESERVED_SLUG_ERROR = {
+  error: true,
+  statusCode: httpStatus.BAD_REQUEST,
+  message: "This address is reserved. Choose a different institute name.",
+};
 
 
 // ------------CREATE INSTITUTE + ADMIN USER IN ONE TRANSACTION----------------
@@ -68,7 +79,11 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
   let logoPublicId: string | null = null;
 
   try {
-    // 1. Check slug uniqueness
+    // 1. Check the slug is free: not one of the website's own addresses, not another school's
+    if (isReservedSlug(body.slug)) {
+      await t.rollback();
+      return RESERVED_SLUG_ERROR;
+    }
     const slugExists = await Institute.findOne({ where: { slug: body.slug } });
     if (slugExists) {
       await t.rollback();
@@ -191,6 +206,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     await SubscriptionService.createForInstitute(instituteId, String(body.plan || "").toLowerCase(), trialDays, t);
 
     let adminResponse = null;
+    let adminEmail: AdminCredentialsEmail | null = null;
     const loginUrl = `${config.frontendUrl}/${body.slug}/auth/signin`;
 
     // 9. Create Admin user ONLY if admin fields are provided
@@ -230,19 +246,20 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         "refreshToken",
       ]);
 
-      // Send credentials email to admin
-      await sendAdminCredentials({
+      // Credentials email to the admin, queued once the institute is committed
+      adminEmail = {
         adminName: `${body.adminFirstName} ${body.adminLastName}`,
         adminEmail: body.adminEmail,
         adminPassword: body.adminPassword,
         instituteName: body.instituteName,
         loginUrl,
         plan: body.plan,
-      });
+      };
     }
 
     // All good — commit
     await t.commit();
+    if (adminEmail) await queueEmail({ kind: "admin-credentials", message: composeAdminCredentials(adminEmail) });
 
     void SubscriptionNotifier.notifySuperAdmins(instituteId, {
       type: SUBSCRIPTION_NOTIFICATION.TRIAL_STARTED,
@@ -293,7 +310,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
 
 
 // ----------RESEND ADMIN CREDENTIALS EMAIL (IF NOT RECEIVED)----------------
-const resendAdminCredentials = async (instituteId: string, password?: string): Promise<any> => {
+const resendAdminCredentials = async (instituteId: string, password?: string, requestedBy?: string): Promise<any> => {
   try {
     // 1. Find institute
     const whereCondition: any = {
@@ -331,26 +348,37 @@ const resendAdminCredentials = async (instituteId: string, password?: string): P
     const newPassword = password || RegHelper.generateTempPassword();
     const encrypted = await EncryptPassword.encryptPassword(newPassword);
 
-    // 4. Update password in DB
-    await adminUser.update({ password: encrypted });
-
-    // 5. Build login URL same way as registration
+    // 4. Build login URL same way as registration
     const loginUrl = `${config.frontendUrl}/${institute.slug}/auth/signin`;
 
-    // 6. Re-send credentials email
-    await sendAdminCredentials({
-      adminName: adminUser.userName,
-      adminEmail: adminUser.emailId,
-      adminPassword: newPassword,       // plain — email only, never stored
-      instituteName: institute.instituteName,
-      loginUrl,
-      plan: institute.plan,
+    // 5. Queue the email; the new password is saved once the mail server accepts it, so a
+    //    failed email never locks the admin out.
+    const sent = await queueEmail({
+      kind: "password-reset",
+      message: composeAdminCredentials({
+        adminName: adminUser.userName,
+        adminEmail: adminUser.emailId,
+        adminPassword: newPassword,       // plain — sealed in the email job only, never stored
+        instituteName: institute.instituteName,
+        loginUrl,
+        plan: institute.plan,
+      }),
+      dedupeKey: `credentials-${adminUser.userId}`,
+      setPassword: { userId: adminUser.userId, hash: encrypted },
+      notify: requestedBy ? { userId: requestedBy, instituteId: institute.instituteId } : null,
     });
+    if (sent.duplicate) {
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message: `New login details for ${adminUser.emailId} are already being emailed. Wait for that email before resending.`,
+      };
+    }
 
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `Credentials resent to ${adminUser.emailId} successfully.`,
+      message: `New login details are being sent to ${adminUser.emailId}. The new password works as soon as the email goes out.`,
       data: { email: adminUser.emailId },
     };
   } catch (e: any) {
@@ -556,6 +584,7 @@ const updateInstitute = async (
 
     // Check slug uniqueness if slug is being changed
     if (body.slug && body.slug !== institute.slug) {
+      if (isReservedSlug(body.slug)) return RESERVED_SLUG_ERROR;
       const slugExists = await Institute.findOne({
         where: {
           slug: body.slug,
@@ -986,7 +1015,7 @@ const getInstituteCredentials = async (instituteId: string): Promise<any> => {
   }
 };
 
-const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> => {
+const addInstituteAdmin = async (instituteId: string, body: any, requestedBy?: string): Promise<any> => {
   try {
     const whereCondition: any = {
       isDeleted: false,
@@ -1031,6 +1060,7 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
     const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
 
     let sendMailNeeded = false;
+    let isNewAdmin = false;
 
     if (adminUser) {
       // Check if email changed and is taken by another user
@@ -1061,14 +1091,14 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
         }
       }
 
-      // New email or explicit reset: issue (save + email) a new password, so the email always works.
+      // New email or explicit reset: issue (email + save) a new password, so the email always works.
+      // The password itself is saved once the mail server accepts that email (below).
       sendMailNeeded = resetPassword || Boolean(adminEmail && adminEmail !== adminUser.emailId);
 
       await adminUser.update({
         userName: `${adminFirstName ?? ""} ${adminLastName ?? ""}`.trim() || adminUser.userName,
         emailId: adminEmail ?? adminUser.emailId,
         phoneNumber: adminPhone ?? adminUser.phoneNumber,
-        ...(sendMailNeeded ? { password: encryptedPassword } : {}),
       });
     } else {
       // Create new admin
@@ -1121,29 +1151,38 @@ const addInstituteAdmin = async (instituteId: string, body: any): Promise<any> =
       });
 
       sendMailNeeded = true;
+      isNewAdmin = true;
     }
 
     const loginUrl = `${config.frontendUrl}/${institute.slug}/auth/signin`;
 
+    let alreadySending = false;
     if (sendMailNeeded) {
-      try {
-        await sendAdminCredentials({
+      const sent = await queueEmail({
+        kind: isNewAdmin ? "admin-credentials" : "password-reset",
+        message: composeAdminCredentials({
           adminName: adminUser.userName,
           adminEmail: adminUser.emailId,
           adminPassword: plainPassword,
           instituteName: institute.instituteName,
           loginUrl,
           plan: institute.plan || "basic",
-        });
-      } catch (mailErr) {
-        console.warn("Mail sending warning:", mailErr);
-      }
+        }),
+        // A new admin's password is saved with the account; an existing admin's once the email is accepted.
+        ...(isNewAdmin ? {} : { dedupeKey: `credentials-${adminUser.userId}`, setPassword: { userId: adminUser.userId, hash: encryptedPassword } }),
+        notify: requestedBy ? { userId: requestedBy, instituteId: institute.instituteId } : null,
+      });
+      alreadySending = sent.duplicate;
     }
 
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: sendMailNeeded ? "Admin saved and login details emailed." : "Admin details saved.",
+      message: alreadySending
+        ? "Admin details saved. A new password email for this admin is already on its way; send another once it has arrived."
+        : sendMailNeeded
+          ? "Admin saved. Login details are being emailed; a new password works as soon as the email goes out."
+          : "Admin details saved.",
       data: {
         admin: exclude(adminUser.toJSON(), ["password", "refreshToken"]),
       },

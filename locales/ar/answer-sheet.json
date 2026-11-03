@@ -1,0 +1,21 @@
+{
+  "Answer sheet approved. Exam is now Live.": "تمت الموافقة على ورقة الإجابة. الامتحان متاح الآن.",
+  "Answer sheet fetched.": "تم إحضار ورقة الإجابة.",
+  "Answer sheet is already approved.": "تمت الموافقة على ورقة الإجابة بالفعل.",
+  "Answer sheet rejected. Teacher has been notified.": "تم رفض ورقة الإجابة. تم إبلاغ المعلم.",
+  "Answer sheet saved as draft.": "تم حفظ ورقة الإجابة كمسودة.",
+  "Answer sheet submitted for review.": "تم تقديم ورقة الإجابة للمراجعة.",
+  "File fetched from legacy storage.": "تم جلب الملف من وحدة التخزين القديمة.",
+  "No answer sheet found.": "لم يتم العثور على ورقة إجابة.",
+  "No files were received. Select at least one answer sheet.": "لم يتم استلام أي ملفات. اختر ورقة إجابة واحدة على الأقل.",
+  "No replacement file was received.": "لم يتم استلام أي ملف بديل.",
+  "Only submitted answer sheets can be approved.": "لا يمكن الموافقة إلا على أوراق الإجابة المقدمة.",
+  "Only submitted answer sheets can be rejected.": "لا يمكن رفض سوى أوراق الإجابة المقدمة.",
+  "Question paper must be approved before creating answer sheet.": "يجب الموافقة على ورقة الأسئلة قبل إنشاء ورقة الإجابة.",
+  "Question paper not found or not assigned to you.": "لم يتم العثور على ورقة الأسئلة أو لم يتم تخصيصها لك.",
+  "Rejection note is required.": "يلزم تقديم مذكرة رفض.",
+  "Submitted answer sheets fetched.": "تم استلام أوراق الإجابة المقدمة.",
+  "There is no exam for this class, subject and exam type. Create the exam first, then upload its sheets.": "لا يوجد امتحان لهذه المادة الدراسية ونوع الامتحان. أنشئ الامتحان أولاً، ثم ارفع أوراقه.",
+  "This exam doesn't match the class, subject and exam type you picked.": "هذا الاختبار لا يتطابق مع الفصل الدراسي والمادة ونوع الاختبار الذي اخترته.",
+  "This sheet has no stored file. It may need to be uploaded again.": "لا يوجد ملف مخزن لهذه الورقة. قد يلزم إعادة تحميلها."
+}

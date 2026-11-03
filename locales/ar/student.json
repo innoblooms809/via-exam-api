@@ -1,0 +1,18 @@
+{
+  "Choose a class that exists (Master Data → Classes).": "اختر فئة موجودة (البيانات الرئيسية → الفئات).",
+  "Choose a session that exists (Master Data → Sessions).": "اختر جلسة موجودة (البيانات الرئيسية → الجلسات).",
+  "Invalid payload: students must be an array of rows.": "حمولة غير صالحة: يجب أن يكون الطلاب عبارة عن مصفوفة من الصفوف.",
+  "Latest results fetched successfully.": "تم جلب أحدث النتائج بنجاح.",
+  "No academic sessions have been configured for this institute. Add a session before uploading students.": "لم يتم إعداد أي جلسات أكاديمية لهذا المعهد. أضف جلسة قبل تحميل الطلاب.",
+  "No classes have been configured for this institute. Add classes before uploading students.": "لم يتم إعداد أي فصول دراسية لهذا المعهد. أضف الفصول الدراسية قبل تحميل الطلاب.",
+  "Performance overview fetched successfully.": "تم جلب نظرة عامة على الأداء بنجاح.",
+  "Something went wrong.": "حدث خطأ ما.",
+  "Student dashboard overview fetched successfully.": "تم جلب نظرة عامة على لوحة معلومات الطالب بنجاح.",
+  "Student fetched successfully.": "تم جلب الطالب بنجاح.",
+  "Student profile not found.": "لم يتم العثور على ملف الطالب.",
+  "STUDENT role not found. Please seed roles.": "لم يتم العثور على دور الطالب. يرجى إنشاء أدوار.",
+  "Students fetched successfully.": "تم استلام الطلاب للطلبات بنجاح.",
+  "Subject comparison fetched successfully.": "تم جلب مقارنة الموضوع بنجاح.",
+  "Subject performance fetched successfully.": "تم جلب بيانات أداء الموضوع بنجاح.",
+  "The uploaded file contains no student rows.": "لا يحتوي الملف المرفوع على أي صفوف خاصة بالطلاب."
+}

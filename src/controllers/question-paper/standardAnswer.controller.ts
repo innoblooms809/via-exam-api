@@ -9,7 +9,7 @@ import Exam from "../../models/Exam.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import httpStatus from "http-status";
 import cloudinary from "../../utils/cloudinary";
-import { warmAnswerKeyOcr } from "../../services/evaluation/answerKeyOcr.service";
+import { warmAnswerKeyOcr } from "../../services/evaluation/pipeline6.service";
 import fs from "fs";
 import path from "path";
 

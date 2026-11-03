@@ -162,7 +162,8 @@ export async function saveRecheckDraft(ctx: RecheckContext, data: { evaluations?
   const sheet = await Scanner.findOne({ where: { sheetId: ctx.evaluation.sheetId }, attributes: ["examId"] });
   const exam = sheet?.examId ? await Exam.findOne({ where: { examId: sheet.examId }, attributes: ["totalMarks"] }) : null;
   const given = data.totalScore === undefined || data.totalScore === null || data.totalScore === "" ? null : Number(data.totalScore);
-  const total = given ?? totalOf(evaluations);
+  // Structured papers: attempt any N and OR decide which parts count (the evaluation's question tree).
+  const total = given ?? totalOf(evaluations, ctx.evaluation.resultTree);
   if (total != null && (!Number.isFinite(total) || total < 0 || (exam && total > exam.totalMarks))) {
     throw new ApiError(httpStatus.BAD_REQUEST, `Marks must be between 0 and ${exam?.totalMarks ?? "the paper's maximum"}.`);
   }

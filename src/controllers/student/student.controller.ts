@@ -3,7 +3,7 @@ import { Response } from "express";
 import StudentService from "../../services/student/student.service";
 import { getTeacherScope, isScannerRequester, isTeacherRequester, maskStudentRecord } from "../../services/evaluation/evaluationAccess.service";
 import config from "../../config/config";
-import { sendUserCredentials } from "../../utils/mailHelper";
+import { queueUserCredentials } from "../../utils/mailHelper";
 
 const createStudent = async (req: any, res: Response): Promise<any> => {
   try {
@@ -22,15 +22,13 @@ const createStudent = async (req: any, res: Response): Promise<any> => {
       const recipientPhone = req.body.phoneNumber || req.body.mobile || req.body.phone;
 
       if (recipientEmail) {
-        sendUserCredentials({
+        void queueUserCredentials({
           userName: `${req.body.firstName} ${req.body.lastName}`,
           email:    recipientEmail,
           phone:    recipientPhone || "",
           password: result.data.plainPassword,
           role:     "Student",
           loginUrl,
-        }).catch((err) => {
-          console.error("Background student email dispatch failed:", err);
         });
       }
     }
@@ -110,8 +108,9 @@ const bulkCreateStudents = async (req: any, res: Response): Promise<any> => {
     );
 
     // Mirror the single-student flow: every student that was actually created
-    // gets their login details by email. Dispatched in the background and one
-    // at a time so a 500-row upload cannot stall the response or flood SMTP.
+    // gets their login details by email. Each email is a queued job, so a 500-row
+    // upload never stalls the response, the email queue sends a couple at a time,
+    // and nothing is lost to a mail-server outage or a restart.
     const created: any[] = !result.error ? (result.data?.successes ?? []) : [];
     if (created.length > 0) {
       const slug = req.viaExamUser?.institute?.slug;
@@ -121,22 +120,15 @@ const bulkCreateStudents = async (req: any, res: Response): Promise<any> => {
 
       void (async () => {
         for (const student of created) {
-          if (!student.generatedPassword) continue; // admin set the password themselves
-          try {
-            await sendUserCredentials({
-              userName: student.name,
-              email: student.email,
-              phone: student.mobile,
-              password: student.generatedPassword,
-              role: "Student",
-              loginUrl,
-            });
-          } catch (err) {
-            console.error(
-              `Background bulk student email dispatch failed for ${student.email}:`,
-              err,
-            );
-          }
+          if (!student.generatedPassword || !student.email) continue; // admin set the password themselves
+          await queueUserCredentials({
+            userName: student.name,
+            email: student.email,
+            phone: student.mobile,
+            password: student.generatedPassword,
+            role: "Student",
+            loginUrl,
+          });
         }
       })();
     }

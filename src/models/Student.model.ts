@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
+import { encryptedColumn } from "../utils/dataProtection";
 
 interface StudentProfileAttributes {
   id: number;
@@ -114,9 +115,11 @@ StudentProfile.init(
       allowNull: false,
     },
 
+    // Encrypted at rest (utils/dataProtection).
     aadhar: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
+      ...encryptedColumn("aadhar", "aadhaar"),
     },
 
     address: {
@@ -125,9 +128,10 @@ StudentProfile.init(
     },
 
     profileUrl: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: null,
+      ...encryptedColumn("profileUrl", "profileUrl"),
     },
 
     isActive: {

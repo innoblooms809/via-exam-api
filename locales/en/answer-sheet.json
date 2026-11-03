@@ -1,0 +1,21 @@
+{
+  "Answer sheet approved. Exam is now Live.": "Answer sheet approved. Exam is now Live.",
+  "Answer sheet fetched.": "Answer sheet fetched.",
+  "Answer sheet is already approved.": "Answer sheet is already approved.",
+  "Answer sheet rejected. Teacher has been notified.": "Answer sheet rejected. Teacher has been notified.",
+  "Answer sheet saved as draft.": "Answer sheet saved as draft.",
+  "Answer sheet submitted for review.": "Answer sheet submitted for review.",
+  "File fetched from legacy storage.": "File fetched from legacy storage.",
+  "No answer sheet found.": "No answer sheet found.",
+  "No files were received. Select at least one answer sheet.": "No files were received. Select at least one answer sheet.",
+  "No replacement file was received.": "No replacement file was received.",
+  "Only submitted answer sheets can be approved.": "Only submitted answer sheets can be approved.",
+  "Only submitted answer sheets can be rejected.": "Only submitted answer sheets can be rejected.",
+  "Question paper must be approved before creating answer sheet.": "Question paper must be approved before creating answer sheet.",
+  "Question paper not found or not assigned to you.": "Question paper not found or not assigned to you.",
+  "Rejection note is required.": "Rejection note is required.",
+  "Submitted answer sheets fetched.": "Submitted answer sheets fetched.",
+  "There is no exam for this class, subject and exam type. Create the exam first, then upload its sheets.": "There is no exam for this class, subject and exam type. Create the exam first, then upload its sheets.",
+  "This exam doesn't match the class, subject and exam type you picked.": "This exam doesn't match the class, subject and exam type you picked.",
+  "This sheet has no stored file. It may need to be uploaded again.": "This sheet has no stored file. It may need to be uploaded again."
+}

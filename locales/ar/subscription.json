@@ -1,0 +1,22 @@
+{
+  "At least one plan must stay active.": "يجب أن تبقى خطة واحدة على الأقل فعّالة.",
+  "Checkout started.": "بدأت عملية الدفع.",
+  "Could not start the payment. Please try again.": "تعذر بدء عملية الدفع. يرجى المحاولة مرة أخرى.",
+  "Online payments are not set up yet. Please contact ViaExam support.": "لم يتم إعداد نظام الدفع الإلكتروني بعد. يرجى التواصل مع دعم ViaExam.",
+  "Online payments are not set up.": "لم يتم إعداد المدفوعات عبر الإنترنت.",
+  "Payment session not found.": "لم يتم العثور على جلسة الدفع.",
+  "Plan activated.": "تم تفعيل الخطة.",
+  "Plan not found.": "لم يتم العثور على الخطة.",
+  "Plan updated successfully.": "تم تحديث الخطة بنجاح.",
+  "Plans fetched successfully.": "تم جلب الخطط بنجاح.",
+  "Quote calculated.": "تم حساب السعر.",
+  "Set when the trial ends.": "يتم تحديده عند انتهاء التجربة.",
+  "Subscription fetched successfully.": "تم جلب الاشتراك بنجاح.",
+  "Subscription overview fetched.": "تم جلب ملخص الاشتراك.",
+  "Subscriptions fetched successfully.": "تم جلب الاشتراكات بنجاح.",
+  "The access end date must be in the future.": "يجب أن يكون تاريخ انتهاء الوصول في المستقبل.",
+  "This payment belongs to another institute.": "هذا المبلغ المدفوع يخص مؤسسة أخرى.",
+  "This plan is not available.": "هذه الخطة غير متاحة.",
+  "Transactions fetched successfully.": "تم جلب المعاملات بنجاح.",
+  "Unknown plan.": "خطة غير معروفة."
+}

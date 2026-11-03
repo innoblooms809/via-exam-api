@@ -1,0 +1,11 @@
+{
+  "Activity logs retrieved successfully from Winston stream.": "تم استرجاع سجلات النشاط بنجاح من بث وينستون.",
+  "Heartbeat recorded.": "تم تسجيل نبضات القلب.",
+  "Institute context is required.": "يلزم توفير سياق المعهد.",
+  "Institute overview fetched successfully.": "تم جلب نبذة عن المعهد بنجاح.",
+  "Institute users fetched successfully.": "تم جلب بيانات مستخدمي المعهد بنجاح.",
+  "Platform overview fetched successfully.": "تم جلب نظرة عامة على المنصة بنجاح.",
+  "Platform users fetched successfully.": "تم جلب البيانات بنجاح من قبل مستخدمي المنصة.",
+  "User monitoring details fetched successfully.": "تم جلب تفاصيل مراقبة المستخدم بنجاح.",
+  "User not found or access denied.": "لم يتم العثور على المستخدم أو تم رفض الوصول."
+}

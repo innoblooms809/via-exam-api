@@ -12,6 +12,7 @@ import { authLimiter } from './middlewares/rateLimiter';
 import routes from './routes/v1';
 import SubscriptionController from './controllers/subscription/subscription.controller';
 import { errorConverter, errorHandler } from './middlewares/error';
+import { detectLanguage, translateMessages } from './middlewares/i18n';
 import ApiError from './utils/ApiError';
 import path from 'path';
 // import session from 'express-session'; // Commented out: captcha is disabled, MemoryStore not needed in production
@@ -44,8 +45,10 @@ app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
 app.use(cookieParser());
 
-// sanitize request data
-app.use(xss());
+// sanitize request data — except the partner evaluation API: it is JSON in and out, never
+// rendered, and its papers are data for the evaluator ("x < 5" must reach it as written).
+const sanitize = xss();
+app.use((req, res, next) => (req.path.startsWith('/v1/partner/') ? next() : sanitize(req, res, next)));
 
 // gzip compression
 app.use(compression());
@@ -83,6 +86,10 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
+
+// Answer messages in the language the UI asks for (Accept-Language): English or Arabic.
+app.use(detectLanguage);
+app.use(translateMessages);
 
 // app.use(session({
 //   secret: config.sessionSecret,
