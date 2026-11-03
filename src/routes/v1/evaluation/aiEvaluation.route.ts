@@ -7,6 +7,8 @@ import { authenticate, authorize } from "../../../middlewares/auth";
 import { ACADEMIC } from "../../../config/roles";
 import { requireSheetAccessMiddleware, requireSheetEvaluateMiddleware } from "../../../services/evaluation/evaluationAccess.service";
 import { evaluationRunGuard } from "../../../services/evaluation/recheckDraft.service";
+import validate from "../../../middlewares/validate";
+import AIEvaluationValidation from "../../../validations/aiEvaluation.validation";
 
 const router = Router();
 
@@ -68,6 +70,25 @@ router.get(
   authenticate,
   authorize(ACADEMIC),
   Pipeline6Controller.getQueueStatus
+);
+
+// "Evaluate all": many sheets in one call, each with the same checks as /evaluate6
+// (assigned evaluator, never published results, cross-checks by their checker only).
+router.post(
+  "/evaluate-batch",
+  authenticate,
+  authorize(ACADEMIC),
+  validate(AIEvaluationValidation.evaluateBatch),
+  Pipeline6Controller.evaluateBatch
+);
+
+// Status and queue place of many sheets: the queue page's single poll.
+router.post(
+  "/status-batch",
+  authenticate,
+  authorize(ACADEMIC),
+  validate(AIEvaluationValidation.statusBatch),
+  Pipeline6Controller.statusBatch
 );
 
 // Failed AI evaluations

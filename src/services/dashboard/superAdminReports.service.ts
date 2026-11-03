@@ -7,6 +7,7 @@ import { isStripeConfigured } from "../../config/stripe";
 import { getFirebaseMessaging } from "../../config/firebase";
 import { ANSWER_SHEET_LIMITS } from "../../config/uploadLimits";
 import { memoize } from "../../utils/memoCache";
+import { decryptField } from "../../utils/dataProtection";
 
 // Detail reports behind the super admin dashboard cards. Every list is paged in SQL
 // (LIMIT/OFFSET + COUNT(*) OVER()), aggregates are computed with one GROUP BY per
@@ -160,6 +161,9 @@ const withReason = <T extends Row>(row: T) => {
   const r = reasonOf(row.error);
   return { ...row, reason: { key: r.key, label: r.label, hint: r.hint } };
 };
+
+/** A sheet row from raw SQL: its file link is stored encrypted. */
+const withFileUrl = <T extends Row>(row: T) => ({ ...row, fileUrl: decryptField(row.fileUrl as string | null, "sheet.fileUrl") });
 
 // ─── Institutes: usage + billing, one row per institute ───────────────────────
 
@@ -554,7 +558,7 @@ const listEvaluations = async (query: Query) => {
           reasons: [...reasons.values()].sort((a, b) => b.count - a.count),
           byInstitute: summary?.byInstitute || [],
         },
-        evaluations: list.rows.map(withReason),
+        evaluations: list.rows.map((row) => withReason(withFileUrl(row))),
         pagination: list.pagination,
       };
     });
@@ -646,7 +650,7 @@ const listAnswerSheets = async (query: Query) => {
           uploadedLast7d: num(summary?.last_7d),
           byInstitute: summary?.byInstitute || [],
         },
-        sheets: list.rows.map(withReason),
+        sheets: list.rows.map((row) => withReason(withFileUrl(row))),
         pagination: list.pagination,
       };
     });

@@ -1,0 +1,10 @@
+{
+  "Internal Server error": "خطأ داخلي في الخادم",
+  "Invalid ID": "هوية غير صالحة",
+  "Role created Successfullly": "تم إنشاء الدور بنجاح",
+  "Role created successfully": "تم إنشاء الدور بنجاح",
+  "Role with Access Fetched Successfully": "تم جلب الدور الذي يتمتع بصلاحية الوصول بنجاح",
+  "Role with Access is fetched.": "تم جلب الدور الذي يملك صلاحية الوصول.",
+  "Role with Access list is fetched.": "تم جلب قائمة الأدوار التي تحتوي على صلاحيات الوصول.",
+  "Role with access updated successfully": "تم تحديث الدور الذي يتمتع بصلاحيات الوصول بنجاح"
+}

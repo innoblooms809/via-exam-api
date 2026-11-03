@@ -1,0 +1,23 @@
+{
+  "Admin email is already registered to another user.": "البريد الإلكتروني الخاص بالمسؤول مسجل بالفعل لمستخدم آخر.",
+  "Admin email is already registered.": "تم تسجيل البريد الإلكتروني الخاص بالمسؤول مسبقاً.",
+  "Admin email is required.": "البريد الإلكتروني الخاص بالمسؤول مطلوب.",
+  "Admin phone number is required.": "رقم هاتف المسؤول مطلوب.",
+  "Admin role not found in database.": "لم يتم العثور على دور المسؤول في قاعدة البيانات.",
+  "Admin role not found. Please seed roles first.": "لم يتم العثور على دور المسؤول. يرجى إنشاء الأدوار أولاً.",
+  "Admin user not found for this institute.": "لم يتم العثور على مستخدم مسؤول لهذا المعهد.",
+  "Credentials fetched successfully.": "تم جلب بيانات الاعتماد بنجاح.",
+  "Email is already registered by another user.": "البريد الإلكتروني مسجل بالفعل من قبل مستخدم آخر.",
+  "Institute contact email is already in use.": "البريد الإلكتروني للتواصل مع المعهد قيد الاستخدام بالفعل.",
+  "Institute contact phone is already in use.": "رقم هاتف الاتصال الخاص بالمعهد قيد الاستخدام بالفعل.",
+  "Institute deleted successfully.": "تم حذف المعهد بنجاح.",
+  "Institute fetched successfully.": "تم جلب المعهد بنجاح.",
+  "Institute updated successfully.": "تم تحديث المعهد بنجاح.",
+  "Institutes fetched successfully.": "تم جلب المعاهد بنجاح.",
+  "Phone number is already registered by another user.": "رقم الهاتف مسجل بالفعل من قبل مستخدم آخر.",
+  "Status must be 0 (inactive) or 1 (active).": "يجب أن تكون الحالة 0 (غير نشط) أو 1 (نشط).",
+  "This address is reserved. Choose a different institute name.": "هذا العنوان محجوز. اختر اسمًا مختلفًا للمؤسسة.",
+  "This phone number is already registered with another institute.": "هذا الرقم مسجل بالفعل لدى مؤسسة أخرى.",
+  "This slug is already taken.": "هذا العنوان محجوز بالفعل.",
+  "This slug is already taken. Choose a different institute name.": "هذا الاسم مستخدم بالفعل. اختر اسم معهد مختلف."
+}

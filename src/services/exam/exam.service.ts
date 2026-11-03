@@ -21,6 +21,8 @@ import { EXAM_TYPE_HINT, normalizeExamType } from "../../utils/examTypes";
 import { examMarksLock, examStructureLock, examUsage } from "../academic/academicGuards.service";
 import { isTaughtIn, sectionRunsIn } from "../academic/sessionSetup.service";
 import { marksFor } from "../academic/marks.service";
+import { buildRoster, loadExam, sectionKey } from "./examRoster.service";
+import { assignedSectionsOf, getTeacherScope, isTeacherRequester } from "../evaluation/evaluationAccess.service";
 
 /** Single exam-table status that drives Manage Exams + approval. */
 export const EXAM_WORKFLOW_STATUSES = [
@@ -723,77 +725,48 @@ const deleteExam = async (examId: string, requestedBy: any): Promise<any> => {
 
 
 // ─── GET EXAM PROGRESS ────────────────────────────────────────────────────────
+/**
+ * One exam, section by section (from its roster: its own session, sheets matched by student):
+ * students, sheets in, marks, and the section's evaluator. A teacher who evaluates some
+ * sections without teaching the subject sees just those; `mine` marks the sections they evaluate.
+ */
 const getExamProgress = async (examId: string, requestedBy: any): Promise<any> => {
   try {
     const instituteId = requestedBy.instituteId;
-
-    const exam: any = await Exam.findOne({
-      where: { examId, instituteId, isDeleted: false },
-      include: [
-        { model: Class, as: "class", attributes: ["classId", "className"], required: true },
-        { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], required: true },
-        { model: Session, as: "session", attributes: ["sessionId", "sessionName"] },
-      ],
-    });
-
+    const exam: any = await loadExam(instituteId, examId);
     if (!exam) {
       return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Exam not found." };
     }
 
-    const sections: any = await Section.findAll({
-      where: { classId: exam.classId, isDeleted: false },
-    });
+    const [roster, evaluators] = await Promise.all([buildRoster(exam), EvaluationAssignment.findAll({ where: { examId: exam.examId, isActive: true } })]);
+    let mine: Set<string> | null = null;
+    let only: Set<string> | null = null;
+    if (isTeacherRequester(requestedBy)) {
+      const scope = await getTeacherScope(requestedBy);
+      mine = assignedSectionsOf(scope, exam.examId);
+      if (mine && !scope.ownSubjectIds.has(String(exam.subjectId))) only = mine;
+    }
+    const names = evaluators.length
+      ? new Map((await UserModal.findAll({ where: { userId: { [Op.in]: evaluators.map((e) => e.teacherId) } }, attributes: ["userId", "userName"] })).map((u) => [u.userId, u.userName]))
+      : new Map<string, string>();
 
-    const className = exam.class?.className || exam.classId;
-    const sessionName = exam.session?.sessionName || exam.sessionId || "";
-
-    const progressData = await Promise.all(
-      sections.map(async (sec: any) => {
-        let studentsList: any[] = [];
-        try {
-          const studentRes = await StudentService.getAllStudents(requestedBy, {
-            className,
-            sectionId: sec.sectionName || sec.sectionId,
-            session: sessionName,
-          });
-          if (studentRes && !studentRes.error && Array.isArray(studentRes?.data?.students)) {
-            studentsList = studentRes.data.students;
-          }
-        } catch (err) {
-          console.error("Error fetching section progress students:", err);
-        }
-
-        const studentRolls = new Set(
-          studentsList.map((s: any) => String(s.rollNumber)).filter(Boolean)
-        );
-
-        const sheets = await Scanner.findAll({
-          where: {
-            instituteId,
-            classId: exam.classId,
-            section: { [Op.in]: [sec.sectionId, sec.sectionName] },
-            subjectId: exam.subjectId,
-            examType: exam.examType,
-            isDeleted: false,
-          },
-          attributes: ["sheetId", "rollNo"],
-        });
-
-        const orphanSheets = sheets.filter(
-          (sh: any) => !studentRolls.has(String(sh.rollNo))
-        );
-
-        const totalStudents = studentsList.length + orphanSheets.length;
-        const uploadedSheets = sheets.length;
-
+    const progressData = roster.sections
+      .filter((s) => !only || only.has(sectionKey(s.sectionId)))
+      .map((s) => {
+        const evaluator = evaluators.find((e) => sectionKey(e.sectionId) === sectionKey(s.sectionId));
         return {
-          sectionId: sec.sectionId,
-          sectionName: sec.sectionName,
-          totalStudents,
-          uploadedSheets,
+          sectionId: s.sectionId,
+          sectionName: s.sectionName,
+          totalStudents: s.counts.total,
+          uploadedSheets: s.counts.uploaded,
+          absent: s.counts.absent,
+          evaluatedSheets: s.counts.evaluated,
+          failedSheets: s.counts.evaluationFailed,
+          evaluator: evaluator ? { teacherId: evaluator.teacherId, name: names.get(evaluator.teacherId) ?? "", reviewedAt: evaluator.reviewedAt } : null,
+          /** The requester evaluates this section (admins: every section). */
+          mine: isTeacherRequester(requestedBy) ? Boolean(mine?.has(sectionKey(s.sectionId))) : true,
         };
-      })
-    );
+      });
 
     return {
       error: false,

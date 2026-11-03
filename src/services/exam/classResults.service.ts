@@ -156,6 +156,10 @@ const classResults = async (admin: any, query: any) => {
       grade: result === "INCOMPLETE" || missing ? null : gradeOn(gradingScale, percentage),
       result,
       rank: null as number | null,
+      /** Rank among the students of the same section (a whole-class sheet only). */
+      sectionRank: null as number | null,
+      /** How many of that section are ranked. */
+      sectionRanked: null as number | null,
     };
   });
 
@@ -165,6 +169,20 @@ const classResults = async (admin: any, query: any) => {
   ranked.forEach((s, i) => {
     s.rank = i > 0 && ranked[i - 1].percentage === s.percentage ? ranked[i - 1].rank : i + 1;
   });
+  // A whole-class sheet of a class with sections: each student's place in their own section too,
+  // as report cards print it ("2nd in Section A, 5th in Class 9").
+  if (!section) {
+    const bySection = new Map<string, typeof ranked>();
+    for (const s of ranked) bySection.set(s.sectionName, [...(bySection.get(s.sectionName) ?? []), s]);
+    if (new Set(students.map((s) => s.sectionName).filter(Boolean)).size > 1) {
+      for (const [, list] of bySection) {
+        list.forEach((s, i) => {
+          s.sectionRank = i > 0 && list[i - 1].percentage === s.percentage ? list[i - 1].sectionRank : i + 1;
+          s.sectionRanked = list.length;
+        });
+      }
+    }
+  }
   students.sort((a, b) => a.rollNo.localeCompare(b.rollNo, undefined, { numeric: true }) || a.name.localeCompare(b.name));
 
   const complete = students.filter((s) => s.result !== "INCOMPLETE");

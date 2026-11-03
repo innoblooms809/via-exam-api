@@ -5,6 +5,7 @@ import Subscription from "../../models/Subscription.model";
 import PlanService from "./plan.service";
 import SubscriptionService, { accessEndsAt } from "./subscription.service";
 import SubscriptionNotifier, { SUBSCRIPTION_NOTIFICATION, formatDate } from "./subscriptionNotifier";
+import { defineMaintenanceTask, runMaintenanceTaskNow } from "../../queue/maintenance";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RUN_EVERY_MS = 60 * 60 * 1000; // hourly
@@ -65,26 +66,32 @@ const sendReminders = async (): Promise<void> => {
   }
 };
 
+const maintain = async () => {
+  const expired = await SubscriptionService.expireDueSubscriptions();
+  if (expired) logger.info(`[Subscription] Marked ${expired} subscription(s) as expired`);
+  await sendReminders();
+  return { expired };
+};
+
 const runMaintenance = async (): Promise<void> => {
   try {
-    const expired = await SubscriptionService.expireDueSubscriptions();
-    if (expired) logger.info(`[Subscription] Marked ${expired} subscription(s) as expired`);
-    await sendReminders();
+    await maintain();
   } catch (e: any) {
     logger.error(`[Subscription] Maintenance run failed: ${e.message}`);
   }
 };
 
-let timer: NodeJS.Timeout | null = null;
+// Expiry and reminders run hourly as a scheduled job (queue/maintenance.ts): one run per hour
+// however many API instances there are, and a failed run is retried. Reminders are claimed
+// atomically (lastReminderKey), so a retried run never sends one twice.
+defineMaintenanceTask("subscription-maintenance", { everyMs: RUN_EVERY_MS }, maintain);
 
-/** Seeds plans, gives existing institutes a subscription, then runs expiry/reminders hourly. */
+/** Seeds plans and gives existing institutes a subscription; the hourly checks are scheduled. */
 export const startSubscriptionScheduler = async (): Promise<void> => {
   await PlanService.ensureDefaultPlans();
   await SubscriptionService.backfillSubscriptions();
-  if (timer) return;
-  setTimeout(() => void runMaintenance(), FIRST_RUN_DELAY_MS).unref();
-  timer = setInterval(() => void runMaintenance(), RUN_EVERY_MS);
-  timer.unref();
+  // The first check soon after start, as before; then the hourly schedule.
+  setTimeout(() => void runMaintenanceTaskNow("subscription-maintenance").catch(() => runMaintenance()), FIRST_RUN_DELAY_MS).unref();
 };
 
 export default { startSubscriptionScheduler, runMaintenance };

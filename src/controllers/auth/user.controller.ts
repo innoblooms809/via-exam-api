@@ -4,13 +4,14 @@ import svgCaptcha from "svg-captcha"; // same as your boilerplate
 import jwt from "jsonwebtoken";
 import tokenService from "../../services/auth/token.service"; // reuse your existing tokenService
 import Service from "../../services/auth/user.service";
-import { sendUserCredentials } from "../../utils/mailHelper"; // reuse your mail helper
+import { queueUserCredentials } from "../../utils/mailHelper"; // queued; retried while SMTP is down
 import config from "../../config/config";
 import UserModal from "../../models/User.model";
 import UserPresenceSession from "../../models/UserPresenceSession.model";
 import logger from "../../config/logger";
 import Role from "../../models/Role.model";
 import { resolveRequestAuthRole } from "../../middlewares/auth";
+import { digestSecret, verifySecret } from "../../utils/dataProtection";
 
 interface IGetUserInfoRequest extends Request {
   session?: any; // Optional: express-session middleware is disabled (captcha not in use)
@@ -105,8 +106,9 @@ const loginViaExamUser = async (
     }
     const token = await tokenService.generateUserAuthTokens(result.data.user);
 
+    // Only a digest of the refresh token is stored: a copy of the database can't sign anyone in.
     await UserModal.update(
-      { refreshToken: token.refresh.token },
+      { refreshToken: digestSecret(token.refresh.token, "refresh-token") },
       { where: { userId: result.data.user.userId } },
     );
 
@@ -258,7 +260,8 @@ const refreshAccessToken = async (
       });
     }
 
-    const matchingStored = candidates.find((candidate) => candidate === user.refreshToken);
+    // The stored value is a digest (or, for a session from before digests, the token itself).
+    const matchingStored = candidates.find((candidate) => verifySecret(candidate, user.refreshToken, "refresh-token"));
     if (matchingStored) {
       refreshToken = matchingStored;
     }
@@ -267,7 +270,7 @@ const refreshAccessToken = async (
       (decoded as any).sub?.userId === user.userId ||
       (decoded as any).sub === user.userId;
 
-    if (!isSameUser || !user.refreshToken || user.refreshToken !== refreshToken) {
+    if (!isSameUser || !matchingStored) {
       return res.status(httpStatus.FORBIDDEN).json({
         error: true,
         statusCode: httpStatus.FORBIDDEN,
@@ -278,7 +281,7 @@ const refreshAccessToken = async (
     const token = await tokenService.generateUserAuthTokens(user);
 
     await UserModal.update(
-      { refreshToken: token.refresh.token },
+      { refreshToken: digestSecret(token.refresh.token, "refresh-token") },
       { where: { userId: user.userId } },
     );
 
@@ -333,7 +336,7 @@ const createViaExamUser = async (req: any, res: Response): Promise<any> => {
         ? `${config.frontendUrl}/${slug}/auth/signin`
         : `${config.frontendUrl}/auth/signin`;
 
-      sendUserCredentials({
+      void queueUserCredentials({
         userName:
           req.body.userName ||
           `${req.body.firstName || ""} ${req.body.lastName || ""}`.trim(),
@@ -342,8 +345,6 @@ const createViaExamUser = async (req: any, res: Response): Promise<any> => {
         password: result.password,
         role: req.body.role || "User",
         loginUrl,
-      }).catch((err) => {
-        logger.error(`Background user email dispatch failed: ${err}`);
       });
     }
 

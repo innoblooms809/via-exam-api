@@ -1,0 +1,18 @@
+{
+  "Admin dashboard overview fetched successfully.": "تم جلب نظرة عامة على لوحة تحكم المسؤول بنجاح.",
+  "Could not load dashboard data.": "تعذر تحميل بيانات لوحة المعلومات.",
+  "Could not load the home page data.": "تعذر تحميل بيانات الصفحة الرئيسية.",
+  "Could not load this report.": "تعذر تحميل هذا التقرير.",
+  "Evaluated answer sheets statistics fetched successfully.": "تم جلب إحصائيات أوراق الإجابة المقيمة بنجاح.",
+  "Exam statistics fetched successfully.": "تم جلب إحصائيات الامتحان بنجاح.",
+  "History loaded.": "تم تحميل السجل.",
+  "Institute statistics fetched successfully.": "تم جلب إحصائيات المعهد بنجاح.",
+  "Person loaded.": "تم تحميل الشخص.",
+  "Scanner analytics fetched successfully.": "تم جلب بيانات تحليل الماسح الضوئي بنجاح.",
+  "status must be pending or done.": "يجب أن تكون الحالة \"معلقة\" أو \"مكتملة\".",
+  "Student analytics fetched successfully.": "تم جلب بيانات تحليلات الطلاب بنجاح.",
+  "Student statistics fetched successfully.": "تم جلب إحصائيات الطلاب بنجاح.",
+  "Teacher analytics fetched successfully.": "تم جلب بيانات تحليلات المعلمين بنجاح.",
+  "This person was not found in your school.": "لم يتم العثور على هذا الشخص في مدرستك.",
+  "Work loaded.": "العمل كثير."
+}

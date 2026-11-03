@@ -36,15 +36,20 @@ import { requireSheetAccess } from "../evaluation/evaluationAccess.service";
 import { inspectDiskFile } from "../../middlewares/verifyUpload";
 import { ANSWER_SHEET_DETECTED_TYPES } from "../../utils/fileSignature";
 import { newId } from "../../utils/idGenerator";
-import { assertSheetWritable, clearAbsentForRoll, sheetsChangedAfterReview } from "../exam/examWorkflow.service";
-import { rosterRolls, rosterSectionsByRoll, sheetWhereForExam } from "../exam/examRoster.service";
+import { assertSheetWritable, clearAbsentFor, sheetsChangedAfterReview } from "../exam/examWorkflow.service";
+import { buildRoster, loadExam, rosterIndex, sectionKey } from "../exam/examRoster.service";
 import {
   beginQualityCheck,
   qualitySummary,
+  queueQualityCheck,
   scanQualityRule,
   settleQualityCheck,
   type QualitySummary,
 } from "./sheetQuality.service";
+
+// A sheet whose quick check hasn't landed gets a queued one this much later (by then the
+// quick check has usually finished, and the queued one skips it).
+const QUEUED_CHECK_DELAY_MS = 90_000;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,6 +72,12 @@ export interface SheetResult {
 const UPLOAD_CONCURRENCY = 4;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const clean = (v: unknown) => String(v ?? "").trim();
+
+/** A sheet's section for the upload checks: known once it names its student or section; undefined for older sheets. */
+const sectionOfSheet = (sheet: { sectionId?: string | null; studentId?: string | null }) =>
+  sheet.sectionId || sheet.studentId ? sheet.sectionId ?? null : undefined;
 
 const rollNoFromFileName = (fileName: string): string =>
   String(fileName ?? "")
@@ -219,44 +230,57 @@ export const uploadSheets = async (
         message: "There is no exam for this class, subject and exam type. Create the exam first, then upload its sheets.",
       };
     }
-    const examRolls = await rosterRolls(instituteId, matchingExam.examId);
+    const exam = await loadExam(instituteId, matchingExam.examId);
+    const index = await rosterIndex(exam);
 
-    // Only the scanner the admin assigned (or an admin) may add sheets, and not
-    // after the upload is marked complete or results are published.
-    try {
-      await assertSheetWritable(uploadedBy, matchingExam?.examId);
-    } catch (err: any) {
-      return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
+    // The section these sheets are for: a section exam's own; for a whole-class exam the one the
+    // scanner picked (`sectionId`, or `section` by name). With none picked, each file's roll
+    // number decides, when only one section has it.
+    const named = (body as any).sectionId !== undefined || clean(body.section) !== "";
+    let target: string | null | undefined = exam.sectionId || undefined;
+    if (!exam.sectionId && named) {
+      target = index.section((body as any).sectionId !== undefined ? (body as any).sectionId : body.section);
+      if (target === undefined) {
+        return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "That section isn't part of this exam. Pick the section again." };
+      }
+    }
+    if (target === undefined && index.sections.length === 1) target = index.sections[0].sectionId;
+
+    // Only the scanner given the section (or an admin) may add sheets to it, and not after its
+    // upload is marked complete or results are published.
+    const blocked = new Map<string, { statusCode: number; message: string }>();
+    for (const sectionId of target === undefined ? index.sections.map((s) => s.sectionId) : [target]) {
+      try {
+        await assertSheetWritable(uploadedBy, exam.examId, sectionId);
+      } catch (err: any) {
+        blocked.set(sectionKey(sectionId), { statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message });
+      }
+    }
+    if (blocked.size && (target !== undefined || blocked.size === index.sections.length)) {
+      const why = [...blocked.values()][0];
+      return { error: true, statusCode: why.statusCode, message: why.message };
     }
     const qualityRule = await scanQualityRule(instituteId);
 
-    // No section sent (a whole-class exam): each sheet takes its student's own section,
-    // and the sheets already in are the exam's own, whatever section they carry.
-    const sectionGiven = Boolean(String(body.section ?? "").trim());
-    const sectionByRoll = sectionGiven ? null : await rosterSectionsByRoll(instituteId, matchingExam.examId);
-    const sectionOf = (rollNo: string) => (sectionByRoll ? (sectionByRoll.get(rollNo) ?? "") : body.section);
+    // Whose sheet each file is, before anything is stored.
+    const ownerOf = new Map<Express.Multer.File, { studentId: string; sectionId: string | null; rollNo: string } | string>();
+    for (const f of files) {
+      const roll = rollNoFromFileName(f.originalname);
+      if (!/^\d{1,32}$/.test(roll)) continue;
+      const { student, problem } = index.find(target, roll);
+      ownerOf.set(f, student ?? problem ?? `Roll number ${roll} is not on this exam's roster.`);
+    }
 
-    // One query instead of one per file.
-    const rollNos = files.map((f) => rollNoFromFileName(f.originalname)).filter(Boolean);
-    const existingRows = rollNos.length
-      ? await Scanner.findAll({
-        where: sectionByRoll
-          ? { ...sheetWhereForExam(matchingExam), rollNo: { [Op.in]: rollNos } }
-          : {
-            instituteId,
-            classId: body.classId,
-            section: body.section,
-            subjectId: body.subjectId,
-            examType: body.examType,
-            rollNo: { [Op.in]: rollNos },
-            isDeleted: false,
-          },
-      })
-      : [];
-    const existingByRoll = new Map(existingRows.map((r) => [String(r.rollNo), r]));
+    // The sheets these students already have (newest first, as on the roster).
+    const roster = await buildRoster(exam);
+    const sheetIdOf = new Map(roster.rows.filter((r) => r.studentId && r.sheetId).map((r) => [r.studentId as string, r.sheetId as string]));
+    const wantedIds = [...ownerOf.values()].map((o) => (typeof o === "string" ? null : sheetIdOf.get(o.studentId))).filter(Boolean) as string[];
+    const existingRows = wantedIds.length ? await Scanner.findAll({ where: { sheetId: { [Op.in]: wantedIds }, isDeleted: false } }) : [];
+    const existingBySheet = new Map(existingRows.map((r) => [r.sheetId, r]));
 
     const takenSheetIds = new Set<string>();
     const seenInBatch = new Map<string, string>();
+    const touchedSections = new Set<string>();
     // Assets replaced during this batch, destroyed only after every row commits.
     const supersededAssets: { publicId: string | null; resourceType: string | null }[] = [];
 
@@ -283,9 +307,12 @@ export const uploadSheets = async (
           reason: `"${fileName}" is not named after a roll number. Rename it to the student's roll number, for example 101.pdf.`,
         };
       }
-      if (examRolls && !examRolls.has(rollNo)) {
-        return { ...base, reason: `Roll number ${rollNo} is not on this exam's roster.` };
+      const owner = ownerOf.get(file);
+      if (!owner || typeof owner === "string") {
+        return { ...base, reason: (owner as string | undefined) ?? `Roll number ${rollNo} is not on this exam's roster.` };
       }
+      const why = blocked.get(sectionKey(owner.sectionId));
+      if (why) return { ...base, reason: why.message };
 
       // The file's bytes decide its type; a PDF carrying scripts never reaches storage.
       const inspected = inspectDiskFile(file.path, ANSWER_SHEET_DETECTED_TYPES);
@@ -294,7 +321,7 @@ export const uploadSheets = async (
       }
       file.mimetype = inspected.mime;
 
-      const duplicateOf = seenInBatch.get(rollNo);
+      const duplicateOf = seenInBatch.get(owner.studentId);
       if (duplicateOf) {
         return {
           ...base,
@@ -302,9 +329,10 @@ export const uploadSheets = async (
           reason: `Roll number ${rollNo} also appears in this batch as "${duplicateOf}". Upload one sheet per student.`,
         };
       }
-      seenInBatch.set(rollNo, fileName);
+      seenInBatch.set(owner.studentId, fileName);
 
-      const existing = existingByRoll.get(rollNo);
+      const existingId = sheetIdOf.get(owner.studentId);
+      const existing = existingId ? existingBySheet.get(existingId) : undefined;
       if (existing && !replaceExisting) {
         return {
           ...base,
@@ -320,6 +348,9 @@ export const uploadSheets = async (
       const qualityCheck = beginQualityCheck(file.path, qualityRule);
       const withQuality = async (result: SheetResult, publicId: string): Promise<SheetResult> => {
         const report = await settleQualityCheck(sheetId, publicId, qualityCheck);
+        // Not measured yet (still running, or skipped while a big batch keeps the checkers
+        // busy): the queued check makes sure it is, and skips a sheet checked meanwhile.
+        if (qualityRule.enabled && !report) void queueQualityCheck(sheetId, publicId, QUEUED_CHECK_DELAY_MS);
         return { ...result, quality: qualitySummary(report), qualityPending: qualityRule.enabled && !report };
       };
 
@@ -357,6 +388,11 @@ export const uploadSheets = async (
                 qualityFlag: null, // measured again for the new scan
                 qualityReport: null,
                 uploadedBy: uploadedBy.userId,
+                // An older sheet matched by roll number now names its student too.
+                examId: exam.examId,
+                studentId: owner.studentId,
+                sectionId: owner.sectionId,
+                section: index.nameOf(owner.sectionId),
               },
               { transaction: t },
             );
@@ -370,17 +406,21 @@ export const uploadSheets = async (
             supersededAssets.push(previous);
           }
 
+          touchedSections.add(sectionKey(owner.sectionId));
           return withQuality({ ...base, outcome: "replaced", sheetId }, stored.publicId);
         }
 
         await Scanner.create({
           sheetId,
           instituteId,
-          examId: matchingExam ? matchingExam.examId : undefined,
-          classId: body.classId,
-          section: sectionOf(rollNo),
-          subjectId: body.subjectId,
-          examType: body.examType,
+          examId: exam.examId,
+          classId: exam.classId,
+          // The student's own section, by id and (for display) by name.
+          sectionId: owner.sectionId,
+          section: index.nameOf(owner.sectionId),
+          studentId: owner.studentId,
+          subjectId: exam.subjectId,
+          examType: exam.examType,
           rollNo,
           fileName,
           fileUrl: stored.url,
@@ -391,7 +431,8 @@ export const uploadSheets = async (
           uploadedBy: uploadedBy.userId,
           status: "Pending",
         });
-        await clearAbsentForRoll(matchingExam?.examId, rollNo, uploadedBy.userId);
+        touchedSections.add(sectionKey(owner.sectionId));
+        await clearAbsentFor(exam.examId, owner.studentId, uploadedBy.userId);
 
         return withQuality({ ...base, outcome: "saved", sheetId }, stored.publicId);
       } catch (err: any) {
@@ -427,8 +468,10 @@ export const uploadSheets = async (
     };
     const stored = counts.saved + counts.replaced;
     const notStored = results.length - stored;
-    // New or replaced scans: marks confirmed before no longer cover the exam.
-    if (stored > 0) await sheetsChangedAfterReview(matchingExam.examId).catch((e) => logger.error(`[AnswerSheets] Batch upload: could not reopen the review: ${e?.message || e}`));
+    // New or replaced scans: marks confirmed before no longer cover those sections.
+    if (stored > 0) {
+      await sheetsChangedAfterReview(exam.examId, [...touchedSections]).catch((e) => logger.error(`[AnswerSheets] Batch upload: could not reopen the review: ${e?.message || e}`));
+    }
 
     return {
       error: false,
@@ -480,7 +523,7 @@ export const replaceSheet = async (
       return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Access denied." };
     }
     try {
-      await assertSheetWritable(requestedBy, sheet.examId);
+      await assertSheetWritable(requestedBy, sheet.examId, sectionOfSheet(sheet));
     } catch (err: any) {
       return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
     }
@@ -535,9 +578,14 @@ export const replaceSheet = async (
     }
 
     // The scan behind the confirmed marks is gone.
-    await sheetsChangedAfterReview(sheet.examId).catch((e) => logger.error(`[AnswerSheets] Replace ${sheetId}: could not reopen the review: ${e?.message || e}`));
+    const replacedIn = sectionOfSheet(sheet);
+    await sheetsChangedAfterReview(sheet.examId, replacedIn === undefined ? undefined : [replacedIn]).catch((e) =>
+      logger.error(`[AnswerSheets] Replace ${sheetId}: could not reopen the review: ${e?.message || e}`)
+    );
 
     const report = await settleQualityCheck(sheet.sheetId, stored.publicId, qualityCheck);
+    // Not measured yet: the queued check makes sure it is (it skips a sheet checked meanwhile).
+    if (qualityRule.enabled && !report) void queueQualityCheck(sheet.sheetId, stored.publicId, QUEUED_CHECK_DELAY_MS);
 
     return {
       error: false,
@@ -575,7 +623,7 @@ export const deleteSheet = async (sheetId: string, requestedBy: any): Promise<an
       return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Access denied." };
     }
     try {
-      await assertSheetWritable(requestedBy, sheet.examId);
+      await assertSheetWritable(requestedBy, sheet.examId, sectionOfSheet(sheet));
     } catch (err: any) {
       return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
     }
@@ -592,7 +640,10 @@ export const deleteSheet = async (sheetId: string, requestedBy: any): Promise<an
     // Committed — the asset can no longer be reached through the app.
     await destroyAnswerSheet(asset.publicId, asset.resourceType, `deleted sheet ${sheetId}`);
     // A sheet behind the confirmed marks (and maybe a cross-check item) is gone.
-    await sheetsChangedAfterReview(sheet.examId).catch((e) => logger.error(`[AnswerSheets] Delete ${sheetId}: could not reopen the review: ${e?.message || e}`));
+    const deletedFrom = sectionOfSheet(sheet);
+    await sheetsChangedAfterReview(sheet.examId, deletedFrom === undefined ? undefined : [deletedFrom]).catch((e) =>
+      logger.error(`[AnswerSheets] Delete ${sheetId}: could not reopen the review: ${e?.message || e}`)
+    );
 
     return {
       error: false,

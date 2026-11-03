@@ -1,13 +1,15 @@
 import httpStatus from "http-status";
+import { randomInt } from "crypto";
 import UserModal from "../../models/User.model";
 import PasswordReset from "../../models/PasswordReset.model";
 import Role from "../../models/Role.model";
 import EncryptPassword from "../../utils/encryption"
-import { sendOtpEmail } from "../../utils/mailHelper" // your existing mailer
+import { cancelQueuedEmail, composeAdminCredentials, composeOtpEmail, composeUserCredentials, queueEmail, type QueuedEmail } from "../../utils/mailHelper"
+import { digestSecret, verifySecret } from "../../utils/dataProtection"
 import config from "../../config/config"
 import Helper from "../../utils/helper"
 import { sequelize } from "../../config/sequelize"
-import { Op, col, fn, where as sqlWhere } from "sequelize"
+import { Op, QueryTypes, col, fn, where as sqlWhere } from "sequelize"
 
 /**
  * Matches a user's email whatever its case. New accounts are stored lowercased, but older
@@ -38,11 +40,7 @@ const genericResendMessage = "If an active account uses this email, new login de
 const RESEND_COOLDOWN_MS = 10 * 60 * 1000;
 const lastResendAt = new Map<string, number>();
 
-/**
- * Saves a new password for the user and emails it to the account's own address.
- * Both happen in one transaction: if the email can't be sent the password change
- * is rolled back, so nobody is left locked out with a password they never got.
- */
+/** The user's role, sign-in page and institute name, for the login-details email. */
 const signInFor = async (user: any) => {
   const roleName = String(await getRoleName(user.roleId)).toLowerCase();
   let loginUrl = `${config.frontendUrl}/auth/superadmin/signin`;
@@ -58,37 +56,43 @@ const signInFor = async (user: any) => {
   return { roleName, loginUrl, instituteName };
 };
 
-const issueCredentials = async (user: any, password: string): Promise<void> => {
-  const { roleName, loginUrl, instituteName } = await signInFor(user);
-  const encrypted = await EncryptPassword.encryptPassword(password);
+/** The admin who asked, told in the app if the email can't be sent (needs the user's institute). */
+const notifyOf = (requestedBy: any, user: any) =>
+  requestedBy?.userId && user?.instituteId ? { userId: String(requestedBy.userId), instituteId: String(user.instituteId) } : null;
 
-  await sequelize.transaction(async (t) => {
-    await user.update({ password: encrypted }, { transaction: t });
-    // The mail helpers report failure by returning false instead of throwing.
-    let sent: unknown;
-    if (roleName === "admin" || roleName === "super_admin") {
-      const { sendAdminCredentials } = require("../../utils/mailHelper");
-      sent = await sendAdminCredentials({
-        adminName: user.userName,
-        adminEmail: user.emailId,
-        adminPassword: password,
-        instituteName: roleName === "super_admin" ? "ViaExam Platform" : instituteName,
-        loginUrl,
-        plan: roleName === "super_admin" ? "PLATFORM" : "PREMIUM",
-      });
-    } else {
-      const { sendUserCredentials } = require("../../utils/mailHelper");
-      sent = await sendUserCredentials({
-        userName: user.userName,
-        email: user.emailId,
-        phone: user.phoneNumber,
-        password,
-        role: roleName.charAt(0).toUpperCase() + roleName.slice(1),
-        loginUrl,
-        kind: "reset",
-      });
-    }
-    if (sent === false) throw new Error("The login details email could not be sent.");
+/**
+ * Queues the email with the new password. The password is saved only once the mail server has
+ * accepted that email (utils/mailHelper), so nobody is left locked out with a password they never
+ * got. One at a time per user: while one is queued, another is refused (`duplicate`).
+ */
+const issueCredentials = async (user: any, password: string, requestedBy?: any): Promise<QueuedEmail> => {
+  const { roleName, loginUrl, instituteName } = await signInFor(user);
+  const hash = await EncryptPassword.encryptPassword(password);
+  const message =
+    roleName === "admin" || roleName === "super_admin"
+      ? composeAdminCredentials({
+          adminName: user.userName,
+          adminEmail: user.emailId,
+          adminPassword: password,
+          instituteName: roleName === "super_admin" ? "ViaExam Platform" : instituteName,
+          loginUrl,
+          plan: roleName === "super_admin" ? "PLATFORM" : "PREMIUM",
+        })
+      : composeUserCredentials({
+          userName: user.userName,
+          email: user.emailId,
+          phone: user.phoneNumber,
+          password,
+          role: roleName.charAt(0).toUpperCase() + roleName.slice(1),
+          loginUrl,
+          kind: "reset",
+        });
+  return queueEmail({
+    kind: "password-reset",
+    message,
+    dedupeKey: `credentials-${user.userId}`,
+    setPassword: { userId: user.userId, hash },
+    notify: notifyOf(requestedBy, user),
   });
 };
 
@@ -96,19 +100,28 @@ const issueCredentials = async (user: any, password: string): Promise<void> => {
  * Emails a user their login email and sign-in link, and leaves the password alone.
  * (The current password can't be sent: only its hash is stored.)
  */
-const sendLoginDetails = async (user: any): Promise<boolean> => {
+const sendLoginDetails = async (user: any, requestedBy?: any): Promise<QueuedEmail> => {
   const { roleName, loginUrl } = await signInFor(user);
-  const { sendUserCredentials } = require("../../utils/mailHelper");
-  return sendUserCredentials({
-    userName: user.userName,
-    email: user.emailId,
-    phone: user.phoneNumber,
-    password: null,
-    role: roleName.charAt(0).toUpperCase() + roleName.slice(1),
-    loginUrl,
-    kind: "details",
+  return queueEmail({
+    kind: "login-details",
+    message: composeUserCredentials({
+      userName: user.userName,
+      email: user.emailId,
+      phone: user.phoneNumber,
+      password: null,
+      role: roleName.charAt(0).toUpperCase() + roleName.slice(1),
+      loginUrl,
+      kind: "details",
+    }),
+    dedupeKey: `login-details-${user.userId}`,
+    notify: notifyOf(requestedBy, user),
   });
 };
+
+/** The rule for passwords people choose: 8–64 characters, an uppercase and a lowercase letter, a digit. */
+const STRONG_PASSWORD_MESSAGE = "Password must be 8–64 characters with an uppercase letter, a lowercase letter and a number.";
+const isStrongPassword = (password: string) =>
+  password.length >= 8 && password.length <= 64 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
 
 /** How an admin sends someone their login: a generated password, one they typed, or the details only. */
 export type LoginMode = "generate" | "manual" | "details";
@@ -176,12 +189,12 @@ const adminResetCredentials = async (admin: any, email: string, password?: strin
       if (Number(user.status) !== 1) {
         return { error: true, statusCode: httpStatus.CONFLICT, message: "This account is deactivated. Reactivate it before sending login details." };
       }
-      const sent = await sendLoginDetails(user);
-      if (sent === false) return { error: true, statusCode: httpStatus.BAD_GATEWAY, message: "The email could not be sent. Check the address and try again." };
+      const sent = await sendLoginDetails(user, admin);
+      if (sent.duplicate) return { error: true, statusCode: httpStatus.CONFLICT, message: `Login details are already on their way to ${user.emailId}.` };
       return {
         error: false,
         statusCode: httpStatus.OK,
-        message: `Login details sent to ${user.emailId}. Their password is unchanged.`,
+        message: `Login details are being sent to ${user.emailId}. Their password is unchanged.`,
         data: { email: user.emailId, mode: how },
       };
     }
@@ -192,26 +205,23 @@ const adminResetCredentials = async (admin: any, email: string, password?: strin
     let nextPassword = Helper.generateTempPassword();
     if (how === "manual") {
       nextPassword = String(password).trim();
-      const strong =
-        nextPassword.length >= 8 &&
-        nextPassword.length <= 64 &&
-        /[A-Z]/.test(nextPassword) &&
-        /[a-z]/.test(nextPassword) &&
-        /\d/.test(nextPassword);
-      if (!strong) {
-        return {
-          error: true,
-          statusCode: httpStatus.BAD_REQUEST,
-          message: "Password must be 8–64 characters with an uppercase letter, a lowercase letter and a number.",
-        };
+      if (!isStrongPassword(nextPassword)) {
+        return { error: true, statusCode: httpStatus.BAD_REQUEST, message: STRONG_PASSWORD_MESSAGE };
       }
     }
 
-    await issueCredentials(user, nextPassword);
+    const sent = await issueCredentials(user, nextPassword, admin);
+    if (sent.duplicate) {
+      return {
+        error: true,
+        statusCode: httpStatus.CONFLICT,
+        message: `A new password for ${user.emailId} is already being emailed. Wait for that email before resetting again.`,
+      };
+    }
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `Password updated and login details sent to ${user.emailId}.`,
+      message: `New login details are being sent to ${user.emailId}. The new password works as soon as the email goes out.`,
       data: { email: user.emailId, mode: how },
     };
   } catch (e: any) {
@@ -219,12 +229,58 @@ const adminResetCredentials = async (admin: any, email: string, password?: strin
   }
 };
 
+// ─── Password reset by emailed code (OTP) ─────────────────────────────────────
+// The code comes from crypto.randomInt and only its HMAC digest is stored (utils/dataProtection).
+// A code allows MAX_WRONG_CODES wrong tries; each check claims its try before comparing, so
+// parallel guesses can't get past the limit. A new code can be asked for once a minute.
+
+const OTP_TTL_MS = 10 * 60 * 1000;
+const OTP_RESEND_MS = 60 * 1000;
+const MAX_WRONG_CODES = 5;
+
+/** Reset rows of an address whatever its case (rows from before kept the case it was typed in). */
+const resetsOf = (cleanEmail: string) => sqlWhere(fn("lower", col("email")), cleanEmail);
+
+type CodeCheck = { ok: true; record: PasswordReset } | { ok: false; statusCode: number; message: string };
+
+const checkCode = async (cleanEmail: string, otp: unknown): Promise<CodeCheck> => {
+  const record = await PasswordReset.findOne({
+    where: { [Op.and]: [resetsOf(cleanEmail), { isUsed: false }] },
+    order: [["createdAt", "DESC"]],
+  });
+  if (!record) return { ok: false, statusCode: httpStatus.BAD_REQUEST, message: "Invalid OTP. Please check and try again." };
+  if (new Date() > record.expiresAt) return { ok: false, statusCode: httpStatus.BAD_REQUEST, message: "OTP has expired. Please request a new one." };
+
+  const claimed = await sequelize.query<{ attempts: number }>(
+    `UPDATE "viaexam_password_resets" SET "attempts" = "attempts" + 1 WHERE "id" = :id AND "isUsed" = false AND "attempts" < :max RETURNING "attempts"`,
+    { replacements: { id: record.id, max: MAX_WRONG_CODES }, type: QueryTypes.SELECT }
+  );
+  if (!claimed.length) {
+    await record.update({ isUsed: true });
+    return { ok: false, statusCode: httpStatus.TOO_MANY_REQUESTS, message: "Too many wrong codes. Please request a new OTP." };
+  }
+  if (!verifySecret(String(otp ?? "").trim(), record.otp, "otp")) {
+    if (claimed[0].attempts >= MAX_WRONG_CODES) {
+      await record.update({ isUsed: true });
+      return { ok: false, statusCode: httpStatus.TOO_MANY_REQUESTS, message: "Too many wrong codes. Please request a new OTP." };
+    }
+    return { ok: false, statusCode: httpStatus.BAD_REQUEST, message: "Invalid OTP. Please check and try again." };
+  }
+  // The right code: this check doesn't count against the wrong ones (verify, then reset, use it twice).
+  await sequelize.query(`UPDATE "viaexam_password_resets" SET "attempts" = GREATEST("attempts" - 1, 0) WHERE "id" = :id`, {
+    replacements: { id: record.id },
+  });
+  return { ok: true, record };
+};
+
 // ─── STEP 1: Send OTP ─────────────────────────────────────────────────────────
 const forgotPassword = async (email: string): Promise<any> => {
   try {
+    const cleanEmail = String(email ?? "").trim().toLowerCase();
+
     // 1. Check user exists
     const user = await UserModal.findOne({
-      where: { ...emailIs(email), status: 1 },
+      where: { ...emailIs(cleanEmail), status: 1 },
     });
 
     if (!user) {
@@ -235,30 +291,40 @@ const forgotPassword = async (email: string): Promise<any> => {
       };
     }
 
-    // 2. Get user role for personalized email
+    // 2. One code a minute per address (the page's "Resend" waits a minute too)
+    const latest = await PasswordReset.findOne({ where: resetsOf(cleanEmail), order: [["createdAt", "DESC"]], attributes: ["createdAt"] });
+    const waitMs = latest ? OTP_RESEND_MS - (Date.now() - new Date(latest.createdAt).getTime()) : 0;
+    if (waitMs > 0) {
+      return {
+        error: true,
+        statusCode: httpStatus.TOO_MANY_REQUESTS,
+        message: `A code was sent less than a minute ago. Check your inbox (and spam), or ask for a new one in ${Math.ceil(waitMs / 1000)} seconds.`,
+      };
+    }
+
+    // 3. Get user role for personalized email
     const roleName = await getRoleName(user.roleId);
 
-    // 3. Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // 4. A 6-digit code from the cryptographic generator, valid for 10 minutes
+    const otp = String(randomInt(100000, 1000000));
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
-    // 4. Expire in 10 minutes
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    // 5. Older codes stop working; their emails are dropped if they haven't gone out yet
+    const older = await PasswordReset.findAll({ where: { [Op.and]: [resetsOf(cleanEmail), { isUsed: false }] }, attributes: ["id"] });
+    if (older.length) await PasswordReset.update({ isUsed: true }, { where: { id: older.map((r) => r.id) } });
+    older.forEach((r) => void cancelQueuedEmail(`otp-${r.id}`));
 
-    // 5. Invalidate any previous unused OTPs for this email
-    await PasswordReset.update(
-      { isUsed: true },
-      { where: { email, isUsed: false } }
-    );
+    // 6. Save only the code's digest
+    const record = await PasswordReset.create({ email: cleanEmail, otp: digestSecret(otp, "otp"), expiresAt });
 
-    // 6. Save new OTP
-    await PasswordReset.create({ email, otp, expiresAt });
-
-    // 7. Send role-specific email
-    await sendOtpEmail({
-      toEmail: email,
-      userName: user.userName,
-      otp,
-      role: roleName,
+    // 7. Queue the role-specific email: ahead of bulk mail, retried for a few minutes, never sent after the code expires
+    await queueEmail({
+      kind: "otp",
+      message: composeOtpEmail({ toEmail: user.emailId, userName: user.userName, otp, role: roleName }),
+      jobId: `otp-${record.id}`,
+      notAfter: expiresAt,
+      attempts: 5,
+      retryMs: 10_000,
     });
 
     return {
@@ -279,31 +345,15 @@ const forgotPassword = async (email: string): Promise<any> => {
 // ─── STEP 2: Verify OTP (separate from password reset) ───────────────────────
 const verifyOtp = async (email: string, otp: string): Promise<any> => {
   try {
-    // 1. Find the OTP record
-    const record = await PasswordReset.findOne({
-      where: { email, otp, isUsed: false },
-    });
+    const cleanEmail = String(email ?? "").trim().toLowerCase();
 
-    if (!record) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Invalid OTP. Please check and try again.",
-      };
-    }
+    // 1. Check the code (counts against the wrong-code limit when wrong)
+    const check = await checkCode(cleanEmail, otp);
+    if (!check.ok) return { error: true, statusCode: check.statusCode, message: check.message };
 
-    // 2. Check expiry
-    if (new Date() > record.expiresAt) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "OTP has expired. Please request a new one.",
-      };
-    }
-
-    // 3. Check if user still exists and is active
+    // 2. Check if user still exists and is active
     const user = await UserModal.findOne({
-      where: { ...emailIs(email), status: 1 },
+      where: { ...emailIs(cleanEmail), status: 1 },
     });
 
     if (!user) {
@@ -336,31 +386,20 @@ const resetPassword = async (
   newPassword: string
 ): Promise<any> => {
   try {
-    // 1. Find the OTP record
-    const record = await PasswordReset.findOne({
-      where: { email, otp, isUsed: false },
-    });
+    const cleanEmail = String(email ?? "").trim().toLowerCase();
 
-    if (!record) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Invalid OTP.",
-      };
+    // 1. The new password must be strong (before the code is checked, so a weak one costs no try)
+    if (!isStrongPassword(String(newPassword ?? ""))) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: STRONG_PASSWORD_MESSAGE };
     }
 
-    // 2. Check expiry
-    if (new Date() > record.expiresAt) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "OTP has expired. Please request a new one.",
-      };
-    }
+    // 2. Check the code
+    const check = await checkCode(cleanEmail, otp);
+    if (!check.ok) return { error: true, statusCode: check.statusCode, message: check.message };
 
     // 3. Find user
     const user = await UserModal.findOne({
-      where: { ...emailIs(email), status: 1 },
+      where: { ...emailIs(cleanEmail), status: 1 },
     });
 
     if (!user) {
@@ -371,12 +410,12 @@ const resetPassword = async (
       };
     }
 
-    // 4. Encrypt + update password
-    const encrypted = await EncryptPassword.encryptPassword(newPassword);
-    await user.update({ password: encrypted });
+    // 4. Hash + update password; sessions signed in with the old one end
+    const encrypted = await EncryptPassword.encryptPassword(String(newPassword));
+    await user.update({ password: encrypted, refreshToken: null });
 
     // 5. Mark OTP as used
-    await record.update({ isUsed: true });
+    await check.record.update({ isUsed: true });
 
     return {
       error: false,

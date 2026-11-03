@@ -59,10 +59,11 @@ Notification.init(
   }
 );
 
-// Every in-app notification is also pushed to the user's browsers (Firebase Cloud Messaging).
-// Inside a transaction, wait for the commit so a rolled-back notification is never pushed.
+// Every in-app notification is also pushed to the user's browsers (Firebase Cloud Messaging),
+// through the push queue (retried while FCM is unreachable). Inside a transaction, wait for
+// the commit so a rolled-back notification is never pushed.
 Notification.afterCreate((notification, options) => {
-  const send = () => void PushService.sendToUser(notification.get({ plain: true }));
+  const send = () => PushService.enqueuePush(notification.get({ plain: true }));
   if (options.transaction) {
     options.transaction.afterCommit(send);
   } else {

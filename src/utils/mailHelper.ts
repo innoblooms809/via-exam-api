@@ -296,7 +296,13 @@
 import nodemailer from "nodemailer";
 import fs from "fs";
 import path from "path";
+import { randomUUID } from "crypto";
 import config from "../config/config";
+import logger from "../config/logger";
+import UserModal from "../models/User.model";
+import { defineQueue, PermanentJobError } from "../queue";
+import { positiveInt } from "../queue/config";
+import { seal, unseal } from "../queue/sealed";
 
 // ─── Transporter ──────────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
@@ -359,7 +365,7 @@ export const sendEmailToNewUser = async (requestBody: any) => {
 const escapeHtml = (v: unknown) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 
-export const sendUserCredentials = async (data: {
+export interface UserCredentialsEmail {
   userName: string;
   email: string;
   phone: string;
@@ -368,8 +374,211 @@ export const sendUserCredentials = async (data: {
   role: string;
   loginUrl: string;
   kind?: "created" | "reset" | "details";
-}): Promise<boolean> => {
+}
+
+export interface MailMessage {
+  to: string;
+  subject: string;
+  html: string;
+}
+
+/** Sends one email now; throws when the mail server refuses it. */
+const deliverMail = async (message: MailMessage) => {
+  await transporter.sendMail({
+    from: `"ViaExam" <${config.email.smtp.auth.user}>`,
+    to: message.to,
+    subject: message.subject,
+    html: message.html,
+  });
+};
+
+/** "ad***@gmail.com": enough to tell addresses apart in a log, not to collect them. */
+export const maskEmail = (email: string) => {
+  const [name, domain] = String(email ?? "").split("@");
+  return domain ? `${name.slice(0, 2)}***@${domain}` : "***";
+};
+
+// ─── Email queue ───────────────────────────────────────────────────────────────
+// Every email the app sends goes out as a job: no request waits for the mail server, a
+// 500-student import is sent a couple at a time, and an outage is retried with backoff.
+//
+//   • Interactive emails (sign-in codes, password resets, login details) have no priority,
+//     so they run before every bulk one (an import's new-account emails, priority 10).
+//   • The email, recipient included, is stored sealed (AES-256-GCM, queue/sealed.ts): the
+//     queue tables never hold a readable code, password or address. The job is deleted as
+//     soon as the email is sent.
+//   • An OTP email carries its code's expiry and is dropped, not sent late, after it.
+//   • A reset's new password is saved only once the mail server has accepted the email, so
+//     an outage never leaves anyone locked out with a password they didn't get.
+
+export type EmailKind = "otp" | "password-reset" | "login-details" | "new-account" | "admin-credentials";
+
+const KIND_LABEL: Record<EmailKind, string> = {
+  otp: "sign-in code",
+  "password-reset": "new password",
+  "login-details": "login details",
+  "new-account": "new account's login details",
+  "admin-credentials": "admin login details",
+};
+
+interface SealedEmail {
+  message: MailMessage;
+  /** Saved once the email is accepted (password resets). */
+  setPassword?: { userId: string; hash: string };
+}
+
+interface EmailJob {
+  sealed: string;
+  kind: EmailKind;
+  /** Epoch ms after which the email is no longer worth sending (an OTP's expiry). */
+  notAfter?: number;
+  /** Who to tell, in the app, if the email fails for good (the admin who asked for it). */
+  notify?: { userId: string; instituteId: string };
+}
+
+export interface EmailRequest {
+  kind: EmailKind;
+  message: MailMessage;
+  /** Bulk emails (an import's new accounts) wait behind interactive ones. */
+  bulk?: boolean;
+  jobId?: string;
+  /** While a job with this key is queued, the same email isn't queued again (`duplicate`). */
+  dedupeKey?: string;
+  notAfter?: Date;
+  setPassword?: SealedEmail["setPassword"];
+  notify?: EmailJob["notify"] | null;
+  attempts?: number;
+  /** First retry delay (doubling after each); default 1 minute. */
+  retryMs?: number;
+}
+
+export interface QueuedEmail {
+  /** false: the queue was unavailable and the email is being sent from this process instead. */
+  queued: boolean;
+  /** true: an identical email (same dedupeKey) was already queued; nothing was added. */
+  duplicate: boolean;
+}
+
+const SENT = { sent: true };
+
+/** Saves a reset's password (the email with it has been accepted) and ends the user's sessions. */
+const applyPassword = async ({ userId, hash }: NonNullable<SealedEmail["setPassword"]>) => {
+  const [count] = await UserModal.update({ password: hash, refreshToken: null }, { where: { userId, isDeleted: false } });
+  if (!count) logger.warn(`[Email] User ${userId} no longer exists; the emailed password was not saved.`);
+};
+
+const isRejection = (err: any) => {
+  // 5xx from the mail server (no such mailbox, address rejected) won't change on retry.
+  const code = Number(err?.responseCode);
+  return (code >= 500 && code < 600) || err?.code === "EENVELOPE";
+};
+
+const emailQueue = defineQueue<EmailJob>({
+  name: "emails",
+  concurrency: positiveInt(process.env.EMAIL_QUEUE_CONCURRENCY, 2),
+  defaults: { attempts: 6, backoff: { type: "exponential", delayMs: 60_000 }, keepCompletedSec: 0, keepFailedSec: 3 * 24 * 3600 },
+  processor: async (job) => {
+    const { kind, notAfter } = job.data;
+    if (notAfter && Date.now() > notAfter) {
+      logger.warn(`[Email] A ${KIND_LABEL[kind]} email expired before the mail server took it; dropped.`);
+      return { skipped: "expired" };
+    }
+    const email = unseal<SealedEmail>(job.data.sealed);
+    // A retry after the email went out (the password save failed) doesn't send it twice.
+    if (!(job.lastProgress as any)?.sent) {
+      try {
+        await deliverMail(email.message);
+      } catch (err: any) {
+        if (isRejection(err)) throw new PermanentJobError(`The mail server rejected the email: ${err?.message || err}`);
+        throw err;
+      }
+      await job.progress(SENT);
+    }
+    if (email.setPassword) await applyPassword(email.setPassword);
+    return SENT;
+  },
+  onFailed: async (job, err) => {
+    let to = "***";
+    let resetsPassword = false;
+    try {
+      const email = unseal<SealedEmail>(job.data.sealed);
+      to = maskEmail(email.message.to);
+      resetsPassword = !!email.setPassword;
+    } catch {
+      /* unreadable: say what we know */
+    }
+    const reason = String(err?.message || err).slice(0, 200);
+    const label = KIND_LABEL[job.data.kind] ?? "email";
+    logger.error(`[Email] The ${label} email to ${to} could not be sent${resetsPassword ? " (the password was not changed)" : ""}: ${reason}`);
+    const notify = job.data.notify;
+    if (!notify) return;
+    const { notifyAll } = require("../services/notification/notifyPeople");
+    await notifyAll([
+      {
+        instituteId: notify.instituteId,
+        userId: notify.userId,
+        type: "EMAIL_NOT_SENT",
+        title: `Email not sent: ${label}`,
+        message: `The ${label} email to ${to} could not be sent (${reason}).${resetsPassword ? " Their password was not changed." : ""} Check the address and send it again.`,
+        referenceId: job.id,
+      },
+    ]);
+  },
+});
+
+/** Sends now, in this process, when the queue can't take the email. Never throws. */
+const sendInBackground = (email: SealedEmail, kind: EmailKind) => {
+  void (async () => {
+    try {
+      await deliverMail(email.message);
+      if (email.setPassword) await applyPassword(email.setPassword);
+    } catch (err: any) {
+      logger.error(`[Email] The ${KIND_LABEL[kind]} email to ${maskEmail(email.message.to)} could not be sent: ${err?.message || err}`);
+    }
+  })();
+};
+
+/** Queues an email. Never throws: when the queue is down it is sent from this process instead. */
+export const queueEmail = async (request: EmailRequest): Promise<QueuedEmail> => {
+  const email: SealedEmail = { message: request.message, ...(request.setPassword ? { setPassword: request.setPassword } : {}) };
+  // A unique id, so a deduplicated add is told apart by the id that comes back.
+  const jobId = request.jobId ?? `${request.kind}-${randomUUID()}`;
   try {
+    const id = await emailQueue.add(
+      request.kind,
+      {
+        sealed: seal(email),
+        kind: request.kind,
+        ...(request.notAfter ? { notAfter: request.notAfter.getTime() } : {}),
+        ...(request.notify ? { notify: request.notify } : {}),
+      },
+      {
+        jobId,
+        ...(request.dedupeKey ? { dedupeKey: request.dedupeKey } : {}),
+        ...(request.bulk ? { priority: 10 } : {}),
+        ...(request.attempts ? { attempts: request.attempts } : {}),
+        ...(request.retryMs ? { backoff: { type: "exponential" as const, delayMs: request.retryMs } } : {}),
+        // An expired code's failed job is no use to anyone.
+        ...(request.notAfter ? { keepFailedSec: 3600 } : {}),
+      }
+    );
+    return { queued: true, duplicate: id !== jobId };
+  } catch (err: any) {
+    logger.warn(`[Email] Queue unavailable (${err?.message || err}); sending the ${KIND_LABEL[request.kind]} email to ${maskEmail(request.message.to)} directly.`);
+    sendInBackground(email, request.kind);
+    return { queued: false, duplicate: false };
+  }
+};
+
+/** Takes a queued email out before it is sent (e.g. the OTP a newer one replaced). False if it already ran. */
+export const cancelQueuedEmail = (jobId: string): Promise<boolean> => emailQueue.remove(jobId).catch(() => false);
+
+/** Login details of a new account (bulk: an import queues hundreds). */
+export const queueUserCredentials = async (data: UserCredentialsEmail): Promise<void> => {
+  await queueEmail({ kind: "new-account", message: composeUserCredentials(data), bulk: true });
+};
+
+export const composeUserCredentials = (data: UserCredentialsEmail): MailMessage => {
     const kind = data.kind ?? "created";
     const e = {
       name: escapeHtml(data.userName),
@@ -467,30 +676,28 @@ export const sendUserCredentials = async (data: {
       </html>
     `;
 
-    await transporter.sendMail({
-      from: `"ViaExam" <${config.email.smtp.auth.user}>`,
-      to: data.email,
-      subject,
-      html,
-    });
-
-    return true;
-  } catch (e: any) {
-    console.error(`❌ sendUserCredentials failed for ${data.email}:`, e.message);
-    return false;
-  }
+    return { to: data.email, subject, html };
 };
 
-// ─── NEW — Send admin credentials after institute registration ─────────────────
-export const sendAdminCredentials = async (data: {
+// ─── Admin credentials (institute registration, resends) ──────────────────────
+export interface AdminCredentialsEmail {
   adminName: string;
   adminEmail: string;
   adminPassword: string;
   instituteName: string;
   loginUrl: string;
   plan: string;
-}): Promise<boolean> => {
-  try {
+}
+
+export const composeAdminCredentials = (raw: AdminCredentialsEmail): MailMessage => {
+    const data = {
+      adminName: escapeHtml(raw.adminName),
+      adminEmail: escapeHtml(raw.adminEmail),
+      adminPassword: escapeHtml(raw.adminPassword),
+      instituteName: escapeHtml(raw.instituteName),
+      loginUrl: escapeHtml(raw.loginUrl),
+      plan: escapeHtml(String(raw.plan ?? "")),
+    };
     const html = `
       <!DOCTYPE html>
       <html>
@@ -570,23 +777,15 @@ export const sendAdminCredentials = async (data: {
       </html>
     `;
 
-    const response=await transporter.sendMail({
-      from: `"ViaExam" <${config.email.smtp.auth.user}>`,
-      to: data.adminEmail,
-      subject: `Welcome to ViaExam — Your Admin Credentials for ${data.instituteName}`,
+    return {
+      to: raw.adminEmail,
+      subject: `Welcome to ViaExam — Your Admin Credentials for ${raw.instituteName}`,
       html,
-    });
-
-
-    return true;
-  } catch (e: any) {
-    console.error("❌ sendAdminCredentials failed:", e.message);
-    return false; // don't throw — email failure won't break registration
-  }
+    };
 };
 
 // ─── Role-specific OTP email templates ──────────────────────────────────────────
-export const sendOtpEmail = async ({
+export const composeOtpEmail = ({
   toEmail,
   userName,
   otp,
@@ -596,19 +795,14 @@ export const sendOtpEmail = async ({
   userName: string;
   otp: string;
   role?: string;
-}) => {
-  try {
-    const roleSpecificContent = getRoleSpecificOTPContent(role);
-    
-    await transporter.sendMail({
-      from: `"ViaExam" <${config.email.smtp.auth.user}>`,
-      to: toEmail,
-      subject: roleSpecificContent.subject,
-      html: roleSpecificContent.html(userName, otp),
-    });
-  } catch (error) {
-    console.error("Failed to send OTP email:", error);
-  }
+}): MailMessage => {
+  // Roles are stored in capitals ("TEACHER"); the templates are keyed in lower case.
+  const roleSpecificContent = getRoleSpecificOTPContent(String(role ?? "").toLowerCase());
+  return {
+    to: toEmail,
+    subject: roleSpecificContent.subject,
+    html: roleSpecificContent.html(escapeHtml(userName), escapeHtml(otp)),
+  };
 };
 
 // Helper function to get role-specific email content

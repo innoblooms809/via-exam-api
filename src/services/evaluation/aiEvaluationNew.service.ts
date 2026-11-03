@@ -9,7 +9,7 @@ import logger from "../../config/logger";
 import axios from "axios";
 import FormData from "form-data";
 import { pythonServices } from "../../config/pythonServices";
-import { formatQuestionPaper } from "../../utils/questionPaperText";
+import { formatQuestionPaper, paperSetOf } from "../../utils/questionPaperText";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
 import { restoreFullAnswers } from "../../utils/answerSnippets";
@@ -118,7 +118,7 @@ const triggerEvaluationV2 = async (
 
       // ─── Paper Set Matching (same logic as V1) ─────────────────────────────────
       // Target paperSet from student sheet section (e.g. "A", "B", etc.)
-      const targetPaperSet = sheet.section || "A";
+      const targetPaperSet = paperSetOf(sheet.section);
 
       // 1. Try matching exact paperSet for this exam & section
       let questionPaper = await QuestionPaper.findOne({

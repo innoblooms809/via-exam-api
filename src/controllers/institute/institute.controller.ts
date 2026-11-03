@@ -25,7 +25,7 @@ const registerInstitute = async (req: any, res: Response): Promise<any> => {
 const resendAdminCredentials = async (req: any, res: Response): Promise<any> => {
   try {
     // Super admin only: the password they typed (validated by the route), or a generated one.
-    const result = await InstituteService.resendAdminCredentials(req.params.instituteId, req.body?.password);
+    const result = await InstituteService.resendAdminCredentials(req.params.instituteId, req.body?.password, req.viaExamUser?.userId);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -170,6 +170,7 @@ const addInstituteAdmin = async (req: any, res: Response): Promise<any> => {
     const result = await InstituteService.addInstituteAdmin(
       req.params.instituteId,
       req.body,
+      req.viaExamUser?.userId,
     );
     return res.status(result.statusCode).send(result);
   } catch (error) {

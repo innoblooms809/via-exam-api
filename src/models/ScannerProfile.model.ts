@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../config/sequelize";
+import { encryptedColumn } from "../utils/dataProtection";
 
 interface ScannerProfileAttributes {
   id: number;
@@ -40,8 +41,9 @@ ScannerProfile.init(
     address: { type: DataTypes.TEXT, allowNull: true, defaultValue: null },
     dob: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
     gender: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
-    aadhar: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
-    profileUrl: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
+    // Encrypted at rest (utils/dataProtection).
+    aadhar: { type: DataTypes.TEXT, allowNull: true, defaultValue: null, ...encryptedColumn("aadhar", "aadhaar") },
+    profileUrl: { type: DataTypes.TEXT, allowNull: true, defaultValue: null, ...encryptedColumn("profileUrl", "profileUrl") },
   },
   {
     sequelize,

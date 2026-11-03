@@ -50,6 +50,9 @@ export async function examReport(admin: any, examId: string) {
   ]);
   const sheetIds = roster.rows.map((r) => r.sheetId).filter(Boolean) as string[];
   const activeRound = rounds.find((r) => r.isActive) ?? null;
+  // Scanners and evaluators are given sections of the exam.
+  const sectionNames = new Map(roster.sections.map((s) => [s.sectionId ?? "", s.sectionName]));
+  const sectionNameOf = (sectionId: string | null) => sectionNames.get(sectionId ?? "") ?? "";
 
   const [sheets, evaluations, audits, items, assignments] = await Promise.all([
     sheetIds.length ? Scanner.findAll({ where: { sheetId: { [Op.in]: sheetIds } }, attributes: ["sheetId", "uploadedBy", "createdAt"] }) : [],
@@ -201,8 +204,8 @@ export async function examReport(admin: any, examId: string) {
     },
     steps: timeline.steps,
     people: {
-      scanners: scanners.map((s) => ({ name: nameOf(s.scannerId), active: s.isActive, assignedAt: s.createdAt, completedAt: s.completedAt, unassignedAt: s.unassignedAt })),
-      evaluators: evaluators.map((e) => ({ name: nameOf(e.teacherId), active: e.isActive, assignedAt: e.createdAt, reviewedAt: e.reviewedAt, unassignedAt: e.unassignedAt })),
+      scanners: scanners.map((s) => ({ name: nameOf(s.scannerId), section: sectionNameOf(s.sectionId), active: s.isActive, assignedAt: s.createdAt, completedAt: s.completedAt, unassignedAt: s.unassignedAt })),
+      evaluators: evaluators.map((e) => ({ name: nameOf(e.teacherId), section: sectionNameOf(e.sectionId), active: e.isActive, assignedAt: e.createdAt, reviewedAt: e.reviewedAt, unassignedAt: e.unassignedAt })),
       crossCheckers: rounds.map((r) => ({ name: nameOf(r.checkerId), active: r.isActive, status: r.status, assignedAt: r.createdAt, completedAt: r.completedAt })),
     },
     summary,

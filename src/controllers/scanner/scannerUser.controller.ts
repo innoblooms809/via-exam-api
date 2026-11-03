@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import { Response } from "express";
 import ScannerUserService from "../../services/scanner/scannerUser.service";
 import config from "../../config/config";
-import { sendUserCredentials } from "../../utils/mailHelper";
+import { queueUserCredentials } from "../../utils/mailHelper";
 
 const createScanner = async (req: any, res: Response): Promise<any> => {
   try {
@@ -22,15 +22,13 @@ const createScanner = async (req: any, res: Response): Promise<any> => {
       const recipientPhone = req.body.phoneNumber || req.body.mobile || req.body.phone;
 
       if (recipientEmail) {
-        sendUserCredentials({
+        void queueUserCredentials({
           userName: `${req.body.firstName} ${req.body.lastName}`,
           email:    recipientEmail,
           phone:    recipientPhone || "",
           password: result.data.plainPassword,
           role:     "Scanner",
           loginUrl,
-        }).catch((err) => {
-          console.error("Background scanner email dispatch failed:", err);
         });
       } else {
         console.warn("Scanner user created without an email address — skipping credentials email.");

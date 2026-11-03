@@ -45,10 +45,26 @@ export const pythonServices = {
     firstSet(process.env.PIPELINE6_PREPROCESS_URL) || `${evalBase()}/preprocess-exam`,
   pipeline6VisualPreEvalUrl: () =>
     firstSet(process.env.PIPELINE6_VISUAL_PREEVAL_URL) || `${evalBase()}/visual-pre-eval`,
+  // Documented evaluation call (structured paper in, every part marked) — the partner API uses it.
+  evaluateV1Url: () => firstSet(process.env.EVAL_V1_URL) || `${evalBase()}/v1/evaluate`,
+  capabilitiesUrl: () => `${evalBase()}/v1/capabilities`,
 
   // ── Legacy evaluation API (port 8002) — only used by the old /evaluate route ──
   evaluationUrl: () => firstSet(process.env.EVALUATION_API_URL) || `${legacyEvalBase()}/evaluation`,
 };
+
+/**
+ * Headers for calls to a Python service. When the service runs with INTERNAL_API_TOKEN set,
+ * set the same value here (OCR_SERVICE_TOKEN / EVAL_SERVICE_TOKEN); without it every call
+ * except /health is refused with 401.
+ */
+export const serviceHeaders = (service: "ocr" | "eval"): Record<string, string> => {
+  const token = firstSet(service === "ocr" ? process.env.OCR_SERVICE_TOKEN : process.env.EVAL_SERVICE_TOKEN);
+  return token ? { "X-Internal-Token": token } : {};
+};
+
+/** Base URLs, for health checks and the evaluation API's capabilities. */
+export const serviceBase = { ocr: ocrBase, eval: evalBase };
 
 /** One-line summary for the startup log, so the active targets are visible after an .env change. */
 export const describePythonServices = () =>

@@ -1,0 +1,11 @@
+{
+  "Activity logs retrieved successfully from Winston stream.": "Activity logs retrieved successfully from Winston stream.",
+  "Heartbeat recorded.": "Heartbeat recorded.",
+  "Institute context is required.": "Institute context is required.",
+  "Institute overview fetched successfully.": "Institute overview fetched successfully.",
+  "Institute users fetched successfully.": "Institute users fetched successfully.",
+  "Platform overview fetched successfully.": "Platform overview fetched successfully.",
+  "Platform users fetched successfully.": "Platform users fetched successfully.",
+  "User monitoring details fetched successfully.": "User monitoring details fetched successfully.",
+  "User not found or access denied.": "User not found or access denied."
+}

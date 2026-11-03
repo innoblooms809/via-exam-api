@@ -1,5 +1,7 @@
 import User from "./User.model";
 import Role from "./Role.model";
+// Partner evaluation API (keys, requests): registered so sync() creates their tables.
+import "./PartnerApi.model";
 import Access from "./Access.model";
 import TeacherProfile from "./TeacherProfile.model";
 import StudentProfile from "./Student.model";
@@ -744,6 +746,8 @@ ExamAttendance.belongsTo(Exam, { foreignKey: "examId", targetKey: "examId", as: 
 StudentResult.belongsTo(Exam, { foreignKey: "examId", targetKey: "examId", as: "exam", constraints: false });
 StudentResult.belongsTo(Subject, { foreignKey: "subjectId", targetKey: "subjectId", as: "subject", constraints: false });
 StudentResult.belongsTo(User, { foreignKey: "studentId", targetKey: "userId", as: "student", constraints: false });
+// The student's own section when the result was published (a whole-class exam has none of its own).
+StudentResult.belongsTo(Section, { foreignKey: "sectionId", targetKey: "sectionId", as: "resultSection", constraints: false });
 RecheckRequest.hasOne(RecheckAssignment, { foreignKey: "requestId", sourceKey: "requestId", as: "assignment", constraints: false });
 RecheckAssignment.belongsTo(User, { foreignKey: "teacherId", targetKey: "userId", as: "teacher", constraints: false });
 

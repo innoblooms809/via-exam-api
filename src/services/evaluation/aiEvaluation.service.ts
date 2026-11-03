@@ -10,7 +10,7 @@ import Class from "../../models/Class.model";
 import logger from "../../config/logger";
 import axios from "axios";
 import { pythonServices } from "../../config/pythonServices";
-import { formatQuestionPaper } from "../../utils/questionPaperText";
+import { formatQuestionPaper, paperSetOf } from "../../utils/questionPaperText";
 import { getSheetQueueInfo } from "./pipeline6.service";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
@@ -21,6 +21,7 @@ import { logMarksChange } from "../academic/marks.service";
 import { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
 import { sheetHeldForCrossCheck } from "../exam/crossCheck.service";
 import { questionChanges } from "../../utils/questionMarks";
+import { decryptField } from "../../utils/dataProtection";
 
 // ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
 const triggerEvaluation = async (sheetId: string, force: boolean = false): Promise<any> => {
@@ -117,7 +118,7 @@ const triggerEvaluation = async (sheetId: string, force: boolean = false): Promi
       maxMarks = exam.totalMarks || 10;
 
       // Target paperSet from student sheet section (e.g. "A", "B", etc.)
-      const targetPaperSet = sheet.section || "A";
+      const targetPaperSet = paperSetOf(sheet.section);
 
       // 1. Try matching exact paperSet for this exam & section
       let questionPaper = await QuestionPaper.findOne({
@@ -358,7 +359,7 @@ const getEvaluationBySheetId = async (sheetId: string): Promise<any> => {
     evalDataJson.subjectName = examInfo?.subjectName ?? null;
     evalDataJson.sessionName = examInfo?.sessionName ?? null;
     // While Pending: where the sheet is in the Pipeline 6 queue (stage + place in line).
-    evalDataJson.queue = getSheetQueueInfo(sheetId);
+    evalDataJson.queue = await getSheetQueueInfo(sheetId);
 
     return {
       error: false,
@@ -521,7 +522,7 @@ const getFailedEvaluations = async (user: any, query?: any): Promise<any> => {
     const examId = query?.examId;
     const sessionId = query?.sessionId;
 
-    const rows: any[] = await sequelize.query(
+    const found: any[] = await sequelize.query(
       `SELECT
         e.id,
         e."evaluationId",
@@ -590,6 +591,8 @@ const getFailedEvaluations = async (user: any, query?: any): Promise<any> => {
         type: QueryTypes.SELECT,
       }
     );
+    // The sheet's file link is stored encrypted.
+    const rows = found.map((r) => ({ ...r, fileUrl: decryptField(r.fileUrl, "sheet.fileUrl") }));
 
     return {
       error: false,

@@ -44,7 +44,7 @@ const assign = async (req: any, res: Response): Promise<any> => {
 // DELETE /v1/evaluation-assignments/exams/:examId
 const unassign = async (req: any, res: Response): Promise<any> => {
   try {
-    return send(res, "Evaluator removed.", await EvaluationAssignmentService.unassign(req.viaExamUser, req.params.examId));
+    return send(res, "Evaluator removed.", await EvaluationAssignmentService.unassign(req.viaExamUser, req.params.examId, req.query));
   } catch (err) {
     return fail(res, err);
   }
@@ -75,7 +75,7 @@ const markReviewed = async (req: any, res: Response): Promise<any> => {
     return send(
       res,
       reviewed ? "Evaluation marked as reviewed." : "Evaluation review status cleared.",
-      await EvaluationAssignmentService.markReviewed(req.viaExamUser, req.params.examId, reviewed)
+      await EvaluationAssignmentService.markReviewed(req.viaExamUser, req.params.examId, reviewed, req.body?.sectionId)
     );
   } catch (err) {
     return fail(res, err);

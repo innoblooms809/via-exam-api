@@ -265,7 +265,9 @@ export const studentsIn = async (q: { instituteId: string; sessionId: string; cl
  * Who an answer sheet belongs to: the student with that roll number in the sheet's class
  * (and section) in its exam's session. Null when no one matches, or the match isn't unique.
  */
-export const studentForSheet = async (sheet: { instituteId: string; examId?: string | null; classId: string; section?: string | null; rollNo: string }) => {
+export const studentForSheet = async (sheet: { instituteId: string; examId?: string | null; classId: string; section?: string | null; rollNo: string; studentId?: string | null }) => {
+  // Sheets name their student since uploads went by section; older ones are found by roll number.
+  if (sheet.studentId) return sheet.studentId;
   const exam = sheet.examId ? await Exam.findOne({ where: { examId: sheet.examId }, attributes: ["sessionId", "sectionId"] }) : null;
   const sessionId = exam?.sessionId ?? (await activeSession(sheet.instituteId))?.sessionId;
   if (!sessionId) return null;

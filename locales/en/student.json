@@ -1,0 +1,18 @@
+{
+  "Choose a class that exists (Master Data → Classes).": "Choose a class that exists (Master Data → Classes).",
+  "Choose a session that exists (Master Data → Sessions).": "Choose a session that exists (Master Data → Sessions).",
+  "Invalid payload: students must be an array of rows.": "Invalid payload: students must be an array of rows.",
+  "Latest results fetched successfully.": "Latest results fetched successfully.",
+  "No academic sessions have been configured for this institute. Add a session before uploading students.": "No academic sessions have been configured for this institute. Add a session before uploading students.",
+  "No classes have been configured for this institute. Add classes before uploading students.": "No classes have been configured for this institute. Add classes before uploading students.",
+  "Performance overview fetched successfully.": "Performance overview fetched successfully.",
+  "Something went wrong.": "Something went wrong.",
+  "Student dashboard overview fetched successfully.": "Student dashboard overview fetched successfully.",
+  "Student fetched successfully.": "Student fetched successfully.",
+  "Student profile not found.": "Student profile not found.",
+  "STUDENT role not found. Please seed roles.": "STUDENT role not found. Please seed roles.",
+  "Students fetched successfully.": "Students fetched successfully.",
+  "Subject comparison fetched successfully.": "Subject comparison fetched successfully.",
+  "Subject performance fetched successfully.": "Subject performance fetched successfully.",
+  "The uploaded file contains no student rows.": "The uploaded file contains no student rows."
+}

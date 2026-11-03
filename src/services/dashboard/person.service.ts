@@ -3,6 +3,7 @@ import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/sequelize";
 import logger from "../../config/logger";
 import { EXAM_TYPES, EXAM_TYPE_HINT, normalizeExamType } from "../../utils/examTypes";
+import { decryptField } from "../../utils/dataProtection";
 
 // One person's page for the institute admin: who they are, a few numbers, their work
 // (pending / completed) and a history of everything that happened to or by them, all
@@ -43,6 +44,8 @@ const EXAM_NAMES = `
   LEFT JOIN viaexam_sections sec ON sec."sectionId" = e."sectionId"
   LEFT JOIN viaexam_subjects sub ON sub."subjectId" = e."subjectId"`;
 const EXAM_COLUMNS = `e."examId", e."examType", e."examDate", c."className", sec."sectionName", sub."subjectName"`;
+// For a scanner / evaluator row `a`: the section it covers (a whole-class exam is given out section by section).
+const ASSIGNMENT_NAMES = EXAM_NAMES.replace(`sec."sectionId" = e."sectionId"`, `sec."sectionId" = COALESCE(a."sectionId", e."sectionId")`);
 const NO_EXAM = `NULL::text AS "examId", NULL::text AS "examType", NULL::date AS "examDate"`;
 // Work tied to an exam belongs to the exam's session and type (Mid Term / Final);
 // '' means every session / every exam.
@@ -282,7 +285,7 @@ const WORK: Record<Role, { groups: Record<WorkStatus, string[]>; sql: string }> 
       SELECT CASE WHEN a."reviewedAt" IS NULL THEN 'evaluations-pending' ELSE 'evaluations-done' END, 2,
              COALESCE(a."reviewedAt", a."createdAt"), 'e:' || a."assignmentId", ${EXAM_COLUMNS},
              NULL, a."createdAt", a."reviewedAt"
-      FROM viaexam_evaluation_assignments a JOIN viaexam_exams e ON e."examId" = a."examId" ${EXAM_NAMES}
+      FROM viaexam_evaluation_assignments a JOIN viaexam_exams e ON e."examId" = a."examId" ${ASSIGNMENT_NAMES}
       WHERE a."instituteId" = :inst AND a."teacherId" = :id AND a."isActive" = true ${IN_SCOPE}`,
   },
   SCANNER: {
@@ -292,7 +295,7 @@ const WORK: Record<Role, { groups: Record<WorkStatus, string[]>; sql: string }> 
              CASE WHEN a.status = 'COMPLETED' THEN COALESCE(a."completedAt", a."createdAt") ELSE a."createdAt" END AS at,
              'a:' || a."assignmentId" AS key, ${EXAM_COLUMNS},
              a.status, a."createdAt" AS "assignedAt", a."completedAt"
-      FROM viaexam_exam_scanner_assignments a JOIN viaexam_exams e ON e."examId" = a."examId" ${EXAM_NAMES}
+      FROM viaexam_exam_scanner_assignments a JOIN viaexam_exams e ON e."examId" = a."examId" ${ASSIGNMENT_NAMES}
       WHERE a."instituteId" = :inst AND a."scannerId" = :id AND a."isActive" = true ${IN_SCOPE}`,
   },
   STUDENT: {
@@ -456,7 +459,7 @@ const historySql = (ctx: Ctx) => {
     WHERE q."instituteId" = :inst AND q."teacherId" = :id AND q."deletedAt" IS NULL AND v.at IS NOT NULL ${IN_SCOPE}
     UNION ALL
     SELECT v.at, 'evaluation', v.ev, v.ev || ':' || a."assignmentId", ${EXAM_COLUMNS}, ${X(4)}
-    FROM viaexam_evaluation_assignments a JOIN viaexam_exams e ON e."examId" = a."examId" ${EXAM_NAMES}
+    FROM viaexam_evaluation_assignments a JOIN viaexam_exams e ON e."examId" = a."examId" ${ASSIGNMENT_NAMES}
     CROSS JOIN LATERAL (VALUES (a."createdAt", 'eval-assigned'), (a."reviewedAt", 'eval-done'), (a."unassignedAt", 'eval-removed')) v(at, ev)
     WHERE a."instituteId" = :inst AND a."teacherId" = :id AND v.at IS NOT NULL ${IN_SCOPE}
     UNION ALL
@@ -473,7 +476,7 @@ const historySql = (ctx: Ctx) => {
     return `${common}
     UNION ALL
     SELECT v.at, 'scan', v.ev, v.ev || ':' || a."assignmentId", ${EXAM_COLUMNS}, a.note::text, NULL, NULL, NULL
-    FROM viaexam_exam_scanner_assignments a JOIN viaexam_exams e ON e."examId" = a."examId" ${EXAM_NAMES}
+    FROM viaexam_exam_scanner_assignments a JOIN viaexam_exams e ON e."examId" = a."examId" ${ASSIGNMENT_NAMES}
     CROSS JOIN LATERAL (VALUES (a."createdAt", 'scan-assigned'), (a."completedAt", 'scan-done'), (a."unassignedAt", 'scan-removed')) v(at, ev)
     WHERE a."instituteId" = :inst AND a."scannerId" = :id AND v.at IS NOT NULL ${IN_SCOPE}
     UNION ALL
@@ -772,7 +775,7 @@ const getPerson = async (user: any, userId: string, query: PersonQuery = {}) => 
         role,
         email: base.emailId ?? "",
         phone: base.phoneNumber ?? "",
-        photo: base.profileUrl ?? null,
+        photo: decryptField(base.profileUrl, "profileUrl") ?? null,
         status: num(base.status),
         addedAt: iso(base.createdAt),
         updatedAt: iso(base.updatedAt),

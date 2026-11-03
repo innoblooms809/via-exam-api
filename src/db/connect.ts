@@ -2,7 +2,9 @@ import logger from "../config/logger";
 import { sequelize } from "../config/sequelize";
 import '../models/index'
 import { ensureEveryStudentEnrolled, runSessionScopeBackfill } from "./sessionScopeBackfill";
+import { runSectionWorkBackfill } from "./sectionWorkBackfill";
 import { watchEvaluationProgress } from "../services/exam/examProgress";
+import { checkStoredKeys, prepareEncryptedColumns } from "../services/security/dataProtectionMaintenance";
 
 // Indexes for hot read paths (notification polling, per-institute counts, dashboard trends).
 // sync() never adds indexes to existing tables, so they are created here. CONCURRENTLY
@@ -30,6 +32,10 @@ const PERFORMANCE_INDEXES = [
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_ai_evaluations_student_idx" ON "viaexam_ai_evaluations" ("studentId")`,
   // "Low quality" filter on an exam's sheets.
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_exam_quality_idx" ON "viaexam_answer_sheets" ("examId", "qualityFlag") WHERE "isDeleted" = false`,
+  // Evaluation maintenance: pending runs (watchdog) and failed ones it may retry.
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_ai_evaluations_status_updated_idx" ON "viaexam_ai_evaluations" ("status", "updatedAt") WHERE "status" IN ('Pending', 'Failed')`,
+  // Scan-quality sweep: sheets not checked yet.
+  `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_unchecked_idx" ON "viaexam_answer_sheets" ("createdAt") WHERE "qualityFlag" IS NULL AND "isDeleted" = false`,
 ];
 
 const ensurePerformanceIndexes = async () => {
@@ -89,14 +95,33 @@ const connectDB = async (fn: any) => {
     await sequelize.query(
       `ALTER TABLE "viaexam_cross_check_items" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`
     ).catch(() => null);
+    // Exam work by section: the section each scanner / evaluator has, and whose sheet each sheet is.
+    await sequelize.query(`ALTER TABLE "viaexam_exam_scanner_assignments" ADD COLUMN IF NOT EXISTS "sectionId" VARCHAR(255);`).catch(() => null);
+    await sequelize.query(`ALTER TABLE "viaexam_evaluation_assignments" ADD COLUMN IF NOT EXISTS "sectionId" VARCHAR(255);`).catch(() => null);
+    await sequelize.query(
+      `ALTER TABLE "viaexam_answer_sheets" ADD COLUMN IF NOT EXISTS "sectionId" VARCHAR(255), ADD COLUMN IF NOT EXISTS "studentId" VARCHAR(255);`
+    ).catch(() => null);
+    // AI evaluation runs through the job queue: when each run was queued / started / ended, how
+    // many runs a sheet has had, why the last one failed, and the evaluator's question tree.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_ai_evaluations" ADD COLUMN IF NOT EXISTS "resultTree" JSONB, ADD COLUMN IF NOT EXISTS "queuedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "startedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "finishedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "runCount" INTEGER NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS "failureKind" VARCHAR(16);`
+    ).catch(() => null);
+    // Encrypted columns hold ciphertext, longer than the value (utils/dataProtection): TEXT. A
+    // varchar → text change keeps the data and doesn't rewrite the table. Wrong OTP tries.
+    await prepareEncryptedColumns();
+    await sequelize.query(`ALTER TABLE "viaexam_password_resets" ADD COLUMN IF NOT EXISTS "attempts" INTEGER NOT NULL DEFAULT 0;`).catch(() => null);
 
     await sequelize.sync({ force: false });
     logger.info("Models synced with PostgreSQL");
+    // Refuses to start when the database holds values sealed with a key this process lacks.
+    await checkStoredKeys();
 
     // Once per database: fill the per-session tables (setup, enrolments) from existing data.
     await runSessionScopeBackfill();
     // Every start: a student without any enrolment is placed by their profile.
     await ensureEveryStudentEnrolled();
+    // Exam work by section: per-section keys; once, existing sheets and assignments brought along.
+    await runSectionWorkBackfill();
     // "100% evaluated" notifications follow each sheet that gets its marks.
     watchEvaluationProgress();
 

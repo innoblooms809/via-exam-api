@@ -1,0 +1,23 @@
+{
+  "Admin email is already registered to another user.": "Admin email is already registered to another user.",
+  "Admin email is already registered.": "Admin email is already registered.",
+  "Admin email is required.": "Admin email is required.",
+  "Admin phone number is required.": "Admin phone number is required.",
+  "Admin role not found in database.": "Admin role not found in database.",
+  "Admin role not found. Please seed roles first.": "Admin role not found. Please seed roles first.",
+  "Admin user not found for this institute.": "Admin user not found for this institute.",
+  "Credentials fetched successfully.": "Credentials fetched successfully.",
+  "Email is already registered by another user.": "Email is already registered by another user.",
+  "Institute contact email is already in use.": "Institute contact email is already in use.",
+  "Institute contact phone is already in use.": "Institute contact phone is already in use.",
+  "Institute deleted successfully.": "Institute deleted successfully.",
+  "Institute fetched successfully.": "Institute fetched successfully.",
+  "Institute updated successfully.": "Institute updated successfully.",
+  "Institutes fetched successfully.": "Institutes fetched successfully.",
+  "Phone number is already registered by another user.": "Phone number is already registered by another user.",
+  "Status must be 0 (inactive) or 1 (active).": "Status must be 0 (inactive) or 1 (active).",
+  "This address is reserved. Choose a different institute name.": "This address is reserved. Choose a different institute name.",
+  "This phone number is already registered with another institute.": "This phone number is already registered with another institute.",
+  "This slug is already taken.": "This slug is already taken.",
+  "This slug is already taken. Choose a different institute name.": "This slug is already taken. Choose a different institute name."
+}

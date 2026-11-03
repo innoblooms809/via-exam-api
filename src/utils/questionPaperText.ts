@@ -19,7 +19,7 @@ export interface FormattedQuestionPaper {
   answerKeyFileUrl: string | null;
 }
 
-const parseJson = (value: unknown): any => {
+export const parseJson = (value: unknown): any => {
   if (typeof value !== "string") return value;
   try {
     return JSON.parse(value);
@@ -93,6 +93,16 @@ export const orderPaperQuestions = (content: AnyRecord): AnyRecord[] => {
   return ordered;
 };
 
+/**
+ * The paper set (A–D) for a sheet's section: its letter, else "A". Sections named otherwise
+ * ("E", "Rose") must never reach a paperSet query — it is an enum, and Postgres rejects the
+ * whole lookup.
+ */
+export const paperSetOf = (section: unknown): "A" | "B" | "C" | "D" => {
+  const s = String(section ?? "").trim().toUpperCase();
+  return s === "B" || s === "C" || s === "D" ? s : "A";
+};
+
 /** URL of an uploaded answer-key file (the PDF upload flow stores `{ pdfUrl }`). */
 export const getAnswerKeyFileUrl = (ansDoc: unknown): string | null => {
   const parsed = parseJson(ansDoc);
@@ -101,7 +111,8 @@ export const getAnswerKeyFileUrl = (ansDoc: unknown): string | null => {
   return typeof url === "string" && url.trim() ? url.trim() : null;
 };
 
-const buildAnswerMap = (ansDoc: unknown): Map<string, AnyRecord> => {
+/** Typed answers by question id (and by "1" / "Q1" for answer sheets keyed by number). */
+export const buildAnswerMap = (ansDoc: unknown): Map<string, AnyRecord> => {
   const map = new Map<string, AnyRecord>();
   const parsed = parseJson(ansDoc);
   if (!parsed || typeof parsed !== "object") return map;

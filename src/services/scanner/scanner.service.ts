@@ -14,9 +14,9 @@ import RegHelper from "../../utils/helper";
 import { isScannerRequester, isTeacherRequester, requireSheetAccess, scopeSheetRows } from "../evaluation/evaluationAccess.service";
 import AnswerSheetStorage from "../answer-sheet/answerSheetStorage.service";
 import { newId } from "../../utils/idGenerator";
-import { assertSheetWritable, clearAbsentForRoll, sheetsChangedAfterReview } from "../exam/examWorkflow.service";
+import { assertSheetWritable, clearAbsentFor, sheetsChangedAfterReview } from "../exam/examWorkflow.service";
 import logger from "../../config/logger";
-import { rosterRolls } from "../exam/examRoster.service";
+import { buildRoster, loadExam, rosterIndex } from "../exam/examRoster.service";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 import {
   destroyAnswerSheet,
@@ -318,12 +318,14 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
       where: { examId: { [Op.in]: Array.from(new Set(approvedList.map((a) => a.exam.examId))) }, isActive: true },
       attributes: ["examId", "scannerId", "status", "completedAt"],
     });
-    const assignmentByExam = new Map(assignments.map((a) => [a.examId, a]));
+    // An exam given out section by section is the scanner's if any of its sections is.
+    const scannersOfExam = new Map<string, Set<string>>();
+    for (const a of assignments) scannersOfExam.set(a.examId, new Set([...(scannersOfExam.get(a.examId) ?? []), a.scannerId]));
     const isScannerRole = String(requestedBy?.role?.role ?? "").toUpperCase() === "SCANNER";
     if (isScannerRole) {
       for (let i = approvedList.length - 1; i >= 0; i--) {
-        const assignment = assignmentByExam.get(approvedList[i].exam.examId);
-        if (assignment && assignment.scannerId !== requestedBy.userId) approvedList.splice(i, 1);
+        const scanners = scannersOfExam.get(approvedList[i].exam.examId);
+        if (scanners && !scanners.has(requestedBy.userId)) approvedList.splice(i, 1);
       }
       if (approvedList.length === 0) return empty;
     }
@@ -415,8 +417,12 @@ const getApprovedExams = async (requestedBy: any): Promise<any> => {
         answerKeyStatus: ans?.status || null,
         approvedAt: qp?.approvedAt || ans?.approvedAt || exam.updatedAt,
         createdAt: exam.createdAt,
-        scanStatus: assignmentByExam.get(exam.examId)?.status ?? null,
-        assignedToMe: assignmentByExam.get(exam.examId)?.scannerId === requestedBy.userId,
+        // Done when every section given out is; "mine" when any of them is.
+        scanStatus: (() => {
+          const rows = assignments.filter((a) => a.examId === exam.examId);
+          return rows.length ? (rows.every((a) => a.status === "COMPLETED") ? "COMPLETED" : "ASSIGNED") : null;
+        })(),
+        assignedToMe: Boolean(scannersOfExam.get(exam.examId)?.has(requestedBy.userId)),
       };
     });
 
@@ -481,35 +487,30 @@ const uploadStudentAnswerPaper = async (
       };
     }
 
-    // Only the assigned scanner (or an admin) may add sheets, and not after
-    // the upload is marked complete or results are published.
+    // Whose sheet it is: the roll number in the exam's section, the section sent for a
+    // whole-class exam, or — with none sent — a roll number only one section has.
+    const loaded = await loadExam(instituteId, exam.examId);
+    const index = await rosterIndex(loaded);
+    const sectionSent = String(body.section ?? "").trim();
+    const target = exam.sectionId || (sectionSent ? index.section(sectionSent) : undefined);
+    if (sectionSent && !exam.sectionId && target === undefined) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "That section isn't part of this exam." };
+    }
+    const { student, problem } = index.find(target, String(body.rollNumber));
+    if (!student) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `${problem} Check the roll number, or add the student to the class first.` };
+    }
+
+    // Only the scanner given the student's section (or an admin) may add the sheet, and not after
+    // that section's upload is marked complete or results are published.
     try {
-      await assertSheetWritable(uploadedBy, exam.examId);
+      await assertSheetWritable(uploadedBy, exam.examId, student.sectionId);
     } catch (err: any) {
       return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
     }
 
-    const rolls = await rosterRolls(instituteId, exam.examId);
-    if (rolls && !rolls.has(String(body.rollNumber).trim())) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: `Roll number ${body.rollNumber} is not on this exam's roster. Check the roll number, or add the student to the class first.`,
-      };
-    }
-
-    const classId = body.classId || exam.classId || "ALL";
-    const section = body.section || exam.sectionId || "A";
-
-    // Check duplicate
-    const existing = await Scanner.findOne({
-      where: {
-        instituteId,
-        examId: body.examId,
-        rollNo: body.rollNumber,
-        isDeleted: false,
-      },
-    });
+    // One sheet per student (an older sheet matched by roll number counts too).
+    const existing = (await buildRoster(loaded)).rows.find((r) => r.studentId === student.studentId && r.sheetId);
 
     if (existing) {
       return {
@@ -538,11 +539,13 @@ const uploadStudentAnswerPaper = async (
         sheetId,
         instituteId,
         examId: body.examId,
-        classId,
-        section,
+        classId: exam.classId || "ALL",
+        sectionId: student.sectionId,
+        section: index.nameOf(student.sectionId),
+        studentId: student.studentId,
         subjectId: exam.subjectId,
         examType: exam.examType,
-        rollNo: body.rollNumber,
+        rollNo: student.rollNo,
         studentName: body.studentName,
         fileName: file.originalname,
         fileUrl: stored.url,
@@ -558,9 +561,9 @@ const uploadStudentAnswerPaper = async (
       await destroyAnswerSheet(stored.publicId, stored.resourceType, `rollback ${sheetId}`);
       throw err;
     }
-    await clearAbsentForRoll(body.examId, body.rollNumber, uploadedBy.userId);
-    // A new sheet: marks confirmed before no longer cover the exam.
-    await sheetsChangedAfterReview(exam.examId).catch((e) => logger.error(`[Scanner] Upload ${sheetId}: could not reopen the review: ${e?.message || e}`));
+    await clearAbsentFor(exam.examId, student.studentId, uploadedBy.userId);
+    // A new sheet: marks confirmed before no longer cover the student's section.
+    await sheetsChangedAfterReview(exam.examId, [student.sectionId]).catch((e) => logger.error(`[Scanner] Upload ${sheetId}: could not reopen the review: ${e?.message || e}`));
     const report = await settleQualityCheck(sheetId, stored.publicId, qualityCheck);
 
     return {

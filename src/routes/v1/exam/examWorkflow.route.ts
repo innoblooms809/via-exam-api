@@ -19,14 +19,14 @@ router.get("/exams/:examId/timeline", authorize(MEMBERS.filter((r) => r !== "SCA
 // ── Admin: scanner assignment ───────────────────────────────────────────────
 router.get("/exams/:examId/scanners", admin, validate(Validation.examParam), Controller.listScanners);
 router.post("/exams/:examId/scanner", admin, validate(Validation.assignScanner), Controller.assignScanner);
-router.delete("/exams/:examId/scanner", admin, validate(Validation.examParam), Controller.unassignScanner);
+router.delete("/exams/:examId/scanner", admin, validate(Validation.sectionQuery), Controller.unassignScanner);
 
 // ── Scanner: assigned exams, roster, absentees, completion ───────────────────
 router.get("/scanner/exams", authorize(UPLOADERS), validate(Validation.myScanExams), Controller.myScanExams);
-router.get("/scanner/exams/:examId/roster", authorize(UPLOADERS), validate(Validation.examParam), Controller.scanRoster);
+router.get("/scanner/exams/:examId/roster", authorize(UPLOADERS), validate(Validation.sectionQuery), Controller.scanRoster);
 // Absentees and "upload complete" are the scanner's (the admin sees them, re-opens on request).
 router.post("/scanner/exams/:examId/attendance", authorize(["SCANNER"]), validate(Validation.setAttendance), Controller.setAttendance);
-router.post("/scanner/exams/:examId/complete", authorize(["SCANNER"]), validate(Validation.examParam), Controller.completeScan);
+router.post("/scanner/exams/:examId/complete", authorize(["SCANNER"]), validate(Validation.sectionBody), Controller.completeScan);
 // A completed upload re-opens only through the admin: the scanner asks, the admin decides.
 router.post("/scanner/exams/:examId/reopen-request", authorize(["SCANNER"]), validate(Validation.requestReopen), Controller.requestReopen);
 

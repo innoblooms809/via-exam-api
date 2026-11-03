@@ -130,7 +130,6 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
  */
 const viaExamUserLogin = async (slug: string, emailId: string, password: string) => {
   try {
-    console.log("EMAIL RECEIVED:", emailId);
     let instituteId: string | null = null;
     if (slug) {
       const institute = await Institute.findOne({ where: { slug } });
@@ -144,8 +143,6 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       instituteId = institute.instituteId;
     }
     const user = await getViaExamUserByEmail(emailId, instituteId);
-    console.log("USER FOUND:", user?.emailId);
-    console.log("HASHED PASSWORD:", user?.password);
 
     if (!user) {
       return {
@@ -236,6 +233,14 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       },
       { where: { userId: user.userId } },
     );
+
+    // A hash made with a lower bcrypt cost (older accounts) is upgraded now that the password is
+    // known. Only if it is still the same hash, so a password changed meanwhile is kept.
+    if (EncryptPassword.passwordNeedsRehash(user.password)) {
+      void EncryptPassword.encryptPassword(password)
+        .then((hash) => UserModal.update({ password: hash }, { where: { userId: user.userId, password: user.password } }))
+        .catch((err) => console.warn(`[Auth] Could not upgrade the password hash of ${user.userId}: ${err?.message || err}`));
+    }
 
     // Log Activity & Update Presence
     const now = new Date();

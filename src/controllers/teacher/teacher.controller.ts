@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import { Response } from "express";
 import TeacherService from "../../services/teacher/teacher.service";
 import config from "../../config/config";
-import { sendUserCredentials } from "../../utils/mailHelper";
+import { queueUserCredentials } from "../../utils/mailHelper";
 
 const createTeacher = async (req: any, res: Response): Promise<any> => {
   try {
@@ -18,15 +18,13 @@ const createTeacher = async (req: any, res: Response): Promise<any> => {
         ? `${config.frontendUrl}/${slug}/auth/signin`
         : `${config.frontendUrl}/auth/signin`;
 
-      sendUserCredentials({
+      void queueUserCredentials({
         userName: `${req.body.firstName} ${req.body.lastName}`,
         email:    req.body.emailId,
         phone:    req.body.phoneNumber,
         password: result.data.plainPassword,
         role:     "Teacher",
         loginUrl,
-      }).catch((err) => {
-        console.error("Background teacher email dispatch failed:", err);
       });
     }
 

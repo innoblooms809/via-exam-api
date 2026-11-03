@@ -18,6 +18,7 @@ import { bulkStudentRowSchema } from "../../validations/student.validation";
 import { findSession } from "../academic/sessionSetup.service";
 import { emailChange } from "../../utils/staffInput";
 import { photoChange, uploadedPhoto } from "../../utils/profilePhoto";
+import { decryptField } from "../../utils/dataProtection";
 import {
   currentEnrollment,
   enrollmentIn,
@@ -247,9 +248,10 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
         fatherName: r.fatherName ?? null,
         gender: r.gender ?? null,
         dob: r.dob ?? null,
-        aadhar: r.aadhar ?? null,
+        // Stored encrypted (utils/dataProtection); raw SQL gets the ciphertext.
+        aadhar: decryptField(r.aadhar, "aadhaar") ?? null,
         address: r.address ?? null,
-        profileUrl: r.profileUrl ?? null,
+        profileUrl: decryptField(r.profileUrl, "profileUrl") ?? null,
       }))
       .sort((a, b) => a.userName.localeCompare(b.userName));
 

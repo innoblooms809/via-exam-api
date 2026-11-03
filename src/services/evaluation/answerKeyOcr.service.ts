@@ -20,7 +20,7 @@ import FormData from "form-data";
 import fs from "fs";
 import path from "path";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
-import { pythonServices } from "../../config/pythonServices";
+import { pythonServices, serviceHeaders } from "../../config/pythonServices";
 import logger from "../../config/logger";
 
 const OCR_TIMEOUT_MS = 3600000; // 1 hour — large multi-page PDFs on CPU are slow
@@ -58,7 +58,7 @@ export async function ocrDocument(file: Buffer, fileName: string, contentType?: 
     form.append("file", file, { filename: fileName, contentType: contentType || undefined });
 
     const res = await axios.post(pythonServices.ocrUrl(), form, {
-      headers: form.getHeaders(),
+      headers: { ...form.getHeaders(), ...serviceHeaders("ocr") },
       timeout: OCR_TIMEOUT_MS,
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
@@ -136,15 +136,4 @@ export async function getAnswerKeyText(answerId: string): Promise<string | null>
 
   inFlight.set(key, job);
   return job;
-}
-
-/**
- * Starts reading a freshly uploaded model answer in the background, so the first
- * student evaluation does not have to wait for it. Failures are only logged — the
- * evaluation will simply try again.
- */
-export function warmAnswerKeyOcr(answerId: string): void {
-  getAnswerKeyText(answerId).catch((err) =>
-    logger.warn(`[AnswerKey OCR] Background read of model answer ${answerId} failed: ${err?.message || err}`)
-  );
 }
