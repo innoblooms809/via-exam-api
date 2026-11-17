@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import httpStatus from "http-status";
 import HomeService from "../../services/dashboard/home.service";
 import PersonService from "../../services/dashboard/person.service";
+import StaffWorkService from "../../services/dashboard/staffWork.service";
 
 type Result = { statusCode: number; error: boolean };
 
@@ -31,6 +32,8 @@ export default {
   getTeacherHome: run(HomeService.getTeacherHome),
   getScannerHome: run(HomeService.getScannerHome),
   getStudentHome: run(HomeService.getStudentHome),
+  getStaffWork: run(StaffWorkService.getStaffWork, 0),
+  sendReminder: (req: Request, res: Response) => run((user) => StaffWorkService.sendReminder(user, req.body), 0)(req, res),
   getPerson: (req: Request, res: Response) =>
     run((user) => PersonService.getPerson(user, String(req.params.userId ?? ""), { sessionId: str(req.query.sessionId), examType: str(req.query.examType) }), 0)(req, res),
   getPersonWork: (req: Request, res: Response) =>

@@ -1,17 +1,11 @@
 import { Router } from "express";
 
-import Controller from "../../../controllers/dashboard/adminDashboard.controller";
 import SuperAdminController from "../../../controllers/dashboard/superAdminDashboard.controller";
 
 import { authenticate, authorize } from "../../../middlewares/auth";
-import { ADMINS } from "../../../config/roles";
 
 const router = Router();
 
-router.get("/overview", authenticate, authorize(ADMINS), Controller.getOverview);
-router.get("/teacher-analytics", authenticate, authorize(ADMINS), Controller.getTeacherAnalytics);
-router.get("/scanner-analytics", authenticate, authorize(ADMINS), Controller.getScannerAnalytics);
-router.get("/student-analytics", authenticate, authorize(ADMINS), Controller.getStudentAnalytics);
 
 // ── Super admin dashboard (platform-wide; each section loads on its own) ──────
 // GET /v1/admin-dashboard/super-admin/summary              — KPIs, alerts, revenue, subscription mix

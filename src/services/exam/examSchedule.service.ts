@@ -51,6 +51,17 @@ export interface SchedulePaper {
   /** Approved set letters. Staff only — never sent to students. */
   approvedSets?: string[];
   examStatus?: string | null;
+  /** Admin only: a draft is seen by nobody else until it is published. */
+  status?: "draft" | "published";
+  /** The latest reschedule of this published paper: where it was, and why it moved. */
+  rescheduled?: {
+    fromDate: string | null;
+    fromStartTime: string | null;
+    fromEndTime: string | null;
+    fromShift: string | null;
+    reason: string | null;
+    at: string;
+  } | null;
 }
 
 export interface DateSheet {
@@ -149,7 +160,12 @@ const studentClass = async (user: any, instituteId: string) => {
   return cls ? { classId: cls.classId, className: cls.className } : null;
 };
 
-export const getExamSchedule = async (user: any) => {
+/**
+ * ?sessionId=<id> reads one session's date sheets (the dashboard calendar shows one session):
+ * its events and exams, plus older events saved without a session (the client places those by
+ * date). Without it, every session. The session list always has every session.
+ */
+export const getExamSchedule = async (user: any, query: any = {}) => {
   try {
     const instituteId: string | undefined = user?.instituteId;
     if (!instituteId) {
@@ -170,8 +186,9 @@ export const getExamSchedule = async (user: any) => {
       }
     }
 
-    // A student sees their class plus school-wide papers (no class on them).
-    const eventWhere: any = { instituteId, isDeleted: false };
+    // A student sees their class plus school-wide papers (no class on them). Drafts are the
+    // school admin's until published: nobody else receives them.
+    const eventWhere: any = { instituteId, isDeleted: false, ...(role === "admin" ? {} : { status: "published" }) };
     const examWhere: any = { instituteId, isDeleted: false };
     if (scopedClass) {
       eventWhere[Op.or] = [
@@ -182,6 +199,11 @@ export const getExamSchedule = async (user: any) => {
         },
       ];
       examWhere[Op.or] = [{ classId: scopedClass.classId }, { classId: null }];
+    }
+    const onlySession = typeof query?.sessionId === "string" ? query.sessionId.trim().slice(0, 64) : "";
+    if (onlySession) {
+      eventWhere[Op.and] = [{ [Op.or]: [{ sessionId: onlySession }, { sessionId: null }] }];
+      examWhere.sessionId = onlySession;
     }
 
     const [institute, sessions, classes, events, exams] = await Promise.all([
@@ -297,7 +319,19 @@ export const getExamSchedule = async (user: any) => {
       }
       if (exam) matchedExamIds.add(exam.examId);
 
+      const lastMove = [...(ev.changeLog ?? [])].reverse().find((c) => c.kind === "rescheduled");
       sheetFor(sessionId ?? exam?.sessionId ?? null, classId, className, examType).papers.push({
+        ...(role === "admin" ? { status: ev.status === "draft" ? ("draft" as const) : ("published" as const) } : {}),
+        rescheduled: lastMove
+          ? {
+              fromDate: lastMove.from.date,
+              fromStartTime: lastMove.from.startTime,
+              fromEndTime: lastMove.from.endTime,
+              fromShift: lastMove.from.shift,
+              reason: lastMove.reason,
+              at: lastMove.at,
+            }
+          : null,
         key: ev.eventId,
         eventId: ev.eventId,
         subjectId,
@@ -341,7 +375,9 @@ export const getExamSchedule = async (user: any) => {
       String(a.startTime ?? "").localeCompare(String(b.startTime ?? "")) ||
       a.subjectName.localeCompare(b.subjectName);
 
-    const result = Array.from(sheets.values()).map((sheet) => {
+    // One session asked for: an older event's sheet can still name another session (from its notes).
+    const inScope = Array.from(sheets.values()).filter((sheet) => !onlySession || !sheet.sessionId || sheet.sessionId === onlySession);
+    const result = inScope.map((sheet) => {
       sheet.papers.sort(byDate);
       if (role === "student") {
         // Which sets exist / are approved is internal to the school.

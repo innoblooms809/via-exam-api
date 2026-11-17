@@ -14,6 +14,7 @@ import SubscriptionController from './controllers/subscription/subscription.cont
 import { errorConverter, errorHandler } from './middlewares/error';
 import { detectLanguage, translateMessages } from './middlewares/i18n';
 import ApiError from './utils/ApiError';
+import { guardPrivateUploads } from './middlewares/uploadsAccess';
 import path from 'path';
 // import session from 'express-session'; // Commented out: captcha is disabled, MemoryStore not needed in production
 import bodyParser from 'body-parser';
@@ -133,6 +134,8 @@ const uploadsStatic = [
     if (!name || !SERVABLE_UPLOAD.test(name)) return res.status(httpStatus.NOT_FOUND).end();
     return next();
   },
+  // uploads/private/: answer sheets never; model answers only to staff of their institute.
+  guardPrivateUploads(uploadsPath),
   express.static(uploadsPath, {
     dotfiles: 'deny',
     index: false,

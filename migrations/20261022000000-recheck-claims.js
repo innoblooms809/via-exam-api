@@ -8,7 +8,7 @@
  * The API also adds these columns on boot (db/connect.ts); this is for databases managed
  * by migrations only.
  *
- *   npm run db:migrate:recheck-claims
+ *   npm run db:migrate
  */
 
 module.exports = {

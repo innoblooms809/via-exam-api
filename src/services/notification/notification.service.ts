@@ -2,16 +2,17 @@ import httpStatus from "http-status";
 import { Op, WhereOptions } from "sequelize";
 import Notification from "../../models/Notification.model";
 import Institute from "../../models/Institute.model";
+import { clearFinishedWork } from "../dashboard/openWork";
 
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 100;
 
 // Super admins belong to no institute; their notifications are filed under the institute they're about.
-const ownerWhere = (requestedBy: any): Record<string, unknown> => ({
+const ownerOf = (requestedBy: any): Record<string, unknown> => ({
   userId: requestedBy.userId,
   ...(requestedBy.instituteId ? { instituteId: requestedBy.instituteId } : {}),
-  isDeleted: false,
 });
+const ownerWhere = (requestedBy: any): Record<string, unknown> => ({ ...ownerOf(requestedBy), isDeleted: false });
 
 const format = (notif: Notification) => ({
   id: notif.notificationId,
@@ -27,6 +28,7 @@ const format = (notif: Notification) => ({
 // Query: limit (1–100, default 30) · before (ISO date cursor, for "load more") · unread=true
 const getNotifications = async (requestedBy: any, query: any = {}): Promise<any> => {
   try {
+    await clearFinishedWork(requestedBy);
     const limit = Math.min(MAX_LIMIT, Math.max(1, Number(query.limit) || DEFAULT_LIMIT));
     const owner = ownerWhere(requestedBy);
     const where: WhereOptions = { ...owner };
@@ -74,6 +76,7 @@ const TYPE_RE = /^[A-Z0-9_]{1,64}$/;
 
 const listNotifications = async (requestedBy: any, query: any = {}): Promise<any> => {
   try {
+    await clearFinishedWork(requestedBy);
     const page = Math.max(1, Math.floor(Number(query.page)) || 1);
     const limit = Math.min(MAX_LIMIT, Math.max(1, Math.floor(Number(query.limit)) || 20));
     const owner = ownerWhere(requestedBy);
@@ -188,9 +191,37 @@ const markAllAsRead = async (requestedBy: any): Promise<any> => {
   }
 };
 
+// ─── DELETE A NOTIFICATION (ONLY THEIR OWN) ─────────────────────────────────────────
+// Deleting one that is already gone (its work just finished) is not an error.
+const deleteNotification = async (notificationId: string, requestedBy: any): Promise<any> => {
+  try {
+    const notification = await Notification.findOne({ where: { notificationId, ...ownerOf(requestedBy) } });
+    if (!notification) {
+      return {
+        error: true,
+        statusCode: httpStatus.NOT_FOUND,
+        message: "Notification not found.",
+      };
+    }
+    await notification.update({ isDeleted: true });
+    return {
+      error: false,
+      statusCode: httpStatus.OK,
+      message: "Notification deleted.",
+    };
+  } catch (e: any) {
+    return {
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: `Something went wrong: ${e.message}`,
+    };
+  }
+};
+
 export default {
   getNotifications,
   listNotifications,
   markAsRead,
   markAllAsRead,
+  deleteNotification,
 };

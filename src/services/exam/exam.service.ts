@@ -13,7 +13,6 @@ import StudentResult from "../../models/StudentResult.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
 import { sequelize } from "../../config/sequelize";
-import StudentService from "../student/student.service";
 import { Op } from "sequelize";
 import { checkTeacherForSubject } from "../teacher/teacherSubject.service";
 import { newId } from "../../utils/idGenerator";
@@ -23,6 +22,7 @@ import { isTaughtIn, sectionRunsIn } from "../academic/sessionSetup.service";
 import { marksFor } from "../academic/marks.service";
 import { buildRoster, loadExam, sectionKey } from "./examRoster.service";
 import { assignedSectionsOf, getTeacherScope, isTeacherRequester } from "../evaluation/evaluationAccess.service";
+import { examLabel } from "../notification/notifyPeople";
 
 /** Single exam-table status that drives Manage Exams + approval. */
 export const EXAM_WORKFLOW_STATUSES = [
@@ -223,6 +223,13 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
       );
     }
 
+    // Named in the notification, so the teacher sees which question paper is theirs to set.
+    const [subjectNamed, classNamed, sectionsNamed] = await Promise.all([
+      Subject.findOne({ where: { subjectId: body.subjectId }, attributes: ["subjectName"] }),
+      Class.findOne({ where: { classId: body.classId }, attributes: ["className"] }),
+      Section.findAll({ where: { sectionId: placement.sectionIds.filter(Boolean) as string[] }, attributes: ["sectionId", "sectionName"] }),
+    ]);
+
     const createdExams = await sequelize.transaction(async (t) => {
       const rows: Exam[] = [];
       for (const sectionId of placement.sectionIds) {
@@ -256,8 +263,13 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
             instituteId,
             userId: teacher.userId,
             type: "EXAM_ASSIGNED",
-            title: "New Exam Assigned",
-            message: `A ${examType} exam has been assigned to you.`,
+            title: "Question paper to set",
+            message: `Set the question paper for ${examLabel({
+              examType,
+              subject: subjectNamed,
+              class: classNamed,
+              section: sectionsNamed.find((s) => s.sectionId === sectionId) ?? null,
+            })}.`,
             referenceId: examId,
           },
           { transaction: t }
@@ -275,50 +287,6 @@ const createExam = async (body: any, createdBy: any): Promise<any> => {
   } catch (e: any) {
     console.error(e);
     return bad(httpStatus.INTERNAL_SERVER_ERROR, `Something went wrong: ${e.message}`);
-  }
-};
-
-// ─── GET ALL EXAMS ────────────────────────────────────────────────────────────
-const getAllExams = async (query: any, requestedBy: any): Promise<any> => {
-  try {
-    const instituteId = requestedBy.instituteId;
-    const { search = "", status = "", classVal = "" } = query;
-
-    const where: any = { instituteId, isDeleted: false };
-    if (status) where.status = status;
-    if (classVal) where.classVal = classVal;
-    if (search) {
-      where[Op.or] = [
-        { examType: { [Op.iLike]: `%${search}%` } },
-        { subject: { [Op.iLike]: `%${search}%` } },
-        { classVal: { [Op.iLike]: `%${search}%` } },
-      ];
-    }
-
-    const exams = await Exam.findAll({
-      where,
-      include: [
-        { model: Class, as: "class", where: { isDeleted: false }, required: true },
-        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
-        { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
-        { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
-        { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
-      ],
-      order: [["createdAt", "DESC"]],
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Exams fetched successfully.",
-      data: { exams, total: exams.length },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
   }
 };
 
@@ -387,52 +355,6 @@ const getAssignedExams = async (requestedBy: any): Promise<any> => {
       statusCode: httpStatus.OK,
       message: "Assigned exams fetched successfully.",
       data: { exams: formattedExams },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
-
-// ─── GET ONE EXAM ─────────────────────────────────────────────────────────────
-const getExamById = async (examId: string, requestedBy: any): Promise<any> => {
-  try {
-    const exam = await Exam.findOne({
-      where: { examId, isDeleted: false },
-      include: [
-        { model: Class, as: "class", where: { isDeleted: false }, required: true },
-        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
-        { model: Subject, as: "subject", where: { isDeleted: false }, required: true },
-        { model: UserModal, as: "teacher", attributes: ["userId", "userName", "emailId"], required: false },
-        { model: Session, as: "session", attributes: ["sessionId", "sessionName"], required: false },
-      ],
-    });
-
-    if (!exam) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Exam not found.",
-      };
-    }
-
-    // Check institute access
-    if (requestedBy.instituteId !== exam.instituteId) {
-      return {
-        error: true,
-        statusCode: httpStatus.FORBIDDEN,
-        message: "Access denied.",
-      };
-    }
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Exam fetched successfully.",
-      data: exam,
     };
   } catch (e: any) {
     return {
@@ -648,15 +570,19 @@ const updateExam = async (examId: string, body: any, requestedBy: any): Promise<
 
     // Tell the newly assigned teacher, like on create.
     if (teacherChanged) {
-      await Notification.create({
-        notificationId: newId("notification"),
-        instituteId,
-        userId: nextTeacherId,
-        type: "EXAM_ASSIGNED",
-        title: "Exam Assigned",
-        message: `A ${exam.examType} exam has been assigned to you.`,
-        referenceId: exam.examId,
-      }).catch((err: any) => console.error("Exam reassignment notification failed:", err?.message));
+      await loadExam(instituteId, exam.examId)
+        .then((named) =>
+          Notification.create({
+            notificationId: newId("notification"),
+            instituteId,
+            userId: nextTeacherId,
+            type: "EXAM_ASSIGNED",
+            title: "Question paper to set",
+            message: `Set the question paper for ${examLabel(named)}.`,
+            referenceId: exam.examId,
+          })
+        )
+        .catch((err: any) => console.error("Exam reassignment notification failed:", err?.message));
     }
 
     return { error: false, statusCode: 200, message: "Exam updated.", data: exam };
@@ -723,7 +649,6 @@ const deleteExam = async (examId: string, requestedBy: any): Promise<any> => {
   }
 };
 
-
 // ─── GET EXAM PROGRESS ────────────────────────────────────────────────────────
 /**
  * One exam, section by section (from its roster: its own session, sheets matched by student):
@@ -783,135 +708,11 @@ const getExamProgress = async (examId: string, requestedBy: any): Promise<any> =
   }
 };
 
-// ─── GET ASSIGNED EXAMS SUMMARY (section-aware counts) ────────────────────────
-// New endpoint for the answersheetevaluation page.
-// Unlike getAssignedExams, this filters totalStudents and uploadedSheets
-// by the exam's sectionId so counts match the uploaded-sheets detail page.
-const getAssignedExamsSummary = async (requestedBy: any): Promise<any> => {
-  try {
-    const instituteId = requestedBy.instituteId;
-    const teacherId = requestedBy.userId;
-
-    const exams: any = await Exam.findAll({
-      where: { instituteId, isDeleted: false, teacherId },
-      include: [
-        { model: Class, as: "class", attributes: ["classId", "className"], where: { isDeleted: false }, required: true },
-        { model: Section, as: "section", attributes: ["sectionId", "sectionName"], required: false },
-        { model: Subject, as: "subject", attributes: ["subjectId", "subjectName"], where: { isDeleted: false }, required: true },
-        { model: Session, as: "session", attributes: ["sessionId", "sessionName"] },
-      ],
-      order: [["createdAt", "DESC"]],
-    });
-
-    const formattedExams = await Promise.all(
-      exams.map(async (exam: any) => {
-        const className = exam.class?.className || exam.classId;
-        const sectionName = exam.section?.sectionName || exam.sectionId || "";
-        const sessionName = exam.session?.sessionName || exam.sessionId || "";
-
-        // 1. Get students matching exact same query as uploaded-sheets detail page
-        let studentsList: any[] = [];
-        try {
-          const studentRes = await StudentService.getAllStudents(requestedBy, {
-            className,
-            sectionId: sectionName,
-            session: sessionName,
-          });
-          if (studentRes && !studentRes.error && Array.isArray(studentRes?.data?.students)) {
-            studentsList = studentRes.data.students;
-          }
-        } catch (err) {
-          console.error("Error fetching students for exam summary:", err);
-        }
-
-        const studentRolls = new Set(
-          studentsList.map((s: any) => String(s.rollNumber)).filter(Boolean)
-        );
-
-        // 2. Get uploaded sheets matching the exam parameters
-        const sectionVals = Array.from(
-          new Set([exam.sectionId, exam.section?.sectionName].filter(Boolean))
-        );
-        const classVals = Array.from(
-          new Set([exam.classId, exam.class?.className].filter(Boolean))
-        );
-
-        const sheetWhere: any = {
-          instituteId,
-          subjectId: exam.subjectId,
-          examType: exam.examType,
-          isDeleted: false,
-        };
-
-        if (classVals.length > 0) {
-          sheetWhere.classId = { [Op.in]: classVals };
-        }
-        if (sectionVals.length > 0) {
-          sheetWhere.section = { [Op.in]: sectionVals };
-        }
-
-        const sheets = await Scanner.findAll({
-          where: sheetWhere,
-          attributes: ["sheetId", "rollNo"],
-        });
-
-        const orphanSheets = sheets.filter(
-          (sh: any) => !studentRolls.has(String(sh.rollNo))
-        );
-
-        const totalStudents = studentsList.length + orphanSheets.length;
-        const uploadedSheets = sheets.length;
-
-        return {
-          id: exam.examId,
-          examId: exam.examId,
-          classId: exam.class?.classId || exam.classId,
-          className: exam.class?.className || "N/A",
-          sectionId: exam.section?.sectionId || exam.sectionId || null,
-          sectionName: exam.section?.sectionName || "N/A",
-          subjectId: exam.subject?.subjectId || exam.subjectId,
-          subjectName: exam.subject?.subjectName || "N/A",
-          sessionId: exam.session?.sessionId || exam.sessionId,
-          sessionName: exam.session?.sessionName || "N/A",
-          examType: exam.examType,
-          status: exam.status,
-          totalMarks: exam.totalMarks,
-          passingMarks: exam.passingMarks,
-          duration: exam.duration,
-          instructions: exam.instructions,
-          teacherId: exam.teacherId,
-          examinerId: exam.examinerId,
-          totalStudents,
-          uploadedSheets,
-          createdAt: exam.createdAt,
-          updatedAt: exam.updatedAt
-        };
-      })
-    );
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Assigned exams summary fetched successfully.",
-      data: { exams: formattedExams },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
-
 export default {
   getExamProgress,
   createExam,
-  getAllExams,
-  getExamById,
   updateExamStatus,
   updateExam,
   deleteExam,
   getAssignedExams,
-  getAssignedExamsSummary,
 };

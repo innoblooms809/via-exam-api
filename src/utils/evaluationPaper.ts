@@ -292,3 +292,42 @@ export const buildEvaluationPaper = (content: unknown, ansDoc?: unknown): Evalua
     keyed: state.keyed,
   };
 };
+
+// ─── Uploaded model answer ──────────────────────────────────────────────────────
+
+/** Every part that earns marks, the OR alternatives' parts included. */
+const leavesOf = (nodes: PaperNode[]): PaperNode[] =>
+  nodes.flatMap((n) => [...(n.parts?.length ? leavesOf(n.parts) : [n]), ...(n.or ? leavesOf([n.or]) : [])]);
+
+const hasKey = (a?: PaperAnswer) =>
+  Boolean(a && (a.text?.trim() || a.correctOption !== undefined || a.trueFalse !== undefined || a.matchKey?.some((v) => v !== null)));
+
+/**
+ * An uploaded model answer's OCR text as a part's key: the OCR server's "--- Page N ---"
+ * lines and a leading "Answer:" label left out.
+ */
+export const uploadedKeyText = (raw: unknown): string =>
+  String(raw ?? "")
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*-{2,}\s*page\s*\d+\s*-{2,}\s*$/i.test(line))
+    .join("\n")
+    .replace(/^\s*(?:expected\s+answer|model\s+answer|answer\s+key|answer|ans|उत्तर)\s*[:.\-]\s*/i, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+/**
+ * Puts an uploaded model answer on a paper that has ONE part to mark, as that part's key.
+ * The evaluator places an uploaded key on parts by the labels written in it ("1.", "Q1",
+ * "(a)"); the model answer of a one-question paper usually has none, so that part was marked
+ * from the question alone ("No model answer for this part"). A paper with more parts is left
+ * to the evaluator, which reads the labels and asks its model for the rest. Changes `paper`
+ * in place; returns the part's source id and the key text placed, or null when nothing was.
+ */
+export const placeUploadedKey = (paper: EvaluationPaper | null, rawKey: unknown): { sourceId: string; text: string } | null => {
+  const text = uploadedKeyText(rawKey);
+  if (!paper || !text) return null;
+  const leaves = leavesOf(paper.questions);
+  if (leaves.length !== 1 || hasKey(leaves[0].answer)) return null;
+  leaves[0].answer = { ...(leaves[0].answer ?? {}), text };
+  return { sourceId: leaves[0].sourceId ?? "", text };
+};

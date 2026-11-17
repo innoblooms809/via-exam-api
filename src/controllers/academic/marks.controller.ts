@@ -22,8 +22,9 @@ const saveGradingScale = (req: any, res: Response) => send(res, () => SettingsSe
 const saveMarksDefaults = (req: any, res: Response) => send(res, () => SettingsService.saveMarksDefaults(req.viaExamUser, req.body ?? {}));
 const saveCrossCheck = (req: any, res: Response) => send(res, () => SettingsService.saveCrossCheck(req.viaExamUser, req.body ?? {}));
 const saveScanQuality = (req: any, res: Response) => send(res, () => SettingsService.saveScanQuality(req.viaExamUser, req.body ?? {}));
+const saveRecheckPolicy = (req: any, res: Response) => send(res, () => SettingsService.saveRecheckPolicy(req.viaExamUser, req.body ?? {}));
 const getResultSheet = (req: any, res: Response) => send(res, () => TemplateService.getResultSheet(req.viaExamUser));
 const saveResultSheet = (req: any, res: Response) => send(res, () => TemplateService.saveResultSheet(req.viaExamUser, req.body ?? {}));
 const resetResultSheet = (req: any, res: Response) => send(res, () => TemplateService.resetResultSheet(req.viaExamUser));
 
-export default { getMarks, saveMarks, copyMarks, getChanges, getSettings, saveGradingScale, saveMarksDefaults, saveCrossCheck, saveScanQuality, getResultSheet, saveResultSheet, resetResultSheet };
+export default { getMarks, saveMarks, copyMarks, getChanges, getSettings, saveGradingScale, saveMarksDefaults, saveCrossCheck, saveScanQuality, saveRecheckPolicy, getResultSheet, saveResultSheet, resetResultSheet };

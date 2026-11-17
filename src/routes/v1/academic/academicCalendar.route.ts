@@ -16,6 +16,9 @@ router.get("/", canRead, Controller.getAllEvents);
 router.get("/monthly", canRead, Controller.getEventsByMonth);
 router.get("/exam-schedule", canRead, Controller.getExamSchedule);
 router.post("/exam-schedule", canWrite, Controller.createExamSchedule);
+// Drafts → published (everyone sees them); published papers move only by a reschedule.
+router.post("/publish", canWrite, Controller.publishPapers);
+router.post("/reschedule", canWrite, Controller.reschedulePapers);
 router.post("/bulk-delete", canWrite, Controller.deleteEvents);
 router.put("/:eventId", canWrite, Controller.updateEvent);
 router.delete("/:eventId", canWrite, Controller.deleteEvent);

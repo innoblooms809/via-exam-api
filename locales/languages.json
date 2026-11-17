@@ -1,4 +1,4 @@
 {
-  "en": { "name": "English" },
-  "ar": { "name": "العربية" }
+  "en": { "name": "English", "dir": "ltr", "unitDisplay": "short" },
+  "ar": { "name": "العربية", "dir": "rtl", "unitDisplay": "long" }
 }

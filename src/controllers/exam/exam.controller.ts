@@ -16,38 +16,9 @@ const createExam = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-const getAllExams = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await ExamService.getAllExams(req.query, req.viaExamUser);
-    return res.status(result.statusCode).send(result);
-  } catch (error) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
-    });
-  }
-};
-
 const getAssignedExams = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await ExamService.getAssignedExams(req.viaExamUser);
-    return res.status(result.statusCode).send(result);
-  } catch (error) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: "Internal Server Error",
-    });
-  }
-};
-
-const getExamById = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await ExamService.getExamById(
-      req.params.examId,
-      req.viaExamUser,
-    );
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -108,7 +79,6 @@ const deleteExam = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-
 const getExamProgress = async (req: any, res: Response): Promise<any> => {
   try {
     try {
@@ -125,26 +95,12 @@ const getExamProgress = async (req: any, res: Response): Promise<any> => {
     });
   }
 };
-const getAssignedExamsSummary = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await ExamService.getAssignedExamsSummary(req.viaExamUser);
-    return res.status(result.statusCode).json(result);
-  } catch (e: any) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      message: `Something went wrong: ${e.message}`,
-    });
-  }
-};
 
 export default {
   getExamProgress,
   createExam,
-  getAllExams,
-  getExamById,
   updateExamStatus,
   updateExam,
   deleteExam,
   getAssignedExams,
-  getAssignedExamsSummary,
 };

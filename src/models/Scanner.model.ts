@@ -19,13 +19,13 @@ interface AnswerSheetAttributes {
   rollNo: string;
   studentName?: string; // For approval workflow
   fileName: string;
-  /** Legacy: sheets uploaded before Cloudinary storage still carry their bytes here. */
+  /** Legacy: sheets uploaded before file storage still carry their bytes here. */
   fileBuffer: Buffer | null;
-  /** Cloudinary secure URL of the stored scan. Null only for legacy rows. */
+  /** Web path of the stored scan under uploads/private/ (a Cloudinary URL for older sheets). Null only for legacy rows. */
   fileUrl: string | null;
-  /** Cloudinary public id, needed to delete the asset when the sheet goes. */
+  /** Key of the stored file ("answer-sheets/…" under uploads/private/, or an older sheet's Cloudinary public id). */
   filePublicId: string | null;
-  /** Cloudinary resource type ("raw" for PDFs, "image" otherwise). */
+  /** "local" for a file on this server; "raw" / "image" for an older sheet in Cloudinary. */
   fileResourceType: string | null;
   fileMimeType: string;
   fileSize: number;
@@ -102,7 +102,7 @@ Scanner.init(
     rollNo: { type: DataTypes.STRING, allowNull: false },
     studentName: { type: DataTypes.STRING, allowNull: true }, // For approval workflow
     fileName: { type: DataTypes.STRING, allowNull: false },
-    // Nullable since the move to Cloudinary: new rows store a URL instead.
+    // Nullable since sheets are stored as files: new rows store where the file is instead.
     fileBuffer: { type: DataTypes.BLOB("long"), allowNull: true },
     // Encrypted at rest (utils/dataProtection): whoever has the link or the public id can fetch the scan.
     fileUrl: { type: DataTypes.TEXT, allowNull: true, ...encryptedColumn("fileUrl", "sheet.fileUrl") },

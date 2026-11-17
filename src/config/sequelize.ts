@@ -12,5 +12,5 @@ export const sequelize = new Sequelize({
     password: process.env.DB_PASSWORD || 'your_db_password',
     database: process.env.DB_NAME || 'your_db_name',
     logging: false, // You can enable logging for SQL queries if needed.
-    pool: { max: Number(process.env.DB_POOL_MAX) || 5, min: 0, acquire: 30000, idle: 10000 },
+    pool: { max: Number(process.env.DB_POOL_MAX) || 10, min: 0, acquire: 30000, idle: 10000 },
   });

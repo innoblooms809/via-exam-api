@@ -1,13 +1,14 @@
 /**
  * The school's own rules (Master Data): grade bands, the marks a subject starts with,
- * and cross-checking. One InstituteSettings row per institute; anything not set falls
- * back to the defaults below, so a new school works before anyone opens these pages.
+ * cross-checking, scan quality and the recheck claim window. One InstituteSettings row per
+ * institute; anything not set falls back to the defaults below, so a new school works
+ * before anyone opens these pages.
  */
 
 import httpStatus from "http-status";
 import { Op } from "sequelize";
 import Subject from "../../models/Subject.model";
-import InstituteSettings, { type CrossCheckRule, type GradeBand, type MarksDefault, type ScanQualityRule } from "../../models/InstituteSettings.model";
+import InstituteSettings, { type CrossCheckRule, type GradeBand, type MarksDefault, type RecheckPolicyRule, type ScanQualityRule } from "../../models/InstituteSettings.model";
 import MarksAudit, { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
 import { EXAM_TYPES } from "../../utils/examTypes";
 import { DEFAULT_SCAN_QUALITY } from "../../utils/sheetQuality";
@@ -36,13 +37,49 @@ export const DEFAULT_CROSS_CHECK: CrossCheckRule = { mode: "off", below: null, a
 export const crossCheckCovers = (rule: CrossCheckRule, subjectId: string | null | undefined) =>
   rule.mode !== "off" && (rule.subjectIds == null || (Boolean(subjectId) && rule.subjectIds.includes(subjectId as string)));
 
+/** Students can claim a recheck on every exam, within six days of its results being published, unless the school sets otherwise. */
+export const DEFAULT_RECHECK_POLICY: RecheckPolicyRule = { enabled: true, days: 6, examTypes: null, subjectIds: null };
+export const RECHECK_WINDOW_LIMITS = { min: 1, max: 60 } as const;
+
+/** Whether the policy lets students claim a recheck on a result of this exam type and subject (its deadline aside). */
+export const recheckCovers = (policy: RecheckPolicyRule, examType: string | null | undefined, subjectId: string | null | undefined) =>
+  policy.enabled &&
+  (policy.examTypes == null || (Boolean(examType) && policy.examTypes.includes(examType as string))) &&
+  (policy.subjectIds == null || (Boolean(subjectId) && policy.subjectIds.includes(subjectId as string)));
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** When claims on a result published at `publishedAt` close, under a window of `days`. */
+export const recheckClosesAt = (publishedAt: Date | string, days: number) => new Date(new Date(publishedAt).getTime() + days * DAY_MS);
+
+/** A result's claim deadline: the one it was published with, else (published before windows existed) the school's window now. */
+export const recheckDeadlineOf = (result: { publishedAt: Date | string; recheckClosesAt?: Date | string | null }, days: number) =>
+  result.recheckClosesAt ? new Date(result.recheckClosesAt) : recheckClosesAt(result.publishedAt, days);
+
 export interface Settings {
   gradingScale: GradeBand[];
   marksDefaults: Record<string, MarksDefault>;
   crossCheck: CrossCheckRule;
   scanQuality: ScanQualityRule;
+  recheckPolicy: RecheckPolicyRule;
   updatedAt: string | null;
 }
+
+/** A stored list of ids or names: a non-empty list of strings, else null (every one). */
+const listOf = (v: unknown) => (Array.isArray(v) && v.length ? [...new Set(v.map((x) => String(x ?? "").trim()).filter(Boolean))] : null);
+
+/** A stored policy, with the defaults for anything missing or broken (on, every exam, 6 days). */
+const policyOf = (stored: Partial<RecheckPolicyRule> | null | undefined): RecheckPolicyRule => {
+  const days = Number(stored?.days);
+  const examTypes = listOf(stored?.examTypes);
+  const subjectIds = listOf(stored?.subjectIds);
+  return {
+    enabled: stored?.enabled !== false,
+    days: Number.isInteger(days) && days >= RECHECK_WINDOW_LIMITS.min && days <= RECHECK_WINDOW_LIMITS.max ? days : DEFAULT_RECHECK_POLICY.days,
+    examTypes: examTypes?.length ? examTypes : null,
+    subjectIds: subjectIds?.length ? subjectIds : null,
+  };
+};
 
 // Read on every result and grade; kept for a few seconds per institute.
 const cache = new Map<string, { at: number; value: Settings }>();
@@ -57,6 +94,7 @@ export const settingsOf = async (instituteId: string): Promise<Settings> => {
     marksDefaults: { ...DEFAULT_MARKS, ...(row?.marksDefaults ?? {}) },
     crossCheck: { ...DEFAULT_CROSS_CHECK, ...(row?.crossCheck ?? {}) },
     scanQuality: { ...DEFAULT_SCAN_QUALITY, ...(row?.scanQuality ?? {}) },
+    recheckPolicy: policyOf(row?.recheckPolicy),
     updatedAt: row?.updatedAt ? new Date(row.updatedAt).toISOString() : null,
   };
   cache.set(instituteId, { at: Date.now(), value });
@@ -70,7 +108,7 @@ export const gradeOn = (scale: GradeBand[], percentage: number | null): string |
   return band?.grade ?? null;
 };
 
-const upsert = async (instituteId: string, userId: string, patch: Partial<Pick<InstituteSettings, "gradingScale" | "marksDefaults" | "crossCheck" | "scanQuality">>) => {
+const upsert = async (instituteId: string, userId: string, patch: Partial<Pick<InstituteSettings, "gradingScale" | "marksDefaults" | "crossCheck" | "scanQuality" | "recheckPolicy">>) => {
   const [row] = await InstituteSettings.findOrCreate({ where: { instituteId }, defaults: { instituteId } });
   await row.update({ ...patch, updatedBy: userId });
   cache.delete(instituteId);
@@ -105,7 +143,19 @@ const describeScale = (bands: GradeBand[]) => bands.map((b) => `${b.grade} ≥ $
 
 const getSettings = async (user: any) => {
   const settings = await settingsOf(String(user?.instituteId ?? ""));
-  return { error: false, statusCode: httpStatus.OK, message: "Settings loaded.", data: { ...settings, examTypes: EXAM_TYPES, defaultGradingScale: DEFAULT_GRADING_SCALE, defaultScanQuality: DEFAULT_SCAN_QUALITY } };
+  return {
+    error: false,
+    statusCode: httpStatus.OK,
+    message: "Settings loaded.",
+    data: {
+      ...settings,
+      examTypes: EXAM_TYPES,
+      defaultGradingScale: DEFAULT_GRADING_SCALE,
+      defaultScanQuality: DEFAULT_SCAN_QUALITY,
+      defaultRecheckPolicy: DEFAULT_RECHECK_POLICY,
+      recheckWindowLimits: RECHECK_WINDOW_LIMITS,
+    },
+  };
 };
 
 const saveGradingScale = async (user: any, body: any) => {
@@ -220,4 +270,66 @@ const saveScanQuality = async (user: any, body: any) => {
   };
 };
 
-export default { getSettings, saveGradingScale, saveMarksDefaults, saveCrossCheck, saveScanQuality };
+/**
+ * The recheck policy: whether students can claim a recheck (`enabled`), on which exams
+ * (`examTypes` and `subjectIds`: null for all, or the ones chosen) and for how many days after
+ * results are published (1–60). On/off and the exams apply at once to every result; the days
+ * set the deadline of results published from now on (published ones keep theirs). A field left
+ * out keeps its saved value, so claims can be turned off without resending the rest.
+ */
+const saveRecheckPolicy = async (user: any, body: any) => {
+  const instituteId = String(user?.instituteId ?? "");
+  if (body?.enabled !== undefined && typeof body.enabled !== "boolean") return fail(httpStatus.BAD_REQUEST, "Say whether students can claim a recheck (on or off).");
+  const current = (await settingsOf(instituteId)).recheckPolicy;
+  const enabled = body?.enabled === undefined ? current.enabled : body.enabled;
+
+  const raw = body?.days;
+  const days = raw === undefined ? current.days : raw === null || raw === "" ? NaN : Number(raw);
+  const { min, max } = RECHECK_WINDOW_LIMITS;
+  if (!Number.isInteger(days) || days < min || days > max) return fail(httpStatus.BAD_REQUEST, `Give a whole number of days from ${min} to ${max}.`);
+
+  // Exam types: null for every type, or a non-empty list of the school's types.
+  let examTypes = current.examTypes;
+  if (body?.examTypes !== undefined) {
+    if (body.examTypes === null) examTypes = null;
+    else if (!Array.isArray(body.examTypes)) return fail(httpStatus.BAD_REQUEST, "Choose the exams whose results can be rechecked, or all of them.");
+    else {
+      const wanted = [...new Set(body.examTypes.map((v: unknown) => String(v ?? "").trim()).filter(Boolean))] as string[];
+      if (!wanted.length) return fail(httpStatus.BAD_REQUEST, "Select at least one exam, or allow rechecks on all exams.");
+      const unknown = wanted.filter((v) => !(EXAM_TYPES as readonly string[]).includes(v));
+      if (unknown.length) return fail(httpStatus.BAD_REQUEST, `${unknown.join(", ")} ${unknown.length === 1 ? "isn't an exam" : "aren't exams"} of the school. Exams are ${EXAM_TYPES.join(" and ")}.`);
+      examTypes = wanted;
+    }
+  }
+
+  // Subjects: null for every subject, or a non-empty list of the school's live subjects.
+  let subjectIds = current.subjectIds;
+  if (body?.subjectIds !== undefined) {
+    if (body.subjectIds === null) subjectIds = null;
+    else if (!Array.isArray(body.subjectIds)) return fail(httpStatus.BAD_REQUEST, "Choose the subjects whose results can be rechecked, or all of them.");
+    else {
+      const wanted = [...new Set(body.subjectIds.map((v: unknown) => String(v ?? "").trim()).filter(Boolean))] as string[];
+      if (!wanted.length) return fail(httpStatus.BAD_REQUEST, "Select at least one subject, or allow rechecks on all subjects.");
+      const found = await Subject.findAll({ where: { instituteId, subjectId: { [Op.in]: wanted }, isDeleted: false }, attributes: ["subjectId"] });
+      if (found.length !== wanted.length) return fail(httpStatus.BAD_REQUEST, "Some selected subjects no longer exist. Refresh the page and select again.");
+      subjectIds = wanted;
+    }
+  }
+
+  const rule: RecheckPolicyRule = { enabled, days, examTypes, subjectIds };
+  await upsert(instituteId, user.userId, { recheckPolicy: rule });
+  const daysText = `${days} day${days === 1 ? "" : "s"}`;
+  const which = examTypes || subjectIds ? "the selected exams" : "every exam";
+  return {
+    error: false,
+    statusCode: httpStatus.OK,
+    message: !enabled
+      ? "Recheck claims turned off. Students can't make new claims; claims already made are still handled."
+      : current.enabled
+        ? `Recheck policy saved: students can claim on ${which}, within ${daysText}. New days apply to results published from now on.`
+        : `Recheck claims turned on for ${which}, within ${daysText}. Results still inside their deadline can be claimed again.`,
+    data: { recheckPolicy: rule },
+  };
+};
+
+export default { getSettings, saveGradingScale, saveMarksDefaults, saveCrossCheck, saveScanQuality, saveRecheckPolicy };

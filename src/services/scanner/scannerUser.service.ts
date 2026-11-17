@@ -4,6 +4,7 @@ import ScannerProfile from "../../models/ScannerProfile.model";
 import Role from "../../models/Role.model";
 import Institute from "../../models/Institute.model";
 import EncryptPassword from "../../utils/encryption";
+import { PASSWORD_MESSAGE, isStrongPassword } from "../../utils/passwordRule";
 import RegHelper from "../../utils/helper";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
@@ -25,6 +26,8 @@ const createScanner = async (
   if (!instituteId) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Institute not found for this admin." };
   const problem = staffInputProblem(body, { requireDob: false });
   if (problem) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: problem };
+  // Left empty, a password is generated and emailed; typed, it follows the shared rule.
+  if (body.password && !isStrongPassword(body.password)) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: PASSWORD_MESSAGE };
   const email = cleanEmail(body.emailId ?? body.email);
   const phone = String(body.phoneNumber ?? body.mobile).trim();
 

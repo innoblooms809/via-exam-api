@@ -6,8 +6,8 @@
  *
  *   • A small pool of worker threads does the work, so a 30-page booklet never
  *     stalls other requests.
- *   • A check starts as soon as a file is accepted, alongside its upload to
- *     Cloudinary. The upload response waits a few seconds for it, then leaves it
+ *   • A check starts as soon as a file is accepted, while it is stored.
+ *     The upload response waits a few seconds for it, then leaves it
  *     to finish in the background.
  *   • A result is written only if the sheet still holds the file that was
  *     checked, so a slow check can't overwrite the report of a replacement scan.
@@ -166,9 +166,12 @@ export const checkPdf = async (pdf: Uint8Array, rule: ScanQualityRule = DEFAULT_
 /** What every screen shows (scanner, evaluator, admin): the flag, why, and each page's numbers. */
 export interface QualitySummary {
   flag: QualityFlag;
+  /** English, as stored. Screens write the reasons in their own language from `pages` and `recommendedDpi`. */
   reasons: string[];
   checkedAt: string;
   pages: Pick<PageQuality, "page" | "flag" | "issues" | "dpi" | "sharpness" | "contrast">[];
+  /** The resolution the school's rule asks for (a low_dpi page is below it); null on older reports. */
+  recommendedDpi: number | null;
 }
 
 export const qualitySummary = (report: SheetQualityReport | null | undefined): QualitySummary | null =>
@@ -178,6 +181,7 @@ export const qualitySummary = (report: SheetQualityReport | null | undefined): Q
         reasons: report.reasons ?? [],
         checkedAt: report.checkedAt,
         pages: (report.pages ?? []).map(({ page, flag, issues, dpi, sharpness, contrast }) => ({ page, flag, issues, dpi, sharpness, contrast })),
+        recommendedDpi: Number(report.rule?.warnDpi) > 0 ? Number(report.rule.warnDpi) : null,
       }
     : null;
 
@@ -248,7 +252,7 @@ export const settleQualityCheck = async (
 const running = new Set<string>();
 
 /**
- * Checks a stored sheet (downloads it from Cloudinary). Used for sheets uploaded
+ * Checks a stored sheet (reads its stored file). Used for sheets uploaded
  * before the check existed, and by the queued check. Returns null if it is already
  * running, the sheet has no file, or (`onlyIfUnchecked`) it already has a report.
  * Throws when the file can't be fetched, so a queued check is retried.

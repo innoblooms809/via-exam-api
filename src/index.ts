@@ -11,6 +11,7 @@ import { closeQueues, initQueues, startQueueWorkers } from "./queue";
 import { queueConfig } from "./queue/config";
 import { runMaintenanceTaskNow } from "./queue/maintenance";
 import { describeDataKeys } from "./utils/dataProtection";
+import { startEvaluationQueueMonitor } from "./services/evaluation/pipeline6.service";
 let server: Server;
 
 // The data encryption key is needed before anything touches the database: stop here, clearly,
@@ -41,6 +42,8 @@ const bootApp = async () => {
     // (then `npm run worker` runs them).
     try {
       await startQueueWorkers();
+      // Warns when another API process runs a job queue on this database that this one can't see.
+      startEvaluationQueueMonitor();
       // Evaluations left "Pending" (by the previous version, or a crash) are queued again now,
       // not at the watchdog's next tick.
       void runMaintenanceTaskNow("evaluation-watchdog").catch(() => undefined);

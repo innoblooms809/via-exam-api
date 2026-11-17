@@ -1,5 +1,6 @@
 import Joi from "joi";
 import { NAME_CHARS } from "../utils/textRules";
+import { strongPassword } from "../utils/passwordRule";
 
 const name = Joi.string()
   .trim()
@@ -7,17 +8,8 @@ const name = Joi.string()
   .pattern(NAME_CHARS)
   .messages({ "string.pattern.base": "{{#label}} may contain letters, spaces, dots, apostrophes and hyphens only." });
 
-// Admin passwords chosen by the super admin: 8–64 characters with an uppercase letter,
-// a lowercase letter and a digit, no spaces.
-const adminPassword = Joi.string()
-  .min(8)
-  .max(64)
-  .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)\S+$/)
-  .messages({
-    "string.min": "Password must be at least 8 characters.",
-    "string.max": "Password must not exceed 64 characters.",
-    "string.pattern.base": "Password needs an uppercase letter, a lowercase letter and a number, and no spaces.",
-  });
+// Admin passwords chosen by the super admin: the shared rule (utils/passwordRule).
+const adminPassword = strongPassword();
 
 // Super admin adds or updates an institute's admin. Without a password the server
 // generates one; either way the login details are emailed to the admin.

@@ -6,7 +6,6 @@ import Role from "../../models/Role.model";
 import Institute from "../../models/Institute.model";
 import Class from "../../models/Class.model";
 import Session from "../../models/Session.model";
-import Exam from "../../models/Exam.model";
 import EncryptPassword from "../../utils/encryption";
 import RegHelper from "../../utils/helper";
 import exclude from "../../utils/exclude";
@@ -14,11 +13,13 @@ import { sequelize } from "../../config/sequelize";
 import StudentBulkService from "./studentBulk.service";
 import { newId } from "../../utils/idGenerator";
 import { nameKey } from "../../utils/academicNames";
+import { normalizeRollNo } from "../../utils/textRules";
 import { bulkStudentRowSchema } from "../../validations/student.validation";
 import { findSession } from "../academic/sessionSetup.service";
 import { emailChange } from "../../utils/staffInput";
 import { photoChange, uploadedPhoto } from "../../utils/profilePhoto";
 import { decryptField } from "../../utils/dataProtection";
+import { pageInfo, paging } from "../../utils/pagination";
 import {
   currentEnrollment,
   enrollmentIn,
@@ -59,7 +60,8 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
     const { value: checked, error: invalid } = singleStudentSchema.validate(body, { abortEarly: true, convert: true });
     if (invalid) return fail(httpStatus.BAD_REQUEST, invalid.details[0].message);
     body = { ...body, ...checked, gender: checked.gender, email: checked.email, mobile: checked.mobile };
-    const rollNumber = clean(body.rollNumber);
+    // 0-9 however it was typed (١٠١ is 101): answer sheets are matched by it.
+    const rollNumber = normalizeRollNo(body.rollNumber);
     if (!rollNumber) return fail(httpStatus.BAD_REQUEST, "Roll number is required.");
     const place = await resolvePlace(body, instituteId);
     if ("message" in place) return fail(httpStatus.BAD_REQUEST, place.message);
@@ -92,7 +94,7 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
       sectionId: place.sectionId,
       session: place.sessionName,
       rollNumber,
-      // Optional on the form, but NOT NULL columns: an empty value is stored as "".
+      // Required (checked above; the database refuses a new profile without it too).
       fatherName: clean(body.fatherName),
       gender: body.gender,
       dob: new Date(body.dob),
@@ -159,26 +161,110 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
 // ?session=all lists every student once, at their current class.
 // Also: how many active students aren't in this session at all, and how many of the
 // previous session's students haven't been promoted into it yet.
+//
+// A page at a time: ?page=&limit= (25 a page, at most 1000; the first 1000 without them).
+// Narrowed by ?classId= or ?className= (id or name), ?sectionId= (id or name), ?search=
+// (name, email, roll, father, mobile), ?gender=male,female, ?exams=locked|free and
+// ?studentId=; sorted by ?sort=school|rollNumber|userName|class|father|dob|examCount and
+// ?order=asc|desc (by name when left out). ?counts=1 adds every class-section's head count
+// in the session (the roster strip), unaffected by the other filters.
 
-const STUDENT_ROWS = (all: boolean) => `
-SELECT ${all ? `DISTINCT ON (e."studentId")` : ""}
-       u."userId", u."userName", u."emailId", u."phoneNumber", u.status, u."instituteId",
-       e."enrollmentId", e."sessionId", se."sessionName", e."classId", c."className",
-       e."sectionId", sec."sectionName", e."rollNumber",
-       p."fatherName", p.gender, p.dob, p.aadhar, p.address,
-       COALESCE(u."profileUrl", p."profileUrl") AS "profileUrl"
+const STUDENT_PAGING = { defaultLimit: 25, maxLimit: 1000, unpagedLimit: 1000 };
+
+/** Class names in school order, as the admin screens sort them: pre-primary, 1 … 12, then the rest. */
+const PRE_PRIMARY = ["playgroup", "pre-nursery", "prenursery", "nursery", "lkg", "kg", "ukg"];
+const PRE_PRIMARY_SQL = `ARRAY[${PRE_PRIMARY.map((n) => `'${n}'`).join(", ")}]`;
+const CLASS_KEY = `btrim(regexp_replace(lower(coalesce(c."className", '')), '^class[[:space:]]*', ''))`;
+const CLASS_ORDER = `CASE
+      WHEN ${CLASS_KEY} = ANY(${PRE_PRIMARY_SQL}) THEN array_position(${PRE_PRIMARY_SQL}, ${CLASS_KEY})
+      WHEN ${CLASS_KEY} ~ '^[0-9]' THEN 100 + substring(${CLASS_KEY} from '^[0-9]{1,9}')::bigint
+      ELSE 10000
+    END`;
+/** Roll numbers as numbers ("2" before "10"), then as text. */
+const ROLL_NUMBER = `substring(t."rollNumber" from '^[0-9]{1,15}')::bigint`;
+
+type SortDir = "ASC" | "DESC";
+/** How a text column is ordered (see textOrder). */
+type TextOrder = (expr: string) => string;
+const STUDENT_SORT: Record<string, (d: SortDir, text: TextOrder) => string> = {
+  school: (d, text) => `t."classOrder" ${d}, ${text(`coalesce(t."sectionName", '')`)} ${d}, ${ROLL_NUMBER} ${d} NULLS LAST, ${text(`coalesce(t."rollNumber", '')`)} ${d}`,
+  rollNumber: (d, text) => `${ROLL_NUMBER} ${d} NULLS LAST, ${text(`coalesce(t."rollNumber", '')`)} ${d}`,
+  userName: (d, text) => `${text(`t."userName"`)} ${d}`,
+  class: (d, text) => `t."classOrder" ${d}, ${text(`coalesce(t."sectionName", '')`)} ${d}`,
+  father: (d, text) => `${text(`coalesce(t."fatherName", '')`)} ${d}`,
+  dob: (d) => `t.dob ${d} NULLS LAST`,
+  examCount: (d) => `t."examCount" ${d}`,
+};
+
+// Names in the order the screens sort them (JavaScript's localeCompare): the database's own
+// collation (C.UTF-8) orders bytes, so names that differ only by case ("Aman" / "aman") fell
+// in another order. The ICU root collation sorts like the browser; without it (a server built
+// without ICU) text is compared lower-cased. Checked once; a failed check is tried again.
+let icuCheck: Promise<boolean> | null = null;
+const textOrder = async (): Promise<TextOrder> => {
+  icuCheck ??= sequelize
+    .query(`SELECT 1 FROM pg_collation WHERE collname = 'und-x-icu' LIMIT 1`, { type: QueryTypes.SELECT })
+    .then((rows) => rows.length > 0)
+    .catch(() => {
+      icuCheck = null;
+      return false;
+    });
+  return (await icuCheck) ? (expr) => `${expr} COLLATE "und-x-icu"` : (expr) => `lower(${expr})`;
+};
+
+// examCount: exams whose roster includes the enrolment (same rule as the exam roster: the
+// session and class, and the section unless the exam is for the whole class). While > 0
+// the session's class, section and roll number are locked.
+const STUDENT_ROWS = (all: boolean, orderBy: string) => `
+WITH exam_counts AS (
+  SELECT x."sessionId", x."classId", COALESCE(x."sectionId", '') AS sec, COUNT(*)::int AS n
+  FROM viaexam_exams x
+  WHERE x."instituteId" = :inst AND x."isDeleted" = false
+  GROUP BY x."sessionId", x."classId", COALESCE(x."sectionId", '')
+),
+enrolled AS (
+  SELECT ${all ? `DISTINCT ON (e."studentId")` : ""}
+         u."userId", u."userName", u."emailId", u."phoneNumber", u.status, u."instituteId",
+         e."enrollmentId", e."sessionId", se."sessionName", e."classId", c."className",
+         e."sectionId", sec."sectionName", e."rollNumber",
+         p."fatherName", p.gender, p.dob, p.aadhar, p.address,
+         COALESCE(u."profileUrl", p."profileUrl") AS "profileUrl",
+         ${CLASS_ORDER} AS "classOrder",
+         (SELECT COALESCE(SUM(xc.n), 0)::int FROM exam_counts xc
+           WHERE xc."sessionId" = e."sessionId" AND xc."classId" = e."classId"
+             AND (xc.sec = '' OR xc.sec = e."sectionId" OR xc.sec = sec."sectionName")) AS "examCount"
+  FROM viaexam_student_enrollments e
+  JOIN viaexam_users u ON u."userId" = e."studentId" AND u.status = 1
+  JOIN viaexam_sessions se ON se."sessionId" = e."sessionId"
+  LEFT JOIN viaexam_student_profiles p ON p."userId" = e."studentId"
+  LEFT JOIN viaexam_classes c ON c."classId" = e."classId"
+  LEFT JOIN viaexam_sections sec ON sec."sectionId" = e."sectionId"
+  WHERE e."instituteId" = :inst AND e."isActive" = true
+    ${all ? "" : `AND e."sessionId" = :ses`}
+    AND (:studentId = '' OR e."studentId" = :studentId)
+    AND (:classIds IS NULL OR e."classId" IN (:classList))
+    AND (:section = '' OR e."sectionId" = :section OR lower(sec."sectionName") = lower(:section))
+    AND (:q = '' OR u."userName" ILIKE :like OR u."emailId" ILIKE :like OR e."rollNumber" ILIKE :like
+         OR p."fatherName" ILIKE :like OR u."phoneNumber" ILIKE :like)
+    AND (:genderOn IS NULL OR lower(coalesce(p.gender, '')) IN (:genders))
+  ${all ? `ORDER BY e."studentId", se."isActive" DESC, se."startDate" DESC` : ""}
+)
+SELECT t.*, COUNT(*) OVER() AS "matchCount"
+FROM enrolled t
+WHERE (:exams = '' OR (:exams = 'locked' AND t."examCount" > 0) OR (:exams = 'free' AND t."examCount" = 0))
+ORDER BY ${orderBy}
+LIMIT :limit OFFSET :offset`;
+
+/** Head count of every class-section of a session (the roster strip on the Students page). */
+const ROSTER_COUNTS = `
+SELECT e."classId", e."sectionId", COUNT(*)::int AS n
 FROM viaexam_student_enrollments e
 JOIN viaexam_users u ON u."userId" = e."studentId" AND u.status = 1
-JOIN viaexam_sessions se ON se."sessionId" = e."sessionId"
-LEFT JOIN viaexam_student_profiles p ON p."userId" = e."studentId"
-LEFT JOIN viaexam_classes c ON c."classId" = e."classId"
-LEFT JOIN viaexam_sections sec ON sec."sectionId" = e."sectionId"
-WHERE e."instituteId" = :inst AND e."isActive" = true
-  ${all ? "" : `AND e."sessionId" = :ses`}
-  AND (:classIds IS NULL OR e."classId" IN (:classList))
-  AND (:section = '' OR e."sectionId" = :section OR lower(sec."sectionName") = lower(:section))
-  AND (:q = '' OR u."userName" ILIKE :like OR u."emailId" ILIKE :like OR e."rollNumber" ILIKE :like)
-ORDER BY ${all ? `e."studentId", se."isActive" DESC, se."startDate" DESC` : `u."userName"`}`;
+WHERE e."instituteId" = :inst AND e."sessionId" = :ses AND e."isActive" = true
+GROUP BY e."classId", e."sectionId"`;
+
+/** "50%_off" typed in the search box finds that text, not every row. */
+const likeText = (s: string) => `%${s.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
 
 const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
   try {
@@ -186,17 +272,18 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
     const sessionParam = clean(query?.sessionId) || clean(query?.session);
     const all = sessionParam.toLowerCase() === "all";
     const session = all ? null : await findSession(instituteId, sessionParam);
+    const { page, limit, offset } = paging(query, STUDENT_PAGING);
     if (!all && !session) {
       return {
         error: false,
         statusCode: httpStatus.OK,
         message: sessionParam ? "Session not found." : "No current session yet.",
-        data: { students: [], total: 0, session: null, notEnrolled: 0, previous: null },
+        data: { students: [], total: 0, pagination: pageInfo(0, page, limit), session: null, notEnrolled: 0, previous: null, rosters: [], sessionTotal: 0 },
       };
     }
 
     // Class filter by id or name ("10", "Class 10").
-    const className = clean(query?.className);
+    const className = clean(query?.classId) || clean(query?.className);
     let classList: string[] | null = null;
     if (className) {
       const bare = className.replace(/^class\s+/i, "");
@@ -204,61 +291,73 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
       classList = classes.filter((c) => c.classId === className || nameKey(c.className) === nameKey(className) || nameKey(c.className) === nameKey(bare)).map((c) => c.classId);
       if (!classList.length) classList = ["-"];
     }
+    const genders = clean(query?.gender)
+      .split(",")
+      .map((g) => g.trim().toLowerCase())
+      .filter(Boolean);
+    const exams = ["locked", "free"].includes(clean(query?.exams)) ? clean(query?.exams) : "";
+    const sortKey = STUDENT_SORT[clean(query?.sort)] ? clean(query?.sort) : "userName";
+    const dir: SortDir = clean(query?.order).toLowerCase() === "desc" ? "DESC" : "ASC";
+    // The enrolment id keeps the order the same on every page.
+    const text = await textOrder();
+    const orderBy = `${STUDENT_SORT[sortKey](dir, text)}, ${text(`t."userName"`)} ASC, t."enrollmentId" ASC`;
     const search = clean(query?.search);
-    const rows = (await sequelize.query(STUDENT_ROWS(all), {
-      replacements: {
-        inst: instituteId,
-        ses: session?.sessionId ?? "",
-        classIds: classList ? "x" : null,
-        classList: classList ?? ["-"],
-        section: clean(query?.sectionId),
-        q: search,
-        like: `%${search}%`,
-      },
-      type: QueryTypes.SELECT,
-    })) as any[];
+    const replacements = {
+      inst: instituteId,
+      ses: session?.sessionId ?? "",
+      studentId: clean(query?.studentId),
+      classIds: classList ? "x" : null,
+      classList: classList ?? ["-"],
+      section: clean(query?.sectionId),
+      q: search,
+      like: likeText(search),
+      genderOn: genders.length ? "x" : null,
+      genders: genders.length ? genders : ["-"],
+      exams,
+      limit,
+      offset,
+    };
+    const sql = STUDENT_ROWS(all, orderBy);
+    const rows = (await sequelize.query(sql, { replacements, type: QueryTypes.SELECT })) as any[];
+    // A page past the end has no row to carry the count.
+    let total = rows.length ? Number(rows[0].matchCount) : 0;
+    if (!rows.length && offset > 0) {
+      const [first] = (await sequelize.query(sql, { replacements: { ...replacements, limit: 1, offset: 0 }, type: QueryTypes.SELECT })) as any[];
+      total = Number(first?.matchCount ?? 0);
+    }
 
-    // Exams whose roster includes each row (same rule as the exam roster), counted in
-    // memory so the list can show which placements are locked without a query per row.
-    const sessionIds = [...new Set(rows.map((r) => r.sessionId))];
-    const exams = sessionIds.length
-      ? ((await Exam.findAll({ where: { instituteId, isDeleted: false, sessionId: { [Op.in]: sessionIds } }, attributes: ["classId", "sectionId", "sessionId"], raw: true })) as any[])
-      : [];
-    const rosterExams = (r: any) =>
-      exams.filter((e) => e.sessionId === r.sessionId && e.classId === r.classId && (!e.sectionId || e.sectionId === r.sectionId || e.sectionId === r.sectionName)).length;
-
-    const students = rows
-      .map((r) => ({
-        userId: r.userId,
-        userName: r.userName,
-        emailId: r.emailId,
-        phoneNumber: r.phoneNumber,
-        status: r.status,
-        instituteId: r.instituteId,
-        enrollmentId: r.enrollmentId,
-        sessionId: r.sessionId,
-        session: r.sessionName,
-        rollNumber: r.rollNumber ?? null,
-        classId: r.classId ?? null,
-        className: r.className ?? null,
-        sectionId: r.sectionId ?? null,
-        sectionName: r.sectionName ?? null,
-        /** Exams this enrolment is on the roster of: class, section and roll for this session are locked while > 0. */
-        examCount: rosterExams(r),
-        fatherName: r.fatherName ?? null,
-        gender: r.gender ?? null,
-        dob: r.dob ?? null,
-        // Stored encrypted (utils/dataProtection); raw SQL gets the ciphertext.
-        aadhar: decryptField(r.aadhar, "aadhaar") ?? null,
-        address: r.address ?? null,
-        profileUrl: decryptField(r.profileUrl, "profileUrl") ?? null,
-      }))
-      .sort((a, b) => a.userName.localeCompare(b.userName));
+    const students = rows.map((r) => ({
+      userId: r.userId,
+      userName: r.userName,
+      emailId: r.emailId,
+      phoneNumber: r.phoneNumber,
+      status: r.status,
+      instituteId: r.instituteId,
+      enrollmentId: r.enrollmentId,
+      sessionId: r.sessionId,
+      session: r.sessionName,
+      rollNumber: r.rollNumber ?? null,
+      classId: r.classId ?? null,
+      className: r.className ?? null,
+      sectionId: r.sectionId ?? null,
+      sectionName: r.sectionName ?? null,
+      /** Exams this enrolment is on the roster of: class, section and roll for this session are locked while > 0. */
+      examCount: Number(r.examCount) || 0,
+      fatherName: r.fatherName ?? null,
+      gender: r.gender ?? null,
+      dob: r.dob ?? null,
+      // Stored encrypted (utils/dataProtection); raw SQL gets the ciphertext.
+      aadhar: decryptField(r.aadhar, "aadhaar") ?? null,
+      address: r.address ?? null,
+      profileUrl: decryptField(r.profileUrl, "profileUrl") ?? null,
+    }));
 
     let notEnrolled = 0;
     let previous: { sessionId: string; sessionName: string; waiting: number } | null = null;
+    let rosters: { classId: string | null; sectionId: string | null; count: number }[] = [];
+    const wantCounts = Boolean(session) && ["1", "true"].includes(clean(query?.counts).toLowerCase());
     if (session) {
-      const [[counts], prior] = await Promise.all([
+      const [[counts], prior, rosterRows] = await Promise.all([
         sequelize.query(
           `SELECT COUNT(*)::int AS n FROM viaexam_users u JOIN roles r ON r.id = u."roleId" AND r.role = 'STUDENT'
            WHERE u."instituteId" = :inst AND u.status = 1
@@ -266,8 +365,12 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
           { replacements: { inst: instituteId, ses: session.sessionId }, type: QueryTypes.SELECT }
         ) as Promise<any[]>,
         Session.findOne({ where: { instituteId, isDeleted: false, startDate: { [Op.lt]: session.startDate } }, order: [["startDate", "DESC"]] }),
+        wantCounts
+          ? (sequelize.query(ROSTER_COUNTS, { replacements: { inst: instituteId, ses: session.sessionId }, type: QueryTypes.SELECT }) as Promise<any[]>)
+          : Promise.resolve([] as any[]),
       ]);
       notEnrolled = Number(counts?.n ?? 0);
+      rosters = rosterRows.map((r) => ({ classId: r.classId ?? null, sectionId: r.sectionId ?? null, count: Number(r.n) || 0 }));
       if (prior) {
         const [waiting] = (await sequelize.query(
           `SELECT COUNT(*)::int AS n FROM viaexam_student_enrollments e
@@ -286,10 +389,14 @@ const getAllStudents = async (createdBy: any, query: any): Promise<any> => {
       message: "Students fetched successfully.",
       data: {
         students,
-        total: students.length,
+        total,
+        pagination: pageInfo(total, page, limit),
         session: session ? { sessionId: session.sessionId, sessionName: session.sessionName, isActive: session.isActive } : null,
         notEnrolled,
         previous,
+        /** With ?counts=1: students per class-section of the session, and all of them (null without). */
+        rosters,
+        sessionTotal: wantCounts ? rosters.reduce((n, r) => n + r.count, 0) : null,
       },
     };
   } catch (e: any) {
@@ -380,6 +487,16 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
     if (nextEmail.problem) return fail(httpStatus.BAD_REQUEST, nextEmail.problem);
 
     const profile = await StudentProfile.findOne({ where: { userId, instituteId } });
+    // A new student must have a father's name. Older students saved without one can still be
+    // edited as they are, but a father's name that is there can't be removed.
+    if (profile && body.fatherName !== undefined) {
+      const father = clean(body.fatherName);
+      if (!father && clean(profile.fatherName)) return fail(httpStatus.BAD_REQUEST, "Father's name is required.");
+      if (father && father !== clean(profile.fatherName)) {
+        const { error } = bulkStudentRowSchema.extract("fatherName").validate(father);
+        if (error) return fail(httpStatus.BAD_REQUEST, error.details[0].message);
+      }
+    }
     let place: Place | null = null;
     let rollNumber = "";
 
@@ -400,7 +517,7 @@ const updateStudent = async (userId: string, body: any, files: any, createdBy: a
         instituteId
       );
       if ("message" in resolved) return fail(httpStatus.BAD_REQUEST, resolved.message);
-      rollNumber = clean(body.rollNumber ?? existing?.rollNumber);
+      rollNumber = normalizeRollNo(body.rollNumber ?? existing?.rollNumber);
       if (!rollNumber) return fail(httpStatus.BAD_REQUEST, "Roll number is required.");
 
       const moved = !existing || !existing.isActive || existing.classId !== resolved.classId || existing.sectionId !== resolved.sectionId || existing.rollNumber !== rollNumber;
@@ -520,7 +637,7 @@ const promoteStudents = async (body: any, createdBy: any): Promise<any> => {
         continue;
       }
       const source = fromSession ? await enrollmentIn(id, fromSession.sessionId) : await currentEnrollment(id, instituteId);
-      const rollNumber = clean(rolls[id]) || clean(source?.rollNumber);
+      const rollNumber = normalizeRollNo(rolls[id]) || normalizeRollNo(source?.rollNumber);
       if (!rollNumber) {
         skipped.push({ userId: id, name, reason: "No roll number to give them; enter one." });
         continue;

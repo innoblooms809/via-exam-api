@@ -1,0 +1,8 @@
+{
+  "API key created. Copy the key and the webhook secret now: they are not shown again.": "تم إنشاء مفتاح API. انسخ المفتاح وسرّ الـWebhook الآن، فلن يظهرا مرة أخرى.",
+  "API key not found.": "لم يتم العثور على مفتاح API.",
+  "API key revoked. It stops working within 30 seconds.": "تم إلغاء مفتاح API. سيتوقف عن العمل خلال 30 ثانية.",
+  "API key updated.": "تم تحديث مفتاح API.",
+  "API keys.": "مفاتيح API.",
+  "Webhook secret rotated. Copy it now: it is not shown again.": "تم تغيير سرّ الـWebhook. انسخه الآن، فلن يظهر مرة أخرى."
+}

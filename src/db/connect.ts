@@ -3,6 +3,7 @@ import { sequelize } from "../config/sequelize";
 import '../models/index'
 import { ensureEveryStudentEnrolled, runSessionScopeBackfill } from "./sessionScopeBackfill";
 import { runSectionWorkBackfill } from "./sectionWorkBackfill";
+import { runRollNumberBackfill } from "./rollNumberBackfill";
 import { watchEvaluationProgress } from "../services/exam/examProgress";
 import { checkStoredKeys, prepareEncryptedColumns } from "../services/security/dataProtectionMaintenance";
 
@@ -41,6 +42,31 @@ const PERFORMANCE_INDEXES = [
 const ensurePerformanceIndexes = async () => {
   for (const sql of PERFORMANCE_INDEXES) {
     await sequelize.query(sql).catch((err) => logger.warn(`Index skipped: ${err?.message}`));
+  }
+};
+
+// A new student must have a father's name: the database refuses a new profile without one, so
+// no path can skip it. Only on insert: students saved before the rule may have none and can
+// still be edited. Same as migrations/20261116000000-student-father-name-required.js.
+const FATHER_NAME_REQUIRED = [
+  `CREATE OR REPLACE FUNCTION viaexam_student_father_required() RETURNS trigger AS $fn$
+   BEGIN
+     IF NEW."fatherName" IS NULL OR btrim(NEW."fatherName") = '' THEN
+       RAISE EXCEPTION 'Father''s name is required for a new student.' USING ERRCODE = 'check_violation';
+     END IF;
+     RETURN NEW;
+   END $fn$ LANGUAGE plpgsql`,
+  `DO $do$ BEGIN
+     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'viaexam_student_father_required') THEN
+       CREATE TRIGGER viaexam_student_father_required BEFORE INSERT ON "viaexam_student_profiles"
+         FOR EACH ROW EXECUTE FUNCTION viaexam_student_father_required();
+     END IF;
+   END $do$`,
+];
+
+const ensureFatherNameRequired = async () => {
+  for (const sql of FATHER_NAME_REQUIRED) {
+    await sequelize.query(sql).catch((err) => logger.warn(`Father's-name rule not applied: ${err?.message}`));
   }
 };
 
@@ -85,6 +111,9 @@ const connectDB = async (fn: any) => {
       `ALTER TABLE "viaexam_answer_sheets" ADD COLUMN IF NOT EXISTS "qualityFlag" VARCHAR(16), ADD COLUMN IF NOT EXISTS "qualityReport" JSONB;`
     ).catch(() => null);
     await sequelize.query(`ALTER TABLE "viaexam_institute_settings" ADD COLUMN IF NOT EXISTS "scanQuality" JSONB;`).catch(() => null);
+    // Recheck policy: whether students can claim and for how many days (on, 6 by default), and each published result's deadline.
+    await sequelize.query(`ALTER TABLE "viaexam_institute_settings" ADD COLUMN IF NOT EXISTS "recheckPolicy" JSONB;`).catch(() => null);
+    await sequelize.query(`ALTER TABLE "viaexam_student_results" ADD COLUMN IF NOT EXISTS "recheckClosesAt" TIMESTAMP WITH TIME ZONE;`).catch(() => null);
     // A recheck teacher's re-evaluation (a draft until the admin approves) and what it changes,
     // question by question; the same per-question detail on every change of a student's marks.
     await sequelize.query(
@@ -106,13 +135,25 @@ const connectDB = async (fn: any) => {
     await sequelize.query(
       `ALTER TABLE "viaexam_ai_evaluations" ADD COLUMN IF NOT EXISTS "resultTree" JSONB, ADD COLUMN IF NOT EXISTS "queuedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "startedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "finishedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "runCount" INTEGER NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS "failureKind" VARCHAR(16);`
     ).catch(() => null);
+    // Why the last run failed, as a code the queue page explains (evaluationFailure.ts), the API
+    // process holding the current run (an in-memory queue dies with its process), and where a
+    // paused run stopped (pipeline6.service: pause / resume).
+    await sequelize.query(
+      `ALTER TABLE "viaexam_ai_evaluations" ADD COLUMN IF NOT EXISTS "failure" JSONB, ADD COLUMN IF NOT EXISTS "runOwner" VARCHAR(160), ADD COLUMN IF NOT EXISTS "pause" JSONB;`
+    ).catch(() => null);
     // Encrypted columns hold ciphertext, longer than the value (utils/dataProtection): TEXT. A
     // varchar → text change keeps the data and doesn't rewrite the table. Wrong OTP tries.
     await prepareEncryptedColumns();
     await sequelize.query(`ALTER TABLE "viaexam_password_resets" ADD COLUMN IF NOT EXISTS "attempts" INTEGER NOT NULL DEFAULT 0;`).catch(() => null);
+    // Date sheets: a paper is a draft until the admin publishes it; after that a change is a
+    // reschedule, kept in changeLog. Existing rows (and other events) are already published.
+    await sequelize.query(
+      `ALTER TABLE "viaexam_academic_calendar" ADD COLUMN IF NOT EXISTS "status" VARCHAR(16) NOT NULL DEFAULT 'published', ADD COLUMN IF NOT EXISTS "publishedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "publishedBy" VARCHAR(255), ADD COLUMN IF NOT EXISTS "changeLog" JSONB;`
+    ).catch(() => null);
 
     await sequelize.sync({ force: false });
     logger.info("Models synced with PostgreSQL");
+    await ensureFatherNameRequired();
     // Refuses to start when the database holds values sealed with a key this process lacks.
     await checkStoredKeys();
 
@@ -120,6 +161,9 @@ const connectDB = async (fn: any) => {
     await runSessionScopeBackfill();
     // Every start: a student without any enrolment is placed by their profile.
     await ensureEveryStudentEnrolled();
+    // Once per database: roll numbers typed in Arabic or other digits (١٠١) rewritten with 0-9,
+    // and file names stored as latin1 read back. Logs and retries next start if it fails.
+    await runRollNumberBackfill();
     // Exam work by section: per-section keys; once, existing sheets and assignments brought along.
     await runSectionWorkBackfill();
     // "100% evaluated" notifications follow each sheet that gets its marks.

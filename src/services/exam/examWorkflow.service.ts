@@ -3,7 +3,8 @@
  *
  *   admin assigns a SCANNER ─► scanner uploads sheets / marks ABSENT ─► scanner completes (100%)
  *   admin assigns an EVALUATOR (in parallel) ─► evaluator evaluates 100% ─► marks reviewed
- *   admin PUBLISHES results ─► students see them ─► a student may ask for ONE recheck
+ *   admin PUBLISHES results ─► students see them ─► a student may ask for ONE recheck,
+ *     within the school's recheck window (default 6 days after publishing)
  *   admin assigns the recheck (same evaluator or another teacher) ─► teacher completes it
  *
  * Scanning and evaluation go section by section, as papers are handed out and collected per
@@ -17,7 +18,8 @@
  * transaction; their push is sent after commit (see Notification.afterCreate).
  */
 
-import { gradeOn, settingsOf } from "../academic/instituteSettings.service";
+import { gradeOn, recheckClosesAt, recheckCovers, recheckDeadlineOf, settingsOf } from "../academic/instituteSettings.service";
+import type { RecheckPolicyRule } from "../../models/InstituteSettings.model";
 import type { GradeBand } from "../../models/InstituteSettings.model";
 import { logMarksChange } from "../academic/marks.service";
 import { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
@@ -47,7 +49,7 @@ import StudentResult, { RESULT_STATUS } from "../../models/StudentResult.model";
 import ApiError from "../../utils/ApiError";
 import { newId } from "../../utils/idGenerator";
 import { refreshExamStatus } from "./exam.service";
-import { EXAM_INCLUDES, buildRoster, countsOf, loadExam, sectionKey, sectionsOfExam, type ExamSection, type Roster } from "./examRoster.service";
+import { EXAM_INCLUDES, buildRoster, classSections, rosterBatch, countsOf, loadExam, narrowRoster, sectionKey, sectionsOfExam, studentsForExam, type ClassSections, type ExamSection, type Roster, type RosterRow, type RosterStudent } from "./examRoster.service";
 import { maskName } from "../evaluation/evaluationAccess.service";
 import { examLabel, instituteAdminIds, notifyAll, preview, workLabel } from "../notification/notifyPeople";
 import TeacherProfile from "../../models/TeacherProfile.model";
@@ -55,6 +57,7 @@ import { specialisesIn } from "../../utils/specialization";
 import { subjectTeacherIn } from "../academic/sessionSetup.service";
 import { checkExamEvaluated } from "./examProgress";
 import { assertCrossCheckDone, closeRoundForReopen, crossCheckStates, type CrossCheckState } from "./crossCheck.service";
+import { mapLimit } from "../../utils/mapLimit";
 
 // ─── Small helpers ───────────────────────────────────────────────────────────
 
@@ -70,6 +73,21 @@ const groupBy = <T>(list: T[], keyOf: (item: T) => string) => {
   return map;
 };
 /** The latest of some dates (null when there are none). */
+/** A claim deadline in notification text: "17 Nov 2026, 03:45 pm" (the school's time). */
+const deadlineText = (at: Date) =>
+  at.toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" });
+
+/**
+ * A result's recheck window as students' pages show it: the deadline, whether it is still
+ * open and the window's length. `days` is the school's window now (for results published
+ * before windows existed).
+ */
+const windowView = (result: { publishedAt: Date | string; recheckClosesAt?: Date | string | null }, days: number, now = Date.now()) => {
+  const closesAt = recheckDeadlineOf(result, days);
+  const length = Math.max(1, Math.round((closesAt.getTime() - new Date(result.publishedAt).getTime()) / 86_400_000));
+  return { closesAt: closesAt.toISOString(), open: closesAt.getTime() > now, days: length };
+};
+
 const latest = (dates: (Date | null | undefined)[]) => {
   const times = dates.filter(Boolean).map((d) => new Date(d as Date).getTime());
   return times.length ? new Date(Math.max(...times)) : null;
@@ -236,6 +254,8 @@ const listPipeline = async (admin: any, query: any) => {
   if (clean(query?.examType)) where.examType = clean(query.examType);
   if (clean(query?.sessionId)) where.sessionId = clean(query.sessionId);
   if (clean(query?.classId)) where.classId = clean(query.classId);
+  // One exam (a link to it), wherever the list is scoped.
+  if (clean(query?.examId)) where.examId = clean(query.examId);
 
   const search = clean(query?.search);
   const include: any[] = EXAM_INCLUDES.map((inc) => ({ ...inc }));
@@ -259,21 +279,38 @@ const listPipeline = async (admin: any, query: any) => {
   });
 
   const examIds = exams.map((e) => e.examId);
-  const [scanners, evaluators, published] = examIds.length
+  const [scanners, evaluators, published, claims, settings] = examIds.length
     ? await Promise.all([
         ExamScannerAssignment.findAll({ where: { examId: { [Op.in]: examIds }, isActive: true } }),
         EvaluationAssignment.findAll({ where: { examId: { [Op.in]: examIds }, isActive: true } }),
         StudentResult.findAll({
           where: { examId: { [Op.in]: examIds }, isDeleted: false },
-          attributes: ["examId", [sequelize.fn("MIN", sequelize.col("publishedAt")), "publishedAt"]],
+          attributes: [
+            "examId",
+            [sequelize.fn("MIN", sequelize.col("publishedAt")), "publishedAt"],
+            [sequelize.fn("MIN", sequelize.col("recheckClosesAt")), "recheckClosesAt"],
+          ],
           group: ["examId"],
           raw: true,
-        }) as unknown as Promise<{ examId: string; publishedAt: Date }[]>,
+        }) as unknown as Promise<{ examId: string; publishedAt: Date; recheckClosesAt: Date | null }[]>,
+        RecheckRequest.findAll({
+          where: { examId: { [Op.in]: examIds } },
+          attributes: [
+            "examId",
+            [sequelize.fn("COUNT", sequelize.col("id")), "total"],
+            [sequelize.literal(`COUNT(*) FILTER (WHERE "status" IN (${RECHECK_OPEN_STATUSES.map((s) => `'${s}'`).join(", ")}))`), "open"],
+          ],
+          group: ["examId"],
+          raw: true,
+        }) as unknown as Promise<{ examId: string; total: string | number; open: string | number }[]>,
+        settingsOf(instituteId),
       ])
-    : [[], [], []];
+    : [[], [], [], [], null];
   const scannersByExam = groupBy(scanners, (s) => s.examId);
   const evaluatorsByExam = groupBy(evaluators, (e) => e.examId);
-  const publishedByExam = new Map(published.map((p) => [p.examId, p.publishedAt]));
+  const publishedByExam = new Map(published.map((p) => [p.examId, p]));
+  const claimsByExam = new Map(claims.map((c) => [c.examId, { total: Number(c.total) || 0, open: Number(c.open) || 0 }]));
+  const now = Date.now();
   const crossCheck = await crossCheckStates(instituteId, examIds);
 
   const people = Array.from(new Set([...scanners.map((s) => s.scannerId), ...evaluators.map((e) => e.teacherId)]));
@@ -281,15 +318,32 @@ const listPipeline = async (admin: any, query: any) => {
     ? new Map((await UserModal.findAll({ where: { userId: { [Op.in]: people } }, attributes: ["userId", "userName"] })).map((u) => [u.userId, u.userName]))
     : new Map<string, string>();
 
-  const rows = await Promise.all(
-    exams.map(async (exam: any) => {
-      const roster = await buildRoster(exam);
+  // The exams of one class share its students and section names: read once for the page. The
+  // rosters (each a few queries) are built a few at a time, not a page's worth at once.
+  // Their sheets, absent marks and AI marks come in three queries for the whole page.
+  const studentsByPlace = new Map<string, Promise<RosterStudent[]>>();
+  const namesByClass = new Map<string, Promise<ClassSections>>();
+  const batch = rosterBatch(exams);
+  const rosterOf = (exam: any) => {
+    const place = `${exam.sessionId ?? ""}|${exam.classId ?? ""}|${exam.sectionId ?? ""}`;
+    if (!studentsByPlace.has(place)) studentsByPlace.set(place, studentsForExam(exam));
+    const cls = String(exam.classId ?? "");
+    if (!namesByClass.has(cls)) namesByClass.set(cls, classSections(exam));
+    return buildRoster(exam, { students: studentsByPlace.get(place), names: namesByClass.get(cls), data: batch.of(exam) });
+  };
+
+  const rows = await mapLimit(
+    exams,
+    6,
+    async (exam: any) => {
+      const roster = await rosterOf(exam);
       const examScanners = scannersByExam.get(exam.examId) ?? [];
       const examEvaluators = evaluatorsByExam.get(exam.examId) ?? [];
       const scan = scanState(roster, examScanners);
       const review = reviewState(roster, examEvaluators);
       const paperApproved = PAPER_APPROVED_STATUSES.includes(exam.status);
-      const publishedAt = publishedByExam.get(exam.examId) ?? null;
+      const publishedRow = publishedByExam.get(exam.examId) ?? null;
+      const publishedAt = publishedRow?.publishedAt ?? null;
       const check = crossCheck.byExam.get(exam.examId);
       const crossCheckCovered = crossCheck.covers(exam.subjectId);
       const crossCheckWaiting = crossCheckCovered && review.reviewed && !publishedAt && (!check || check.pending > 0);
@@ -347,12 +401,31 @@ const listPipeline = async (admin: any, query: any) => {
           evaluator: review.sections[i].evaluator ? evaluatorView(review.sections[i].evaluator as EvaluationAssignment) : null,
         })),
         publishedAt,
+        // Whether the recheck policy lets students claim on this exam (on, and its type and subject chosen).
+        recheckOffered: settings ? recheckCovers(settings.recheckPolicy, exam.examType, exam.subjectId) : true,
+        // Published: until when students can claim a recheck, and the claims made so far.
+        recheckWindow: publishedRow && settings ? windowView(publishedRow, settings.recheckPolicy.days, now) : null,
+        claims: publishedRow ? (claimsByExam.get(exam.examId) ?? { total: 0, open: 0 }) : null,
         createdAt: exam.createdAt,
       };
-    })
+    }
   );
 
-  return { exams: rows, pagination: pageInfo(count, page, limit) };
+  return { exams: rows, pagination: pageInfo(count, page, limit), recheckPolicy: settings?.recheckPolicy ?? null };
+};
+
+/**
+ * How many exams each session has, per exam type: the workspace's session and exam picker
+ * shows these without loading every exam (each with its roster) of every session.
+ */
+const examCounts = async (admin: any) => {
+  const rows = (await Exam.findAll({
+    where: { instituteId: admin.instituteId, isDeleted: false },
+    attributes: ["sessionId", "examType", [sequelize.fn("COUNT", sequelize.col("id")), "count"]],
+    group: ["sessionId", "examType"],
+    raw: true,
+  })) as unknown as { sessionId: string | null; examType: string | null; count: string | number }[];
+  return { counts: rows.map((r) => ({ sessionId: r.sessionId ?? null, examType: r.examType ?? null, count: Number(r.count) || 0 })) };
 };
 
 /** Every step of one exam with its timestamp — the "process time" view. */
@@ -376,7 +449,7 @@ const sectionsDetail = (flags: boolean[], word: string) =>
 
 const getTimeline = async (user: any, examId: string) => {
   const exam = await requireExam(user.instituteId, examId);
-  const [papers, scanners, evaluators, firstResult, rechecks, roster, { covers, byExam }] = await Promise.all([
+  const [papers, scanners, evaluators, firstResult, rechecks, roster, { covers, byExam }, settings] = await Promise.all([
     QuestionPaper.findAll({ where: { examId: exam.examId }, attributes: ["paperSet", "status", "submittedAt", "approvedAt", "createdAt"] }),
     ExamScannerAssignment.findAll({ where: { examId: exam.examId }, order: [["createdAt", "ASC"]] }),
     EvaluationAssignment.findAll({ where: { examId: exam.examId }, order: [["createdAt", "ASC"]] }),
@@ -384,7 +457,31 @@ const getTimeline = async (user: any, examId: string) => {
     RecheckRequest.count({ where: { examId: exam.examId } }),
     buildRoster(exam),
     crossCheckStates(exam.instituteId, [exam.examId]),
+    settingsOf(exam.instituteId),
   ]);
+  // Once published: until when students can claim a recheck (done when the window has closed).
+  const policy = settings.recheckPolicy;
+  const offered = recheckCovers(policy, exam.examType, exam.subjectId);
+  const window = firstResult ? windowView(firstResult, policy.days) : null;
+  const claimsText = `${rechecks} claim${rechecks === 1 ? "" : "s"}`;
+  const daysText = `${policy.days} day${policy.days === 1 ? "" : "s"}`;
+  // Not offered (claims off, or this exam not chosen): the step shows only for an exam that
+  // had claims (made while it was offered).
+  const recheckStep = !offered
+    ? rechecks
+      ? {
+          key: "RECHECK_WINDOW_CLOSED",
+          label: "Recheck claims closed",
+          at: null,
+          detail: `${policy.enabled ? "Rechecks are no longer offered on this exam" : "Recheck claims are turned off"} · ${claimsText} made before`,
+        }
+      : null
+    : {
+        key: "RECHECK_WINDOW_CLOSED",
+        label: "Recheck claims closed",
+        at: window && !window.open ? window.closesAt : null,
+        detail: !window ? `Students can claim for ${daysText} after publishing` : window.open ? `Open until ${deadlineText(new Date(window.closesAt))} · ${claimsText} so far` : claimsText,
+      };
   const first = (dates: (Date | null | undefined)[]) =>
     dates.filter(Boolean).sort((a, b) => new Date(a as Date).getTime() - new Date(b as Date).getTime())[0] ?? null;
   const activeScans = scanners.filter((s) => s.isActive);
@@ -413,6 +510,7 @@ const getTimeline = async (user: any, examId: string) => {
     { key: "EVALUATION_REVIEWED", label: "Evaluation completed and reviewed", at: review.reviewedAt, detail: sectionsDetail(review.sections.map((s) => Boolean(s.evaluator?.reviewedAt)), "reviewed") },
     ...(crossCheckStep ? [crossCheckStep] : []),
     { key: "RESULTS_PUBLISHED", label: "Results published to students", at: firstResult?.publishedAt ?? null, detail: null },
+    ...(recheckStep ? [recheckStep] : []),
   ];
   return {
     examId: exam.examId,
@@ -420,6 +518,9 @@ const getTimeline = async (user: any, examId: string) => {
     status: exam.status,
     counts: roster.counts,
     rechecks,
+    recheckWindow: offered ? window : null,
+    recheckOffered: offered,
+    recheckPolicy: policy,
     steps,
     history: {
       scanners: scanners.map((s) => ({
@@ -719,26 +820,50 @@ const myScanExams = async (user: any, query: any) => {
  * the one they name. `scope` is the section keys in view (null: the whole exam) and
  * `assignments` the active scanner rows of those sections.
  */
-const requireScanAccess = async (user: any, examId: string, sectionRaw: unknown, { forWrite }: { forWrite: boolean }) => {
-  const exam = await requireExam(user.instituteId, examId);
-  const [all, sections] = await Promise.all([activeScanners(exam.examId), sectionsOfExam(exam)]);
+/** The exam's students and class sections, read once and shared by everything that needs them. */
+export interface ExamBasics {
+  students: Promise<RosterStudent[]>;
+  names: Promise<ClassSections>;
+}
+
+/**
+ * Who may scan what in an exam: the exam, its sections, the requester's assignments in view
+ * and the sections in view (`scope`, null = all). Each database read is a round trip, so they
+ * go in two waves rather than one after another:
+ *   1. the exam and its active scanners (by the id asked for; nothing is sent before the checks)
+ *   2. the students and class sections, whether results are out (writes), and `alongside`:
+ *      the caller's own reads, started as soon as the requester is known to scan this exam,
+ *      sharing those students and class sections. Its result comes back as `extra`.
+ */
+const requireScanAccess = async <X = undefined>(
+  user: any,
+  examId: string,
+  sectionRaw: unknown,
+  { forWrite, alongside }: { forWrite: boolean; alongside?: (exam: any, basics: ExamBasics, mine: ExamScannerAssignment[]) => Promise<X> }
+) => {
+  const [exam, all] = await Promise.all([requireExam(user.instituteId, examId), activeScanners(clean(examId))]);
+  const mine = isAdmin(user) ? all : all.filter((a) => a.scannerId === user.userId);
+  if (!isAdmin(user) && !mine.length) throw new ApiError(httpStatus.FORBIDDEN, "This exam is not assigned to you for scanning.");
+
+  const basics: ExamBasics = { students: studentsForExam(exam), names: classSections(exam) };
+  const [sections, extra, published] = await Promise.all([
+    Promise.all([basics.students, basics.names]).then(([students, names]) => sectionsOfExam(exam, students, names)),
+    alongside ? alongside(exam, basics, mine) : (Promise.resolve(undefined) as Promise<X | undefined>),
+    forWrite ? publishedCount(exam.examId) : Promise.resolve(0),
+  ]);
+
   const named = sectionRaw !== undefined && sectionRaw !== null;
   const key = named ? sectionKey(sectionRaw as string) : "";
   if (named && !sections.some((s) => sectionKey(s.sectionId) === key)) throw new ApiError(httpStatus.NOT_FOUND, "That section isn't part of this exam.");
-
-  const mine = isAdmin(user) ? all : all.filter((a) => a.scannerId === user.userId);
-  if (!isAdmin(user)) {
-    if (!mine.length) throw new ApiError(httpStatus.FORBIDDEN, "This exam is not assigned to you for scanning.");
-    if (named && !mine.some((a) => sectionKey(a.sectionId) === key)) {
-      throw new ApiError(httpStatus.FORBIDDEN, "This section of the exam is not assigned to you for scanning.");
-    }
+  if (!isAdmin(user) && named && !mine.some((a) => sectionKey(a.sectionId) === key)) {
+    throw new ApiError(httpStatus.FORBIDDEN, "This section of the exam is not assigned to you for scanning.");
   }
   const scope: string[] | null = named ? [key] : isAdmin(user) ? null : mine.map((a) => sectionKey(a.sectionId));
   const assignments = mine.filter((a) => scope === null || scope.includes(sectionKey(a.sectionId)));
-  if (forWrite && (await publishedCount(exam.examId))) {
+  if (forWrite && published) {
     throw new ApiError(httpStatus.CONFLICT, "Results of this exam are already published.");
   }
-  return { exam, sections, assignments, scope };
+  return { exam, sections, assignments, scope, extra: extra as X, basics };
 };
 
 /** Throws if uploading for any of these sections (keys) is marked complete. */
@@ -752,12 +877,30 @@ const assertSectionsOpen = (exam: any, assignments: ExamScannerAssignment[], sec
   }
 };
 
+/**
+ * A sheet's scan quality as the roster sends it: the flag, why, and only the pages that are poor
+ * (the screens name those and nothing else). A 20-page sheet that scanned well sends no pages.
+ */
+const listQuality = (q: RosterRow["quality"]) => (q ? { ...q, pages: (q.pages ?? []).filter((p) => p.flag === "warn" || p.flag === "low") } : null);
+
+/**
+ * The scanner's page of one exam. Two round trips for a scanner, three for an admin: the roster
+ * (sheets, absences) and the scanner's re-open requests are read alongside the access check,
+ * reusing its students and class sections; the AI evaluations are read for the admin only.
+ */
 const scanRoster = async (user: any, examId: string, query: any = {}) => {
-  const { exam, sections, assignments, scope } = await requireScanAccess(user, examId, query?.sectionId, { forWrite: false });
-  const [roster, requests] = await Promise.all([
-    buildRoster(exam, { sections: scope }),
-    isAdmin(user) ? Promise.resolve(new Map<string, ScanReopenRequest>()) : latestReopenRequests(assignments.map((a) => a.assignmentId), user.userId),
-  ]);
+  const admin = isAdmin(user);
+  const { exam, sections, assignments, scope, extra } = await requireScanAccess(user, examId, query?.sectionId, {
+    forWrite: false,
+    alongside: (exam, basics, mine) =>
+      Promise.all([
+        buildRoster(exam, { students: basics.students, names: basics.names, evaluations: admin }),
+        admin ? Promise.resolve(new Map<string, ScanReopenRequest>()) : latestReopenRequests(mine.map((a) => a.assignmentId), user.userId),
+      ]),
+  });
+  // Read for every section the requester has; narrowed now that the section asked for is checked.
+  const roster = narrowRoster(extra[0], scope);
+  const requests = extra[1];
   const inView = sections.filter((s) => scope === null || scope.includes(sectionKey(s.sectionId)));
   // One section in view (a section exam, or one tab of a whole-class exam): its own state.
   const single = inView.length === 1 ? inView[0] : null;
@@ -807,7 +950,7 @@ const scanRoster = async (user: any, examId: string, query: any = {}) => {
       uploadedAt: r.uploadedAt,
       absentMarkedAt: r.absentMarkedAt,
       // Everyone sees a poor scan: the scanner to rescan it, the admin to know the AI marks need a look.
-      quality: r.quality,
+      quality: listQuality(r.quality),
       // Marks are for the admin; the scanner only needs to know a sheet is in.
       ...(isAdmin(user) ? { evaluationId: r.evaluationId, evaluationStatus: r.evaluationStatus, score: r.score } : {}),
     })),
@@ -1113,7 +1256,11 @@ const publishResults = async (admin: any, examId: string) => {
   if (!students.length) throw new ApiError(httpStatus.BAD_REQUEST, "No enrolled students to publish results for.");
 
   const publishedAt = new Date();
-  const { gradingScale } = await settingsOf(instituteId);
+  const { gradingScale, recheckPolicy } = await settingsOf(instituteId);
+  // Every result of the exam keeps the deadline it was published with (also when rechecks
+  // aren't offered on it now, should the school offer them later).
+  const claimsCloseAt = recheckClosesAt(publishedAt, recheckPolicy.days);
+  const offered = recheckCovers(recheckPolicy, exam.examType, exam.subjectId);
   const summary = await sequelize.transaction(async (t) => {
     await Exam.findOne({ where: { examId: exam.examId }, transaction: t, lock: t.LOCK.UPDATE });
     if (await publishedCount(exam.examId, t)) {
@@ -1139,6 +1286,7 @@ const publishResults = async (admin: any, examId: string) => {
         passingMarks: exam.passingMarks,
         publishedAt,
         publishedBy: admin.userId,
+        recheckClosesAt: claimsCloseAt,
       };
       if (r.state !== "UPLOADED") {
         return { ...base, marksObtained: null, percentage: null, grade: null, resultStatus: RESULT_STATUS.ABSENT };
@@ -1151,12 +1299,16 @@ const publishResults = async (admin: any, examId: string) => {
     const label = examLabel(exam);
     await notifyAll(
       [
-        ...rows.map((r) => ({
+        ...rows.map((r: any) => ({
           instituteId,
           userId: r.studentId,
           type: "RESULT_PUBLISHED",
           title: "Result published",
-          message: `Your result for ${label} is out.`,
+          // The deadline only when the student can claim: rechecks offered, and a sheet to recheck.
+          message:
+            !offered || r.resultStatus === RESULT_STATUS.ABSENT || !r.evaluationId
+              ? `Your result for ${label} is out.`
+              : `Your result for ${label} is out. You can ask for a recheck until ${deadlineText(claimsCloseAt)}.`,
           referenceId: exam.examId,
         })),
         ...[...new Set([...evaluators.map((e) => e.teacherId), exam.teacherId])].map((userId) => ({
@@ -1164,7 +1316,9 @@ const publishResults = async (admin: any, examId: string) => {
           userId,
           type: "RESULT_PUBLISHED",
           title: "Results published",
-          message: `Results of ${label} were published.`,
+          message: offered
+            ? `Results of ${label} were published. Students can claim a recheck until ${deadlineText(claimsCloseAt)}.`
+            : `Results of ${label} were published.`,
           referenceId: exam.examId,
         })),
       ],
@@ -1172,6 +1326,9 @@ const publishResults = async (admin: any, examId: string) => {
     );
 
     return {
+      recheckOffered: offered,
+      recheckClosesAt: offered ? claimsCloseAt : null,
+      recheckWindowDays: recheckPolicy.days,
       published: rows.length,
       passed: rows.filter((r: any) => r.resultStatus === RESULT_STATUS.PASS).length,
       failed: rows.filter((r: any) => r.resultStatus === RESULT_STATUS.FAIL).length,
@@ -1179,6 +1336,8 @@ const publishResults = async (admin: any, examId: string) => {
     };
   });
 
+  // Students' homes show the new results (and their recheck deadlines) straight away.
+  invalidate(`home:student:${instituteId}:`);
   return { examId: exam.examId, publishedAt, ...summary };
 };
 
@@ -1289,6 +1448,12 @@ const listResults = async (admin: any, query: any) => {
   };
 };
 
+/**
+ * Most results one answer carries: years of a student's subjects and exams. Past it, the oldest
+ * exams are left out whole (never some of an exam's subjects), and `truncated` says so.
+ */
+const MY_RESULTS_CAP = 600;
+
 /** A student's own published results, grouped by session and exam type (Mid-Term, Final…). */
 const myResults = async (student: any, query: any) => {
   const where: any = { studentId: student.userId, instituteId: student.instituteId, isDeleted: false };
@@ -1303,17 +1468,27 @@ const myResults = async (student: any, query: any) => {
         { model: Section, as: "resultSection", attributes: ["sectionName"], required: false },
         { model: Exam, as: "exam", attributes: ["examId", "examDate"], required: false, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") },
       ],
-      order: [["publishedAt", "DESC"]],
-      limit: 500,
+      order: [["publishedAt", "DESC"], ["id", "DESC"]],
+      limit: MY_RESULTS_CAP + 1,
     }),
     Session.findOne({
       where: { instituteId: student.instituteId, isActive: true },
       attributes: ["sessionId", "sessionName"],
     }),
   ]);
+  // More than the cap: keep whole exams (session + exam type), newest first.
+  const truncated = rows.length > MY_RESULTS_CAP;
+  if (truncated) {
+    const lastKept = rows[MY_RESULTS_CAP - 1];
+    const cut = `${lastKept.sessionId}|${lastKept.examType}`;
+    const keep = new Set(rows.slice(0, MY_RESULTS_CAP).map((r) => `${r.sessionId}|${r.examType}`));
+    // The exam at the edge may have more subjects past it: drop it unless it is the only one kept.
+    if (keep.size > 1) keep.delete(cut);
+    rows.splice(0, rows.length, ...rows.filter((r) => keep.has(`${r.sessionId}|${r.examType}`)));
+  }
 
   const examIds = Array.from(new Set(rows.map((r) => r.examId)));
-  const [rechecks, averages, template] = await Promise.all([
+  const [rechecks, averages, template, settings] = await Promise.all([
     examIds.length
       ? RecheckRequest.findAll({
           where: { studentId: student.userId, examId: { [Op.in]: examIds } },
@@ -1322,8 +1497,11 @@ const myResults = async (student: any, query: any) => {
       : Promise.resolve([] as RecheckRequest[]),
     classAverages(examIds),
     resultTemplateOf(student.instituteId),
+    settingsOf(student.instituteId),
   ]);
   const recheckByExam = new Map(rechecks.map((r) => [r.examId, r]));
+  const { gradingScale, recheckPolicy } = settings;
+  const now = Date.now();
 
   const groups = new Map<string, any>();
   for (const r of rows) {
@@ -1343,7 +1521,8 @@ const myResults = async (student: any, query: any) => {
       });
     }
     const recheck = recheckByExam.get(r.examId);
-    const blocked = recheckBlockedReason(r, recheck);
+    const window = windowView(r, recheckPolicy.days, now);
+    const blocked = recheckBlockedReason(r, recheck, window, recheckPolicy);
     groups.get(key).subjects.push({
       ...toResultRow(r, null),
       examDate: r.exam?.examDate ?? null,
@@ -1362,10 +1541,13 @@ const myResults = async (student: any, query: any) => {
         : null,
       canRequestRecheck: !blocked,
       recheckBlockedReason: blocked,
+      /** Whether the school's recheck policy offers rechecks on this exam now (claims on, its exam type and subject chosen). */
+      recheckOffered: recheckCovers(recheckPolicy, r.examType, r.subjectId),
+      /** Until when this result can be claimed (closesAt), whether it still can, and the window's length in days. */
+      recheckWindow: window,
     });
   }
 
-  const { gradingScale } = await settingsOf(student.instituteId);
   const summarise = (subjects: any[]) => {
     const sat = subjects.filter((s) => s.resultStatus !== RESULT_STATUS.ABSENT);
     const obtained = sat.reduce((sum, s) => sum + (s.marksObtained ?? 0), 0);
@@ -1387,6 +1569,10 @@ const myResults = async (student: any, query: any) => {
     /** What the school lets students see of a result besides its marks (Results → Template). */
     studentView: template.studentView,
     categories: RECHECK_CATEGORIES,
+    /** The school's recheck policy now: whether claims are taken, on which exams, and for how many days after publishing. */
+    recheckPolicy: policyForStudent(recheckPolicy),
+    /** Older exams were left out (more than MY_RESULTS_CAP results); ?sessionId reads one session. */
+    truncated,
   };
 };
 
@@ -1402,13 +1588,25 @@ const classAverages = async (examIds: string[]) => {
   return new Map(rows.filter((r) => r.average != null).map((r) => [r.examId, round2(Number(r.average))]));
 };
 
-/** Why this result can't be rechecked (null: it can). One claim per exam, on an evaluated sheet. */
-const recheckBlockedReason = (result: any, existing: any) => {
+/**
+ * Why this result can't be rechecked (null: it can). One claim per exam, on an evaluated
+ * sheet, while the school's recheck policy offers rechecks on it (claims on, its exam type and
+ * subject chosen), before its recheck window closes.
+ */
+const recheckBlockedReason = (result: any, existing: any, window: ReturnType<typeof windowView>, policy: RecheckPolicyRule) => {
   if (existing) return "You have already made a claim for this exam. Only one is allowed.";
   if (result.resultStatus === RESULT_STATUS.ABSENT) return "You were absent, so there is no answer sheet to recheck.";
   if (!result.evaluationId) return "There is no evaluated answer sheet for this result.";
+  if (!policy.enabled) return "Your school isn't accepting recheck claims at the moment.";
+  if (!recheckCovers(policy, result.examType, result.subjectId)) return "Your school doesn't offer rechecks on this exam.";
+  if (!window.open) {
+    return `The recheck window closed on ${deadlineText(new Date(window.closesAt))}. Claims are accepted for ${window.days} day${window.days === 1 ? "" : "s"} after a result is published.`;
+  }
   return null;
 };
+
+/** The recheck policy as students' pages need it: on or off, the days, which exams (subjects only as "some"). */
+const policyForStudent = (p: RecheckPolicyRule) => ({ enabled: p.enabled, days: p.days, examTypes: p.examTypes, subjectsLimited: p.subjectIds != null });
 
 /** A claim as its student sees it: what was asked, where it is, and the decision (the evaluator stays anonymous). */
 const claimForStudent = (request: any, assignment: any, result: any) => {
@@ -1470,23 +1668,27 @@ const myResultDetail = async (student: any, resultId: string) => {
   if (!r) throw new ApiError(httpStatus.NOT_FOUND, "Result not found.");
 
   // The result names its evaluation (the evaluation's own studentId isn't always the student's).
-  const [template, evaluation, request, averages] = await Promise.all([
+  const [template, evaluation, request, averages, settings] = await Promise.all([
     resultTemplateOf(student.instituteId),
     r.evaluationId ? AIEvaluation.findOne({ where: { evaluationId: r.evaluationId }, attributes: ["evaluations", "feedback", "studentAnsOcr", "standardAnsOcr"] }) : null,
     RecheckRequest.findOne({ where: { studentId: student.userId, examId: r.examId } }),
     classAverages([r.examId]),
+    settingsOf(student.instituteId),
   ]);
   const assignment = request ? await RecheckAssignment.findOne({ where: { requestId: request.requestId } }) : null;
   const view = template.studentView;
   const questions = view.questionMarks && evaluation
     ? questionsOf(evaluation.evaluations, { student: evaluation.studentAnsOcr, answerKey: evaluation.standardAnsOcr })
     : null;
-  const blocked = recheckBlockedReason(r, request);
+  const policy = settings.recheckPolicy;
+  const window = windowView(r, policy.days);
+  const blocked = recheckBlockedReason(r, request, window, policy);
 
   return {
     result: {
       ...toResultRow(r, null),
       examDate: r.exam?.examDate ?? null,
+      evaluationId: r.evaluationId,
       sessionId: r.sessionId,
       classAverage: averages.get(r.examId) ?? null,
     },
@@ -1501,18 +1703,38 @@ const myResultDetail = async (student: any, resultId: string) => {
     claim: request ? claimForStudent(request, assignment, r) : null,
     canRequestRecheck: !blocked,
     recheckBlockedReason: blocked,
+    recheckOffered: recheckCovers(policy, r.examType, r.subjectId),
+    recheckWindow: window,
+    recheckPolicy: policyForStudent(policy),
     categories: RECHECK_CATEGORIES,
   };
 };
+
+/**
+ * The school's recheck policy as the student's pages need it, and whether I have made any claim
+ * (the sidebar drops Recheck Claims when claims are off and I have none).
+ */
+const myRecheckPolicy = async (student: any) => {
+  const [settings, claims] = await Promise.all([
+    settingsOf(student.instituteId),
+    RecheckRequest.count({ where: { studentId: student.userId, instituteId: student.instituteId } }),
+  ]);
+  return { ...policyForStudent(settings.recheckPolicy), claims };
+};
+
+/** Most claims one answer carries (newest first); `truncated` says older ones were left out. */
+const MY_CLAIMS_CAP = 500;
 
 /** Every claim I have made, newest first, with where each one is and its decision. */
 const myClaims = async (student: any) => {
   const requests = await RecheckRequest.findAll({
     where: { studentId: student.userId, instituteId: student.instituteId },
-    order: [["createdAt", "DESC"]],
-    limit: 500,
+    order: [["createdAt", "DESC"], ["id", "DESC"]],
+    limit: MY_CLAIMS_CAP + 1,
   });
-  if (!requests.length) return { claims: [], categories: RECHECK_CATEGORIES };
+  const truncated = requests.length > MY_CLAIMS_CAP;
+  if (truncated) requests.length = MY_CLAIMS_CAP;
+  if (!requests.length) return { claims: [], categories: RECHECK_CATEGORIES, truncated };
   const examIds = Array.from(new Set(requests.map((r) => r.examId)));
   const [exams, assignments, results] = await Promise.all([
     Exam.findAll({ where: { examId: { [Op.in]: examIds } }, include: EXAM_INCLUDES.filter((i) => i.as !== "teacher") }),
@@ -1536,6 +1758,7 @@ const myClaims = async (student: any) => {
       };
     }),
     categories: RECHECK_CATEGORIES,
+    truncated,
   };
 };
 
@@ -1569,7 +1792,8 @@ const myReportCard = async (student: any, query: any) => {
 
 /**
  * Student claims a recheck of a published result: the kind of concern (category), the
- * questions it is about (none: the whole paper) and their reason. One claim per exam, ever.
+ * questions it is about (none: the whole paper) and their reason. One claim per exam, ever,
+ * and only until the result's recheck window closes.
  */
 const createRecheck = async (student: any, body: any) => {
   const instituteId = student.instituteId;
@@ -1590,6 +1814,18 @@ const createRecheck = async (student: any, body: any) => {
   if (!result) throw new ApiError(httpStatus.NOT_FOUND, "There is no published result for this exam.");
   if (result.resultStatus === RESULT_STATUS.ABSENT || !result.evaluationId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "A recheck needs an evaluated answer sheet.");
+  }
+  // The school's recheck policy decides, whatever the page still shows: claims on, this exam
+  // offered, and its window still open.
+  const policy = (await settingsOf(instituteId)).recheckPolicy;
+  if (!policy.enabled) throw new ApiError(httpStatus.FORBIDDEN, "Your school isn't accepting recheck claims at the moment.");
+  if (!recheckCovers(policy, result.examType, result.subjectId)) throw new ApiError(httpStatus.FORBIDDEN, "Your school doesn't offer rechecks on this exam.");
+  const window = windowView(result, policy.days);
+  if (!window.open) {
+    throw new ApiError(
+      httpStatus.FORBIDDEN,
+      `The recheck window for this result closed on ${deadlineText(new Date(window.closesAt))}. Claims are accepted for ${window.days} day${window.days === 1 ? "" : "s"} after a result is published.`
+    );
   }
 
   // The questions named must be on the evaluated paper; their marks are kept as they were.
@@ -1641,7 +1877,10 @@ const createRecheck = async (student: any, body: any) => {
     );
     return request;
   });
-  return { requestId: created.requestId, status: created.status, examId, category, questions, requestedAt: created.createdAt };
+  // The student's home stops offering this result for a claim; the admin's lists the new request.
+  invalidate(`home:student:${instituteId}:${student.userId}:`);
+  invalidate(`home:admin:${instituteId}`);
+  return { requestId: created.requestId, status: created.status, examId, category, questions, requestedAt: created.createdAt, recheckClosesAt: window.closesAt };
 };
 
 /**
@@ -1751,18 +1990,45 @@ const decorateRechecks = async (requests: any[], masked = false) => {
   });
 };
 
-/** Admin: recheck requests of the institute. */
+/**
+ * Requests about the exams of one session (and exam, e.g. Mid Term), as a where clause on examId;
+ * {} when no session is asked for.
+ */
+const examsInScope = (instituteId: string, query: any) => {
+  const sessionId = clean(query?.sessionId);
+  if (!sessionId) return {};
+  const examType = clean(query?.examType);
+  return {
+    examId: {
+      [Op.in]: sequelize.literal(
+        `(SELECT "examId" FROM viaexam_exams WHERE "instituteId" = ${sequelize.escape(instituteId)} AND "sessionId" = ${sequelize.escape(sessionId)}${
+          examType ? ` AND "examType" = ${sequelize.escape(examType)}` : ""
+        } AND "isDeleted" = false)`
+      ),
+    },
+  };
+};
+
+/** Admin: recheck requests of the institute (?sessionId&examType scope the list and its counts). */
 const listRechecks = async (admin: any, query: any) => {
   const { page, limit, offset } = paging(query, 10);
-  const where: any = { instituteId: admin.instituteId };
+  const scope: any = { instituteId: admin.instituteId, ...examsInScope(admin.instituteId, query) };
+  if (clean(query?.examId)) scope.examId = clean(query.examId);
+  const where: any = { ...scope };
   if (clean(query?.status)) where.status = clean(query.status);
-  if (clean(query?.examId)) where.examId = clean(query.examId);
-  const { rows, count } = await RecheckRequest.findAndCountAll({ where, order: [["createdAt", "DESC"]], limit, offset });
-  const [pending, underReview, awaitingApproval, completed, rejected] = await Promise.all(
-    (["Pending", "Under Review", "Awaiting Approval", "Completed", "Rejected"] as const).map((status) => RecheckRequest.count({ where: { instituteId: admin.instituteId, status } }))
-  );
-  return { requests: await decorateRechecks(rows), summary: { pending, underReview, awaitingApproval, completed, rejected }, pagination: pageInfo(count, page, limit) };
+  const [{ rows, count }, byStatus] = await Promise.all([
+    RecheckRequest.findAndCountAll({ where, order: [["createdAt", "DESC"], ["id", "DESC"]], limit, offset }),
+    RecheckRequest.findAll({ where: scope, attributes: ["status", [sequelize.fn("COUNT", sequelize.col("id")), "n"]], group: ["status"], raw: true }) as unknown as Promise<
+      { status: string; n: string }[]
+    >,
+  ]);
+  const n = (status: string) => Number(byStatus.find((x) => x.status === status)?.n ?? 0);
+  const summary = { pending: n("Pending"), underReview: n("Under Review"), awaitingApproval: n("Awaiting Approval"), completed: n("Completed"), rejected: n("Rejected") };
+  return { requests: await decorateRechecks(rows), summary, pagination: { ...pageInfo(count, page, limit), hasMore: page * limit < count } };
 };
+
+/** Decided requests a list shows (newest first); open ones are always all there. */
+const DECIDED_SHOWN = 200;
 
 /** Admin hands a recheck to the exam's evaluator (default) or another eligible teacher. */
 const assignRecheck = async (admin: any, requestId: string, body: any) => {
@@ -2185,23 +2451,28 @@ const requestReopen = async (user: any, examId: string, body: any) => {
   return { examId: exam.examId, request: reopenInfo(request) };
 };
 
-/** Admin: the scanners' requests, open ones first (PENDING), the decided ones (DECIDED), or ALL. */
+/**
+ * Admin: the scanners' requests, open ones first (PENDING), the decided ones (DECIDED), or ALL
+ * (newest first). Every open request is listed; decided ones, the newest DECIDED_SHOWN.
+ * ?sessionId (&examType) keeps the requests, and the counts, to that session's exams.
+ */
 const listReopenRequests = async (admin: any, query: any) => {
   const instituteId = admin.instituteId;
   const view = clean(query?.status).toUpperCase() || "PENDING";
-  const where: any = { instituteId };
-  if (view === "PENDING") where.status = REOPEN_STATUS.PENDING;
-  else if (view === "DECIDED") where.status = { [Op.in]: [REOPEN_STATUS.APPROVED, REOPEN_STATUS.REJECTED] };
+  const scope: any = { instituteId, ...examsInScope(instituteId, query) };
+  const decided = { [Op.in]: [REOPEN_STATUS.APPROVED, REOPEN_STATUS.REJECTED] };
 
-  const [rows, byStatus] = await Promise.all([
-    ScanReopenRequest.findAll({ where, order: [["createdAt", view === "PENDING" ? "ASC" : "DESC"]], limit: 200 }),
+  const [open, closed, byStatus] = await Promise.all([
+    view === "DECIDED" ? [] : ScanReopenRequest.findAll({ where: { ...scope, status: REOPEN_STATUS.PENDING }, order: [["createdAt", view === "PENDING" ? "ASC" : "DESC"]] }),
+    view === "PENDING" ? [] : ScanReopenRequest.findAll({ where: { ...scope, status: decided }, order: [["createdAt", "DESC"]], limit: DECIDED_SHOWN }),
     ScanReopenRequest.findAll({
-      where: { instituteId },
+      where: scope,
       attributes: ["status", [sequelize.fn("COUNT", sequelize.col("id")), "n"]],
       group: ["status"],
       raw: true,
     }) as unknown as Promise<{ status: string; n: string }[]>,
   ]);
+  const rows = view === "ALL" ? [...open, ...closed].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)) : [...open, ...closed];
   const examIds = [...new Set(rows.map((r) => r.examId))];
   const userIds = [...new Set(rows.flatMap((r) => [r.scannerId, r.decidedBy]).filter(Boolean) as string[])];
   const [exams, users, assignments] = await Promise.all([
@@ -2316,6 +2587,7 @@ const rejectReopen = (admin: any, requestId: string, body: any) => decideReopen(
 
 export default {
   listPipeline,
+  examCounts,
   getTimeline,
   listScanners,
   assignScanner,
@@ -2330,6 +2602,7 @@ export default {
   myResults,
   myResultDetail,
   myClaims,
+  myRecheckPolicy,
   myReportCard,
   createRecheck,
   listRechecks,

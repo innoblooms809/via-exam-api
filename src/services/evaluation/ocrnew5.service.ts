@@ -24,7 +24,7 @@ export const evaluateSheetOCRNew5 = async (sheetId: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Scanner sheet not found.");
   }
 
-  // Cloudinary-backed sheets keep fileBuffer null in the database; resolve the
+  // Sheets stored as files keep fileBuffer null in the database; resolve the
   // real bytes onto the in-memory instance before anything below reads it.
   // sheet.update() further down passes an explicit field list, so this is
   // never written back.

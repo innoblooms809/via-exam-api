@@ -8,7 +8,7 @@
  * The API also creates these on boot (sequelize sync); this is for databases managed by
  * migrations only.
  *
- *   npm run db:migrate:partner-api
+ *   npm run db:migrate
  */
 
 module.exports = {

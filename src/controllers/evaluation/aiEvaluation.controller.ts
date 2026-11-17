@@ -1,39 +1,13 @@
 import { Response } from "express";
 import httpStatus from "http-status";
 import AIEvaluationService from "../../services/evaluation/aiEvaluation.service";
-import { maskAnswerTexts, maskEvaluationIdentity, scopeEvaluationRows } from "../../services/evaluation/evaluationAccess.service";
+import { isTeacherRequester, maskAnswerTexts, maskEvaluationIdentity } from "../../services/evaluation/evaluationAccess.service";
+import { sheetEvaluationLock } from "../../services/evaluation/evaluationLock.service";
 import { restoreFullAnswers } from "../../utils/answerSnippets";
 import { ensureSheetQuality, scanQualityView } from "../../services/answer-sheet/sheetQuality.service";
-import Pipeline6Service from "../../services/evaluation/pipeline6.service";
 import { recheckFor, recheckView, saveRecheckDraft, sheetPublished } from "../../services/evaluation/recheckDraft.service";
 import { crossCheckFor, crossCheckView, saveCrossCheckDraft } from "../../services/evaluation/crossCheckDraft.service";
 import { sheetHeldForCrossCheck } from "../../services/exam/crossCheck.service";
-
-// POST /v1/ai-evaluation/evaluate
-const evaluateSheet = async (req: any, res: Response): Promise<any> => {
-  try {
-    const { sheetId, force } = req.body;
-    if (!sheetId) {
-      return res.status(httpStatus.BAD_REQUEST).json({
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "sheetId is required.",
-      });
-    }
-
-    // A recheck or cross-check run goes into that draft, which only pipeline 6 writes.
-    const result = req.recheck || req.crossCheck
-      ? await Pipeline6Service.triggerPipeline6Evaluation(sheetId, true, req.recheck ?? null, req.crossCheck ?? null)
-      : await AIEvaluationService.triggerEvaluation(sheetId, force);
-    return res.status(result.statusCode).send(result);
-  } catch (error: any) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: error.message || "Internal Server Error",
-    });
-  }
-};
 
 // GET /v1/ai-evaluation/sheet/:sheetId
 const getEvaluation = async (req: any, res: Response): Promise<any> => {
@@ -59,16 +33,20 @@ const getEvaluation = async (req: any, res: Response): Promise<any> => {
       // Published results are read only on this screen, except for the teacher rechecking
       // this sheet, who sees (and edits) their draft over the published marks. The sheet's
       // cross-checker likewise sees their draft over the evaluator's marks.
-      const [published, recheck, crossCheck, held] = await Promise.all([
+      const [published, recheck, crossCheck, held, lock] = await Promise.all([
         sheetPublished(sheetId),
         recheckFor(req.viaExamUser, sheetId),
         crossCheckFor(req.viaExamUser, sheetId),
         sheetHeldForCrossCheck(sheetId),
+        sheetEvaluationLock(sheetId, { teacher: isTeacherRequester(req.viaExamUser) }),
       ]);
       const base = {
         ...plain,
-        // While a cross-check holds the sheet, only its checker changes the marks (into a draft).
-        canEvaluate: req.canEvaluate !== false && !published && !held,
+        // Published, held by a cross-check (only its checker changes the marks, into a draft), or a
+        // section its evaluator marked completed: read only, and the screen says why (evaluationLock).
+        canEvaluate: req.canEvaluate !== false && !published && !held && !lock,
+        // The recheck teacher and the cross-checker work in their drafts: no lock for them.
+        evaluationLock: lock && !recheck && !crossCheck ? { reason: lock.reason, message: lock.message } : null,
         crossCheckHeld: Boolean(held) && !crossCheck,
         resultsPublished: published,
         // A poor scan means the AI may have misread it; the evaluator checks the marks harder.
@@ -83,24 +61,6 @@ const getEvaluation = async (req: any, res: Response): Promise<any> => {
     }
     // Sheets uploaded before the quality check get checked the first time they're opened.
     ensureSheetQuality(req.accessSheet);
-    return res.status(result.statusCode).send(result);
-  } catch (error: any) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: error.message || "Internal Server Error",
-    });
-  }
-};
-
-// GET /v1/ai-evaluation/list
-const getAllEvaluations = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await AIEvaluationService.getAllEvaluations(req.query, req.viaExamUser);
-    if (!result.error && Array.isArray(result.data?.evaluations)) {
-      const evaluations = await scopeEvaluationRows(req.viaExamUser, result.data.evaluations);
-      result.data = { ...result.data, evaluations, total: evaluations.length };
-    }
     return res.status(result.statusCode).send(result);
   } catch (error: any) {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -194,9 +154,7 @@ const getFailedEvaluations = async (req: any, res: Response): Promise<any> => {
 };
 
 export default {
-  evaluateSheet,
   getEvaluation,
-  getAllEvaluations,
   updateEvaluation,
   getFailedEvaluations,
 };

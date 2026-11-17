@@ -1,6 +1,7 @@
 import { Response } from "express";
 import httpStatus from "http-status";
 import Scanner from "../../services/scanner/scanner.service";
+import { contentDisposition } from "../../utils/fileNames";
 
 // POST /uploadSheets  (multipart/form-data, field name: "sheets")
 const uploadSheets = async (req: any, res: Response): Promise<any> => {
@@ -16,7 +17,8 @@ const uploadSheets = async (req: any, res: Response): Promise<any> => {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
+      // The cause is logged above; its text is no help to the user and may expose internals.
+      message: "Something went wrong. Please try again.",
     });
   }
 };
@@ -35,7 +37,8 @@ const replaceSheet = async (req: any, res: Response): Promise<any> => {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
+      // The cause is logged above; its text is no help to the user and may expose internals.
+      message: "Something went wrong. Please try again.",
     });
   }
 };
@@ -50,7 +53,8 @@ const getAllSheets = async (req: any, res: Response): Promise<any> => {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
+      // The cause is logged above; its text is no help to the user and may expose internals.
+      message: "Something went wrong. Please try again.",
     });
   }
 };
@@ -58,33 +62,50 @@ const getAllSheets = async (req: any, res: Response): Promise<any> => {
 // GET /getFile/:sheetId  — streams the raw file
 const getSheetFile = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await Scanner.getSheetFile(
-      req.params.sheetId,
-      req.viaExamUser
-    );
+    // ?mode=url only asks where the file is: no need to read a legacy sheet's bytes for that.
+    const result = await Scanner.getSheetFile(req.params.sheetId, req.viaExamUser, { buffer: String(req.query.mode) !== "url" });
 
     if (result.error) {
       return res.status(result.statusCode).send(result);
     }
 
-    const { buffer, mimeType, fileName, redirectUrl } = result.data;
+    const { buffer, mimeType, fileName, remoteUrl, filePath } = result.data;
 
-    if (redirectUrl) {
-      // Preferred path: the caller takes the short-lived signed URL and loads
-      // the file straight from the CDN, so the bytes never touch this process.
-      if (String(req.query.mode) === "url") {
-        return res.status(httpStatus.OK).send({
-          error: false,
-          statusCode: httpStatus.OK,
-          message: "File located.",
-          data: { url: redirectUrl, mimeType, fileName },
+    // Every sheet is streamed from here, after the access checks above; none has a link to
+    // hand out. A caller asking for one (?mode=url) is told so and downloads the bytes.
+    if (String(req.query.mode) === "url") {
+      return res.status(httpStatus.OK).send({
+        error: false,
+        statusCode: httpStatus.OK,
+        message: "File located.",
+        data: { url: null, mimeType, fileName },
+      });
+    }
+
+    res.setHeader("Cache-Control", "private, no-store");
+
+    if (filePath) {
+      // Stored on this server.
+      // A stored name may be Arabic: plain headers carry latin1 only (Node throws on more).
+      res.setHeader("Content-Disposition", contentDisposition("inline", fileName));
+      return res.sendFile(filePath, { headers: { "Content-Type": mimeType || "application/octet-stream" } }, (err: any) => {
+        if (!err || res.headersSent) return;
+        const missing = err?.statusCode === 404 || err?.code === "ENOENT";
+        const status = missing ? httpStatus.NOT_FOUND : httpStatus.INTERNAL_SERVER_ERROR;
+        res.status(status).json({
+          error: true,
+          statusCode: status,
+          message: missing
+            ? "The stored file could not be found. Please upload the sheet again."
+            : "Something went wrong. Please try again.",
         });
-      }
+      });
+    }
 
-      // Compatibility path: callers that expect raw bytes get them streamed
-      // through. A 302 is not usable here — the browser would repeat the
-      // request to Cloudinary in credentialed CORS mode and be blocked.
-      const upstream = await fetch(redirectUrl);
+    if (remoteUrl) {
+      // Stored in Cloudinary before the move to local storage: fetched here and streamed
+      // on, so its permanent public link never reaches the browser.
+      const upstream = await fetch(remoteUrl);
       if (!upstream.ok || !upstream.body) {
         return res.status(httpStatus.BAD_GATEWAY).json({
           error: true,
@@ -94,7 +115,8 @@ const getSheetFile = async (req: any, res: Response): Promise<any> => {
       }
 
       res.setHeader("Content-Type", upstream.headers.get("content-type") || mimeType);
-      res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+      // A stored name may be Arabic: plain headers carry latin1 only (Node throws on more).
+      res.setHeader("Content-Disposition", contentDisposition("inline", fileName));
       const length = upstream.headers.get("content-length");
       if (length) res.setHeader("Content-Length", length);
 
@@ -105,51 +127,15 @@ const getSheetFile = async (req: any, res: Response): Promise<any> => {
 
     // Legacy sheet still held as a database blob.
     res.setHeader("Content-Type", mimeType);
-    res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+    res.setHeader("Content-Disposition", contentDisposition("inline", fileName));
     return res.send(buffer);
   } catch (err: any) {
     console.error("getSheetFile Controller Error:", err);
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
-    });
-  }
-};
-
-// GET /summary?classId=&section=&subjectId=&examType=
-const getSheetSummary = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await Scanner.getSheetSummary(
-      req.query as any,
-      req.viaExamUser
-    );
-    return res.status(result.statusCode).send(result);
-  } catch (err: any) {
-    console.error("getSheetSummary Controller Error:", err);
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
-    });
-  }
-};
-
-// PATCH /updateStatus/:sheetId
-const updateSheetStatus = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await Scanner.updateSheetStatus(
-      req.params.sheetId,
-      req.body.status,
-      req.viaExamUser
-    );
-    return res.status(result.statusCode).send(result);
-  } catch (err: any) {
-    console.error("updateSheetStatus Controller Error:", err);
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
+      // The cause is logged above; its text is no help to the user and may expose internals.
+      message: "Something went wrong. Please try again.",
     });
   }
 };
@@ -167,61 +153,8 @@ const deleteSheet = async (req: any, res: Response): Promise<any> => {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
-    });
-  }
-};
-
-// ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────
-
-// GET /approved-exams
-const getApprovedExams = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await Scanner.getApprovedExams(req.viaExamUser);
-    return res.status(result.statusCode).send(result);
-  } catch (err: any) {
-    console.error("getApprovedExams Controller Error:", err);
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
-    });
-  }
-};
-
-// POST /upload-student-answer
-const uploadStudentAnswerPaper = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await Scanner.uploadStudentAnswerPaper(
-      req.body,
-      req.file,
-      req.viaExamUser
-    );
-    return res.status(result.statusCode).send(result);
-  } catch (err: any) {
-    console.error("uploadStudentAnswerPaper Controller Error:", err);
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
-    });
-  }
-};
-
-// GET /student-answers/:examId
-const getStudentAnswerPapers = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await Scanner.getStudentAnswerPapers(
-      req.params.examId,
-      req.viaExamUser
-    );
-    return res.status(result.statusCode).send(result);
-  } catch (err: any) {
-    console.error("getStudentAnswerPapers Controller Error:", err);
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: err?.message || "Internal Server Error",
+      // The cause is logged above; its text is no help to the user and may expose internals.
+      message: "Something went wrong. Please try again.",
     });
   }
 };
@@ -231,10 +164,5 @@ export default {
   replaceSheet,
   getAllSheets,
   getSheetFile,
-  getSheetSummary,
-  updateSheetStatus,
   deleteSheet,
-  getApprovedExams,
-  uploadStudentAnswerPaper,
-  getStudentAnswerPapers,
 };

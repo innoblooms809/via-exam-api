@@ -1,38 +1,28 @@
 import httpStatus from "http-status";
-import { Op } from "sequelize";
 import Scanner from "../../models/Scanner.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
-import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
-import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
-import Exam from "../../models/Exam.model";
-import Class from "../../models/Class.model";
-import Subject from "../../models/Subject.model";
-import Session from "../../models/Session.model";
-import StudentEnrollment from "../../models/StudentEnrollment.model";
-import UserModal from "../../models/User.model";
 import RegHelper from "../../utils/helper";
 import { isScannerRequester, isTeacherRequester, requireSheetAccess, scopeSheetRows } from "../evaluation/evaluationAccess.service";
 import AnswerSheetStorage from "../answer-sheet/answerSheetStorage.service";
-import { newId } from "../../utils/idGenerator";
-import { assertSheetWritable, clearAbsentFor, sheetsChangedAfterReview } from "../exam/examWorkflow.service";
 import logger from "../../config/logger";
-import { buildRoster, loadExam, rosterIndex } from "../exam/examRoster.service";
-import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
-import {
-  destroyAnswerSheet,
-  removeTempFile,
-  uploadAnswerSheet,
-} from "../../utils/answerSheetStorage";
-import { beginQualityCheck, qualitySummary, scanQualityRule, settleQualityCheck } from "../answer-sheet/sheetQuality.service";
+import { normalizeKeyText, normalizeRollNo } from "../../utils/textRules";
+import { pageInfo, paging } from "../../utils/pagination";
 
-// Exam-table statuses reached only after the QP + answer key pair is approved.
-const APPROVED_EXAM_STATUSES = ["Approved", "Live", "Completed"];
-const APPROVED_PAPER_STATUSES: ("APPROVED" | "PUBLISHED")[] = ["APPROVED", "PUBLISHED"];
+/** A failure the caller can't act on: logged here, a plain message for them (no internal error text). */
+const somethingWentWrong = (where: string, e: any, data?: object) => {
+  logger.error(`[Scanner] ${where} failed: ${e?.stack || e?.message || e}`);
+  return {
+    error: true,
+    statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+    message: "Something went wrong. Please try again.",
+    ...(data ? { data } : {}),
+  };
+};
 
 // ─── UPLOAD (single or bulk) ──────────────────────────────────────────────────
-// Storage lives in answerSheetStorage.service.ts: scans now go to Cloudinary
-// rather than a Postgres BLOB, and keeping the row, the remote asset and the
-// temp file in step needs its own module.
+// Storage lives in answerSheetStorage.service.ts: scans are stored as files
+// (uploads/private/answer-sheets/) rather than a Postgres BLOB, and keeping the
+// row, the stored file and the temp file in step needs its own module.
 const uploadSheets = AnswerSheetStorage.uploadSheets;
 
 // ─── REPLACE ONE SHEET ────────────────────────────────────────────────────────
@@ -41,31 +31,66 @@ const replaceSheet = AnswerSheetStorage.replaceSheet;
 /** Sheet statuses that come from evaluation, hidden from scanner staff. */
 const SCANNER_HIDDEN_STATUSES = new Set(["Evaluated", "Evaluating", "Failed"]);
 
+// ─── LIST SHEETS ──────────────────────────────────────────────────────────────
+// The sheets of one exam (examId, or class + subject + exam type, optionally a section) or
+// one sheet (sheetId), a page at a time: ?page=&limit= (50 a page, at most 500; the first
+// 500 without them). Each row carries its AI status and score (not for scanner staff).
+
+const SHEET_PAGING = { defaultLimit: 50, maxLimit: 500, unpagedLimit: 500 };
+/** Not sent in a list: the scan itself and its storage links (encrypted at rest, decrypted per row). Opening a sheet uses getFile. */
+const SHEET_LIST_EXCLUDE = ["fileBuffer", "fileUrl", "filePublicId"];
+
 const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
   try {
     const instituteId = requestedBy.instituteId;
     const { classId, section, subjectId, examType, rollNo, status, sheetId, examId } = query;
 
+    // Names as stored (one encoding, no direction marks); a roll number typed in any script is 0-9.
     const where: any = { instituteId, isDeleted: false };
-    if (classId) where.classId = classId;
-    if (section) where.section = section;
-    if (subjectId) where.subjectId = subjectId;
-    if (examType) where.examType = examType;
-    if (rollNo) where.rollNo = rollNo;
+    if (classId) where.classId = normalizeKeyText(classId);
+    if (section) where.section = normalizeKeyText(section);
+    if (subjectId) where.subjectId = normalizeKeyText(subjectId);
+    if (examType) where.examType = normalizeKeyText(examType);
+    if (rollNo) where.rollNo = normalizeRollNo(rollNo);
     if (status) where.status = status;
     if (sheetId) where.sheetId = sheetId;
     if (examId) where.examId = examId;
 
-    // Never return fileBuffer in list — too heavy
-    const sheets = await Scanner.findAll({
-      where,
-      attributes: { exclude: ["fileBuffer"] },
-      order: [["createdAt", "DESC"]],
-    });
+    // One exam (or one sheet) at a time: without it the list would be every sheet of the
+    // school, every class × every exam of every session.
+    if (!sheetId && !examId && !(classId && subjectId && examType)) {
+      return {
+        error: true,
+        statusCode: httpStatus.BAD_REQUEST,
+        message: "Choose the exam whose answer sheets to list (examId, or class, subject and exam type).",
+      };
+    }
 
-    const sheetIds = sheets.map((s: any) => s.sheetId);
-    // Scanner staff never see evaluation: their sheets carry no AI status or score.
+    const { page, limit, offset } = paging(query, SHEET_PAGING);
     const scanner = isScannerRequester(requestedBy);
+    // createdAt ties within a bulk upload; the id keeps every page in the same order.
+    const order: any = [["createdAt", "DESC"], ["id", "DESC"]];
+
+    let pageRows: any[];
+    let total: number;
+    if (isTeacherRequester(requestedBy)) {
+      // A teacher's access is decided sheet by sheet (subject, assigned exam and section,
+      // rechecks, cross-checks), so the exam's sheets are scoped first and the page cut after.
+      const rows = await Scanner.findAll({ where, attributes: { exclude: SHEET_LIST_EXCLUDE }, order });
+      let visible = await scopeSheetRows(requestedBy, rows.map((s: any) => s.toJSON()));
+      // Looking a sheet up by real roll number would reveal a masked student.
+      if (rollNo) visible = visible.filter((s: any) => !s.identityMasked);
+      total = visible.length;
+      pageRows = visible.slice(offset, offset + limit);
+    } else {
+      const { rows, count } = await Scanner.findAndCountAll({ where, attributes: { exclude: SHEET_LIST_EXCLUDE }, order, limit, offset });
+      total = count;
+      // Scanner staff: names masked, roll numbers kept. Admins: as stored.
+      pageRows = await scopeSheetRows(requestedBy, rows.map((s: any) => s.toJSON()));
+    }
+
+    const sheetIds = pageRows.map((s: any) => s.sheetId);
+    // Scanner staff never see evaluation: their sheets carry no AI status or score.
     const aiEvals =
       sheetIds.length > 0 && !scanner
         ? await AIEvaluation.findAll({
@@ -79,8 +104,9 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
       evalMap.set(ev.sheetId, ev);
     });
 
-    const enrichedSheets = sheets.map((sheet: any) => {
-      const s = sheet.toJSON();
+    const sheets = pageRows.map((row: any) => {
+      // The list shows the scan's flag and reasons; the per-page measurements stay with the sheet.
+      const s = { ...row, qualityReport: row.qualityReport ? { reasons: row.qualityReport.reasons ?? [] } : null };
       if (scanner) {
         // A status the evaluation set reads as plain "uploaded" to them.
         if (SCANNER_HIDDEN_STATUSES.has(String(s.status))) s.status = "Uploaded";
@@ -102,24 +128,14 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
       return s;
     });
 
-    // Teachers only see sheets of their own class subjects (real names) or of exams
-    // they were assigned to evaluate (names masked).
-    let visibleSheets = await scopeSheetRows(requestedBy, enrichedSheets);
-    // Looking a sheet up by real roll number would reveal a masked student.
-    if (rollNo && isTeacherRequester(requestedBy)) visibleSheets = visibleSheets.filter((s: any) => !s.identityMasked);
-
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Sheets fetched successfully.",
-      data: { sheets: visibleSheets, total: visibleSheets.length },
+      data: { sheets, total, pagination: pageInfo(total, page, limit) },
     };
   } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
+    return somethingWentWrong("List sheets", e);
   }
 };
 
@@ -127,497 +143,15 @@ const getAllSheets = async (query: any, requestedBy: any): Promise<any> => {
 
 const getSheetFile = AnswerSheetStorage.getSheetFile;
 
-// ─── GET SUMMARY (uploaded vs missing counts) ─────────────────────────────────
-
-const getSheetSummary = async (
-  query: { classId: string; section: string; subjectId: string; examType: string },
-  requestedBy: any
-): Promise<any> => {
-  try {
-    const instituteId = requestedBy.instituteId;
-    const { classId, section, subjectId, examType } = query;
-
-    if (!classId || !section || !subjectId || !examType) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "classId, section, subjectId and examType are required.",
-      };
-    }
-
-    const sheets = await Scanner.findAll({
-      where: { instituteId, classId, section, subjectId, examType, isDeleted: false },
-      attributes: ["rollNo", "status", "fileName", "createdAt"],
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Summary fetched.",
-      data: {
-        total: sheets.length,
-        pending: sheets.filter((s) => s.status === "Pending").length,
-        evaluated: sheets.filter((s) => s.status === "Evaluated").length,
-        uploadedRollNos: sheets.map((s) => s.rollNo),
-        sheets,
-      },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
-
-// ─── UPDATE STATUS ────────────────────────────────────────────────────────────
-
-const updateSheetStatus = async (
-  sheetId: string,
-  status: string,
-  requestedBy: any
-): Promise<any> => {
-  try {
-    const allowed = ["Pending", "Evaluated"];
-    if (!allowed.includes(status)) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: `Status must be one of: ${allowed.join(", ")}`,
-      };
-    }
-
-    const sheet = await Scanner.findOne({ where: { sheetId, isDeleted: false } });
-    if (!sheet) {
-      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Sheet not found." };
-    }
-
-    if (sheet.instituteId !== requestedBy.instituteId) {
-      return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Access denied." };
-    }
-
-    await sheet.update({ status });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: `Sheet status updated to ${status}.`,
-      data: sheet,
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
-
 // ─── SOFT DELETE ──────────────────────────────────────────────────────────────
 
 // Soft-deletes the row and destroys the stored scan once the change commits.
 const deleteSheet = AnswerSheetStorage.deleteSheet;
-
-// ─── APPROVAL WORKFLOW SCANNER ENDPOINTS ────────────────────────────────────
-
-// Get approved exams for scanner to upload student answer papers
-const getApprovedExams = async (requestedBy: any): Promise<any> => {
-  try {
-    const instituteId = requestedBy.instituteId;
-
-    if (!instituteId) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Institute ID not found for user.",
-        data: { exams: [] },
-      };
-    }
-
-    // Only this institute's exams are candidates — everything below is scoped through these IDs.
-    const instituteExams = await Exam.findAll({
-      where: { instituteId, isDeleted: false },
-      order: [["createdAt", "DESC"]],
-    });
-
-    const empty = {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "No approved exams found.",
-      data: { exams: [] },
-    };
-    if (instituteExams.length === 0) return empty;
-
-    const instituteExamIds = instituteExams.map((e) => e.examId);
-
-    const questionPapers = await QuestionPaper.findAll({
-      where: { examId: { [Op.in]: instituteExamIds }, status: { [Op.in]: APPROVED_PAPER_STATUSES } },
-      attributes: ["paperId", "examId", "paperSet", "status", "approvedAt"],
-    });
-    const approvedPaperIds = questionPapers.map((qp) => qp.paperId);
-
-    // Answer keys are linked to the exam either directly or through their question paper.
-    const answerKeys = await QuestionPaperAnswer.findAll({
-      where: {
-        status: { [Op.in]: APPROVED_PAPER_STATUSES },
-        [Op.or]: [
-          { examId: { [Op.in]: instituteExamIds } },
-          ...(approvedPaperIds.length > 0 ? [{ paperId: { [Op.in]: approvedPaperIds } }] : []),
-        ],
-      },
-      attributes: ["paperId", "examId", "paperSet", "status", "approvedAt"],
-    });
-
-    // Collect all approved exam sets. An exam can have multiple approved paper sets (A, B, etc.)
-    const approvedList: {
-      exam: Exam;
-      qp?: QuestionPaper;
-      ans?: QuestionPaperAnswer;
-      paperSet: string;
-    }[] = [];
-
-    for (const exam of instituteExams) {
-      const examQps = questionPapers.filter((p) => p.examId === exam.examId);
-      const examAns = answerKeys.filter(
-        (a) => a.examId === exam.examId || examQps.some((q) => a.paperId === q.paperId)
-      );
-
-      // Collect unique paperSet names from approved QPs and Answer Keys for this exam
-      const setNames = Array.from(
-        new Set(
-          [
-            ...examQps.map((q) => q.paperSet),
-            ...examAns.map((a) => a.paperSet),
-          ].filter((s) => Boolean(s && String(s).trim() !== ""))
-        )
-      );
-
-      if (setNames.length > 0) {
-        for (const set of setNames) {
-          const qp = examQps.find((q) => q.paperSet === set);
-          const ans = examAns.find((a) => a.paperSet === set || (qp && a.paperId === qp.paperId));
-          const isApproved =
-            APPROVED_EXAM_STATUSES.includes(exam.status) ||
-            (exam.status !== "Rejected" && Boolean(qp && ans));
-          if (isApproved) {
-            approvedList.push({ exam, qp, ans, paperSet: set });
-          }
-        }
-      } else {
-        if (APPROVED_EXAM_STATUSES.includes(exam.status)) {
-          approvedList.push({ exam, paperSet: "" });
-        }
-      }
-    }
-
-    if (approvedList.length === 0) return empty;
-
-    // Exams the admin gave to a scanner are that scanner's alone.
-    const assignments = await ExamScannerAssignment.findAll({
-      where: { examId: { [Op.in]: Array.from(new Set(approvedList.map((a) => a.exam.examId))) }, isActive: true },
-      attributes: ["examId", "scannerId", "status", "completedAt"],
-    });
-    // An exam given out section by section is the scanner's if any of its sections is.
-    const scannersOfExam = new Map<string, Set<string>>();
-    for (const a of assignments) scannersOfExam.set(a.examId, new Set([...(scannersOfExam.get(a.examId) ?? []), a.scannerId]));
-    const isScannerRole = String(requestedBy?.role?.role ?? "").toUpperCase() === "SCANNER";
-    if (isScannerRole) {
-      for (let i = approvedList.length - 1; i >= 0; i--) {
-        const scanners = scannersOfExam.get(approvedList[i].exam.examId);
-        if (scanners && !scanners.has(requestedBy.userId)) approvedList.splice(i, 1);
-      }
-      if (approvedList.length === 0) return empty;
-    }
-
-    const exams = approvedList.map((a) => a.exam);
-    const unique = (ids: (string | null | undefined)[]) =>
-      Array.from(new Set(ids.filter(Boolean))) as string[];
-    const classIds = unique(exams.map((e) => e.classId));
-    const subjectIds = unique(exams.map((e) => e.subjectId));
-    const sessionIds = unique(exams.map((e) => e.sessionId));
-    const userIds = unique(exams.flatMap((e) => [e.teacherId, e.examinerId]));
-
-    const [classesList, subjectsList, sessionsList, usersList, allSheets, studentCounts] =
-      await Promise.all([
-        classIds.length ? Class.findAll({ where: { classId: { [Op.in]: classIds } } }) : [],
-        subjectIds.length ? Subject.findAll({ where: { subjectId: { [Op.in]: subjectIds } } }) : [],
-        sessionIds.length ? Session.findAll({ where: { sessionId: { [Op.in]: sessionIds } } }) : [],
-        userIds.length
-          ? UserModal.findAll({
-              where: { userId: { [Op.in]: userIds }, instituteId },
-              attributes: ["userId", "userName"],
-            })
-          : [],
-        Scanner.findAll({
-          where: { instituteId, isDeleted: false },
-          attributes: ["examId", "classId", "subjectId", "examType"],
-        }),
-        // Students per class in each exam's own session.
-        classIds.length && sessionIds.length
-          ? StudentEnrollment.count({
-              where: { instituteId, classId: { [Op.in]: classIds }, sessionId: { [Op.in]: sessionIds }, isActive: true },
-              group: ["sessionId", "classId"],
-            })
-          : [],
-      ]);
-
-    const classMap = new Map<string, string>(classesList.map((c: any) => [c.classId, c.className]));
-    const subjectMap = new Map<string, any>(subjectsList.map((s: any) => [s.subjectId, s]));
-    const sessionMap = new Map<string, string>(sessionsList.map((s: any) => [s.sessionId, s.sessionName]));
-    const userMap = new Map<string, string>(usersList.map((u: any) => [u.userId, u.userName]));
-    const studentMap = new Map<string, number>(
-      (studentCounts as any[]).map((r) => [`${r.sessionId}|${r.classId}`, Number(r.count)])
-    );
-
-    // Calculate uploaded sheet count per exam, matching by examId OR (classId, subjectId, examType)
-    const countUploadedForExam = (exam: Exam) => {
-      return allSheets.filter((s: any) => {
-        if (s.examId && s.examId === exam.examId) return true;
-        if (
-          s.classId === exam.classId &&
-          s.subjectId === exam.subjectId &&
-          s.examType === exam.examType
-        ) {
-          return true;
-        }
-        return false;
-      }).length;
-    };
-
-    const enrichedExams = approvedList.map(({ exam, qp, ans, paperSet }) => {
-      const subject = subjectMap.get(exam.subjectId);
-      const setLabel = paperSet || qp?.paperSet || ans?.paperSet || "";
-      const rowId = setLabel ? `${exam.examId}_${setLabel}` : exam.examId;
-
-      return {
-        id: rowId,
-        examId: rowId,
-        rawExamId: exam.examId,
-        examName: exam.examType,
-        examType: exam.examType,
-        classId: exam.classId,
-        className: exam.classId ? classMap.get(exam.classId) || exam.classId : "All Classes",
-        subjectId: exam.subjectId,
-        subject: subject?.subjectName || exam.subjectId,
-        subjectCode: subject?.subjectCode || "",
-        sessionId: exam.sessionId,
-        session: sessionMap.get(exam.sessionId) || exam.sessionId,
-        teacherName: userMap.get(exam.teacherId) || "",
-        examinerName: exam.examinerId ? userMap.get(exam.examinerId) || "" : "",
-        setLabel,
-        totalMarks: exam.totalMarks,
-        passingMarks: exam.passingMarks,
-        duration: exam.duration,
-        instructions: exam.instructions,
-        totalStudents: exam.classId ? studentMap.get(`${exam.sessionId}|${exam.classId}`) || 0 : 0,
-        uploadedCount: countUploadedForExam(exam),
-        status: exam.status,
-        questionPaperStatus: qp?.status || null,
-        answerKeyStatus: ans?.status || null,
-        approvedAt: qp?.approvedAt || ans?.approvedAt || exam.updatedAt,
-        createdAt: exam.createdAt,
-        // Done when every section given out is; "mine" when any of them is.
-        scanStatus: (() => {
-          const rows = assignments.filter((a) => a.examId === exam.examId);
-          return rows.length ? (rows.every((a) => a.status === "COMPLETED") ? "COMPLETED" : "ASSIGNED") : null;
-        })(),
-        assignedToMe: Boolean(scannersOfExam.get(exam.examId)?.has(requestedBy.userId)),
-      };
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Approved exams fetched successfully.",
-      data: { exams: enrichedExams },
-    };
-  } catch (e: any) {
-    console.error("getApprovedExams Error:", e);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-      data: { exams: [] },
-    };
-  }
-};
-
-// Upload single student answer paper for approval workflow
-const uploadStudentAnswerPaper = async (
-  body: {
-    examId: string;
-    studentName: string;
-    rollNumber: string;
-    section?: string;
-    classId?: string;
-  },
-  file: Express.Multer.File | undefined,
-  uploadedBy: any
-): Promise<any> => {
-  try {
-    const instituteId = uploadedBy.instituteId;
-    
-    if (!file) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "No file provided.",
-      };
-    }
-
-    if (!body.examId || !body.studentName || !body.rollNumber) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "examId, studentName, and rollNumber are required.",
-      };
-    }
-
-    // Check if exam exists
-    const exam = await Exam.findOne({
-      where: { examId: body.examId, instituteId, isDeleted: false },
-    });
-
-    if (!exam) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Exam not found.",
-      };
-    }
-
-    // Whose sheet it is: the roll number in the exam's section, the section sent for a
-    // whole-class exam, or — with none sent — a roll number only one section has.
-    const loaded = await loadExam(instituteId, exam.examId);
-    const index = await rosterIndex(loaded);
-    const sectionSent = String(body.section ?? "").trim();
-    const target = exam.sectionId || (sectionSent ? index.section(sectionSent) : undefined);
-    if (sectionSent && !exam.sectionId && target === undefined) {
-      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "That section isn't part of this exam." };
-    }
-    const { student, problem } = index.find(target, String(body.rollNumber));
-    if (!student) {
-      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `${problem} Check the roll number, or add the student to the class first.` };
-    }
-
-    // Only the scanner given the student's section (or an admin) may add the sheet, and not after
-    // that section's upload is marked complete or results are published.
-    try {
-      await assertSheetWritable(uploadedBy, exam.examId, student.sectionId);
-    } catch (err: any) {
-      return { error: true, statusCode: err?.statusCode || httpStatus.FORBIDDEN, message: err?.message };
-    }
-
-    // One sheet per student (an older sheet matched by roll number counts too).
-    const existing = (await buildRoster(loaded)).rows.find((r) => r.studentId === student.studentId && r.sheetId);
-
-    if (existing) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "Answer paper already uploaded for this student.",
-      };
-    }
-
-    const sheetId = newId("answerSheet");
-    const qualityRule = await scanQualityRule(instituteId);
-    const qualityCheck = beginQualityCheck(file.path, qualityRule);
-
-    // Same storage path as the batch upload: bytes go to Cloudinary, the row
-    // keeps a URL. Multer wrote the file to disk, so nothing is held in memory.
-    const stored = await uploadAnswerSheet({
-      filePath: file.path,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      instituteId,
-      sheetId,
-    });
-
-    try {
-      await Scanner.create({
-        sheetId,
-        instituteId,
-        examId: body.examId,
-        classId: exam.classId || "ALL",
-        sectionId: student.sectionId,
-        section: index.nameOf(student.sectionId),
-        studentId: student.studentId,
-        subjectId: exam.subjectId,
-        examType: exam.examType,
-        rollNo: student.rollNo,
-        studentName: body.studentName,
-        fileName: file.originalname,
-        fileUrl: stored.url,
-        filePublicId: stored.publicId,
-        fileResourceType: stored.resourceType,
-        fileMimeType: file.mimetype,
-        fileSize: file.size ?? stored.bytes,
-        uploadedBy: uploadedBy.userId,
-        status: "UPLOADED",
-      });
-    } catch (err) {
-      // The row never landed, so the asset just uploaded is an orphan.
-      await destroyAnswerSheet(stored.publicId, stored.resourceType, `rollback ${sheetId}`);
-      throw err;
-    }
-    await clearAbsentFor(exam.examId, student.studentId, uploadedBy.userId);
-    // A new sheet: marks confirmed before no longer cover the student's section.
-    await sheetsChangedAfterReview(exam.examId, [student.sectionId]).catch((e) => logger.error(`[Scanner] Upload ${sheetId}: could not reopen the review: ${e?.message || e}`));
-    const report = await settleQualityCheck(sheetId, stored.publicId, qualityCheck);
-
-    return {
-      error: false,
-      statusCode: httpStatus.CREATED,
-      message: "Student answer paper uploaded successfully.",
-      data: { sheetId, quality: qualitySummary(report), qualityPending: qualityRule.enabled && !report },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  } finally {
-    await removeTempFile(file?.path);
-  }
-};
-
-// Get student answer papers for a specific exam
-const getStudentAnswerPapers = async (examId: string, requestedBy: any): Promise<any> => {
-  try {
-    const instituteId = requestedBy.instituteId;
-
-    const papers = await Scanner.findAll({
-      where: { examId, instituteId, isDeleted: false },
-      attributes: { exclude: ["fileBuffer"] },
-      order: [["createdAt", "DESC"]],
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Student answer papers fetched successfully.",
-      data: { answerPapers: papers },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
 
 export default {
   uploadSheets,
   replaceSheet,
   getAllSheets,
   getSheetFile,
-  getSheetSummary,
-  updateSheetStatus,
   deleteSheet,
-  getApprovedExams,
-  uploadStudentAnswerPaper,
-  getStudentAnswerPapers,
 };

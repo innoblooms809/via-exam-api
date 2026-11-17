@@ -1,4 +1,5 @@
 {
+  "{{problem}} Check the roll number, or add the student to the class first.": "{{problem}} تحقّق من رقم القيد، أو أضف الطالب إلى الصف أولًا.",
   "Answer paper already uploaded for this student.": "تم تحميل ورقة الإجابة لهذا الطالب بالفعل.",
   "Approved exams fetched successfully.": "تم استلام الامتحانات المعتمدة بنجاح.",
   "classId, section, subjectId and examType are required.": "مطلوب كل من classId و section و subjectId و examType.",
@@ -18,7 +19,9 @@
   "Scanner staff added.": "أضاف فريق الماسح الضوئي.",
   "Scanner staff saved.": "تم إنقاذ موظفي الماسح الضوئي.",
   "Scanners fetched successfully.": "تم جلب البيانات من الماسحات الضوئية بنجاح.",
+  "Sheet status updated to {{status}}.": "تم تحديث حالة الورقة إلى «{{status}}».",
   "Sheets fetched successfully.": "تم جلب البيانات بنجاح.",
+  "Status must be {{statuses}}.": "يجب أن تكون الحالة {{statuses}}.",
   "Student answer paper uploaded successfully.": "تم تحميل ورقة إجابة الطالب بنجاح.",
   "Student answer papers fetched successfully.": "تم جلب أوراق إجابات الطلاب بنجاح.",
   "Summary fetched.": "تم جلب الملخص.",

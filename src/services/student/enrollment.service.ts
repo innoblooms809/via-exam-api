@@ -21,6 +21,7 @@ import UserModal from "../../models/User.model";
 import StudentEnrollment from "../../models/StudentEnrollment.model";
 import { newId } from "../../utils/idGenerator";
 import { nameKey } from "../../utils/academicNames";
+import { normalizeRollNo } from "../../utils/textRules";
 import { activeSession, ensureSectionRuns, findSession } from "../academic/sessionSetup.service";
 
 const clean = (v: unknown) => String(v ?? "").trim();
@@ -81,10 +82,16 @@ export const resolvePlace = async (
   };
 };
 
-/** Another student still in the section already has this roll number in that session. */
+/** Another student still in the section already has this roll number (typed in any script) in that session. */
 export const rollTaken = (sessionId: string, sectionId: string, rollNumber: string, exceptStudentId?: string, transaction?: Transaction) =>
   StudentEnrollment.findOne({
-    where: { sessionId, sectionId, rollNumber, isActive: true, ...(exceptStudentId ? { studentId: { [Op.ne]: exceptStudentId } } : {}) },
+    where: {
+      sessionId,
+      sectionId,
+      rollNumber: normalizeRollNo(rollNumber),
+      isActive: true,
+      ...(exceptStudentId ? { studentId: { [Op.ne]: exceptStudentId } } : {}),
+    },
     transaction,
   });
 
@@ -182,7 +189,10 @@ export const placeStudent = async (
   input: { instituteId: string; studentId: string; place: Place; rollNumber: string },
   transaction: Transaction
 ) => {
-  const { instituteId, studentId, place, rollNumber } = input;
+  const { instituteId, studentId, place } = input;
+  // Stored with 0-9 and no invisible marks, so answer sheets named "101.pdf" find the student
+  // whether the roll number was typed as 101 or ١٠١.
+  const rollNumber = normalizeRollNo(input.rollNumber);
   const existing = await StudentEnrollment.findOne({ where: { studentId, sessionId: place.sessionId }, transaction });
   if (existing) {
     await existing.update({ classId: place.classId, sectionId: place.sectionId, rollNumber, isActive: true }, { transaction });
@@ -258,7 +268,7 @@ export const studentsIn = async (q: { instituteId: string; sessionId: string; cl
     attributes: ["studentId", "rollNumber", "sectionId"],
     include: [{ model: UserModal, as: "student", attributes: ["userId", "userName"], where: { status: 1, isDeleted: false }, required: true }],
   });
-  return rows.map((r: any) => ({ studentId: r.studentId, name: r.student?.userName ?? "", rollNo: clean(r.rollNumber), sectionId: r.sectionId }));
+  return rows.map((r: any) => ({ studentId: r.studentId, name: r.student?.userName ?? "", rollNo: normalizeRollNo(r.rollNumber), sectionId: r.sectionId }));
 };
 
 /**
@@ -280,7 +290,7 @@ export const studentForSheet = async (sheet: { instituteId: string; examId?: str
     sectionId = section?.sectionId ?? null;
   }
   const rows = await StudentEnrollment.findAll({
-    where: { sessionId, classId: sheet.classId, rollNumber: clean(sheet.rollNo), isActive: true, ...(sectionId ? { sectionId } : {}) },
+    where: { sessionId, classId: sheet.classId, rollNumber: normalizeRollNo(sheet.rollNo), isActive: true, ...(sectionId ? { sectionId } : {}) },
     attributes: ["studentId"],
     limit: 2,
   });

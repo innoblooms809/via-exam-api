@@ -1,7 +1,6 @@
 import express from "express";
 import config from "../../config/config";
 import userRoutes from "./auth/user.route";
-import accessRoutes from "./access/access.route";
 import docsRoute from "./system/docs.route";
 import instituteRoutes from "./institute/institute.route";
 import teacherRoutes from "./teacher/teacher.route";
@@ -18,21 +17,15 @@ import subjectRoutes from "./academic/subject.route";
 import scannerRoutes from "./scanner/scanner.route";
 import scannerUserRoutes from "./scanner/scannerUser.route";
 import studentRoutes from "./student/student.route";
-import { session } from "passport";
 import standeranswerRoutes from "./question-paper/standardAnswer.route";
 import healthRoutes from "./system/health.route";
 import academicCalendarRoutes from "./academic/academicCalendar.route";
 import authRoutes from "./auth/auth.route";
 import notificationRoutes from "./notification/notification.route";
 import aiEvaluationRoutes from "./evaluation/aiEvaluation.route";
-import dashboardRoutes from "./dashboard/dashboard.route";
 import adminDashboardRoutes from "./dashboard/adminDashboard.route";
-import teacherDashboardRoutes from "./teacher/teacherDashboard.route";
-import studentDashboardRoutes from "./student/studentDashboard.route";
-import scannerDashboardRoutes from "./scanner/scannerDashboard.route";
 import homeRoutes from "./dashboard/home.route";
 import monitoringRoutes from "./monitoring/monitoring.route";
-import recheckRequestRoutes from "./evaluation/recheckRequest.route";
 import evaluationAssignmentRoutes from "./evaluation/evaluationAssignment.route";
 import subscriptionRoutes from "./subscription/subscription.route";
 import { partnerKeyRoutes, partnerRoutes } from "./partner/partner.route";
@@ -43,33 +36,13 @@ const defaultRoutes = [
     path: "/user",
     route: userRoutes,
   },
-  {
-    path: "/access",
-    route: accessRoutes,
-  },
 {
     path: "/institute",
     route: instituteRoutes,
   },
   {
-    path: "/dashboard",
-    route: dashboardRoutes,
-  },
-  {
     path: "/admin-dashboard",
     route: adminDashboardRoutes,
-  },
-  {
-    path: "/teacher-dashboard",
-    route: teacherDashboardRoutes,
-  },
-  {
-    path: "/student-dashboard",
-    route: studentDashboardRoutes,
-  },
-  {
-    path: "/scanner-dashboard",
-    route: scannerDashboardRoutes,
   },
   {
     path: "/home",
@@ -166,10 +139,6 @@ const defaultRoutes = [
   {
     path: "/monitoring",
     route: monitoringRoutes,
-  },
-  {
-    path: "/recheck-requests",
-    route: recheckRequestRoutes,
   },
   {
     path: "/evaluation-assignments",

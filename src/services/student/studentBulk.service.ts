@@ -57,6 +57,35 @@ export interface BulkRowSuccess {
   generatedPassword: string | null;
 }
 
+/**
+ * Fixed for every row before the first one is written: the new student's id, and the
+ * password the server generated (null when the row has its own). An import that is run
+ * again after its process died reuses the plan, so a row it had already saved is
+ * recognised by its id (and keeps its password) instead of being reported as a duplicate.
+ */
+export interface ImportPlanRow {
+  userId: string;
+  password: string | null;
+}
+
+export interface ImportState {
+  /** Rows handled so far (saved or rejected), from the start of the file. */
+  done: number;
+  successes: BulkRowSuccess[];
+  errors: BulkRowError[];
+}
+
+export interface ImportHooks {
+  /** Where an earlier run of this import got to: its plan and the rows it had handled. */
+  resume?: (ImportState & { plan: ImportPlanRow[] }) | null;
+  /** The plan, before any row is written; store it so a run after a crash reuses it. */
+  onPlan?: (plan: ImportPlanRow[]) => Promise<void>;
+  /** After every row, saved or rejected. */
+  onRow?: (state: ImportState) => Promise<void>;
+  /** After a student is saved, or found saved by an earlier run of this import (`again`). */
+  onCreated?: (student: BulkRowSuccess, again: boolean) => Promise<void>;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const norm = (value: unknown): string =>
@@ -161,7 +190,8 @@ const allocateUserIds = async (count: number): Promise<string[]> => {
 
 // ─── Bulk create ──────────────────────────────────────────────────────────────
 
-const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any> => {
+/** Saves the rows of an uploaded file; the hooks let a queued job report progress and resume. */
+const runImport = async (students: any[], createdBy: any, hooks: ImportHooks = {}): Promise<any> => {
   try {
     // 1 ── Envelope checks ────────────────────────────────────────────────────
     if (!Array.isArray(students)) {
@@ -292,267 +322,146 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
     const dbRollKeys = new Set(existingProfiles.map((p: any) => rollKeyOf(p.rollNumber, p.sectionId, p.sessionId)));
 
     // 5 ── Walk the rows ──────────────────────────────────────────────────────
-    const errors: BulkRowError[] = [];
-    const successes: BulkRowSuccess[] = [];
+    const resume = hooks.resume ?? null;
+    const errors: BulkRowError[] = resume ? [...resume.errors] : [];
+    const successes: BulkRowSuccess[] = resume ? [...resume.successes] : [];
+    const startAt = resume ? Math.min(Math.max(0, resume.done), students.length) : 0;
 
-    // One pool for the whole batch, sized to the worst case where every row
-    // turns out to be insertable.
-    const userIdPool = await allocateUserIds(students.length);
-    let nextUserId = 0;
+    // Every row's id and generated password, fixed before anything is written (see ImportPlanRow).
+    let plan: ImportPlanRow[];
+    if (resume) {
+      if (resume.plan.length !== students.length) throw new Error("The saved progress of this upload does not match its rows.");
+      plan = resume.plan;
+    } else {
+      const ids = await allocateUserIds(students.length);
+      plan = [];
+      for (let i = 0; i < students.length; i++) {
+        plan.push({ userId: ids[i], password: asString(students[i]?.password) ? null : await RegHelper.generatePassword() });
+      }
+      await hooks.onPlan?.(plan);
+    }
+
+    // Rows past the saved progress that an earlier run had already written.
+    const savedBefore = new Set<string>();
+    if (resume && startAt < students.length) {
+      const found = await UserModal.findAll({
+        where: { userId: { [Op.in]: plan.slice(startAt).map((p) => p.userId) } },
+        attributes: ["userId"],
+      });
+      for (const u of found as any[]) savedBefore.add(u.userId);
+    }
 
     // Rows written earlier in this run are not part of the snapshot taken
-    // above, so in-file collisions are tracked in memory as well.
+    // above, so in-file collisions are tracked in memory as well. (A resumed run
+    // finds the rows saved by the earlier run in the database snapshot instead.)
     const seenEmails = new Map<string, number>();
     const seenMobiles = new Map<string, number>();
     const seenRollKeys = new Map<string, number>();
 
-    for (let i = 0; i < students.length; i++) {
-      const raw = students[i] ?? {};
-      // The client sends the real spreadsheet row so every message points at
-      // the line the admin is actually looking at; fall back to array order.
-      const rowNumber = Number.isFinite(Number(raw.rowNumber))
-        ? Number(raw.rowNumber)
-        : i + 1;
-
-      // 5a ── Field-level validation ──────────────────────────────────────────
-      const { value: row, error: joiError } = bulkStudentRowSchema.validate(raw, {
-        abortEarly: false,
-        convert: true,
-      });
-
-      if (joiError) {
-        for (const detail of joiError.details) {
-          const field = String(detail.path?.[0] ?? "");
-          errors.push(
-            buildError(rowNumber, raw, "validation", detail.message, field || null),
-          );
-        }
-        continue;
-      }
-
-      // 5b ── Reference resolution: class, then section, then session ─────────
-      const classRecord = classByKey.get(norm(row.className));
-      if (!classRecord) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "reference",
-            `Class "${asString(raw.className)}" does not exist in this institute. Available classes: ${availableClasses}.`,
-            "className",
-          ),
-        );
-        continue;
-      }
-
-      const sectionRecord =
-        sectionByClassAndName.get(`${norm(classRecord.classId)}::${norm(row.sectionId)}`) ??
-        sectionById.get(norm(row.sectionId));
-
-      if (!sectionRecord) {
-        const optionsForClass = sectionRows
-          .filter((s: any) => norm(s.classId) === norm(classRecord.classId))
-          .map((s: any) => s.sectionName)
-          .join(", ");
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "reference",
-            optionsForClass
-              ? `Section "${asString(raw.sectionId)}" does not exist in ${classRecord.className}. Available sections: ${optionsForClass}.`
-              : `No sections have been configured for ${classRecord.className}.`,
-            "sectionId",
-          ),
-        );
-        continue;
-      }
-
-      if (norm(sectionRecord.classId) !== norm(classRecord.classId)) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "reference",
-            `Section "${sectionRecord.sectionName}" does not belong to ${classRecord.className}.`,
-            "sectionId",
-          ),
-        );
-        continue;
-      }
-
-      const sessionRecord = sessionByName.get(norm(row.session)) ?? sessionByName.get(sessionKey(row.session));
-      if (!sessionRecord) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "reference",
-            `Session "${asString(raw.session)}" does not exist in this institute. Available sessions: ${availableSessions}.`,
-            "session",
-          ),
-        );
-        continue;
-      }
-
-      // Store canonical values so the uniqueness keys line up with the ones
-      // written by the single-student form.
-      const className: string = classRecord.className;
-      const sectionId: string = sectionRecord.sectionId;
-      const sessionName: string = sessionRecord.sessionName;
-
-      const emailKey = norm(row.email);
-      const mobileKey = asString(row.mobile);
-      const rollKey = rollKeyOf(row.rollNumber, sectionId, sessionRecord.sessionId);
-
-      // 5c ── Duplicates inside the uploaded file ─────────────────────────────
-      if (seenEmails.has(emailKey)) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "duplicate",
-            `Email "${row.email}" is already used on row ${seenEmails.get(emailKey)} of this file.`,
-            "email",
-          ),
-        );
-        continue;
-      }
-      if (seenMobiles.has(mobileKey)) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "duplicate",
-            `Mobile number "${row.mobile}" is already used on row ${seenMobiles.get(mobileKey)} of this file.`,
-            "mobile",
-          ),
-        );
-        continue;
-      }
-      if (seenRollKeys.has(rollKey)) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "duplicate",
-            `Roll number "${row.rollNumber}" for ${className} section ${sectionRecord.sectionName} (${sessionName}) is already used on row ${seenRollKeys.get(rollKey)} of this file.`,
-            "rollNumber",
-          ),
-        );
-        continue;
-      }
-
-      // 5d ── Duplicates already in the database ──────────────────────────────
-      if (dbEmails.has(emailKey)) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "duplicate",
-            `Email "${row.email}" is already registered to another user.`,
-            "email",
-          ),
-        );
-        continue;
-      }
-      if (dbMobiles.has(mobileKey)) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "duplicate",
-            `Mobile number "${row.mobile}" is already registered to another user.`,
-            "mobile",
-          ),
-        );
-        continue;
-      }
-      if (dbRollKeys.has(rollKey)) {
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            "duplicate",
-            `Roll number "${row.rollNumber}" already exists in ${className} section ${sectionRecord.sectionName} for session ${sessionName}.`,
-            "rollNumber",
-          ),
-        );
-        continue;
-      }
-
-      // 5e ── Persist the row in its own transaction ──────────────────────────
-      // One transaction per row is deliberate: on Postgres a single failed
-      // statement poisons the surrounding transaction, so a shared transaction
-      // would let one bad row take down every row after it.
-      const t = await sequelize.transaction();
+    for (let i = startAt; i < students.length; i++) {
+      // Every way out of a row (saved, rejected, skipped) reports it.
       try {
-        const generated = !asString(row.password);
-        const plainPassword = asString(row.password) || (await RegHelper.generatePassword());
-        const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
-        const userId = userIdPool[nextUserId];
+        const raw = students[i] ?? {};
+        // The client sends the real spreadsheet row so every message points at
+        // the line the admin is actually looking at; fall back to array order.
+        const rowNumber = Number.isFinite(Number(raw.rowNumber))
+          ? Number(raw.rowNumber)
+          : i + 1;
 
-        const newUser = await UserModal.create(
-          {
-            userId,
-            userName: `${row.firstName} ${row.lastName}`.trim(),
-            emailId: row.email,
-            phoneNumber: row.mobile,
-            password: encryptedPassword,
-            roleId: studentRole.id,
-            instituteId,
-            status: 1,
-          },
-          { transaction: t },
-        );
+        // 5a ── Field-level validation ──────────────────────────────────────────
+        const { value: row, error: joiError } = bulkStudentRowSchema.validate(raw, {
+          abortEarly: false,
+          convert: true,
+        });
 
-        await StudentProfile.create(
-          {
-            userId: newUser.userId,
-            instituteId,
-            classId: classRecord.classId,
-            rollNumber: row.rollNumber,
-            className,
-            sectionId,
-            session: sessionName,
-            fatherName: asString(row.fatherName) || "Not provided",
-            gender: row.gender,
-            dob: new Date(row.dob),
-            aadhar: asString(row.aadhar) || "000000000000",
-            address: asString(row.address) || "Not provided",
-            profileUrl: null,
-            isActive: true,
-          },
-          { transaction: t },
-        );
-        await placeStudent(
-          {
-            instituteId,
-            studentId: newUser.userId,
-            place: {
-              classId: classRecord.classId,
-              className,
-              sectionId,
-              sectionName: sectionRecord.sectionName,
-              sessionId: sessionRecord.sessionId,
-              sessionName,
-            },
-            rollNumber: row.rollNumber,
-          },
-          t,
-        );
-        await syncStudentProfiles(instituteId, [newUser.userId], t);
+        if (joiError) {
+          for (const detail of joiError.details) {
+            const field = String(detail.path?.[0] ?? "");
+            errors.push(
+              buildError(rowNumber, raw, "validation", detail.message, field || null),
+            );
+          }
+          continue;
+        }
 
-        await t.commit();
-        nextUserId++; // only consume the id once the row is safely committed
+        // 5b ── Reference resolution: class, then section, then session ─────────
+        const classRecord = classByKey.get(norm(row.className));
+        if (!classRecord) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "reference",
+              `Class "${asString(raw.className)}" does not exist in this institute. Available classes: ${availableClasses}.`,
+              "className",
+            ),
+          );
+          continue;
+        }
 
-        seenEmails.set(emailKey, rowNumber);
-        seenMobiles.set(mobileKey, rowNumber);
-        seenRollKeys.set(rollKey, rowNumber);
+        const sectionRecord =
+          sectionByClassAndName.get(`${norm(classRecord.classId)}::${norm(row.sectionId)}`) ??
+          sectionById.get(norm(row.sectionId));
 
-        successes.push({
+        if (!sectionRecord) {
+          const optionsForClass = sectionRows
+            .filter((s: any) => norm(s.classId) === norm(classRecord.classId))
+            .map((s: any) => s.sectionName)
+            .join(", ");
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "reference",
+              optionsForClass
+                ? `Section "${asString(raw.sectionId)}" does not exist in ${classRecord.className}. Available sections: ${optionsForClass}.`
+                : `No sections have been configured for ${classRecord.className}.`,
+              "sectionId",
+            ),
+          );
+          continue;
+        }
+
+        if (norm(sectionRecord.classId) !== norm(classRecord.classId)) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "reference",
+              `Section "${sectionRecord.sectionName}" does not belong to ${classRecord.className}.`,
+              "sectionId",
+            ),
+          );
+          continue;
+        }
+
+        const sessionRecord = sessionByName.get(norm(row.session)) ?? sessionByName.get(sessionKey(row.session));
+        if (!sessionRecord) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "reference",
+              `Session "${asString(raw.session)}" does not exist in this institute. Available sessions: ${availableSessions}.`,
+              "session",
+            ),
+          );
+          continue;
+        }
+
+        // Store canonical values so the uniqueness keys line up with the ones
+        // written by the single-student form.
+        const className: string = classRecord.className;
+        const sectionId: string = sectionRecord.sectionId;
+        const sessionName: string = sessionRecord.sessionName;
+
+        const emailKey = norm(row.email);
+        const mobileKey = asString(row.mobile);
+        const rollKey = rollKeyOf(row.rollNumber, sectionId, sessionRecord.sessionId);
+
+        const success: BulkRowSuccess = {
           rowNumber,
-          userId: newUser.userId,
+          userId: plan[i].userId,
           name: `${row.firstName} ${row.lastName}`.trim(),
           email: row.email,
           mobile: row.mobile,
@@ -560,25 +469,186 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
           className,
           sectionName: sectionRecord.sectionName,
           session: sessionName,
-          generatedPassword: generated ? plainPassword : null,
-        });
-      } catch (err: any) {
-        try {
-          await t.rollback();
-        } catch {
-          /* transaction already resolved */
+          generatedPassword: plan[i].password,
+        };
+
+        // Saved by an earlier run of this import, after its last recorded progress.
+        if (savedBefore.has(plan[i].userId)) {
+          seenEmails.set(emailKey, rowNumber);
+          seenMobiles.set(mobileKey, rowNumber);
+          seenRollKeys.set(rollKey, rowNumber);
+          successes.push(success);
+          await hooks.onCreated?.(success, true);
+          continue;
         }
-        const isUnique = err?.name === "SequelizeUniqueConstraintError";
-        errors.push(
-          buildError(
-            rowNumber,
-            raw,
-            isUnique ? "duplicate" : "server",
-            isUnique
-              ? "This student clashes with an existing record (email, mobile or roll number)."
-              : `Could not save this student: ${err?.message ?? "unknown error"}`,
-          ),
-        );
+
+        // 5c ── Duplicates inside the uploaded file ─────────────────────────────
+        if (seenEmails.has(emailKey)) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "duplicate",
+              `Email "${row.email}" is already used on row ${seenEmails.get(emailKey)} of this file.`,
+              "email",
+            ),
+          );
+          continue;
+        }
+        if (seenMobiles.has(mobileKey)) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "duplicate",
+              `Mobile number "${row.mobile}" is already used on row ${seenMobiles.get(mobileKey)} of this file.`,
+              "mobile",
+            ),
+          );
+          continue;
+        }
+        if (seenRollKeys.has(rollKey)) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "duplicate",
+              `Roll number "${row.rollNumber}" for ${className} section ${sectionRecord.sectionName} (${sessionName}) is already used on row ${seenRollKeys.get(rollKey)} of this file.`,
+              "rollNumber",
+            ),
+          );
+          continue;
+        }
+
+        // 5d ── Duplicates already in the database ──────────────────────────────
+        if (dbEmails.has(emailKey)) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "duplicate",
+              `Email "${row.email}" is already registered to another user.`,
+              "email",
+            ),
+          );
+          continue;
+        }
+        if (dbMobiles.has(mobileKey)) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "duplicate",
+              `Mobile number "${row.mobile}" is already registered to another user.`,
+              "mobile",
+            ),
+          );
+          continue;
+        }
+        if (dbRollKeys.has(rollKey)) {
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              "duplicate",
+              `Roll number "${row.rollNumber}" already exists in ${className} section ${sectionRecord.sectionName} for session ${sessionName}.`,
+              "rollNumber",
+            ),
+          );
+          continue;
+        }
+
+        // 5e ── Persist the row in its own transaction ──────────────────────────
+        // One transaction per row is deliberate: on Postgres a single failed
+        // statement poisons the surrounding transaction, so a shared transaction
+        // would let one bad row take down every row after it.
+        const t = await sequelize.transaction();
+        try {
+          const plainPassword = plan[i].password ?? asString(row.password);
+          const encryptedPassword = await EncryptPassword.encryptPassword(plainPassword);
+          const userId = plan[i].userId;
+
+          const newUser = await UserModal.create(
+            {
+              userId,
+              userName: `${row.firstName} ${row.lastName}`.trim(),
+              emailId: row.email,
+              phoneNumber: row.mobile,
+              password: encryptedPassword,
+              roleId: studentRole.id,
+              instituteId,
+              status: 1,
+            },
+            { transaction: t },
+          );
+
+          await StudentProfile.create(
+            {
+              userId: newUser.userId,
+              instituteId,
+              classId: classRecord.classId,
+              rollNumber: row.rollNumber,
+              className,
+              sectionId,
+              session: sessionName,
+              fatherName: asString(row.fatherName),
+              gender: row.gender,
+              dob: new Date(row.dob),
+              aadhar: asString(row.aadhar) || "000000000000",
+              address: asString(row.address) || "Not provided",
+              profileUrl: null,
+              isActive: true,
+            },
+            { transaction: t },
+          );
+          await placeStudent(
+            {
+              instituteId,
+              studentId: newUser.userId,
+              place: {
+                classId: classRecord.classId,
+                className,
+                sectionId,
+                sectionName: sectionRecord.sectionName,
+                sessionId: sessionRecord.sessionId,
+                sessionName,
+              },
+              rollNumber: row.rollNumber,
+            },
+            t,
+          );
+          await syncStudentProfiles(instituteId, [newUser.userId], t);
+
+          await t.commit();
+
+          seenEmails.set(emailKey, rowNumber);
+          seenMobiles.set(mobileKey, rowNumber);
+          seenRollKeys.set(rollKey, rowNumber);
+
+          successes.push(success);
+        } catch (err: any) {
+          try {
+            await t.rollback();
+          } catch {
+            /* transaction already resolved */
+          }
+          const isUnique = err?.name === "SequelizeUniqueConstraintError";
+          errors.push(
+            buildError(
+              rowNumber,
+              raw,
+              isUnique ? "duplicate" : "server",
+              isUnique
+                ? "This student clashes with an existing record (email, mobile or roll number)."
+                : `Could not save this student: ${err?.message ?? "unknown error"}`,
+            ),
+          );
+          continue;
+        }
+        // Outside the row's transaction: a failing hook must not report a saved row as unsaved.
+        await hooks.onCreated?.(success, false);
+      } finally {
+        await hooks.onRow?.({ done: i + 1, successes, errors });
       }
     }
 
@@ -616,7 +686,7 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
       },
     };
   } catch (e: any) {
-    console.error("bulkCreateStudents failed:", e);
+    console.error("Student import failed:", e);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
@@ -625,4 +695,7 @@ const bulkCreateStudents = async (students: any[], createdBy: any): Promise<any>
   }
 };
 
-export default { bulkCreateStudents };
+/** The whole file in one go, without progress (the upload endpoint queues runImport instead). */
+const bulkCreateStudents = (students: any[], createdBy: any): Promise<any> => runImport(students, createdBy);
+
+export default { runImport, bulkCreateStudents };

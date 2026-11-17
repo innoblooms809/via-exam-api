@@ -10,6 +10,7 @@ import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.mode
 import Exam from "../../models/Exam.model";
 import Session from "../../models/Session.model";
 import EncryptPassword from "../../utils/encryption";
+import { PASSWORD_MESSAGE, isStrongPassword } from "../../utils/passwordRule";
 import RegHelper from "../../utils/helper";
 import exclude from "../../utils/exclude";
 import Section from "../../models/Section.model";
@@ -24,6 +25,7 @@ import { NAME_RULE } from "../../utils/textRules";
 import { TEACHER_TYPES, checkClassTeacherPost, isTeacherType } from "./classTeacher.service";
 import SessionSection from "../../models/SessionSection.model";
 import { activeSession, addToCurrentSession, releaseTeacher } from "../academic/sessionSetup.service";
+import { paging } from "../../utils/pagination";
 import {
   formatSpecializations,
   parseSpecializations,
@@ -50,6 +52,9 @@ const createTeacher = async (
   if (taken) return { error: true, statusCode: httpStatus.CONFLICT, message: taken };
   const teacherRole = await Role.findOne({ where: { role: "TEACHER" } });
   if (!teacherRole) return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: "TEACHER role not found. Please seed roles." };
+
+  // Left empty, a password is generated and emailed; typed, it follows the shared rule.
+  if (body.password && !isStrongPassword(body.password)) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: PASSWORD_MESSAGE };
 
   const teacherType = body.teacherType || "Subject Teacher";
   if (!isTeacherType(teacherType)) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `Teacher type must be one of: ${TEACHER_TYPES.join(", ")}.` };
@@ -89,7 +94,6 @@ const createTeacher = async (
       { transaction: t },
     );
 
-
     // 9. Create teacher profile record
     await TeacherProfile.create(
       {
@@ -110,13 +114,10 @@ const createTeacher = async (
       { transaction: t },
     );
 
-
     if (post) await addToCurrentSession(instituteId, { sections: [{ classId: post.classId, sectionId: post.sectionId, classTeacherId: newUser.userId }] }, t);
 
     // 10. Commit
     await t.commit();
-
-
 
     return {
       error: false,
@@ -141,9 +142,8 @@ const createTeacher = async (
 // ─── GET ALL TEACHERS (Production-Grade Server-Side Pagination & Indexed Search) ───
 const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
   try {
-    const pageNum = parseInt(query?.page || "1", 10);
-    const limitNum = parseInt(query?.limit || "25", 10); // Default limit: 25 per user request
-    const offset = (pageNum - 1) * limitNum;
+    // 25 a page by default, at most 1000 (the People screens load a school's staff at once).
+    const { page: pageNum, limit: limitNum, offset } = paging(query, { defaultLimit: 25, maxLimit: 1000 });
     const search = (query?.search || "").trim();
     const isExaminer = query?.isExaminer || "";
     const teacherTypeFilter = query?.teacherType || "";
@@ -316,71 +316,6 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
   }
 };
 
-// ─── GET ONE TEACHER ──────────────────────────────────────────────────────────
-const getTeacherById = async (userId: string, createdBy: any): Promise<any> => {
-  try {
-    const teacher = await UserModal.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-      include: [
-        { model: Role, as: "role" },
-        { model: TeacherProfile, as: "teacherProfile" },
-      ],
-      attributes: { exclude: ["password", "refreshToken"] },
-    });
-
-    if (!teacher) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Teacher not found.",
-      };
-    }
-
-    // Find assigned class if teacher is Class Teacher
-
-    const assignedSection = await Section.findOne({
-      where: { classTeacherId: userId, instituteId: createdBy.instituteId, isDeleted: false, isActive: true },
-      include: [{ model: Class, as: "class", attributes: ["classId", "className"] }],
-    });
-
-    const assignedClass = await Class.findOne({
-      where: { classTeacherId: userId, instituteId: createdBy.instituteId, isDeleted: false },
-    });
-
-    const teacherData: any = teacher.toJSON();
-    if (assignedSection) {
-      teacherData.assignedClass = {
-        classId: assignedSection.classId,
-        className: (assignedSection as any).class?.className || "",
-        sectionId: assignedSection.sectionId,
-        sectionName: assignedSection.sectionName,
-      };
-    } else if (assignedClass) {
-      teacherData.assignedClass = {
-        classId: assignedClass.classId,
-        className: assignedClass.className,
-        sectionId: null,
-        sectionName: null,
-      };
-    } else {
-      teacherData.assignedClass = null;
-    }
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Teacher fetched successfully.",
-      data: teacherData,
-      
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
-
 // ─── UPDATE TEACHER ───────────────────────────────────────────────────────────
 const updateTeacher = async (
   userId: string,
@@ -532,92 +467,6 @@ const deleteTeacher = async (userId: string, createdBy: any): Promise<any> => {
   } catch (e: any) {
     console.error("Delete teacher error:", e);
     return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Something went wrong: ${e.message}` };
-  }
-};
-
-// ─── ASSIGN EXAMINER ──────────────────────────────────────────────────────────
-const assignExaminer = async (userId: string, createdBy: any): Promise<any> => {
-  try {
-    const profile = await TeacherProfile.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-    });
-
-    if (!profile) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Teacher profile not found.",
-      };
-    }
-
-    if (profile.isExaminer) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Teacher is already an examiner.",
-      };
-    }
-
-    await profile.update({
-      isExaminer: true,
-      examinerSince: new Date(),
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Teacher assigned as examiner successfully.",
-      data: { userId, isExaminer: true },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
-
-// ─── REMOVE EXAMINER ──────────────────────────────────────────────────────────
-const removeExaminer = async (userId: string, createdBy: any): Promise<any> => {
-  try {
-    const profile = await TeacherProfile.findOne({
-      where: { userId, instituteId: createdBy.instituteId },
-    });
-
-    if (!profile) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Teacher profile not found.",
-      };
-    }
-
-    if (!profile.isExaminer) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "Teacher is not an examiner.",
-      };
-    }
-
-    await profile.update({
-      isExaminer: false,
-      examinerSince: null,
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Examiner role removed successfully.",
-      data: { userId, isExaminer: false },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
   }
 };
 
@@ -844,213 +693,6 @@ const getMyStudents = async (user: any, query: any): Promise<any> => {
   }
 };
 
-const getMyAssignments = async (teacherId: string): Promise<any> => {
-  try {
-    const user = await UserModal.findOne({ where: { userId: teacherId } });
-    const instituteId = user?.instituteId;
-
-    const activeSession = instituteId
-      ? await Session.findOne({
-          where: { instituteId, isActive: true, isDeleted: false },
-        })
-      : null;
-
-    const assignedSubjects = await Subject.findAll({
-      where: {
-        teacherId,
-        isActive: true,
-        isDeleted: false,
-      },
-      include: [
-        {
-          model: Class,
-          as: "class",
-          attributes: ["classId", "className"],
-          required: false,
-        },
-        {
-          model: Section,
-          as: "section",
-          attributes: ["sectionId", "sectionName"],
-          required: false,
-        },
-      ],
-    });
-
-    const assignedClasses = await Class.findAll({
-      where: {
-        classTeacherId: teacherId,
-        isActive: true,
-        isDeleted: false,
-      },
-      include: [
-        {
-          model: Section,
-          as: "sections",
-          attributes: ["sectionId", "sectionName"],
-          required: false,
-        },
-      ],
-    });
-
-    const assignedSections = await Section.findAll({
-      where: {
-        classTeacherId: teacherId,
-        isActive: true,
-        isDeleted: false,
-      },
-      include: [
-        {
-          model: Class,
-          as: "class",
-          attributes: ["classId", "className"],
-          required: false,
-        },
-      ],
-    });
-
-    // Fetch all active sections for the classes where the teacher teaches subjects
-    const subjectClassIds = Array.from(
-      new Set(assignedSubjects.map((s: any) => s.classId).filter(Boolean))
-    );
-
-    const classSectionsList = subjectClassIds.length > 0
-      ? await Section.findAll({
-          where: {
-            classId: { [Op.in]: subjectClassIds },
-            isActive: true,
-            isDeleted: false,
-          },
-          attributes: ["sectionId", "classId", "sectionName"],
-          order: [["sectionName", "ASC"]],
-        })
-      : [];
-
-    const classSectionsMap = new Map<string, any[]>();
-    classSectionsList.forEach((sec: any) => {
-      const plainSec = sec.get({ plain: true });
-      const list = classSectionsMap.get(plainSec.classId) || [];
-      list.push(plainSec);
-      classSectionsMap.set(plainSec.classId, list);
-    });
-
-    // Group assigned subjects by classId + subjectName so multiple section entries merge
-    const groupedSubjectMap = new Map<string, any>();
-
-    for (const s of assignedSubjects) {
-      const plain: any = s.get({ plain: true });
-      const className = plain.class?.className || plain.className || "";
-      const subjectNameKey = (plain.subjectName || "").trim().toLowerCase();
-      const groupKey = `${plain.classId || className}_${subjectNameKey}`;
-
-      let secs: any[] = [];
-      if (plain.sectionId && plain.section) {
-        secs = [plain.section];
-      } else if (plain.sectionId && !plain.section) {
-        const foundSec = classSectionsList.find(
-          (sec: any) => sec.sectionId === plain.sectionId
-        );
-        if (foundSec) secs = [foundSec.get({ plain: true })];
-      } else {
-        secs = classSectionsMap.get(plain.classId) || [];
-      }
-
-      if (!groupedSubjectMap.has(groupKey)) {
-        groupedSubjectMap.set(groupKey, {
-          ...plain,
-          className,
-          sections: [...secs],
-          sessionName: activeSession ? activeSession.sessionName : null,
-        });
-      } else {
-        const existing = groupedSubjectMap.get(groupKey);
-        const existingKeys = new Set(
-          existing.sections.map((sec: any) => sec.sectionId || sec.sectionName)
-        );
-        for (const sec of secs) {
-          const key = sec.sectionId || sec.sectionName;
-          if (!existingKeys.has(key)) {
-            existingKeys.add(key);
-            existing.sections.push(sec);
-          }
-        }
-      }
-    }
-
-    const formattedSubjects = Array.from(groupedSubjectMap.values()).map((sub: any) => {
-      let sectionNameStr = "All Sections";
-      if (sub.sections && sub.sections.length > 0) {
-        const cleanNames = Array.from(
-          new Set(
-            sub.sections
-              .map((sec: any) =>
-                (sec.sectionName || "").replace(/^(sec|section)\s*/i, "").trim()
-              )
-              .filter(Boolean)
-          )
-        );
-        if (cleanNames.length > 0) {
-          sectionNameStr = cleanNames.map((name: any) => `Sec ${name}`).join(", ");
-        }
-      }
-      return {
-        ...sub,
-        sectionName: sectionNameStr,
-      };
-    });
-
-    const formattedClasses = assignedClasses.map((c: any) => {
-      const plain: any = c.get({ plain: true });
-      let secName = "All Sections";
-      if (plain.sections && plain.sections.length > 0) {
-        const cleanNames = Array.from(
-          new Set(
-            plain.sections
-              .map((s: any) => (s.sectionName || "").replace(/^(sec|section)\s*/i, "").trim())
-              .filter(Boolean)
-          )
-        );
-        if (cleanNames.length > 0) {
-          secName = cleanNames.map((name: any) => `Sec ${name}`).join(", ");
-        }
-      }
-      return {
-        ...plain,
-        sectionName: secName,
-        sessionName: activeSession ? activeSession.sessionName : null,
-      };
-    });
-
-    const formattedSections = assignedSections.map((sec: any) => {
-      const plain = sec.get({ plain: true });
-      const rawName = plain.sectionName ? plain.sectionName.replace(/^(sec|section)\s*/i, "").trim() : "";
-      return {
-        ...plain,
-        sectionName: rawName ? `Sec ${rawName}` : "—",
-        sessionName: activeSession ? activeSession.sessionName : null,
-      };
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "Assignments fetched successfully",
-      data: {
-        assignedSubjects: formattedSubjects,
-        assignedClasses: formattedClasses,
-        assignedSections: formattedSections,
-        activeSession: activeSession ? activeSession.sessionName : null,
-      },
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
-};
-
 const getTeacherQuestionPapers = async (
   teacherUser: any,
   query: any,
@@ -1202,138 +844,11 @@ export default {
   createTeacher,
   updateSpecializations,
   getAllTeachers,
-  getTeacherById,
   updateTeacher,
   deleteTeacher,
-  assignExaminer,
-  removeExaminer,
   getDeactivatedTeachers,
   reactivateTeacher,
-  getMyAssignments,
   getMyTeaching,
   getMyStudents,
   getTeacherQuestionPapers,
-  getTeacherExamsWithApprovalStatus: async (
-    teacherUser: any,
-    query: any,
-    targetUserId?: string
-  ): Promise<any> => {
-    try {
-      const QuestionPaperAnswer = (await import(
-        "../../models/question-paper/StandardAnswer.model"
-      )).default;
-
-      const teacherId = targetUserId || query?.teacherId || teacherUser?.userId;
-      const instituteId = teacherUser?.instituteId;
-
-      if (!teacherId) {
-        return {
-          error: true,
-          statusCode: httpStatus.BAD_REQUEST,
-          message: "Teacher ID is required.",
-        };
-      }
-
-      const whereExam: any = { teacherId };
-      if (instituteId) {
-        whereExam.instituteId = instituteId;
-      }
-
-      const exams = await Exam.findAll({
-        where: whereExam,
-        order: [["createdAt", "DESC"]],
-      });
-
-      const examIds = exams.map((e) => e.examId);
-
-      const [papers, answers, classesList, subjectsList, sessionsList] = await Promise.all([
-        examIds.length > 0 ? QuestionPaper.findAll({ where: { examId: { [Op.in]: examIds } } }) : [],
-        examIds.length > 0 ? QuestionPaperAnswer.findAll({ where: { examId: { [Op.in]: examIds } } }) : [],
-        Class.findAll({ where: { instituteId, isDeleted: false } }),
-        Subject.findAll({ where: { instituteId, isDeleted: false } }),
-        Session.findAll({ where: { instituteId } }),
-      ]);
-
-      const classMap = new Map<string, string>(classesList.map((c: any) => [c.classId, c.className]));
-      const subjectMap = new Map<string, string>(subjectsList.map((s: any) => [s.subjectId, s.subjectName]));
-      const sessionMap = new Map<string, string>(sessionsList.map((s: any) => [s.sessionId, s.sessionName]));
-
-      const paperMap = new Map<string, any[]>();
-      papers.forEach((p) => {
-        const list = paperMap.get(p.examId) || [];
-        list.push(p.get({ plain: true }));
-        paperMap.set(p.examId, list);
-      });
-
-      const answerMap = new Map<string, any[]>();
-      answers.forEach((a) => {
-        const list = answerMap.get(a.examId) || [];
-        list.push(a.get({ plain: true }));
-        answerMap.set(a.examId, list);
-      });
-
-      const result = exams.map((exam) => {
-        const qpList = paperMap.get(exam.examId) || [];
-        const ansList = answerMap.get(exam.examId) || [];
-
-        const qp = qpList[0] || null;
-        const ans = ansList[0] || null;
-
-        let workflowStatus = "DRAFT";
-        if (!qp && !ans) {
-          workflowStatus = "BOTH_MISSING";
-        } else if (!qp) {
-          workflowStatus = "QP_MISSING";
-        } else if (!ans) {
-          workflowStatus = "ANSWER_MISSING";
-        } else if (qp.status === "REJECTED" || ans.status === "REJECTED") {
-          workflowStatus = "REJECTED";
-        } else if (qp.status === "PENDING_APPROVAL" || ans.status === "PENDING_APPROVAL") {
-          workflowStatus = "PENDING_APPROVAL";
-        } else if (
-          (qp.status === "APPROVED" || qp.status === "PUBLISHED") &&
-          (ans.status === "APPROVED" || ans.status === "PUBLISHED")
-        ) {
-          workflowStatus = "APPROVED";
-        }
-
-        const className = exam.classId ? classMap.get(exam.classId) || exam.classId : "All Classes";
-        const subjectName = exam.subjectId ? subjectMap.get(exam.subjectId) || exam.subjectId : "General Subject";
-        const sessionName = exam.sessionId ? sessionMap.get(exam.sessionId) || exam.sessionId : "";
-
-        return {
-          examId: exam.examId,
-          examType: exam.examType,
-          totalMarks: exam.totalMarks,
-          passingMarks: exam.passingMarks,
-          duration: exam.duration,
-          status: exam.status,
-          className,
-          subjectName,
-          sessionName,
-          workflowStatus,
-          rejectionNote: qp?.rejectionNote || ans?.rejectionNote || null,
-          questionPaper: qp,
-          answerSheet: ans,
-        };
-      });
-
-      return {
-        error: false,
-        statusCode: httpStatus.OK,
-        message: "Teacher approval workflow exams fetched successfully.",
-        data: {
-          total: result.length,
-          exams: result,
-        },
-      };
-    } catch (error: any) {
-      console.error("getTeacherExamsWithApprovalStatus Error:", error);
-      return {
-        error: true,
-        statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-        message: `Failed to fetch approval workflow exams: ${error.message}`,
-      };
-    }
-  },
 };

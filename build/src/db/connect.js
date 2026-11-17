@@ -39,7 +39,10 @@ const logger_1 = __importDefault(require("../config/logger"));
 const sequelize_1 = require("../config/sequelize");
 require("../models/index");
 const sessionScopeBackfill_1 = require("./sessionScopeBackfill");
+const sectionWorkBackfill_1 = require("./sectionWorkBackfill");
+const rollNumberBackfill_1 = require("./rollNumberBackfill");
 const examProgress_1 = require("../services/exam/examProgress");
+const dataProtectionMaintenance_1 = require("../services/security/dataProtectionMaintenance");
 // Indexes for hot read paths (notification polling, per-institute counts, dashboard trends).
 // sync() never adds indexes to existing tables, so they are created here. CONCURRENTLY
 // builds them without blocking writes; it runs after startup so boot isn't delayed.
@@ -66,6 +69,10 @@ const PERFORMANCE_INDEXES = [
     `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_ai_evaluations_student_idx" ON "viaexam_ai_evaluations" ("studentId")`,
     // "Low quality" filter on an exam's sheets.
     `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_exam_quality_idx" ON "viaexam_answer_sheets" ("examId", "qualityFlag") WHERE "isDeleted" = false`,
+    // Evaluation maintenance: pending runs (watchdog) and failed ones it may retry.
+    `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_ai_evaluations_status_updated_idx" ON "viaexam_ai_evaluations" ("status", "updatedAt") WHERE "status" IN ('Pending', 'Failed')`,
+    // Scan-quality sweep: sheets not checked yet.
+    `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_answer_sheets_unchecked_idx" ON "viaexam_answer_sheets" ("createdAt") WHERE "qualityFlag" IS NULL AND "isDeleted" = false`,
 ];
 const ensurePerformanceIndexes = () => __awaiter(void 0, void 0, void 0, function* () {
     for (const sql of PERFORMANCE_INDEXES) {
@@ -94,18 +101,46 @@ const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
         // Scan quality of each uploaded sheet, and the thresholds the school flags it by.
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_answer_sheets" ADD COLUMN IF NOT EXISTS "qualityFlag" VARCHAR(16), ADD COLUMN IF NOT EXISTS "qualityReport" JSONB;`).catch(() => null);
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_institute_settings" ADD COLUMN IF NOT EXISTS "scanQuality" JSONB;`).catch(() => null);
+        // Recheck policy: whether students can claim and for how many days (on, 6 by default), and each published result's deadline.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_institute_settings" ADD COLUMN IF NOT EXISTS "recheckPolicy" JSONB;`).catch(() => null);
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_student_results" ADD COLUMN IF NOT EXISTS "recheckClosesAt" TIMESTAMP WITH TIME ZONE;`).catch(() => null);
         // A recheck teacher's re-evaluation (a draft until the admin approves) and what it changes,
         // question by question; the same per-question detail on every change of a student's marks.
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_recheck_assignments" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`).catch(() => null);
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_marks_audit" ADD COLUMN IF NOT EXISTS "details" JSONB;`).catch(() => null);
         // A cross-checker's re-evaluation (a draft until their verdict) and what the verdict changed.
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_cross_check_items" ADD COLUMN IF NOT EXISTS "draft" JSONB, ADD COLUMN IF NOT EXISTS "changes" JSONB;`).catch(() => null);
+        // Exam work by section: the section each scanner / evaluator has, and whose sheet each sheet is.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_exam_scanner_assignments" ADD COLUMN IF NOT EXISTS "sectionId" VARCHAR(255);`).catch(() => null);
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_evaluation_assignments" ADD COLUMN IF NOT EXISTS "sectionId" VARCHAR(255);`).catch(() => null);
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_answer_sheets" ADD COLUMN IF NOT EXISTS "sectionId" VARCHAR(255), ADD COLUMN IF NOT EXISTS "studentId" VARCHAR(255);`).catch(() => null);
+        // AI evaluation runs through the job queue: when each run was queued / started / ended, how
+        // many runs a sheet has had, why the last one failed, and the evaluator's question tree.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_ai_evaluations" ADD COLUMN IF NOT EXISTS "resultTree" JSONB, ADD COLUMN IF NOT EXISTS "queuedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "startedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "finishedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "runCount" INTEGER NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS "failureKind" VARCHAR(16);`).catch(() => null);
+        // Why the last run failed, as a code the queue page explains (evaluationFailure.ts), the API
+        // process holding the current run (an in-memory queue dies with its process), and where a
+        // paused run stopped (pipeline6.service: pause / resume).
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_ai_evaluations" ADD COLUMN IF NOT EXISTS "failure" JSONB, ADD COLUMN IF NOT EXISTS "runOwner" VARCHAR(160), ADD COLUMN IF NOT EXISTS "pause" JSONB;`).catch(() => null);
+        // Encrypted columns hold ciphertext, longer than the value (utils/dataProtection): TEXT. A
+        // varchar → text change keeps the data and doesn't rewrite the table. Wrong OTP tries.
+        yield (0, dataProtectionMaintenance_1.prepareEncryptedColumns)();
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_password_resets" ADD COLUMN IF NOT EXISTS "attempts" INTEGER NOT NULL DEFAULT 0;`).catch(() => null);
+        // Date sheets: a paper is a draft until the admin publishes it; after that a change is a
+        // reschedule, kept in changeLog. Existing rows (and other events) are already published.
+        yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_academic_calendar" ADD COLUMN IF NOT EXISTS "status" VARCHAR(16) NOT NULL DEFAULT 'published', ADD COLUMN IF NOT EXISTS "publishedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "publishedBy" VARCHAR(255), ADD COLUMN IF NOT EXISTS "changeLog" JSONB;`).catch(() => null);
         yield sequelize_1.sequelize.sync({ force: false });
         logger_1.default.info("Models synced with PostgreSQL");
+        // Refuses to start when the database holds values sealed with a key this process lacks.
+        yield (0, dataProtectionMaintenance_1.checkStoredKeys)();
         // Once per database: fill the per-session tables (setup, enrolments) from existing data.
         yield (0, sessionScopeBackfill_1.runSessionScopeBackfill)();
         // Every start: a student without any enrolment is placed by their profile.
         yield (0, sessionScopeBackfill_1.ensureEveryStudentEnrolled)();
+        // Once per database: roll numbers typed in Arabic or other digits (١٠١) rewritten with 0-9,
+        // and file names stored as latin1 read back. Logs and retries next start if it fails.
+        yield (0, rollNumberBackfill_1.runRollNumberBackfill)();
+        // Exam work by section: per-section keys; once, existing sheets and assignments brought along.
+        yield (0, sectionWorkBackfill_1.runSectionWorkBackfill)();
         // "100% evaluated" notifications follow each sheet that gets its marks.
         (0, examProgress_1.watchEvaluationProgress)();
         fn();

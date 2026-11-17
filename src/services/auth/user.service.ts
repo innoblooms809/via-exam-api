@@ -14,6 +14,7 @@ import StudentProfile from "../../models/Student.model";
 import ScannerProfile from "../../models/ScannerProfile.model";
 import Section from "../../models/Section.model";
 import { newId } from "../../utils/idGenerator";
+import { normalizeRollNo } from "../../utils/textRules";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -536,7 +537,7 @@ const viaExamUpdateProfile = async (userId: string, body: any, files: any): Prom
     if (studentProfile || (user as any).role?.role?.toLowerCase() === "student") {
       const studentUpdates: any = {};
       if (body.fatherName !== undefined) studentUpdates.fatherName = body.fatherName;
-      if (body.rollNumber !== undefined) studentUpdates.rollNumber = body.rollNumber;
+      if (body.rollNumber !== undefined) studentUpdates.rollNumber = normalizeRollNo(body.rollNumber);
       if (body.className !== undefined) studentUpdates.className = body.className;
       if (body.sectionId !== undefined) studentUpdates.sectionId = body.sectionId;
       if (body.session !== undefined) studentUpdates.session = body.session;

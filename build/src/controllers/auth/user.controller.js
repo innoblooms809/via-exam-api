@@ -17,13 +17,14 @@ const svg_captcha_1 = __importDefault(require("svg-captcha")); // same as your b
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const token_service_1 = __importDefault(require("../../services/auth/token.service")); // reuse your existing tokenService
 const user_service_1 = __importDefault(require("../../services/auth/user.service"));
-const mailHelper_1 = require("../../utils/mailHelper"); // reuse your mail helper
+const mailHelper_1 = require("../../utils/mailHelper"); // queued; retried while SMTP is down
 const config_1 = __importDefault(require("../../config/config"));
 const User_model_1 = __importDefault(require("../../models/User.model"));
 const UserPresenceSession_model_1 = __importDefault(require("../../models/UserPresenceSession.model"));
 const logger_1 = __importDefault(require("../../config/logger"));
 const Role_model_1 = __importDefault(require("../../models/Role.model"));
 const auth_1 = require("../../middlewares/auth");
+const dataProtection_1 = require("../../utils/dataProtection");
 const getCookieValue = (req, name) => {
     var _a;
     const cookies = req.cookies;
@@ -95,7 +96,8 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
             return res.status(result.statusCode).send(result);
         }
         const token = yield token_service_1.default.generateUserAuthTokens(result.data.user);
-        yield User_model_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: result.data.user.userId } });
+        // Only a digest of the refresh token is stored: a copy of the database can't sign anyone in.
+        yield User_model_1.default.update({ refreshToken: (0, dataProtection_1.digestSecret)(token.refresh.token, "refresh-token") }, { where: { userId: result.data.user.userId } });
         const cookieNames = getRoleCookieNames(((_a = result.data.user.role) === null || _a === void 0 ? void 0 : _a.role) || "");
         // Set tokens as httpOnly cookies (role-scoped to avoid session collisions)
         res.cookie(cookieNames.access, token.access.token, {
@@ -226,13 +228,14 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 message: "This account is no longer active.",
             });
         }
-        const matchingStored = candidates.find((candidate) => candidate === user.refreshToken);
+        // The stored value is a digest (or, for a session from before digests, the token itself).
+        const matchingStored = candidates.find((candidate) => (0, dataProtection_1.verifySecret)(candidate, user.refreshToken, "refresh-token"));
         if (matchingStored) {
             refreshToken = matchingStored;
         }
         const isSameUser = ((_g = decoded.sub) === null || _g === void 0 ? void 0 : _g.userId) === user.userId ||
             decoded.sub === user.userId;
-        if (!isSameUser || !user.refreshToken || user.refreshToken !== refreshToken) {
+        if (!isSameUser || !matchingStored) {
             return res.status(http_status_1.default.FORBIDDEN).json({
                 error: true,
                 statusCode: http_status_1.default.FORBIDDEN,
@@ -240,7 +243,7 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         const token = yield token_service_1.default.generateUserAuthTokens(user);
-        yield User_model_1.default.update({ refreshToken: token.refresh.token }, { where: { userId: user.userId } });
+        yield User_model_1.default.update({ refreshToken: (0, dataProtection_1.digestSecret)(token.refresh.token, "refresh-token") }, { where: { userId: user.userId } });
         const cookieNames = getRoleCookieNames(((_h = user.role) === null || _h === void 0 ? void 0 : _h.role) || "");
         res.cookie(cookieNames.access, token.access.token, {
             httpOnly: true,
@@ -288,7 +291,7 @@ const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
             const loginUrl = slug
                 ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
                 : `${config_1.default.frontendUrl}/auth/signin`;
-            (0, mailHelper_1.sendUserCredentials)({
+            void (0, mailHelper_1.queueUserCredentials)({
                 userName: req.body.userName ||
                     `${req.body.firstName || ""} ${req.body.lastName || ""}`.trim(),
                 email: req.body.emailId || req.body.email,
@@ -296,8 +299,6 @@ const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
                 password: result.password,
                 role: req.body.role || "User",
                 loginUrl,
-            }).catch((err) => {
-                logger_1.default.error(`Background user email dispatch failed: ${err}`);
             });
         }
         return res.status(result.statusCode).send(result);

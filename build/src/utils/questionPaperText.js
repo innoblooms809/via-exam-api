@@ -10,7 +10,7 @@
 // stays on one line: the Python parsers treat any line that starts with a number
 // as a new question/answer, so multi-line text would otherwise be split apart.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.formatQuestionPaper = exports.getAnswerKeyFileUrl = exports.orderPaperQuestions = exports.getQuestionText = void 0;
+exports.formatQuestionPaper = exports.buildAnswerMap = exports.getAnswerKeyFileUrl = exports.paperSetOf = exports.orderPaperQuestions = exports.getQuestionText = exports.parseJson = void 0;
 const parseJson = (value) => {
     if (typeof value !== "string")
         return value;
@@ -21,6 +21,7 @@ const parseJson = (value) => {
         return value;
     }
 };
+exports.parseJson = parseJson;
 const oneLine = (value) => String(value !== null && value !== void 0 ? value : "").replace(/\s+/g, " ").trim();
 const sectionToken = (value) => String(value !== null && value !== void 0 ? value : "")
     .toUpperCase()
@@ -81,19 +82,30 @@ const orderPaperQuestions = (content) => {
     return ordered;
 };
 exports.orderPaperQuestions = orderPaperQuestions;
+/**
+ * The paper set (A–D) for a sheet's section: its letter, else "A". Sections named otherwise
+ * ("E", "Rose") must never reach a paperSet query — it is an enum, and Postgres rejects the
+ * whole lookup.
+ */
+const paperSetOf = (section) => {
+    const s = String(section !== null && section !== void 0 ? section : "").trim().toUpperCase();
+    return s === "B" || s === "C" || s === "D" ? s : "A";
+};
+exports.paperSetOf = paperSetOf;
 /** URL of an uploaded answer-key file (the PDF upload flow stores `{ pdfUrl }`). */
 const getAnswerKeyFileUrl = (ansDoc) => {
     var _a;
-    const parsed = parseJson(ansDoc);
+    const parsed = (0, exports.parseJson)(ansDoc);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
         return null;
     const url = (_a = parsed.pdfUrl) !== null && _a !== void 0 ? _a : parsed.fileUrl;
     return typeof url === "string" && url.trim() ? url.trim() : null;
 };
 exports.getAnswerKeyFileUrl = getAnswerKeyFileUrl;
+/** Typed answers by question id (and by "1" / "Q1" for answer sheets keyed by number). */
 const buildAnswerMap = (ansDoc) => {
     const map = new Map();
-    const parsed = parseJson(ansDoc);
+    const parsed = (0, exports.parseJson)(ansDoc);
     if (!parsed || typeof parsed !== "object")
         return map;
     const list = Array.isArray(parsed)
@@ -123,16 +135,17 @@ const buildAnswerMap = (ansDoc) => {
     });
     return map;
 };
+exports.buildAnswerMap = buildAnswerMap;
 const formatQuestionPaper = (content, ansDoc) => {
     const answerKeyFileUrl = (0, exports.getAnswerKeyFileUrl)(ansDoc);
-    const parsed = parseJson(content);
+    const parsed = (0, exports.parseJson)(content);
     if (!parsed) {
         return { questions: "", answers: "", calculatedTotalMarks: 0, answerKeyFileUrl };
     }
     if (typeof parsed !== "object") {
         return { questions: String(parsed), answers: "", calculatedTotalMarks: 0, answerKeyFileUrl };
     }
-    const answerMap = buildAnswerMap(ansDoc);
+    const answerMap = (0, exports.buildAnswerMap)(ansDoc);
     const questionLines = [];
     const answerLines = [];
     let calculatedTotalMarks = 0;

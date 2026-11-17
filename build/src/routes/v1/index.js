@@ -39,6 +39,7 @@ const monitoring_route_1 = __importDefault(require("./monitoring/monitoring.rout
 const recheckRequest_route_1 = __importDefault(require("./evaluation/recheckRequest.route"));
 const evaluationAssignment_route_1 = __importDefault(require("./evaluation/evaluationAssignment.route"));
 const subscription_route_1 = __importDefault(require("./subscription/subscription.route"));
+const partner_route_1 = require("./partner/partner.route");
 const router = express_1.default.Router();
 const defaultRoutes = [
     {
@@ -180,6 +181,15 @@ const defaultRoutes = [
     {
         path: "/subscription",
         route: subscription_route_1.default,
+    },
+    // The evaluation API for partners (API keys), and its key management.
+    {
+        path: "/partner",
+        route: partner_route_1.partnerRoutes,
+    },
+    {
+        path: "/partner-keys",
+        route: partner_route_1.partnerKeyRoutes,
     },
     // {
     //   path: '/captcha',

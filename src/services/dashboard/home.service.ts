@@ -8,6 +8,7 @@ import { memoize } from "../../utils/memoCache";
 import { buildRoster, loadExam } from "../exam/examRoster.service";
 import ExamWorkflowService, { PAPER_APPROVED_STATUSES } from "../exam/examWorkflow.service";
 import { maskName } from "../evaluation/evaluationAccess.service";
+import { OPEN_WORK_SQL, PAPER_WITH_SETTER } from "./openWork";
 
 // Home pages of the institute roles (admin, teacher, scanner, student). Each page is
 // one request: a few aggregate SQL statements run in parallel, nothing is loaded into
@@ -59,13 +60,11 @@ const TODAY = `(now() AT TIME ZONE :tz)::date`;
 const SERIES_START = `((date_trunc('day', now() AT TIME ZONE :tz) - (:days - 1) * interval '1 day') AT TIME ZONE :tz)`;
 const DAY_SERIES = `SELECT generate_series(${TODAY} - (:days - 1), ${TODAY}, interval '1 day')::date AS day`;
 
-/** Exam statuses while its paper is with the setter: not started, being written, sent back. */
-const PAPER_WITH_SETTER = ["Draft", "Paper Created", "Rejected"];
 /** A question paper is due this many days before its exam; still with its setter after that, it is overdue. */
 const PAPER_DUE_DAYS = 14;
 
 /** Joins that turn an exam row `e` into display names. */
-const EXAM_NAMES = `
+export const EXAM_NAMES = `
   LEFT JOIN viaexam_classes c ON c."classId" = e."classId"
   LEFT JOIN viaexam_sections sec ON sec."sectionId" = e."sectionId"
   LEFT JOIN viaexam_subjects sub ON sub."subjectId" = e."subjectId"`;
@@ -144,15 +143,16 @@ st AS (
 )`;
 
 /**
- * The day of an exam without a date of its own: the first day the date sheet gives its paper
- * (same session or none, class, subject and exam type), as the Exam calendar shows it.
+ * The day of an exam without a date of its own: the first day the published date sheet gives
+ * its paper (same session or none, class, subject and exam type). Draft papers don't count:
+ * nobody but the admin knows those dates yet.
  */
-const EXAM_DAY = `
+export const EXAM_DAY = `
 exam_day AS (
   SELECT e."examId", MIN(ac."eventDate") AS day
   FROM viaexam_exams e
   JOIN viaexam_academic_calendar ac
-    ON ac."instituteId" = e."instituteId" AND ac."isDeleted" = false
+    ON ac."instituteId" = e."instituteId" AND ac."isDeleted" = false AND ac."status" = 'published'
    AND ac."classId" = e."classId" AND ac."subjectId" = e."subjectId"
    AND (ac."sessionId" = e."sessionId" OR ac."sessionId" IS NULL)
    AND regexp_replace(lower(ac."eventType"), '[^a-z0-9]', '', 'g') = regexp_replace(lower(e."examType"), '[^a-z0-9]', '', 'g')
@@ -160,11 +160,11 @@ exam_day AS (
   GROUP BY e."examId"
 )`;
 /** An exam's day: its own date, else the date sheet's. */
-const DAY_OF_EXAM = `COALESCE(e."examDate", exam_day.day)`;
+export const DAY_OF_EXAM = `COALESCE(e."examDate", exam_day.day)`;
 
 /** Session columns and join for an exam row `e`. */
 const EXAM_SESSION_COLUMNS = `e."sessionId", sx."sessionName"`;
-const EXAM_SESSION = `LEFT JOIN viaexam_sessions sx ON sx."sessionId" = e."sessionId"`;
+export const EXAM_SESSION = `LEFT JOIN viaexam_sessions sx ON sx."sessionId" = e."sessionId"`;
 
 // The numbers of the session shown.
 const ADMIN_SUMMARY_SQL = `
@@ -305,7 +305,15 @@ ro AS (
   WHERE q."instituteId" = :inst AND q.status = 'PENDING'
   GROUP BY 1
 ),
-k AS (SELECT "sessionId" FROM stg UNION SELECT "sessionId" FROM qp UNION SELECT "sessionId" FROM rr UNION SELECT "sessionId" FROM fl UNION SELECT "sessionId" FROM ro)
+-- Evaluators asking to reopen marks they marked completed.
+ero AS (
+  SELECT ex."sessionId", COUNT(*)::int AS n
+  FROM viaexam_evaluation_reopen_requests q
+  JOIN ex ON ex."examId" = q."examId"
+  WHERE q."instituteId" = :inst AND q.status = 'PENDING'
+  GROUP BY 1
+),
+k AS (SELECT "sessionId" FROM stg UNION SELECT "sessionId" FROM qp UNION SELECT "sessionId" FROM rr UNION SELECT "sessionId" FROM fl UNION SELECT "sessionId" FROM ro UNION SELECT "sessionId" FROM ero)
 SELECT k."sessionId", se."sessionName",
        COALESCE(stg.ready, 0) AS ready, COALESCE(stg.cross_check, 0) AS cross_check,
        COALESCE(stg.no_evaluator_sheets, 0) AS no_evaluator_sheets, COALESCE(stg.no_evaluator_due, 0) AS no_evaluator_due,
@@ -313,14 +321,15 @@ SELECT k."sessionId", se."sessionName",
        COALESCE(stg.overdue, 0) AS overdue,
        COALESCE(stg.no_setter, 0) AS no_setter, COALESCE(stg.no_date, 0) AS no_date,
        COALESCE(qp.n, 0) AS approvals, COALESCE(rr.n, 0) AS rechecks, COALESCE(fl.n, 0) AS failed,
-       COALESCE(ro.n, 0) AS reopen
+       COALESCE(ro.n, 0) AS reopen, COALESCE(ero.n, 0) AS eval_reopen
 FROM k
 LEFT JOIN viaexam_sessions se ON se."sessionId" = k."sessionId"
 LEFT JOIN stg ON stg."sessionId" IS NOT DISTINCT FROM k."sessionId"
 LEFT JOIN qp ON qp."sessionId" IS NOT DISTINCT FROM k."sessionId"
 LEFT JOIN rr ON rr."sessionId" IS NOT DISTINCT FROM k."sessionId"
 LEFT JOIN fl ON fl."sessionId" IS NOT DISTINCT FROM k."sessionId"
-LEFT JOIN ro ON ro."sessionId" IS NOT DISTINCT FROM k."sessionId"`;
+LEFT JOIN ro ON ro."sessionId" IS NOT DISTINCT FROM k."sessionId"
+LEFT JOIN ero ON ero."sessionId" IS NOT DISTINCT FROM k."sessionId"`;
 
 // Question papers sent for approval, oldest first, from every session.
 const ADMIN_APPROVALS_SQL = `
@@ -360,41 +369,14 @@ WHERE rr."instituteId" = :inst AND rr.status IN ('Pending', 'Awaiting Approval')
 ORDER BY rr."createdAt"
 LIMIT 5`;
 
-// Work per person: open work (teachers: question papers to set in the sessions that haven't
-// ended; exams to evaluate, cross-checks and rechecks of every session; scanner staff: exams
-// to scan of every session) and, for scanner staff, the answer sheets they uploaded in the
-// session shown. The busiest eight of each role (the Staff workload tabs).
+// Work per person: their open work (see OPEN_WORK_SQL) and, for scanner staff, the answer
+// sheets they uploaded in the session shown. The busiest eight of each role (the Staff
+// workload tabs); the Staff workload page lists all of it, piece by piece.
 const ADMIN_WORKLOAD_SQL = `
 WITH w AS (
-  SELECT e."teacherId" AS "userId", 'papers' AS kind, COUNT(*)::int AS n
-  FROM viaexam_exams e
-  WHERE e."instituteId" = :inst AND e."isDeleted" = false AND e."teacherId" IS NOT NULL
-    AND e.status IN (:withSetter) AND ${IN_OPEN}
-  GROUP BY 1
-  UNION ALL
-  SELECT a."teacherId", 'evaluations', COUNT(*)::int
-  FROM viaexam_evaluation_assignments a
-  JOIN viaexam_exams e ON e."examId" = a."examId" AND e."isDeleted" = false
-  WHERE a."instituteId" = :inst AND a."isActive" = true AND a."reviewedAt" IS NULL
-  GROUP BY 1
-  UNION ALL
-  SELECT r."checkerId", 'crossChecks', COUNT(*)::int
-  FROM viaexam_cross_check_rounds r
-  JOIN viaexam_exams e ON e."examId" = r."examId" AND e."isDeleted" = false
-  WHERE r."instituteId" = :inst AND r."isActive" = true AND r.status = 'open'
-  GROUP BY 1
-  UNION ALL
-  SELECT ra."teacherId", 'rechecks', COUNT(*)::int
-  FROM viaexam_recheck_assignments ra
-  JOIN viaexam_exams e ON e."examId" = ra."examId" AND e."isDeleted" = false
-  WHERE ra."instituteId" = :inst AND ra."completedAt" IS NULL
-  GROUP BY 1
-  UNION ALL
-  SELECT a."scannerId", 'scans', COUNT(*)::int
-  FROM viaexam_exam_scanner_assignments a
-  JOIN viaexam_exams e ON e."examId" = a."examId" AND e."isDeleted" = false
-  WHERE a."instituteId" = :inst AND a."isActive" = true AND a.status = 'ASSIGNED'
-  GROUP BY 1
+  SELECT "userId", kind, COUNT(*)::int AS n
+  FROM (${OPEN_WORK_SQL}) open_work
+  GROUP BY 1, 2
   UNION ALL
   SELECT s."uploadedBy", 'uploaded', COUNT(*)::int
   FROM viaexam_answer_sheets s
@@ -499,6 +481,7 @@ interface OpenWorkRow {
   rechecks: number;
   failed: number;
   reopen: number;
+  evalReopen: number;
 }
 
 type AttentionKey =
@@ -512,7 +495,8 @@ type AttentionKey =
   | "readyToPublish"
   | "rechecksPending"
   | "failedEvaluations"
-  | "reopenRequests";
+  | "reopenRequests"
+  | "evaluationReopenRequests";
 
 const loadAdminHome = async (instituteId: string, session: { sessionId: string; sessionName: string; isActive: boolean } | null, openIds: string[]) => {
   const rule = (await settingsOf(instituteId)).crossCheck;
@@ -561,6 +545,7 @@ const loadAdminHome = async (instituteId: string, session: { sessionId: string; 
     rechecks: num(x.rechecks),
     failed: num(x.failed),
     reopen: num(x.reopen),
+    evalReopen: num(x.eval_reopen),
   }));
   // Every kind of admin exam work, for one session.
   const counts: Record<AttentionKey, (x: OpenWorkRow) => number> = {
@@ -575,6 +560,7 @@ const loadAdminHome = async (instituteId: string, session: { sessionId: string; 
     readyToPublish: (x) => x.ready,
     rechecksPending: (x) => x.rechecks,
     reopenRequests: (x) => x.reopen,
+    evaluationReopenRequests: (x) => x.evalReopen,
   };
   // What someone is still waiting on, whichever session it belongs to.
   const waitingOn: Partial<Record<AttentionKey, (x: OpenWorkRow) => number>> = {
@@ -585,6 +571,7 @@ const loadAdminHome = async (instituteId: string, session: { sessionId: string; 
     readyToPublish: (x) => x.ready,
     rechecksPending: (x) => x.rechecks,
     reopenRequests: (x) => x.reopen,
+    evaluationReopenRequests: (x) => x.evalReopen,
   };
   const keys = Object.keys(counts) as AttentionKey[];
   // The session shown; with none current, every session (all of them count as not ended then).
@@ -1188,9 +1175,31 @@ SELECT COUNT(*)::int AS total,
 FROM viaexam_student_results
 WHERE "studentId" = :uid AND "instituteId" = :inst AND "isDeleted" = false AND "sessionId" = :ses`;
 
+/**
+ * A result's recheck deadline (`r` = the result): the one it was published with, else (published
+ * before windows existed) the school's window (:claimDays) counted from publishing.
+ */
+const CLAIM_CLOSES_AT = `COALESCE(r."recheckClosesAt", r."publishedAt" + make_interval(days => :claimDays))`;
+/** The school's recheck policy offers rechecks on the result: claims on (:claimsOn), its exam type and subject chosen. */
+const CLAIM_OFFERED = `(:claimsOn AND (:claimAllTypes OR r."examType" IN (:claimTypes)) AND (:claimAllSubjects OR r."subjectId" IN (:claimSubjects)))`;
+/** The result can still be claimed (`rr` = its claim, if any): offered, evaluated, unclaimed and inside the window. */
+const CLAIMABLE = `(${CLAIM_OFFERED} AND r."resultStatus" IN ('PASS', 'FAIL') AND r."evaluationId" IS NOT NULL AND rr."requestId" IS NULL AND ${CLAIM_CLOSES_AT} > now())`;
+
+// Results I can still claim a recheck on, the soonest deadline first. Not limited to the current
+// session: a deadline matters whichever session the exam was in.
+const STUDENT_CLAIMABLE_SQL = `
+SELECT r."resultId", r."examId", r."examType", r."sessionId", sub."subjectName", r."publishedAt", ${CLAIM_CLOSES_AT} AS "closesAt"
+FROM viaexam_student_results r
+LEFT JOIN viaexam_subjects sub ON sub."subjectId" = r."subjectId"
+LEFT JOIN viaexam_recheck_requests rr ON rr."examId" = r."examId" AND rr."studentId" = r."studentId"
+WHERE r."studentId" = :uid AND r."instituteId" = :inst AND r."isDeleted" = false AND ${CLAIMABLE}
+ORDER BY 7 ASC
+LIMIT 20`;
+
 const STUDENT_LATEST_SQL = `
 SELECT r."resultId", r."examId", r."examType", r."marksObtained", r."totalMarks", r.percentage, r.grade,
-       r."resultStatus", r."publishedAt", sub."subjectName", rr.status AS "recheckStatus", ${CLAIM_OUTCOME} AS "recheckOutcome"
+       r."resultStatus", r."publishedAt", sub."subjectName", rr.status AS "recheckStatus", ${CLAIM_OUTCOME} AS "recheckOutcome",
+       ${CLAIM_CLOSES_AT} AS "recheckClosesAt", ${CLAIMABLE} AS "canClaim"
 FROM viaexam_student_results r
 LEFT JOIN viaexam_subjects sub ON sub."subjectId" = r."subjectId"
 LEFT JOIN viaexam_recheck_requests rr ON rr."examId" = r."examId" AND rr."studentId" = r."studentId"
@@ -1245,9 +1254,21 @@ GROUP BY r."examType"
 ORDER BY MIN(r."publishedAt")`;
 
 const loadStudentHome = async (instituteId: string, userId: string, session: HomeSession | null) => {
+  const policy = (await settingsOf(instituteId)).recheckPolicy;
   // No current session: nothing matches "" (every exam and result has a session), so the page is empty.
-  const r = { inst: instituteId, uid: userId, ses: session?.sessionId ?? "" };
-  const [[profile], [s], latest, subjects, rechecks, [claims], byExam] = await Promise.all([
+  const r = {
+    inst: instituteId,
+    uid: userId,
+    ses: session?.sessionId ?? "",
+    // The recheck policy, for which results can still be claimed ("" stands in for an empty list).
+    claimDays: policy.days,
+    claimsOn: policy.enabled,
+    claimAllTypes: policy.examTypes == null,
+    claimTypes: policy.examTypes?.length ? policy.examTypes : [""],
+    claimAllSubjects: policy.subjectIds == null,
+    claimSubjects: policy.subjectIds?.length ? policy.subjectIds : [""],
+  };
+  const [[profile], [s], latest, subjects, rechecks, [claims], byExam, claimable] = await Promise.all([
     select(STUDENT_PROFILE_SQL, r),
     select(STUDENT_RESULTS_SQL, r),
     select(STUDENT_LATEST_SQL, r),
@@ -1255,6 +1276,7 @@ const loadStudentHome = async (instituteId: string, userId: string, session: Hom
     select(STUDENT_RECHECKS_SQL, r),
     select(STUDENT_CLAIMS_SQL, r),
     select(STUDENT_BY_EXAM_SQL, r),
+    select(STUDENT_CLAIMABLE_SQL, r),
   ]);
 
   // Section keys: the id and the name, since older exams / profiles store either one.
@@ -1284,7 +1306,25 @@ const loadStudentHome = async (instituteId: string, userId: string, session: Hom
       /** Published in the last seven days. */
       newThisWeek: num(s?.new_week),
     },
-    rechecks: { open: num(s?.rechecks_open), closed: num(s?.rechecks_closed) },
+    rechecks: {
+      open: num(s?.rechecks_open),
+      closed: num(s?.rechecks_closed),
+      /** Results I can still claim, and the soonest deadline among them. */
+      claimable: claimable.length,
+      nextClosesAt: claimable[0]?.closesAt ?? null,
+    },
+    /** The school's recheck policy: whether claims are taken, on which exams, and for how many days after publishing. */
+    recheckPolicy: { enabled: policy.enabled, days: policy.days, examTypes: policy.examTypes, subjectsLimited: policy.subjectIds != null },
+    /** Results I can still claim a recheck on, the soonest deadline first. */
+    claimable: claimable.map((x: any) => ({
+      resultId: x.resultId,
+      examId: x.examId,
+      examType: x.examType ?? "",
+      sessionId: x.sessionId ?? null,
+      subjectName: x.subjectName ?? "",
+      publishedAt: x.publishedAt,
+      closesAt: x.closesAt,
+    })),
     analytics: {
       claims: {
         pending: num(claims?.pending),
@@ -1317,6 +1357,9 @@ const loadStudentHome = async (instituteId: string, userId: string, session: Hom
       publishedAt: x.publishedAt,
       recheckStatus: x.recheckStatus ?? null,
       recheckOutcome: x.recheckOutcome ?? null,
+      /** Until when a recheck can be claimed, and whether it still can (unclaimed, evaluated, window open). */
+      recheckClosesAt: x.recheckClosesAt ?? null,
+      canClaim: Boolean(x.canClaim),
     })),
     subjects: subjects.map((x: any) => ({ subjectName: x.subjectName, average: pctOrNull(x.average) ?? 0, exams: num(x.exams) })),
     recentRechecks: rechecks.map((x: any) => ({

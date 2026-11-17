@@ -13,6 +13,8 @@ const admin = authorize(ADMINS);
 
 // ── Admin: where every exam is in the workflow ───────────────────────────────
 router.get("/exams", admin, validate(Validation.listPipeline), Controller.listPipeline);
+// How many exams each session has, per exam type (the session and exam picker), without the exams.
+router.get("/exams/counts", admin, Controller.examCounts);
 // Not scanner staff: the timeline tells the evaluation's story, which they never see.
 router.get("/exams/:examId/timeline", authorize(MEMBERS.filter((r) => r !== "SCANNER")), validate(Validation.examParam), Controller.getTimeline);
 
@@ -48,6 +50,8 @@ router.get("/student/results", authorize(["STUDENT"]), validate(Validation.myRes
 router.get("/student/report-card", authorize(["STUDENT"]), validate(Validation.myReportCard), Controller.myReportCard);
 // One result in full: question-wise marks and feedback as far as the school shows them.
 router.get("/student/results/:resultId", authorize(["STUDENT"]), validate(Validation.resultParam), Controller.myResultDetail);
+// Whether the school takes recheck claims, on which exams and for how long (and whether I have any).
+router.get("/student/recheck-policy", authorize(["STUDENT"]), Controller.myRecheckPolicy);
 router.get("/student/rechecks", authorize(["STUDENT"]), validate(Validation.myClaims), Controller.myClaims);
 router.post("/student/rechecks", authorize(["STUDENT"]), validate(Validation.createRecheck), Controller.createRecheck);
 
@@ -56,7 +60,7 @@ router.get("/rechecks", admin, validate(Validation.listRechecks), Controller.lis
 // One answer sheet's marks history: evaluator, cross-check, recheck, who changed what.
 router.get("/sheets/:sheetId/history", admin, validate(Validation.sheetParam), Controller.sheetHistory);
 // An exam's full report: every student from scanning to result and recheck.
-router.get("/exams/:examId/report", admin, validate(Validation.examParam), Controller.examReport);
+router.get("/exams/:examId/report", admin, validate(Validation.examReport), Controller.examReport);
 router.post("/rechecks/:requestId/assign", admin, validate(Validation.assignRecheck), Controller.assignRecheck);
 router.post("/rechecks/:requestId/reject", admin, validate(Validation.rejectRecheck), Controller.rejectRecheck);
 // The teacher's decision reaches the result only once an admin approves it.

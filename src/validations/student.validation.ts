@@ -1,5 +1,16 @@
 import Joi from "joi";
-import { NAME_CHARS } from "../utils/textRules";
+import { NAME_CHARS, normalizeDigits, normalizeRollNo } from "../utils/textRules";
+import { strongPassword } from "../utils/passwordRule";
+
+/**
+ * Digits typed on an Arabic, Persian or Indian keyboard (١٢٣, ۱۲۳, १२३) are read as 0-9 and
+ * invisible direction marks dropped before the checks after it, and the value is stored that way.
+ * A value that was nothing but such marks counts as empty.
+ */
+const asLatinDigits = (normalize: (value: unknown) => string) => (value: string, helpers: Joi.CustomHelpers) => {
+  const normalized = normalize(value);
+  return normalized === "" && value !== "" ? helpers.error("string.empty") : normalized;
+};
 
 /**
  * Hard cap on how many rows a single bulk-upload request may carry.
@@ -51,7 +62,7 @@ const personName = (label: string, min = 2) =>
 export const bulkStudentRowSchema = Joi.object({
   firstName: personName("First name").required(),
   lastName: personName("Last name", 1).required(),
-  fatherName: personName("Father's name").allow("", null).optional(),
+  fatherName: personName("Father's name").required(),
 
   email: Joi.string()
     .trim()
@@ -68,6 +79,7 @@ export const bulkStudentRowSchema = Joi.object({
 
   mobile: Joi.string()
     .trim()
+    .custom(asLatinDigits(normalizeDigits))
     .pattern(/^[6-9]\d{9}$/)
     .required()
     .messages({
@@ -76,7 +88,7 @@ export const bulkStudentRowSchema = Joi.object({
       "string.pattern.base": "Enter a valid 10-digit Indian mobile number.",
     }),
 
-  rollNumber: Joi.string().trim().max(32).required().messages({
+  rollNumber: Joi.string().trim().custom(asLatinDigits(normalizeRollNo)).max(32).required().messages({
     "string.empty": "Roll number is required.",
     "any.required": "Roll number is required.",
     "string.max": "Roll number must not exceed 32 characters.",
@@ -117,6 +129,7 @@ export const bulkStudentRowSchema = Joi.object({
 
   aadhar: Joi.string()
     .trim()
+    .custom(asLatinDigits(normalizeDigits))
     .length(12)
     .pattern(/^[2-9]\d{11}$/)
     .allow("", null)
@@ -131,10 +144,8 @@ export const bulkStudentRowSchema = Joi.object({
     "string.max": "Address must not exceed 300 characters.",
   }),
 
-  password: Joi.string().min(6).max(128).allow("", null).optional().messages({
-    "string.min": "Password must be at least 6 characters.",
-    "string.max": "Password must not exceed 128 characters.",
-  }),
+  // Left empty, the server generates one and emails it. Typed: the shared rule (utils/passwordRule).
+  password: strongPassword().allow("", null).optional(),
 }).unknown(true);
 
 /** Human labels used when reporting which spreadsheet column failed. */

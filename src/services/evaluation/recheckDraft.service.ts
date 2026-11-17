@@ -21,7 +21,7 @@ import logger from "../../config/logger";
 import { questionChanges, totalOf } from "../../utils/questionMarks";
 import { isTeacherRequester } from "./evaluationAccess.service";
 import { assertCrossCheckEditable, crossCheckFor, type CrossCheckContext } from "./crossCheckDraft.service";
-import { sheetHeldForCrossCheck } from "../exam/crossCheck.service";
+import { EvaluationLockedError, sheetEvaluationLock } from "./evaluationLock.service";
 
 export interface RecheckContext {
   request: RecheckRequest;
@@ -53,9 +53,11 @@ export async function sheetPublished(sheetId: string): Promise<boolean> {
 }
 
 /**
- * Before anyone runs the AI on a sheet. Published results never get re-evaluated in place:
- * the recheck teacher's run goes into their draft, anyone else is refused. A sheet in an open
- * cross-check is re-evaluated only by its cross-checker, into their draft.
+ * Before anyone runs the AI on a sheet (evaluationLock.service has the rules). Published results
+ * never get re-evaluated in place: the recheck teacher's run goes into their draft, anyone else is
+ * refused. A sheet in an open cross-check is re-evaluated only by its cross-checker, into their
+ * draft. A section the evaluator marked completed is reopened before it is evaluated again.
+ * A refusal is an EvaluationLockedError (409, naming the lock).
  */
 export async function evaluationRunFor(user: any, sheetId: string): Promise<{ recheck: RecheckContext | null; crossCheck: CrossCheckContext | null }> {
   const recheck = await recheckFor(user, sheetId);
@@ -63,24 +65,35 @@ export async function evaluationRunFor(user: any, sheetId: string): Promise<{ re
     assertEditable(recheck);
     return { recheck, crossCheck: null };
   }
-  if (await sheetPublished(sheetId)) {
-    throw new ApiError(httpStatus.CONFLICT, "This exam's results are published, so its sheets aren't evaluated again. Marks change only through a recheck the admin assigns.");
-  }
+  const lock = await sheetEvaluationLock(sheetId, { teacher: isTeacherRequester(user) });
+  if (lock?.reason === "published") throw new EvaluationLockedError(lock);
   const crossCheck = await crossCheckFor(user, sheetId);
   if (crossCheck) {
     assertCrossCheckEditable(crossCheck);
     return { recheck: null, crossCheck };
   }
-  if (await sheetHeldForCrossCheck(sheetId)) {
-    throw new ApiError(httpStatus.CONFLICT, "This sheet is being cross-checked. Its marks change only through the cross-checker's verdict until that's done.");
-  }
+  if (lock) throw new EvaluationLockedError(lock);
   return { recheck: null, crossCheck: null };
 }
 
+/** A refused run or edit as an answer: a locked sheet says which lock (data.lock), so it never reads as a failure. */
+export const refusalBody = (err: any) => {
+  const statusCode = err?.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
+  return {
+    statusCode,
+    body: {
+      error: true,
+      statusCode,
+      message: err?.localized ?? err?.message ?? "This sheet can't be evaluated now.",
+      ...(err instanceof EvaluationLockedError ? { data: { lock: err.lock.reason } } : {}),
+    },
+  };
+};
+
 /**
- * On every route that runs the AI on a sheet (after the access check): refuses published
- * sheets, and marks a recheck teacher's run (req.recheck) or a cross-checker's
- * (req.crossCheck) so it goes into their draft.
+ * On every route that runs the AI on a sheet (after the access check): refuses locked sheets, and
+ * marks a recheck teacher's run (req.recheck) or a cross-checker's (req.crossCheck) so it goes
+ * into their draft.
  */
 export const evaluationRunGuard = async (req: any, res: any, next: any) => {
   const sheetId = String(req.body?.sheetId ?? req.params?.sheetId ?? "");
@@ -91,8 +104,8 @@ export const evaluationRunGuard = async (req: any, res: any, next: any) => {
     req.crossCheck = run.crossCheck;
     return next();
   } catch (err: any) {
-    const statusCode = err?.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
-    return res.status(statusCode).json({ error: true, statusCode, message: err?.message || "This sheet can't be evaluated now." });
+    const { statusCode, body } = refusalBody(err);
+    return res.status(statusCode).json(body);
   }
 };
 

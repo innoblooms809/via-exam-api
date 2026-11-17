@@ -22,7 +22,10 @@ import {
 } from "bullmq";
 import logger from "../config/logger";
 import { queueConfig } from "./config";
+import { emitQueueEvent } from "./events";
 import {
+  backoffDelay,
+  CAN_CLAIM_EVERY_MS,
   isPermanent,
   type AddOptions,
   type JobContext,
@@ -83,12 +86,21 @@ class PostgresJobQueue<T> implements JobQueue<T> {
 
   async add(name: string, data: T, opts?: AddOptions): Promise<string> {
     const job = await this.q.add(name as any, data as any, this.options(opts));
+    // With a job id, a different id back means the add found a job already holding its key.
+    const deduplicated = Boolean(opts?.jobId) && String(job.id) !== opts?.jobId;
+    emitQueueEvent({
+      type: deduplicated ? "deduplicated" : "added",
+      queue: this.def.name,
+      job: view(job as Job<T>, opts?.delayMs ? "delayed" : "waiting"),
+      ...(opts?.delayMs ? { delayMs: opts.delayMs } : {}),
+    });
     return String(job.id);
   }
 
   async addBulk(jobs: Array<{ name: string; data: T; opts?: AddOptions }>): Promise<string[]> {
     if (!jobs.length) return [];
     const added = await this.q.addBulk(jobs.map((j) => ({ name: j.name as any, data: j.data as any, opts: this.options(j.opts) })));
+    for (const job of added) emitQueueEvent({ type: "added", queue: this.def.name, job: view(job as Job<T>, "waiting") });
     return added.map((j) => String(j.id));
   }
 
@@ -175,6 +187,7 @@ class PostgresDriver implements QueueDriver {
   readonly kind = "postgres" as const;
   private readonly queues = new Map<string, PostgresJobQueue<any>>();
   private readonly workers: BullWorker[] = [];
+  private readonly claimChecks: NodeJS.Timeout[] = [];
 
   constructor(private readonly pool: PgPool) {}
 
@@ -197,6 +210,7 @@ class PostgresDriver implements QueueDriver {
     const worker: BullWorker = new Worker<any>(
       def.name,
       async (job: Job<T>) => {
+        let pauseMs = 0;
         const ctx: JobContext<T> = {
           id: String(job.id),
           name: job.name,
@@ -206,15 +220,45 @@ class PostgresDriver implements QueueDriver {
           lastProgress: job.progress,
           progress: (value) => job.updateProgress(value),
           rateLimit: async (ms: number) => {
-            await worker.rateLimit(Math.max(1000, ms));
+            pauseMs = Math.max(1000, ms);
+            await worker.rateLimit(pauseMs);
             throw Worker.RateLimitError();
           },
         };
+        const started = Date.now();
+        emitQueueEvent({ type: "active", queue: def.name, job: view(job, "active") });
         try {
-          return await processor(ctx);
+          const result = await processor(ctx);
+          emitQueueEvent({ type: "completed", queue: def.name, job: { ...view(job, "completed"), returnValue: result }, durationMs: Date.now() - started });
+          return result;
         } catch (err: any) {
-          // BullMQ only recognises its own class as "do not retry".
-          if (isPermanent(err) && !(err instanceof UnrecoverableError)) throw new UnrecoverableError(err.message);
+          if (pauseMs) {
+            emitQueueEvent({ type: "rate-limited", queue: def.name, job: view(job, "waiting"), delayMs: pauseMs, durationMs: Date.now() - started });
+            throw err;
+          }
+          const attempt = (job.attemptsMade ?? 0) + 1;
+          const maxAttempts = job.opts?.attempts ?? 1;
+          const failure = { error: String(err?.message || err), errorCode: err?.failureCode, durationMs: Date.now() - started };
+          if (!isPermanent(err) && attempt < maxAttempts) {
+            const b: any = job.opts?.backoff;
+            const delayMs =
+              typeof b === "number" ? b : backoffDelay({ type: b?.type === "fixed" ? "fixed" : "exponential", delayMs: Number(b?.delay) || 0 }, attempt);
+            emitQueueEvent({
+              type: "retrying",
+              queue: def.name,
+              job: { ...view(job, "delayed"), attemptsMade: attempt, runAt: Date.now() + delayMs },
+              delayMs,
+              ...failure,
+            });
+          } else {
+            emitQueueEvent({ type: "failed", queue: def.name, job: { ...view(job, "failed"), attemptsMade: attempt }, ...failure });
+          }
+          // BullMQ only recognises its own class as "do not retry"; the failure code goes along.
+          if (isPermanent(err) && !(err instanceof UnrecoverableError)) {
+            const unrecoverable: any = new UnrecoverableError(err.message);
+            if (err?.failureCode) unrecoverable.failureCode = err.failureCode;
+            throw unrecoverable;
+          }
           throw err;
         }
       },
@@ -223,6 +267,8 @@ class PostgresDriver implements QueueDriver {
         concurrency: def.concurrency,
         lockDuration: def.lockMs ?? 60_000,
         maxStalledCount: def.maxStalls ?? 1,
+        // With a canClaim check the worker starts once the first check has answered.
+        autorun: !def.canClaim,
       }
     );
 
@@ -239,9 +285,49 @@ class PostgresDriver implements QueueDriver {
     });
     worker.on("error", (err) => logger.error(`[Queue] ${def.name} worker error: ${err?.message || err}`));
     this.workers.push(worker);
+    if (def.canClaim) this.followCanClaim(def, worker);
+  }
+
+  /**
+   * Runs the worker only while `canClaim` says yes. The pause is this worker's alone: other
+   * processes keep taking the queue's jobs, and a job already running here is left to finish.
+   */
+  private followCanClaim<T>(def: QueueDefinition<T>, worker: BullWorker) {
+    let claiming: boolean | null = null;
+    let checking = false;
+    const check = async () => {
+      if (checking) return;
+      checking = true;
+      try {
+        const able = await def.canClaim!().catch(() => false);
+        if (able === claiming) return;
+        const wasBlocked = claiming === false;
+        claiming = able;
+        if (able) {
+          await worker.resume();
+          if (wasBlocked) {
+            logger.info(`[Queue] ${def.name}: this process can do this work again and is taking jobs.`);
+            emitQueueEvent({ type: "claim-resumed", queue: def.name });
+          }
+        } else {
+          await worker.pause(true);
+          logger.warn(`[Queue] ${def.name}: this process can't do this work right now, so it leaves these jobs to other processes.`);
+          emitQueueEvent({ type: "claim-paused", queue: def.name });
+        }
+      } catch (err: any) {
+        logger.warn(`[Queue] ${def.name}: could not ${claiming ? "resume" : "pause"} the worker: ${err?.message || err}`);
+      } finally {
+        checking = false;
+      }
+    };
+    void check();
+    const timer = setInterval(() => void check(), CAN_CLAIM_EVERY_MS);
+    timer.unref?.();
+    this.claimChecks.push(timer);
   }
 
   async close(graceMs: number): Promise<void> {
+    this.claimChecks.forEach((timer) => clearInterval(timer));
     // Running jobs get `graceMs` to finish; any still running keep their lock and are picked up
     // again by the next worker once it lapses.
     const stopped = Promise.all(this.workers.map((w) => w.close().catch(() => undefined)));

@@ -17,6 +17,7 @@ const rateLimiter_1 = require("./middlewares/rateLimiter");
 const v1_1 = __importDefault(require("./routes/v1"));
 const subscription_controller_1 = __importDefault(require("./controllers/subscription/subscription.controller"));
 const error_1 = require("./middlewares/error");
+const i18n_1 = require("./middlewares/i18n");
 const ApiError_1 = __importDefault(require("./utils/ApiError"));
 const path_1 = __importDefault(require("path"));
 // import session from 'express-session'; // Commented out: captcha is disabled, MemoryStore not needed in production
@@ -41,8 +42,10 @@ app.use(express_1.default.json({ limit: "25mb" }));
 // parse urlencoded request body
 app.use(express_1.default.urlencoded({ limit: "25mb", extended: true }));
 app.use((0, cookie_parser_1.default)());
-// sanitize request data
-app.use((0, xss_1.default)());
+// sanitize request data — except the partner evaluation API: it is JSON in and out, never
+// rendered, and its papers are data for the evaluator ("x < 5" must reach it as written).
+const sanitize = (0, xss_1.default)();
+app.use((req, res, next) => (req.path.startsWith('/v1/partner/') ? next() : sanitize(req, res, next)));
 // gzip compression
 app.use((0, compression_1.default)());
 // enable cors
@@ -78,6 +81,9 @@ const corsOptions = {
 };
 app.use((0, cors_1.default)(corsOptions));
 app.options("*", (0, cors_1.default)(corsOptions));
+// Answer messages in the language the UI asks for (Accept-Language): English or Arabic.
+app.use(i18n_1.detectLanguage);
+app.use(i18n_1.translateMessages);
 // app.use(session({
 //   secret: config.sessionSecret,
 //   resave: false,

@@ -26,6 +26,7 @@ import Subscription from "./Subscription.model";
 import SubscriptionTransaction from "./SubscriptionTransaction.model";
 import ExamScannerAssignment from "./ExamScannerAssignment.model";
 import ScanReopenRequest from "./ScanReopenRequest.model";
+import EvaluationReopenRequest from "./EvaluationReopenRequest.model";
 import ExamAttendance from "./ExamAttendance.model";
 import StudentResult from "./StudentResult.model";
 import RecheckAssignment from "./RecheckAssignment.model";
@@ -52,6 +53,7 @@ export {
   StudentEnrollment,
   ExamScannerAssignment,
   ScanReopenRequest,
+  EvaluationReopenRequest,
   ExamAttendance,
   StudentResult,
   RecheckAssignment,

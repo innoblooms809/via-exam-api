@@ -5,7 +5,7 @@
  * is filtered by the person (teacher, scanner, student or uploader) and paged newest
  * first, so each source table gets an index on the person column.
  *
- *   npm run db:migrate:person-page
+ *   npm run db:migrate
  *
  * Idempotent (IF NOT EXISTS) and built CONCURRENTLY so writes are never blocked; that
  * is why each statement runs on its own, outside a transaction.

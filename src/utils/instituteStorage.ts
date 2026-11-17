@@ -1,20 +1,21 @@
 /**
- * Cloudinary storage for institute logos and banners.
+ * Storage of institute logos: on this server's disk, under uploads/institutes/logos/ — public,
+ * served at /uploads/… (logos appear on papers, result PDFs and the sign-in page).
  *
- * Unlike answer sheets, these are small (<=5MB) jpeg/png/webp images that
- * multer already holds fully in memory, so there is no temp file to stream
- * from or clean up — the buffer is piped straight into Cloudinary's upload
- * stream.
+ * Each upload is a new file with a server-chosen name, so no browser shows a cached old logo. A
+ * replaced logo is kept: question papers keep the logo address they were made with. A local
+ * asset's id is its web path ("/uploads/institutes/logos/…").
  *
- * Each institute gets exactly one asset per kind, at a fixed public_id
- * (`institutes/{instituteId}/logo` or `.../banner`). Uploading again for the
- * same institute simply overwrites that asset in place, so replacing a logo
- * on edit never needs to track and destroy a superseded asset.
+ * Logos stored in Cloudinary before this stay there (their ids don't start with "/uploads/") and
+ * keep loading from their public links; this module no longer talks to Cloudinary, so such a
+ * logo is left there when its institute is deleted.
  */
 
-import { Readable } from "stream";
-import cloudinary from "./cloudinary";
+import path from "path";
+import { randomUUID } from "crypto";
 import logger from "../config/logger";
+import { sniffFileType } from "./fileSignature";
+import { UPLOADS_ROOT, localPathOf, removeStoredFile, safeSegment, webPathOf, writeStoredFile } from "./localFileStorage";
 
 /** Root folder. Nothing outside this prefix is ever destroyed by this module. */
 export const INSTITUTE_ASSET_FOLDER = "institutes";
@@ -26,64 +27,25 @@ export interface StoredInstituteAsset {
   publicId: string;
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const LOCAL_ROOT = path.join(UPLOADS_ROOT, INSTITUTE_ASSET_FOLDER);
+const FOLDER_OF: Record<InstituteAssetKind, string> = { logo: "logos", banner: "banners" };
 
-const publicIdFor = (instituteId: string, kind: InstituteAssetKind): string =>
-  `${INSTITUTE_ASSET_FOLDER}/${String(instituteId || "unknown").replace(/[^A-Za-z0-9_-]/g, "")}/${kind}`;
-
-/**
- * Upload one logo or banner from a multer memory-storage buffer.
- *
- * Retries twice on transient failures, same as answer sheets — a flaky
- * connection during registration should not force a school to redo the form.
- */
+/** Store one logo or banner from a multer memory-storage buffer (its bytes already checked by verifyUploads). */
 export const uploadInstituteAsset = async (params: {
   buffer: Buffer;
   instituteId: string;
   kind: InstituteAssetKind;
 }): Promise<StoredInstituteAsset> => {
   const { buffer, instituteId, kind } = params;
-  const publicId = publicIdFor(instituteId, kind);
-
-  let lastError: any = null;
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const result = await new Promise<any>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            public_id: publicId,
-            resource_type: "image",
-            overwrite: true,
-            invalidate: true,
-          },
-          (error: any, uploaded: any) => {
-            if (error) reject(error);
-            else resolve(uploaded);
-          },
-        );
-
-        Readable.from(buffer).pipe(stream);
-      });
-
-      return {
-        url: result?.secure_url ?? "",
-        publicId: result?.public_id ?? publicId,
-      };
-    } catch (err: any) {
-      lastError = err;
-      const status = err?.http_code ?? err?.statusCode;
-      // 4xx means the file itself is unacceptable; retrying cannot help.
-      if (status && status >= 400 && status < 500) break;
-      if (attempt < 3) await sleep(attempt * 500);
-    }
+  const detected = sniffFileType(buffer.subarray(0, 1024));
+  if (!detected || !detected.mime.startsWith("image/")) {
+    throw new Error("The logo is not a JPG, PNG or WEBP image.");
   }
 
-  throw new Error(
-    lastError?.message
-      ? `Storage upload failed: ${lastError.message}`
-      : "Storage upload failed.",
-  );
+  const name = `${safeSegment(instituteId)}-${randomUUID()}${detected.ext}`;
+  const file = await writeStoredFile(path.join(LOCAL_ROOT, FOLDER_OF[kind]), name, buffer);
+  const url = webPathOf(file);
+  return { url, publicId: url };
 };
 
 /**
@@ -96,22 +58,11 @@ export const destroyInstituteAsset = async (
 ): Promise<boolean> => {
   if (!publicId) return false;
 
-  // Never touch anything outside the institutes tree.
-  if (!publicId.startsWith(`${INSTITUTE_ASSET_FOLDER}/`)) {
-    logger.warn(`[InstituteAssets] Refused to destroy out-of-scope asset "${publicId}" (${context}).`);
-    return false;
+  if (publicId.startsWith("/uploads/")) {
+    return removeStoredFile(localPathOf(publicId), LOCAL_ROOT, context);
   }
 
-  try {
-    await cloudinary.uploader.destroy(publicId, {
-      resource_type: "image",
-      invalidate: true,
-    });
-    return true;
-  } catch (err: any) {
-    logger.warn(
-      `[InstituteAssets] Could not remove ${publicId} (${context}): ${err?.message || err}`,
-    );
-    return false;
-  }
+  // Stored in Cloudinary before the move to local storage: this API no longer deletes there.
+  logger.info(`[InstituteAssets] ${publicId} is an older Cloudinary file; left there (${context}).`);
+  return false;
 };
