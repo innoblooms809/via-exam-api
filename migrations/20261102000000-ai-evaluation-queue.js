@@ -12,7 +12,7 @@
  * The API also applies these columns on boot (db/connect.ts); this is for databases managed by
  * migrations only.
  *
- *   npm run db:migrate:evaluation-queue
+ *   npm run db:migrate
  */
 
 module.exports = {

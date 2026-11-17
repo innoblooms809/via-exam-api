@@ -30,6 +30,8 @@ import AIEvaluation from "../../models/AIEvaluation.model";
 import ExamAttendance, { ATTENDANCE_STATUS } from "../../models/ExamAttendance.model";
 import { scanQualityView, type QualitySummary } from "../answer-sheet/sheetQuality.service";
 import { studentsIn } from "../student/enrollment.service";
+import { listOf, msg, type Message } from "../../i18n/message";
+import { normalizeRollNo } from "../../utils/textRules";
 
 export const EXAM_INCLUDES = [
   { model: Class, as: "class", attributes: ["classId", "className"], required: false },
@@ -108,6 +110,8 @@ export interface ExamSection {
 }
 
 const clean = (v: unknown) => String(v ?? "").trim();
+/** A roll number as a lookup key: "١٠١", "101" and "‏101" (with a direction mark) are the same student. */
+const rollKey = (v: unknown) => normalizeRollNo(v);
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 1000) / 10 : 100);
 const byName = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 
@@ -140,6 +144,73 @@ export const sheetWhereForExam = (exam: any) => {
   };
 };
 
+/** Does this sheet belong to the exam? The same test as sheetWhereForExam, on a sheet already read. */
+const sheetIsFor = (exam: any, sheet: any): boolean => {
+  if (sheet.instituteId !== exam.instituteId || sheet.isDeleted) return false;
+  if (sheet.examId === exam.examId) return true;
+  if (sheet.examId !== null && sheet.examId !== undefined) return false;
+  if (sheet.subjectId !== exam.subjectId || sheet.examType !== exam.examType) return false;
+  if (!(new Date(sheet.createdAt) >= new Date(exam.createdAt))) return false;
+  const classKeys = [exam.classId, exam.class?.className].filter(Boolean);
+  const sectionKeys = [exam.sectionId, exam.section?.sectionName].filter(Boolean);
+  if (classKeys.length && !classKeys.includes(sheet.classId)) return false;
+  if (sectionKeys.length && !sectionKeys.includes(sheet.section)) return false;
+  return true;
+};
+
+export interface RosterData {
+  sheets: any[];
+  absentRows: any[];
+  /** null: not read (evaluations: false). */
+  evaluations: any[] | null;
+}
+
+/**
+ * The sheets, absent marks and AI evaluations of many exams in three queries (a list page
+ * builds one roster per exam): `of(exam)` gives what buildRoster would read for that exam.
+ */
+export const rosterBatch = (exams: any[], { evaluations = true }: { evaluations?: boolean } = {}) => {
+  let loaded: Promise<Map<string, RosterData>> | null = null;
+  const load = async () => {
+    const byExam = new Map<string, RosterData>(exams.map((e) => [e.examId, { sheets: [], absentRows: [], evaluations: evaluations ? [] : null }]));
+    if (!exams.length) return byExam;
+    const [sheets, absentRows] = await Promise.all([
+      Scanner.findAll({
+        where: { [Op.or]: exams.map((e) => sheetWhereForExam(e)) },
+        attributes: [...["sheetId", "rollNo", "studentId", "sectionId", "section", "studentName", "fileName", "status", "createdAt", "qualityFlag", "qualityReport"], "instituteId", "isDeleted", "examId", "subjectId", "examType", "classId"],
+        order: [["createdAt", "DESC"]],
+      }),
+      ExamAttendance.findAll({
+        where: { examId: { [Op.in]: exams.map((e) => e.examId) }, status: ATTENDANCE_STATUS.ABSENT },
+        attributes: ["examId", "studentId", "markedBy", "updatedAt"],
+      }),
+    ]);
+    // A sheet saved without an exam id can match more than one exam, as it does one exam at a time.
+    for (const exam of exams) byExam.get(exam.examId)!.sheets = sheets.filter((s) => sheetIsFor(exam, s));
+    for (const row of absentRows) byExam.get(row.examId)?.absentRows.push(row);
+    if (evaluations && sheets.length) {
+      const found = await AIEvaluation.findAll({
+        where: { sheetId: { [Op.in]: [...new Set(sheets.map((s) => s.sheetId))] } },
+        attributes: ["sheetId", "evaluationId", "status", "totalScore"],
+      });
+      const bySheet = new Map<string, any[]>();
+      for (const ev of found) {
+        const list = bySheet.get(ev.sheetId);
+        if (list) list.push(ev);
+        else bySheet.set(ev.sheetId, [ev]);
+      }
+      for (const data of byExam.values()) data.evaluations = data.sheets.flatMap((s) => bySheet.get(s.sheetId) ?? []);
+    }
+    return byExam;
+  };
+  return {
+    of: async (exam: any): Promise<RosterData> => {
+      loaded ??= load();
+      return (await loaded).get(exam.examId) ?? { sheets: [], absentRows: [], evaluations: evaluations ? [] : null };
+    },
+  };
+};
+
 /**
  * Students who sit this exam: those in its class (and section) in its own session, with
  * the section and roll number they have in that session. Promotion adds next year's
@@ -152,7 +223,8 @@ export const studentsForExam = async (exam: any): Promise<RosterStudent[]> => {
 };
 
 /** Names of the sections of the exam's class, by id (deleted ones too: old rosters still name them). */
-const classSections = async (exam: any) => {
+export type ClassSections = Awaited<ReturnType<typeof classSections>>;
+export const classSections = async (exam: any) => {
   const rows = exam.classId ? await Section.findAll({ where: { classId: exam.classId }, attributes: ["sectionId", "sectionName", "isDeleted"] }) : [];
   const nameOf = new Map(rows.map((s) => [s.sectionId, s.sectionName]));
   /** A section id from an id or a name as older sheets stored it ("" when it names none). */
@@ -171,9 +243,9 @@ const classSections = async (exam: any) => {
  * whole-class exam, every section its students are in (null for students without one),
  * or — before anyone is enrolled — the sections the class runs in the exam's session.
  */
-export const sectionsOfExam = async (exam: any, students?: RosterStudent[]): Promise<ExamSection[]> => {
-  const list = students ?? (await studentsForExam(exam));
-  const { nameOf } = await classSections(exam);
+export const sectionsOfExam = async (exam: any, students?: RosterStudent[], names?: ClassSections): Promise<ExamSection[]> => {
+  // Read together, not one after the other (each read is a round trip to the database).
+  const [list, { nameOf }] = await Promise.all([students ?? studentsForExam(exam), names ?? classSections(exam)]);
   const count = new Map<string, number>();
   for (const s of list) count.set(sectionKey(s.sectionId), (count.get(sectionKey(s.sectionId)) ?? 0) + 1);
   let keys = [...count.keys()];
@@ -197,9 +269,9 @@ export const sectionsOfExam = async (exam: any, students?: RosterStudent[]): Pro
 export const rosterIndex = async (exam: any) => {
   const students = await studentsForExam(exam);
   const { nameOf, idOf } = await classSections(exam);
-  const bySectionRoll = new Map(students.map((s) => [`${sectionKey(s.sectionId)}|${s.rollNo}`, s]));
+  const bySectionRoll = new Map(students.map((s) => [`${sectionKey(s.sectionId)}|${rollKey(s.rollNo)}`, s]));
   const byRoll = new Map<string, RosterStudent[]>();
-  for (const s of students) byRoll.set(s.rollNo, [...(byRoll.get(s.rollNo) ?? []), s]);
+  for (const s of students) byRoll.set(rollKey(s.rollNo), [...(byRoll.get(rollKey(s.rollNo)) ?? []), s]);
   const sections = await sectionsOfExam(exam, students);
   const known = new Set(sections.map((s) => sectionKey(s.sectionId)));
 
@@ -214,19 +286,34 @@ export const rosterIndex = async (exam: any) => {
       if (key && !id) return undefined;
       return known.has(id) ? id || null : undefined;
     },
-    /** The student with this roll number: in `sectionId` when one is given (undefined = any section). */
-    find: (sectionId: string | null | undefined, rollNo: string): { student: RosterStudent | null; problem: string | null } => {
-      const roll = clean(rollNo);
+    /**
+     * The student with this roll number (typed in any script): in `sectionId` when one is given
+     * (undefined = any section). Else why no one: a message in the reader's language.
+     */
+    find: (sectionId: string | null | undefined, rollNo: string): { student: RosterStudent | null; problem: Message | null } => {
+      const roll = rollKey(rollNo);
       if (sectionId !== undefined) {
         const student = bySectionRoll.get(`${sectionKey(sectionId)}|${roll}`) ?? null;
-        const where = sectionId ? `Section ${nameOf.get(sectionId) ?? ""}`.trim() : "this exam";
-        return student ? { student, problem: null } : { student: null, problem: `Roll number ${roll} is not in ${where}.` };
+        if (student) return { student, problem: null };
+        const section = sectionId ? nameOf.get(sectionId) ?? "" : "";
+        return {
+          student: null,
+          problem: section
+            ? msg("Roll number {{rollNo}} is not in Section {{section}}.", { rollNo: roll, section })
+            : msg("Roll number {{rollNo}} is not in this exam.", { rollNo: roll }),
+        };
       }
       const matches = byRoll.get(roll) ?? [];
       if (matches.length === 1) return { student: matches[0], problem: null };
-      if (!matches.length) return { student: null, problem: `Roll number ${roll} is not on this exam's roster.` };
-      const names = matches.map((m) => nameOf.get(m.sectionId ?? "") || "no section").sort(byName).join(", ");
-      return { student: null, problem: `Roll number ${roll} is in more than one section (${names}). Upload it from its section.` };
+      if (!matches.length) return { student: null, problem: msg("Roll number {{rollNo}} is not on this exam's roster.", { rollNo: roll }) };
+      const named = matches.map((m) => nameOf.get(m.sectionId ?? "") ?? "").sort(byName);
+      return {
+        student: null,
+        problem: msg("Roll number {{rollNo}} is in more than one section ({{sections}}). Upload it from its section.", {
+          rollNo: roll,
+          sections: listOf(named.map((name) => name || msg("no section"))),
+        }),
+      };
     },
   };
 };
@@ -253,31 +340,55 @@ export const countsOf = (rows: RosterRow[]): RosterCounts => {
  * The exam's roster. `sections` keeps only those sections' rows (null = no section), as a
  * scanner or evaluator given part of the exam sees it; the per-section counts always cover
  * the whole exam.
+ *
+ * A caller that already has (or is already reading) the exam's students or class sections
+ * passes them in, so they aren't read twice; `evaluations: false` skips the AI evaluations
+ * (a scanner never sees them), which saves a round trip to the database. A list of exams
+ * passes `data` from rosterBatch: its sheets, absent marks and evaluations, read for the page.
  */
-export const buildRoster = async (exam: any, opts: { sections?: (string | null)[] | null } = {}): Promise<Roster> => {
-  const [students, sheets, absentRows, { nameOf, idOf }] = await Promise.all([
-    studentsForExam(exam),
-    Scanner.findAll({
-      where: sheetWhereForExam(exam),
-      attributes: ["sheetId", "rollNo", "studentId", "sectionId", "section", "studentName", "fileName", "status", "createdAt", "qualityFlag", "qualityReport"],
-      order: [["createdAt", "DESC"]],
-    }),
-    ExamAttendance.findAll({ where: { examId: exam.examId, status: ATTENDANCE_STATUS.ABSENT } }),
-    classSections(exam),
+export const buildRoster = async (
+  exam: any,
+  opts: {
+    sections?: (string | null)[] | null;
+    students?: RosterStudent[] | Promise<RosterStudent[]>;
+    names?: ClassSections | Promise<ClassSections>;
+    evaluations?: boolean;
+    data?: RosterData | Promise<RosterData>;
+  } = {}
+): Promise<Roster> => {
+  const [students, given, { nameOf, idOf }] = await Promise.all([
+    opts.students ?? studentsForExam(exam),
+    opts.data ??
+      Promise.all([
+        Scanner.findAll({
+          where: sheetWhereForExam(exam),
+          attributes: ["sheetId", "rollNo", "studentId", "sectionId", "section", "studentName", "fileName", "status", "createdAt", "qualityFlag", "qualityReport"],
+          order: [["createdAt", "DESC"]],
+        }),
+        ExamAttendance.findAll({ where: { examId: exam.examId, status: ATTENDANCE_STATUS.ABSENT }, attributes: ["studentId", "markedBy", "updatedAt"] }),
+      ]).then(([sheets, absentRows]): RosterData => ({ sheets, absentRows, evaluations: null })),
+    opts.names ?? classSections(exam),
   ]);
+  const { sheets, absentRows } = given;
 
-  const evaluations = sheets.length
-    ? await AIEvaluation.findAll({
-        where: { sheetId: { [Op.in]: sheets.map((s) => s.sheetId) } },
-        attributes: ["sheetId", "evaluationId", "status", "totalScore"],
-      })
-    : [];
+  const evaluations =
+    !sheets.length || opts.evaluations === false
+      ? []
+      : given.evaluations ??
+        (await AIEvaluation.findAll({
+          where: { sheetId: { [Op.in]: sheets.map((s) => s.sheetId) } },
+          attributes: ["sheetId", "evaluationId", "status", "totalScore"],
+        }));
   const evalBySheet = new Map(evaluations.map((e) => [e.sheetId, e]));
 
   // Whose sheet is whose. Newest first, so a newer upload wins over an older one.
   const byId = new Map(students.map((s) => [s.studentId, s]));
   const byRoll = new Map<string, RosterStudent[]>();
-  for (const s of students) byRoll.set(s.rollNo, [...(byRoll.get(s.rollNo) ?? []), s]);
+  for (const s of students) {
+    const list = byRoll.get(rollKey(s.rollNo));
+    if (list) list.push(s);
+    else byRoll.set(rollKey(s.rollNo), [s]);
+  }
   const sheetOf = new Map<string, any>();
   const orphans: any[] = [];
   for (const sheet of sheets) {
@@ -286,7 +397,7 @@ export const buildRoster = async (exam: any, opts: { sections?: (string | null)[
       // Saved before sheets carried their student: by section and roll, or a roll only one section has.
       const section = sheet.sectionId || idOf(sheet.section);
       const named = clean(sheet.section) !== "";
-      const candidates = (byRoll.get(clean(sheet.rollNo)) ?? []).filter((s) => (section ? s.sectionId === section : !named));
+      const candidates = (byRoll.get(rollKey(sheet.rollNo)) ?? []).filter((s) => (section ? s.sectionId === section : !named));
       if (candidates.length === 1) owner = candidates[0];
     }
     if (owner && !sheetOf.has(owner.studentId)) sheetOf.set(owner.studentId, sheet);
@@ -324,7 +435,7 @@ export const buildRoster = async (exam: any, opts: { sections?: (string | null)[
     ...students.map((s) => toRow(s, sheetOf.get(s.studentId) ?? null)),
     ...orphans
       .filter((sheet) => {
-        const key = `${sheet.sectionId || idOf(sheet.section)}|${clean(sheet.rollNo)}`;
+        const key = `${sheet.sectionId || idOf(sheet.section)}|${rollKey(sheet.rollNo)}`;
         if (orphanRolls.has(key)) return false;
         orphanRolls.add(key);
         return true;
@@ -340,9 +451,15 @@ export const buildRoster = async (exam: any, opts: { sections?: (string | null)[
     .map(([key, rows]) => ({ sectionId: key || null, sectionName: key ? nameOf.get(key) ?? "" : "", counts: countsOf(rows) }))
     .sort((a, b) => Number(!a.sectionId) - Number(!b.sectionId) || byName(a.sectionName, b.sectionName));
 
-  const only = opts.sections ? new Set(opts.sections.map(sectionKey)) : null;
-  const rows = only ? all.filter((r) => only.has(sectionKey(r.sectionId))) : all;
-  return { rows, counts: countsOf(rows), sections };
+  return narrowRoster({ rows: all, counts: countsOf(all), sections }, opts.sections ?? null);
+};
+
+/** A roster narrowed to some sections (null = all of them); the per-section counts stay whole. */
+export const narrowRoster = (roster: Roster, sections: (string | null)[] | null): Roster => {
+  if (!sections) return roster;
+  const only = new Set(sections.map(sectionKey));
+  const rows = roster.rows.filter((r) => only.has(sectionKey(r.sectionId)));
+  return { rows, counts: countsOf(rows), sections: roster.sections };
 };
 
 /** Grade bands used on result pages. */

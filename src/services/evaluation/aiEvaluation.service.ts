@@ -1,294 +1,19 @@
 import httpStatus from "http-status";
 import Scanner from "../../models/Scanner.model";
 import Exam from "../../models/Exam.model";
-import QuestionPaper from "../../models/question-paper/QuestionPaper.model";
-import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import AIEvaluation from "../../models/AIEvaluation.model";
 import { studentForSheet } from "../student/enrollment.service";
 import User from "../../models/User.model";
 import Class from "../../models/Class.model";
 import logger from "../../config/logger";
-import axios from "axios";
-import { pythonServices } from "../../config/pythonServices";
-import { formatQuestionPaper, paperSetOf } from "../../utils/questionPaperText";
 import { getSheetQueueInfo } from "./pipeline6.service";
-import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
-import { newId } from "../../utils/idGenerator";
-import StudentResult from "../../models/StudentResult.model";
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/sequelize";
+import { pageInfo, paging } from "../../utils/pagination";
 import { logMarksChange } from "../academic/marks.service";
 import { MARKS_CHANGE, MARKS_SOURCE } from "../../models/MarksAudit.model";
-import { sheetHeldForCrossCheck } from "../exam/crossCheck.service";
+import { sheetEvaluationLock } from "./evaluationLock.service";
 import { questionChanges } from "../../utils/questionMarks";
-import { decryptField } from "../../utils/dataProtection";
-
-// ─── TRIGGER EVALUATION ───────────────────────────────────────────────────────
-const triggerEvaluation = async (sheetId: string, force: boolean = false): Promise<any> => {
-  try {
-    // 1. Fetch Scanner Sheet
-    const sheet = await Scanner.findOne({
-      where: { sheetId, isDeleted: false },
-    });
-
-    if (!sheet) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "Answer sheet not found.",
-      };
-    }
-
-    // 2. Check if already evaluating or completed
-    let aiEval = await AIEvaluation.findOne({ where: { sheetId } });
-    if (aiEval && aiEval.status === "Success" && !force) {
-      return {
-        error: false,
-        statusCode: httpStatus.OK,
-        message: "Sheet already evaluated.",
-        data: aiEval,
-      };
-    }
-
-    if (aiEval && aiEval.status === "Pending" && !force) {
-      const timeElapsed = Date.now() - new Date(aiEval.updatedAt!).getTime();
-      if (timeElapsed < 180000) { // 3 minutes
-        return {
-          error: false,
-          statusCode: httpStatus.OK,
-          message: "Evaluation is already in progress.",
-          data: aiEval,
-        };
-      }
-      logger.info(`Sheet ${sheetId} has been stuck in Pending for ${Math.round(timeElapsed / 1000)}s. Overriding and starting fresh evaluation.`);
-    }
-
-    // Lookup Student
-    // The student with this roll number in the sheet's class and section, in its exam's session.
-    const ownerId = await studentForSheet(sheet);
-    const studentId = ownerId ?? `STUDENT-${sheet.rollNo}`;
-
-    // 3. Find or Create AIEvaluation record as Pending
-    const evaluationId = newId("evaluation");
-    if (!aiEval) {
-      aiEval = await AIEvaluation.create({
-        evaluationId,
-        sheetId,
-        studentId,
-        examId: sheet.examType, // using the scan examType as exam identifier
-        classId: sheet.classId,
-        section: sheet.section,
-        subjectId: sheet.subjectId,
-        examType: sheet.examType,
-        status: "Pending",
-        totalScore: 0,
-        feedback: "",
-        evaluations: [],
-        studentAnsOcr: "",
-        standardAnsOcr: "",
-        questionOcr: "",
-      });
-    } else {
-      await aiEval.update({
-        status: "Pending",
-        error: undefined,
-      });
-    }
-
-    // 4. Resolve Exam and Question Paper details
-    let examId = sheet.examType;
-    let maxMarks = 10;
-    let questionText = "Evaluate the student's answer sheet.";
-    let standardAnsText = "Provide feedback and score according to subject correctness.";
-
-    // Try to find the matching Exam (ordered by latest created)
-    const exam = await Exam.findOne({
-      where: {
-        instituteId: sheet.instituteId,
-        classId: sheet.classId,
-        subjectId: sheet.subjectId,
-        examType: sheet.examType,
-        isDeleted: false,
-      },
-      order: [["createdAt", "DESC"]],
-    });
-
-    if (exam) {
-      examId = exam.examId;
-      maxMarks = exam.totalMarks || 10;
-
-      // Target paperSet from student sheet section (e.g. "A", "B", etc.)
-      const targetPaperSet = paperSetOf(sheet.section);
-
-      // 1. Try matching exact paperSet for this exam & section
-      let questionPaper = await QuestionPaper.findOne({
-        where: {
-          examId: exam.examId,
-          instituteId: sheet.instituteId,
-          paperSet: targetPaperSet,
-        },
-        order: [["createdAt", "DESC"]],
-      });
-
-      // 2. Fallback: if no paperSet match for this examId, try finding any QuestionPaper for this examId
-      if (!questionPaper) {
-        logger.info(`No QuestionPaper found for examId '${exam.examId}' and paperSet '${targetPaperSet}'. Fetching latest QuestionPaper for examId '${exam.examId}'.`);
-        questionPaper = await QuestionPaper.findOne({
-          where: {
-            examId: exam.examId,
-            instituteId: sheet.instituteId,
-          },
-          order: [["createdAt", "DESC"]],
-        });
-      }
-
-      if (questionPaper) {
-        // Find matching answers from QuestionPaperAnswer for paperId & paperSet
-        let qpAnswer = await QuestionPaperAnswer.findOne({
-          where: {
-            paperId: questionPaper.paperId,
-            paperSet: questionPaper.paperSet,
-          },
-        });
-        if (!qpAnswer) {
-          qpAnswer = await QuestionPaperAnswer.findOne({
-            where: { paperId: questionPaper.paperId },
-          });
-        }
-        const ansDoc = qpAnswer ? qpAnswer.answers : null;
-
-        const { questions, answers } = formatQuestionPaper(questionPaper.content, ansDoc);
-        if (questions) questionText = questions;
-        if (answers) standardAnsText = answers;
-      }
-    }
-
-    // 5. Run evaluation asynchronously in the background
-    runBackgroundEvaluation(
-      sheet,
-      aiEval,
-      studentId,
-      examId,
-      maxMarks,
-      questionText,
-      standardAnsText
-    ).catch((err) => {
-      logger.error("Background evaluation trigger failed:", err);
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "AI evaluation triggered successfully.",
-      data: aiEval,
-    };
-
-  } catch (error: any) {
-    console.error("AI Evaluation initialization failed:", error);
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Failed to initialize evaluation: ${error.message}`,
-    };
-  }
-};
-
-// Helper function to execute OCR & Evaluation in the background
-const runBackgroundEvaluation = async (
-  sheet: any,
-  aiEval: any,
-  studentId: string,
-  examId: string,
-  maxMarks: number,
-  questionText: string,
-  standardAnsText: string
-): Promise<void> => {
-  try {
-    // 1. Resolve the sheet's bytes — Cloudinary-backed sheets keep fileBuffer
-    // null, so fetch the stored file before anything below reads it. This
-    // assigns onto the in-memory instance only; sheet.update() further down
-    // passes an explicit field list and never persists this back.
-    sheet.fileBuffer = await resolveSheetBuffer(sheet);
-    if (!sheet.fileBuffer || sheet.fileBuffer.length === 0) {
-      throw new Error("Answer sheet image file buffer is missing or empty in database.");
-    }
-
-    // Ensure filename has a valid extension (.png, .jpg, .jpeg, .webp, .pdf) for python ocr_server
-    let fileName = sheet.fileName || "sheet.png";
-    if (!/\.(png|jpg|jpeg|webp|pdf)$/i.test(fileName)) {
-      const ext = sheet.fileMimeType === "application/pdf" ? ".pdf" : ".png";
-      fileName = `${fileName}${ext}`;
-    }
-
-    // Call OCR API
-    const ocrApiUrl = pythonServices.ocrUrl();
-    const ocrFormData = new FormData();
-    const fileBlob = new Blob([sheet.fileBuffer], { type: sheet.fileMimeType || "image/png" });
-    ocrFormData.append("file", fileBlob, fileName);
-
-    logger.info(`Sending student answer sheet (${fileName}, ${sheet.fileBuffer.length} bytes) to OCR API: ${ocrApiUrl}`);
-    const ocrResponse = await axios.post(ocrApiUrl, ocrFormData, {
-      timeout: 3600000, // 1 hour
-    });
-
-    const ocrResult = ocrResponse.data;
-    const studentAnsOcr = ocrResult.combined_markdown || "";
-    logger.info("OCR completed successfully (background).");
-
-    // 2. Call Evaluation API
-    const evaluationApiUrl = pythonServices.evaluationUrl();
-    const evalFormData = new FormData();
-    evalFormData.append("student_id", studentId);
-    evalFormData.append("exam_id", examId);
-    evalFormData.append("question", questionText);
-    evalFormData.append("expected_answer", standardAnsText);
-    evalFormData.append("student_answer", studentAnsOcr);
-    evalFormData.append("max_marks", String(maxMarks));
-
-    logger.info(`Sending extracted text to Evaluation API (background): ${evaluationApiUrl}`);
-    const evalResponse = await axios.post(evaluationApiUrl, evalFormData, {
-      timeout: 3600000, // 1 hour
-    });
-
-    const evalResult = evalResponse.data;
-    logger.info("Evaluation completed successfully (background).");
-
-    // 3. Save Successful Evaluation Details
-    await aiEval.update({
-      status: "Success",
-      totalScore: evalResult.total_score || 0,
-      feedback: evalResult.feedback || "",
-      evaluations: evalResult.evaluations || [],
-      studentAnsOcr: studentAnsOcr,
-      standardAnsOcr: standardAnsText,
-      questionOcr: questionText,
-      error: null, // clear previous errors if any
-    });
-
-    // 4. Update Scanner sheet status to Evaluated
-    await sheet.update({ status: "Evaluated" });
-
-  } catch (error: any) {
-    const detailMsg =
-      error?.response?.data?.detail ||
-      error?.response?.data?.message ||
-      (typeof error?.response?.data === "string" ? error.response.data : null) ||
-      error?.message ||
-      "Unknown error occurred during background AI evaluation.";
-
-    logger.error(`AI Evaluation background job failed for sheet ${sheet.sheetId}:`, {
-      message: error.message,
-      responseData: error?.response?.data,
-      status: error?.response?.status,
-    });
-
-    // Update status as Failed with full error detail
-    await aiEval.update({
-      status: "Failed",
-      error: detailMsg,
-    });
-  }
-};
 
 // ─── GET EVALUATION BY SHEET ID ───────────────────────────────────────────────
 const getEvaluationBySheetId = async (sheetId: string): Promise<any> => {
@@ -376,38 +101,6 @@ const getEvaluationBySheetId = async (sheetId: string): Promise<any> => {
   }
 };
 
-// ─── GET ALL EVALUATIONS (list with filters) ──────────────────────────────────
-const getAllEvaluations = async (query: any, requestedBy: any): Promise<any> => {
-  try {
-    const { classId, section, subjectId, examType, status } = query;
-    const where: any = {};
-
-    if (classId) where.classId = classId;
-    if (section) where.section = section;
-    if (subjectId) where.subjectId = subjectId;
-    if (examType) where.examType = examType;
-    if (status) where.status = status;
-
-    const evaluations = await AIEvaluation.findAll({
-      where,
-      order: [["createdAt", "DESC"]],
-    });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: "AI evaluations list fetched successfully.",
-      data: { evaluations, total: evaluations.length },
-    };
-  } catch (error: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${error.message}`,
-    };
-  }
-};
-
 // ─── UPDATE EVALUATION BY SHEET ID ────────────────────────────────────────────
 // An evaluator corrects the AI's marks. The marks stay within the exam's maximum, every
 // change is logged with who made it, and once results are published marks only change
@@ -433,21 +126,12 @@ const updateEvaluationBySheetId = async (
     if (score !== null && (!Number.isFinite(score) || score < 0 || (exam && score > exam.totalMarks))) {
       return { error: true, statusCode: httpStatus.BAD_REQUEST, message: `Marks must be between 0 and ${exam?.totalMarks ?? "the paper's maximum"}.` };
     }
-    if (exam && (await StudentResult.count({ where: { examId: exam.examId, isDeleted: false } }))) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "This exam's results are published, so marks change only through a recheck (Results → Recheck requests).",
-      };
-    }
-
-    const held = await sheetHeldForCrossCheck(sheetId);
-    if (held && String(user?.role?.role ?? user?.role ?? "").toUpperCase().includes("TEACH")) {
-      return {
-        error: true,
-        statusCode: httpStatus.CONFLICT,
-        message: "This sheet is being cross-checked. Its marks change only through the cross-checker's verdict until that's done.",
-      };
+    // Published, in an open cross-check, or a section its evaluator marked completed: the marks stay
+    // (evaluationLock.service). The answer names the lock, so the screen shows it as locked.
+    const teacher = String(user?.role?.role ?? user?.role ?? "").toUpperCase().includes("TEACH");
+    const lock = await sheetEvaluationLock(sheetId, { teacher, forEdit: true });
+    if (lock) {
+      return { error: true, statusCode: httpStatus.CONFLICT, message: lock.message, data: { lock: lock.reason } };
     }
 
     const before = aiEval.totalScore == null ? null : Number(aiEval.totalScore);
@@ -504,10 +188,27 @@ const updateEvaluationBySheetId = async (
   }
 };
 
-// ─── GET FAILED EVALUATIONS ───────────────────────────────────────────────────
-// Answer sheets where AI evaluation has failed (status = 'Failed').
-// Returns full sheet, exam, class, subject, student, and error details so admins
-// can inspect and re-trigger AI evaluation.
+//// ─── GET FAILED EVALUATIONS ───────────────────────────────────────────────────
+// Answer sheets where AI evaluation has failed (status = 'Failed'), with the exam, class, subject,
+// student and error, so admins can see what to re-run. Paged on the server:
+//
+//   ?sessionId&examId          the set the page and its figures describe
+//   ?exam=<examId>&className   table filters (the figures and the filter options ignore them)
+//   ?search                    student, roll, subject, class, file name or error
+//   ?sort=failedAt|subject|student|place &order=asc|desc   (default: newest failure first)
+//   ?page&limit                25 a page, at most 200
+//
+// → { items, total, pagination, summary: { total, exams, classes }, facets: { exams, classes } }
+// The sheet's file link is not in the list: the viewer asks for the file when a row is opened.
+const FAILED_SORTS: Record<string, string[]> = {
+  failedAt: [`"failedAt"`],
+  subject: [`lower(COALESCE("subjectName", ''))`],
+  student: [`lower(COALESCE("studentName", ''))`],
+  place: [`lower(COALESCE("className", ''))`, `lower(COALESCE("sectionName", section, ''))`],
+};
+
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+
 const getFailedEvaluations = async (user: any, query?: any): Promise<any> => {
   try {
     const inst = user?.instituteId;
@@ -519,88 +220,148 @@ const getFailedEvaluations = async (user: any, query?: any): Promise<any> => {
       };
     }
 
-    const examId = query?.examId;
-    const sessionId = query?.sessionId;
+    const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+    const examId = str(query?.examId);
+    const sessionId = str(query?.sessionId);
+    const examFilter = str(query?.exam);
+    const classFilter = str(query?.className);
+    const search = str(query?.search).slice(0, 100);
+    const sortKey = FAILED_SORTS[str(query?.sort)] ? str(query?.sort) : "failedAt";
+    const askedOrder = str(query?.order).toLowerCase();
+    const order = askedOrder === "asc" ? "ASC" : askedOrder === "desc" ? "DESC" : sortKey === "failedAt" ? "DESC" : "ASC";
+    const { page, limit, offset } = paging(query, { defaultLimit: 25, maxLimit: 200, unpagedLimit: 200 });
 
-    const found: any[] = await sequelize.query(
-      `SELECT
-        e.id,
-        e."evaluationId",
-        e."sheetId",
-        e."studentId",
-        COALESCE(ex."examId", sh."examId", e."examId") AS "examId",
-        COALESCE(ex."classId", sh."classId", e."classId") AS "classId",
-        COALESCE(sh.section, e.section) AS "section",
-        COALESCE(ex."subjectId", sh."subjectId", e."subjectId") AS "subjectId",
-        COALESCE(ex."examType", sh."examType", e."examType") AS "examType",
-        e.status,
-        e.error,
-        e."totalScore",
-        e.feedback,
-        e."createdAt",
-        e."updatedAt" AS "failedAt",
-        sh."rollNo",
-        sh."fileName",
-        sh."fileUrl",
-        sh."fileMimeType",
-        sh."fileSize",
-        sh."status" AS "sheetStatus",
-        sh."uploadedBy",
-        sh."createdAt" AS "uploadedAt",
-        uploader."userName" AS "uploadedByName",
-        COALESCE(u."userName", sh."studentName", 'Student') AS "studentName",
-        COALESCE(en."rollNumber", sp."rollNumber", sh."rollNo") AS "rollNumber",
-        ex."examDate",
-        ex."examType" AS "examTypeName",
-        ex."totalMarks",
-        ex.status AS "examStatus",
-        sub."subjectName",
-        sub."subjectCode",
-        c."className",
-        sec."sectionName",
-        sess."sessionId",
-        sess."sessionName"
-      FROM viaexam_ai_evaluations e
-      JOIN viaexam_answer_sheets sh ON sh."sheetId" = e."sheetId" AND sh."isDeleted" = false
-      LEFT JOIN viaexam_exams ex ON (
-        ex."examId" = COALESCE(NULLIF(sh."examId", ''), NULLIF(e."examId", ''))
-        OR (
-          (sh."examId" IS NULL OR sh."examId" = '' OR sh."examId" = sh."examType")
-          AND ex."instituteId" = sh."instituteId"
-          AND ex."classId" = COALESCE(sh."classId", e."classId")
-          AND ex."subjectId" = COALESCE(sh."subjectId", e."subjectId")
-          AND ex."examType" = COALESCE(sh."examType", e."examType")
-          AND ex."isDeleted" = false
+    // One row per failed evaluation.
+    const scoped = `
+      WITH failed AS (
+        SELECT DISTINCT ON (e.id)
+          e.id,
+          e."evaluationId",
+          e."sheetId",
+          e."studentId",
+          COALESCE(ex."examId", sh."examId", e."examId") AS "examId",
+          COALESCE(ex."classId", sh."classId", e."classId") AS "classId",
+          COALESCE(sh.section, e.section) AS "section",
+          COALESCE(ex."subjectId", sh."subjectId", e."subjectId") AS "subjectId",
+          COALESCE(ex."examType", sh."examType", e."examType") AS "examType",
+          e.status,
+          e.error,
+          e."totalScore",
+          e.feedback,
+          e."createdAt",
+          e."updatedAt" AS "failedAt",
+          sh."rollNo",
+          sh."fileName",
+          sh."fileMimeType",
+          sh."fileSize",
+          sh."status" AS "sheetStatus",
+          sh."uploadedBy",
+          sh."createdAt" AS "uploadedAt",
+          uploader."userName" AS "uploadedByName",
+          COALESCE(u."userName", sh."studentName", 'Student') AS "studentName",
+          COALESCE(en."rollNumber", sp."rollNumber", sh."rollNo") AS "rollNumber",
+          ex."examDate",
+          ex."examType" AS "examTypeName",
+          ex."totalMarks",
+          ex.status AS "examStatus",
+          sub."subjectName",
+          sub."subjectCode",
+          c."className",
+          sec."sectionName",
+          sess."sessionId",
+          sess."sessionName"
+        FROM viaexam_ai_evaluations e
+        JOIN viaexam_answer_sheets sh ON sh."sheetId" = e."sheetId" AND sh."isDeleted" = false
+        LEFT JOIN viaexam_exams ex ON (
+          ex."examId" = COALESCE(NULLIF(sh."examId", ''), NULLIF(e."examId", ''))
+          OR (
+            (sh."examId" IS NULL OR sh."examId" = '' OR sh."examId" = sh."examType")
+            AND ex."instituteId" = sh."instituteId"
+            AND ex."classId" = COALESCE(sh."classId", e."classId")
+            AND ex."subjectId" = COALESCE(sh."subjectId", e."subjectId")
+            AND ex."examType" = COALESCE(sh."examType", e."examType")
+            AND ex."isDeleted" = false
+          )
+        ) AND ex."isDeleted" = false
+        LEFT JOIN viaexam_subjects sub ON sub."subjectId" = COALESCE(ex."subjectId", sh."subjectId", e."subjectId")
+        LEFT JOIN viaexam_classes c ON c."classId" = COALESCE(ex."classId", sh."classId", e."classId")
+        LEFT JOIN viaexam_sections sec ON sec."sectionId" = ex."sectionId" OR (
+          sec."instituteId" = sh."instituteId"
+          AND sec."classId" = COALESCE(ex."classId", sh."classId", e."classId")
+          AND sec."sectionName" = COALESCE(sh.section, e.section)
+          AND sec."isDeleted" = false
         )
-      ) AND ex."isDeleted" = false
-      LEFT JOIN viaexam_subjects sub ON sub."subjectId" = COALESCE(ex."subjectId", sh."subjectId", e."subjectId")
-      LEFT JOIN viaexam_classes c ON c."classId" = COALESCE(ex."classId", sh."classId", e."classId")
-      LEFT JOIN viaexam_sections sec ON sec."sectionId" = ex."sectionId" OR (sec."instituteId" = sh."instituteId" AND sec."sectionName" = COALESCE(sh.section, e.section))
-      LEFT JOIN viaexam_sessions sess ON sess."sessionId" = ex."sessionId"
-      LEFT JOIN viaexam_users u ON u."userId" = e."studentId"
-      LEFT JOIN viaexam_student_profiles sp ON sp."userId" = e."studentId"
-      LEFT JOIN viaexam_student_enrollments en ON en."studentId" = e."studentId" AND en."sessionId" = ex."sessionId"
-      LEFT JOIN viaexam_users uploader ON uploader."userId" = sh."uploadedBy"
-      WHERE sh."instituteId" = :inst
-        AND e.status = 'Failed'
-        ${examId ? 'AND (ex."examId" = :examId OR sh."examId" = :examId OR e."examId" = :examId)' : ""}
-        ${sessionId ? 'AND (ex."sessionId" = :sessionId OR sess."sessionId" = :sessionId)' : ""}
-      ORDER BY e."updatedAt" DESC`,
-      {
-        replacements: { inst, ...(examId ? { examId } : {}), ...(sessionId ? { sessionId } : {}) },
-        type: QueryTypes.SELECT,
-      }
-    );
-    // The sheet's file link is stored encrypted.
-    const rows = found.map((r) => ({ ...r, fileUrl: decryptField(r.fileUrl, "sheet.fileUrl") }));
+        LEFT JOIN viaexam_sessions sess ON sess."sessionId" = ex."sessionId"
+        LEFT JOIN viaexam_users u ON u."userId" = e."studentId"
+        LEFT JOIN viaexam_student_profiles sp ON sp."userId" = e."studentId"
+        LEFT JOIN viaexam_student_enrollments en ON en."studentId" = e."studentId" AND en."sessionId" = ex."sessionId"
+        LEFT JOIN viaexam_users uploader ON uploader."userId" = sh."uploadedBy"
+        WHERE sh."instituteId" = :inst
+          AND e.status = 'Failed'
+          ${examId ? 'AND (ex."examId" = :examId OR sh."examId" = :examId OR e."examId" = :examId)' : ""}
+          ${sessionId ? 'AND (ex."sessionId" = :sessionId OR sess."sessionId" = :sessionId)' : ""}
+        -- A sheet without its exam id can match more than one exam: its own exam first, then the newest.
+        ORDER BY e.id, (ex."examId" = sh."examId") DESC NULLS LAST, (sec."sectionId" = ex."sectionId") DESC NULLS LAST, ex."createdAt" DESC NULLS LAST
+      )`;
+
+    const filters: string[] = [];
+    if (examFilter) filters.push(`"examId" = :examFilter`);
+    if (classFilter) filters.push(`"className" = :classFilter`);
+    if (search) {
+      filters.push(`concat_ws(' ', "studentName", "rollNumber", "rollNo", "subjectName", "error", "fileName", "className") ILIKE :search`);
+    }
+    const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+    const replacements = { inst, examId, sessionId, examFilter, classFilter, search: `%${escapeLike(search)}%`, limit, offset };
+    const orderBy = [...FAILED_SORTS[sortKey].map((col) => `${col} ${order}`), `"failedAt" DESC`, "id"].join(", ");
+
+    const [found, figures, examFacets, classFacets] = await Promise.all([
+      sequelize.query<any>(
+        `${scoped}
+        SELECT *, COUNT(*) OVER()::int AS "__total" FROM failed ${where}
+        ORDER BY ${orderBy}
+        LIMIT :limit OFFSET :offset`,
+        { replacements, type: QueryTypes.SELECT }
+      ),
+      sequelize.query<any>(
+        `${scoped}
+        SELECT COUNT(*)::int AS total, COUNT(DISTINCT "examId")::int AS exams, COUNT(DISTINCT "className")::int AS classes FROM failed`,
+        { replacements, type: QueryTypes.SELECT }
+      ),
+      sequelize.query<any>(
+        `${scoped}
+        SELECT "examId", MIN("subjectName") AS "subjectName", MIN(COALESCE("examTypeName", "examType")) AS "examType"
+        FROM failed WHERE "examId" IS NOT NULL AND "subjectName" IS NOT NULL
+        GROUP BY "examId" ORDER BY 2, 3`,
+        { replacements, type: QueryTypes.SELECT }
+      ),
+      sequelize.query<any>(
+        `${scoped}
+        SELECT DISTINCT "className" FROM failed WHERE "className" IS NOT NULL ORDER BY 1`,
+        { replacements, type: QueryTypes.SELECT }
+      ),
+    ]);
+
+    const items = found.map(({ __total, ...row }: any) => row);
+    // A page past the end (rows fixed since) still says how many rows match.
+    let total: number = found[0]?.__total ?? 0;
+    if (!found.length && page > 1) {
+      const [count] = await sequelize.query<any>(`${scoped} SELECT COUNT(*)::int AS n FROM failed ${where}`, { replacements, type: QueryTypes.SELECT });
+      total = count?.n ?? 0;
+    }
 
     return {
       error: false,
       statusCode: httpStatus.OK,
       message: "Failed evaluations fetched successfully.",
       data: {
-        items: rows,
-        total: rows.length,
+        items,
+        total,
+        pagination: pageInfo(total, page, limit),
+        summary: figures[0] ?? { total: 0, exams: 0, classes: 0 },
+        facets: {
+          exams: examFacets.map((r: any) => ({ examId: r.examId, subjectName: r.subjectName, examType: r.examType })),
+          classes: classFacets.map((r: any) => r.className),
+        },
       },
     };
   } catch (error: any) {
@@ -613,9 +374,7 @@ const getFailedEvaluations = async (user: any, query?: any): Promise<any> => {
 };
 
 export default {
-  triggerEvaluation,
   getEvaluationBySheetId,
-  getAllEvaluations,
   updateEvaluationBySheetId,
   getFailedEvaluations,
 };

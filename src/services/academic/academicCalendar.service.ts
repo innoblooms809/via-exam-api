@@ -7,6 +7,7 @@ import Session from "../../models/Session.model";
 import SessionSubject from "../../models/SessionSubject.model";
 import { sequelize } from "../../config/sequelize";
 import { Op } from "sequelize";
+import { pageInfo, paging } from "../../utils/pagination";
 import {
   formatClock,
   formatMinutes,
@@ -41,11 +42,30 @@ export const createEvent = async (data: any, instituteId: string, createdBy: str
   }
 };
 
-export const updateEvent = async (eventId: string, data: any, instituteId: string) => {
+/** Fields that move a paper on the date sheet. */
+const SCHEDULE_FIELDS = ["eventDate", "startTime", "endTime", "shift"] as const;
+
+export const updateEvent = async (eventId: string, data: any, instituteId: string, viewer: { isAdmin: boolean } = { isAdmin: false }) => {
   try {
     const event = await AcademicCalendar.findOne({ where: { eventId, instituteId, isDeleted: false } });
     if (!event) {
       return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Event not found" };
+    }
+
+    if (event.classId) {
+      // Date sheets are the school office's.
+      if (!viewer.isAdmin) {
+        return { error: true, statusCode: httpStatus.FORBIDDEN, message: "Only the school admin can change the date sheet." };
+      }
+      // Published: everyone sees it, so a new date or time is a reschedule (with a reason, and
+      // they're told), never a quiet edit.
+      if (event.status === "published" && SCHEDULE_FIELDS.some((key) => data?.[key] !== undefined)) {
+        return {
+          error: true,
+          statusCode: httpStatus.CONFLICT,
+          message: "This paper is published. Reschedule it, with a reason, so teachers and students are told.",
+        };
+      }
     }
 
     const { shift, ...changes } = data ?? {};
@@ -90,8 +110,8 @@ export const updateEvent = async (eventId: string, data: any, instituteId: strin
       changes.color = SHIFT_COLOR[nextShift];
     }
 
-    // Identity fields of an exam paper are not changed through an edit.
-    for (const key of ["instituteId", "createdBy", "eventId", "isDeleted", "classId", "sessionId", "subjectId"]) delete changes[key];
+    // Identity fields of an exam paper are not changed through an edit, nor its publication.
+    for (const key of ["instituteId", "createdBy", "eventId", "isDeleted", "classId", "sessionId", "subjectId", "status", "publishedAt", "publishedBy", "changeLog"]) delete changes[key];
     await event.update(changes);
     return { error: false, statusCode: httpStatus.OK, message: "Exam paper updated.", data: event };
   } catch (error: any) {
@@ -101,18 +121,18 @@ export const updateEvent = async (eventId: string, data: any, instituteId: strin
 
 // ─── Exam date sheet (bulk) ─────────────────────────────────────────────────
 
-const SHIFT_COLOR: Record<ExamShift, string> = { "First Shift": "#4F6EF7", "Second Shift": "#0EA5E9" };
-const MAX_BATCH = 300;
+export const SHIFT_COLOR: Record<ExamShift, string> = { "First Shift": "#4F6EF7", "Second Shift": "#0EA5E9" };
+export const MAX_BATCH = 300;
 
-const toDateOnly = (value: unknown): string | null => {
+export const toDateOnly = (value: unknown): string | null => {
   if (!value) return null;
   if (typeof value === "string") return value.slice(0, 10);
   const d = new Date(value as any);
   return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 };
-const typeKey = (value: unknown) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+export const typeKey = (value: unknown) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-interface Slot {
+export interface Slot {
   classId: string;
   date: string;
   start: number | null;
@@ -125,14 +145,14 @@ interface Slot {
  * in the other shift. Only when a shift cannot be known (very old events without times)
  * do overlapping times decide.
  */
-const slotsClash = (a: Slot, b: Slot) => {
+export const slotsClash = (a: Slot, b: Slot) => {
   if (a.classId !== b.classId || a.date !== b.date) return false;
   if (a.shift && b.shift) return a.shift === b.shift;
   if (a.start !== null && a.end !== null && b.start !== null && b.end !== null) return a.start < b.end && b.start < a.end;
   return false;
 };
 
-const eventSlot = (e: AcademicCalendar): Slot & { subjectName: string; title: string; eventId: string; time: string } => {
+export const eventSlot = (e: AcademicCalendar): Slot & { subjectName: string; title: string; eventId: string; time: string } => {
   const start = parseTime(e.startTime);
   const end = parseTime(e.endTime);
   const shift = readDetails(e.description).shift;
@@ -174,9 +194,11 @@ export interface SchedulePaperInput {
 }
 
 /**
- * Publishes a date sheet: many papers (classes × subjects) in one go, all or nothing.
- * Names come from the database, not the client. Refused with the full problem list when
- * any paper is invalid, clashes with another paper of that class, or is already scheduled.
+ * Saves a date sheet as drafts: many papers (classes × subjects) in one go, all or nothing.
+ * Only the school admin sees drafts; they're published from the exam calendar (see
+ * examCalendarChanges.service). Names come from the database, not the client. Refused with
+ * the full problem list when any paper is invalid, clashes with another paper of that class
+ * (drafts included), or is already scheduled.
  */
 export const createExamSchedule = async (items: SchedulePaperInput[], instituteId: string, createdBy: string) => {
   try {
@@ -247,6 +269,8 @@ export const createExamSchedule = async (items: SchedulePaperInput[], instituteI
         className: cls.className,
         subjectId: subject.subjectId,
         subjectName: subject.subjectName,
+        // Seen only by the admin until it is published.
+        status: "draft",
         _index: index,
       });
     });
@@ -306,51 +330,22 @@ export const createExamSchedule = async (items: SchedulePaperInput[], instituteI
     return {
       error: false,
       statusCode: httpStatus.CREATED,
-      message: `Date sheet published — ${created.length} ${created.length === 1 ? "paper" : "papers"} scheduled.`,
+      message: `Saved as a draft: ${created.length} ${created.length === 1 ? "paper" : "papers"}. Only you can see ${created.length === 1 ? "it" : "them"} until you publish.`,
       data: { events: created },
     };
   } catch (error: any) {
     console.error("createExamSchedule Error:", error);
-    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Failed to publish the date sheet: ${error.message}` };
+    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: `Failed to save the date sheet: ${error.message}` };
   }
 };
 
-/** Unschedules several papers at once (soft delete, like single delete). */
-export const deleteEvents = async (eventIds: string[], instituteId: string) => {
-  try {
-    const ids = Array.isArray(eventIds) ? eventIds.filter((id) => typeof id === "string" && id) : [];
-    if (!ids.length) {
-      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Select at least one paper." };
-    }
-    const [count] = await AcademicCalendar.update(
-      { isDeleted: true },
-      { where: { instituteId, isDeleted: false, eventId: { [Op.in]: ids } } }
-    );
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: `${count} ${count === 1 ? "paper" : "papers"} unscheduled.`,
-      data: { deleted: count },
-    };
-  } catch (error: any) {
-    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: error.message };
-  }
-};
+// Removing papers (and other events): examCalendarChanges.service, which also tells people
+// when a published paper goes.
 
-export const deleteEvent = async (eventId: string, instituteId: string) => {
-  try {
-    const event = await AcademicCalendar.findOne({ where: { eventId, instituteId, isDeleted: false } });
-    if (!event) {
-      return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Event not found" };
-    }
-    await event.update({ isDeleted: true });
-    return { error: false, statusCode: httpStatus.OK, message: "Event deleted successfully" };
-  } catch (error: any) {
-    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: error.message };
-  }
-};
+/** Drafts are the admin's: everyone else sees published events only. */
+const visibleTo = (includeDrafts: boolean) => (includeDrafts ? {} : { status: "published" });
 
-export const getEventsByMonth = async (instituteId: string, year: number, month: number) => {
+export const getEventsByMonth = async (instituteId: string, year: number, month: number, includeDrafts = false) => {
   try {
     // MySQL handles string comparison on DATEONLY correctly. We can do month matching.
     const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
@@ -361,6 +356,7 @@ export const getEventsByMonth = async (instituteId: string, year: number, month:
       where: {
         instituteId,
         isDeleted: false,
+        ...visibleTo(includeDrafts),
         eventDate: {
           [Op.gte]: startDate,
           [Op.lte]: endDate,
@@ -393,16 +389,27 @@ export const getEventsByMonth = async (instituteId: string, year: number, month:
   }
 };
 
-export const getAllEvents = async (instituteId: string) => {
+/** "2026-11-17" as given, else null. */
+const dayParam = (value: unknown): string | null => (/^\d{4}-\d{2}-\d{2}$/.test(String(value ?? "")) ? String(value) : null);
+
+// Every event of every year grows without end: ?from= and ?to= (YYYY-MM-DD) narrow the days,
+// and the events come a page at a time (?page=&limit=, at most 500; the first 500 without them).
+export const getAllEvents = async (instituteId: string, includeDrafts = false, query: any = {}) => {
   try {
-    const events = await AcademicCalendar.findAll({
-      where: { instituteId, isDeleted: false },
-      order: [["eventDate", "ASC"]],
+    const { page, limit, offset } = paging(query, { defaultLimit: 100, maxLimit: 500, unpagedLimit: 500 });
+    const where: any = { instituteId, isDeleted: false, ...visibleTo(includeDrafts) };
+    const from = dayParam(query?.from);
+    const to = dayParam(query?.to);
+    if (from || to) where.eventDate = { ...(from ? { [Op.gte]: from } : {}), ...(to ? { [Op.lte]: to } : {}) };
+    const { rows: events, count } = await AcademicCalendar.findAndCountAll({
+      where,
+      order: [["eventDate", "ASC"], ["id", "ASC"]],
+      limit,
+      offset,
     });
-    const creatorIds = events.map(e => e.createdBy).filter(Boolean);
-    const users = await User.findAll({
-      where: { userId: creatorIds }
-    });
+    // Who made each event: their names only.
+    const creatorIds = [...new Set(events.map((e) => e.createdBy).filter(Boolean))];
+    const users = creatorIds.length ? await User.findAll({ where: { userId: creatorIds }, attributes: ["userId", "userName"] }) : [];
     const userMap = users.reduce((acc: any, u: any) => {
       acc[u.userId] = u.userName;
       return acc;
@@ -416,7 +423,7 @@ export const getAllEvents = async (instituteId: string) => {
       return plain;
     });
 
-    return { error: false, statusCode: httpStatus.OK, data: mappedEvents };
+    return { error: false, statusCode: httpStatus.OK, data: mappedEvents, pagination: pageInfo(count, page, limit) };
   } catch (error: any) {
     return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: error.message };
   }

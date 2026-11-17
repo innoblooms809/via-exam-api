@@ -20,6 +20,7 @@ import { createPostgresDriver } from "./postgresDriver";
 import type { AddOptions, JobQueue, JobView, QueueDefinition, QueueDriver, Repeat } from "./types";
 
 export * from "./types";
+export * from "./events";
 
 const definitions = new Map<string, QueueDefinition<any>>();
 const schedules: Array<{ queue: string; id: string; repeat: Repeat; job: { name: string; data?: unknown } }> = [];
@@ -201,3 +202,6 @@ export async function queueStatus(options: { counts?: boolean } = {}): Promise<{
 }
 
 export const queueDriverKind = (): QueueDriverKind | "none" => driver?.kind ?? "none";
+
+/** Whether this process runs the queues' jobs (the worker, or the API without QUEUE_WORKERS=false). */
+export const queueWorkersRunningHere = (): boolean => workersRunning;

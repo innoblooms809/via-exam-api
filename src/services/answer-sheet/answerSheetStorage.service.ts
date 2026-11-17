@@ -3,11 +3,12 @@
  *
  * Split out of scanner.service.ts because storage is its own concern: every
  * function here has to keep three things in step — the database row, the
- * Cloudinary asset and the temporary file on disk — and get that right on the
- * failure paths as well as the happy one.
+ * stored file (uploads/private/answer-sheets/, see utils/answerSheetStorage)
+ * and the temporary upload file — and get that right on the failure paths as
+ * well as the happy one.
  *
  * Two rules hold throughout:
- *   • A Cloudinary asset is destroyed only AFTER the database change commits.
+ *   • A stored file is destroyed only AFTER the database change commits.
  *     Losing a row is recoverable; deleting a student's paper is not.
  *   • Temp files are released in a finally block, always.
  */
@@ -24,12 +25,14 @@ import { sequelize } from "../../config/sequelize";
 import {
   ANSWER_SHEET_LIMITS,
   answerSheetLimitSummary,
-  formatBytes,
 } from "../../config/uploadLimits";
+import { bytes, msg, msgPlural, type Message } from "../../i18n/message";
+import { normalizeKeyText, normalizeRollNo, ROLL_DIGITS } from "../../utils/textRules";
 import {
   destroyAnswerSheet,
+  localSheetPath,
+  remoteSheetUrl,
   removeTempFile,
-  signedAnswerSheetUrl,
   uploadAnswerSheet,
 } from "../../utils/answerSheetStorage";
 import { requireSheetAccess } from "../evaluation/evaluationAccess.service";
@@ -60,15 +63,16 @@ export interface SheetResult {
   rollNo: string;
   outcome: SheetOutcome;
   sheetId: string | null;
-  reason: string | null;
+  /** Why it wasn't saved (or a note on it), written in the reader's language. */
+  reason: Message | null;
   bytes: number;
   /** Scan quality of a stored sheet; null while it is still being checked (or the check is off). */
   quality: QualitySummary | null;
   qualityPending: boolean;
 }
 
-// How many sheets travel to Cloudinary at once. Four keeps a batch moving
-// without opening so many sockets that a school's uplink collapses.
+// How many sheets of a batch are stored at once. Four keeps a batch moving
+// without every sheet's quality check and copy competing for the disk.
 const UPLOAD_CONCURRENCY = 4;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -79,10 +83,12 @@ const clean = (v: unknown) => String(v ?? "").trim();
 const sectionOfSheet = (sheet: { sectionId?: string | null; studentId?: string | null }) =>
   sheet.sectionId || sheet.studentId ? sheet.sectionId ?? null : undefined;
 
-const rollNoFromFileName = (fileName: string): string =>
-  String(fileName ?? "")
-    .replace(/\.[^.]+$/, "")
-    .trim();
+/**
+ * The roll number a sheet is named after: "101.pdf" → "101". Digits typed on an Arabic,
+ * Persian or Indian keyboard count as 0-9 ("١٠١.pdf" is roll 101), and invisible direction
+ * marks are dropped, so the name matches the roll number however it was typed.
+ */
+const rollNoFromFileName = (fileName: string): string => normalizeRollNo(String(fileName ?? "").replace(/\.[^.]+$/, ""));
 
 /** sheetId collisions are cheap to avoid and expensive to debug. */
 const generateSheetId = async (taken: Set<string>): Promise<string> => {
@@ -160,6 +166,16 @@ export const uploadSheets = async (
       };
     }
 
+    // Section and exam type names may be in Arabic: one encoding, no direction marks, so they
+    // match what is stored however the browser sent them (the route's validation does the same).
+    body = {
+      ...body,
+      classId: normalizeKeyText(body.classId),
+      section: normalizeKeyText(body.section),
+      subjectId: normalizeKeyText(body.subjectId),
+      examType: normalizeKeyText(body.examType),
+    };
+
     // The exam these sheets belong to: the one the client names, else the newest
     // exam of this class / subject / type that covers the section.
     const requestedExamId = String((body as any)?.examId ?? "").trim();
@@ -172,7 +188,9 @@ export const uploadSheets = async (
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
-        message: `Missing exam context: ${missing.join(", ")}. Reopen the upload screen and pick the class, section, subject and exam.`,
+        message: msg("Missing exam context: {{fields}}. Reopen the upload screen and pick the class, section, subject and exam.", {
+          fields: missing.join(", "),
+        }),
       };
     }
 
@@ -182,7 +200,7 @@ export const uploadSheets = async (
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
-        message: `Too many files in one batch. ${answerSheetLimitSummary()}`,
+        message: msg("Too many files in one batch. {{limits}}", { limits: answerSheetLimitSummary() }),
       };
     }
 
@@ -191,7 +209,7 @@ export const uploadSheets = async (
       return {
         error: true,
         statusCode: httpStatus.REQUEST_ENTITY_TOO_LARGE,
-        message: `This batch is ${formatBytes(totalBytes)}. ${answerSheetLimitSummary()}`,
+        message: msg("This batch is {{size}}. {{limits}}", { size: bytes(totalBytes), limits: answerSheetLimitSummary() }),
       };
     }
 
@@ -247,7 +265,7 @@ export const uploadSheets = async (
     if (target === undefined && index.sections.length === 1) target = index.sections[0].sectionId;
 
     // Only the scanner given the section (or an admin) may add sheets to it, and not after its
-    // upload is marked complete or results are published.
+    // upload is marked complete or results are published. The messages are fixed English text.
     const blocked = new Map<string, { statusCode: number; message: string }>();
     for (const sectionId of target === undefined ? index.sections.map((s) => s.sectionId) : [target]) {
       try {
@@ -262,19 +280,21 @@ export const uploadSheets = async (
     }
     const qualityRule = await scanQualityRule(instituteId);
 
-    // Whose sheet each file is, before anything is stored.
-    const ownerOf = new Map<Express.Multer.File, { studentId: string; sectionId: string | null; rollNo: string } | string>();
+    // Whose sheet each file is, before anything is stored (else why no one's).
+    const ownerOf = new Map<Express.Multer.File, { studentId: string; sectionId: string | null; rollNo: string } | Message>();
     for (const f of files) {
       const roll = rollNoFromFileName(f.originalname);
-      if (!/^\d{1,32}$/.test(roll)) continue;
+      if (!ROLL_DIGITS.test(roll)) continue;
       const { student, problem } = index.find(target, roll);
-      ownerOf.set(f, student ?? problem ?? `Roll number ${roll} is not on this exam's roster.`);
+      ownerOf.set(f, student ?? problem ?? msg("Roll number {{rollNo}} is not on this exam's roster.", { rollNo: roll }));
     }
+    const isOwner = (o: unknown): o is { studentId: string; sectionId: string | null; rollNo: string } =>
+      Boolean(o && typeof o === "object" && "studentId" in o);
 
     // The sheets these students already have (newest first, as on the roster).
     const roster = await buildRoster(exam);
     const sheetIdOf = new Map(roster.rows.filter((r) => r.studentId && r.sheetId).map((r) => [r.studentId as string, r.sheetId as string]));
-    const wantedIds = [...ownerOf.values()].map((o) => (typeof o === "string" ? null : sheetIdOf.get(o.studentId))).filter(Boolean) as string[];
+    const wantedIds = [...ownerOf.values()].map((o) => (isOwner(o) ? sheetIdOf.get(o.studentId) : null)).filter(Boolean) as string[];
     const existingRows = wantedIds.length ? await Scanner.findAll({ where: { sheetId: { [Op.in]: wantedIds }, isDeleted: false } }) : [];
     const existingBySheet = new Map(existingRows.map((r) => [r.sheetId, r]));
 
@@ -299,25 +319,27 @@ export const uploadSheets = async (
       };
 
       if (!rollNo) {
-        return { ...base, reason: "The file name is empty, so no roll number could be read from it." };
+        return { ...base, reason: msg("The file name is empty, so no roll number could be read from it.") };
       }
-      if (!/^\d{1,32}$/.test(rollNo)) {
+      if (!ROLL_DIGITS.test(rollNo)) {
         return {
           ...base,
-          reason: `"${fileName}" is not named after a roll number. Rename it to the student's roll number, for example 101.pdf.`,
+          reason: msg("\"{{name}}\" is not named after a roll number. Rename it to the student's roll number, for example 101.pdf.", {
+            name: fileName,
+          }),
         };
       }
       const owner = ownerOf.get(file);
-      if (!owner || typeof owner === "string") {
-        return { ...base, reason: (owner as string | undefined) ?? `Roll number ${rollNo} is not on this exam's roster.` };
+      if (!isOwner(owner)) {
+        return { ...base, reason: owner ?? msg("Roll number {{rollNo}} is not on this exam's roster.", { rollNo }) };
       }
       const why = blocked.get(sectionKey(owner.sectionId));
-      if (why) return { ...base, reason: why.message };
+      if (why) return { ...base, reason: why.message ? msg(why.message) : null };
 
       // The file's bytes decide its type; a PDF carrying scripts never reaches storage.
       const inspected = inspectDiskFile(file.path, ANSWER_SHEET_DETECTED_TYPES);
       if (!inspected.ok) {
-        return { ...base, reason: `${fileName}: ${inspected.reason}` };
+        return { ...base, reason: msg("{{name}}: {{reason}}", { name: fileName, reason: inspected.reason }) };
       }
       file.mimetype = inspected.mime;
 
@@ -326,7 +348,10 @@ export const uploadSheets = async (
         return {
           ...base,
           outcome: "duplicate",
-          reason: `Roll number ${rollNo} also appears in this batch as "${duplicateOf}". Upload one sheet per student.`,
+          reason: msg("Roll number {{rollNo}} also appears in this batch as \"{{name}}\". Upload one sheet per student.", {
+            rollNo,
+            name: duplicateOf,
+          }),
         };
       }
       seenInBatch.set(owner.studentId, fileName);
@@ -338,13 +363,13 @@ export const uploadSheets = async (
           ...base,
           outcome: "duplicate",
           sheetId: existing.sheetId,
-          reason: `Roll number ${rollNo} already has a sheet for this exam. Use Replace if you want to overwrite it.`,
+          reason: msg("Roll number {{rollNo}} already has a sheet for this exam. Use Replace if you want to overwrite it.", { rollNo }),
         };
       }
 
       const sheetId = existing ? existing.sheetId : await generateSheetId(takenSheetIds);
 
-      // Measured while the file travels to Cloudinary.
+      // Measured while the file is stored.
       const qualityCheck = beginQualityCheck(file.path, qualityRule);
       const withQuality = async (result: SheetResult, publicId: string): Promise<SheetResult> => {
         const report = await settleQualityCheck(sheetId, publicId, qualityCheck);
@@ -446,9 +471,10 @@ export const uploadSheets = async (
         return {
           ...base,
           outcome: isUnique ? "duplicate" : "failed",
+          // The cause is in the log; storage and database errors mean nothing to the operator.
           reason: isUnique
-            ? `Roll number ${rollNo} already has a sheet for this exam.`
-            : `Could not store this sheet: ${err?.message ?? "unknown error"}`,
+            ? msg("Roll number {{rollNo}} already has a sheet for this exam.", { rollNo })
+            : msg("This sheet couldn't be stored. Please try again."),
         };
       }
     });
@@ -478,21 +504,30 @@ export const uploadSheets = async (
       statusCode: stored > 0 ? httpStatus.CREATED : httpStatus.OK,
       message:
         stored === 0
-          ? "No sheets were stored. Every file in this batch was rejected."
+          ? msg("No sheets were stored. Every file in this batch was rejected.")
           : notStored === 0
-            ? `${stored} sheet${stored === 1 ? "" : "s"} stored successfully.`
-            : `${stored} of ${results.length} sheets stored. ${notStored} need attention.`,
+            ? msgPlural(stored, "{{count}} sheet stored successfully.", "{{count}} sheets stored successfully.")
+            : msgPlural(results.length, "{{stored}} of {{count}} sheet stored; {{failed}} need attention.", "{{stored}} of {{count}} sheets stored; {{failed}} need attention.", {
+                stored,
+                failed: notStored,
+              }),
       ...(counts.poorScans
-        ? { qualityMessage: `${counts.poorScans} sheet${counts.poorScans === 1 ? " looks" : "s look"} like a poor scan. Rescan ${counts.poorScans === 1 ? "it" : "them"} if you can.` }
+        ? {
+            qualityMessage: msgPlural(
+              counts.poorScans,
+              "{{count}} sheet looks like a poor scan. Rescan it if you can.",
+              "{{count}} sheets look like a poor scan. Rescan them if you can."
+            ),
+          }
         : {}),
       data: { counts, results, limits: ANSWER_SHEET_LIMITS },
     };
   } catch (e: any) {
-    logger.error(`[AnswerSheets] Batch upload failed: ${e?.message || e}`);
+    logger.error(`[AnswerSheets] Batch upload failed: ${e?.stack || e?.message || e}`);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e?.message ?? e}`,
+      message: "Something went wrong. Please try again.",
     };
   } finally {
     await cleanup();
@@ -590,7 +625,7 @@ export const replaceSheet = async (
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `Sheet for roll number ${sheet.rollNo} replaced. Any earlier evaluation was cleared.`,
+      message: msg("Sheet for roll number {{rollNo}} replaced. Any earlier evaluation was cleared.", { rollNo: sheet.rollNo }),
       data: {
         sheetId: sheet.sheetId,
         rollNo: sheet.rollNo,
@@ -600,11 +635,11 @@ export const replaceSheet = async (
       },
     };
   } catch (e: any) {
-    logger.error(`[AnswerSheets] Replace ${sheetId} failed: ${e?.message || e}`);
+    logger.error(`[AnswerSheets] Replace ${sheetId} failed: ${e?.stack || e?.message || e}`);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Could not replace this sheet: ${e?.message ?? e}`,
+      message: "This sheet couldn't be replaced. Please try again.",
     };
   } finally {
     await removeTempFile(file?.path);
@@ -648,15 +683,15 @@ export const deleteSheet = async (sheetId: string, requestedBy: any): Promise<an
     return {
       error: false,
       statusCode: httpStatus.OK,
-      message: `Sheet for roll number ${rollNo} deleted.`,
+      message: msg("Sheet for roll number {{rollNo}} deleted.", { rollNo }),
       data: { sheetId, rollNo },
     };
   } catch (e: any) {
-    logger.error(`[AnswerSheets] Delete ${sheetId} failed: ${e?.message || e}`);
+    logger.error(`[AnswerSheets] Delete ${sheetId} failed: ${e?.stack || e?.message || e}`);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Could not delete this sheet: ${e?.message ?? e}`,
+      message: "This sheet couldn't be deleted. Please try again.",
     };
   }
 };
@@ -664,14 +699,20 @@ export const deleteSheet = async (sheetId: string, requestedBy: any): Promise<an
 // ─── READ ─────────────────────────────────────────────────────────────────────
 
 /**
- * Returns either a short-lived Cloudinary URL to redirect to, or — for sheets
- * uploaded before the move to Cloudinary — the stored bytes. Keeping the
- * fallback means the migration can run at its own pace without breaking
- * anything already in the system.
+ * Where a sheet's file is, after the access checks: a file on this server, or —
+ * for older sheets — a Cloudinary link (fetched by the controller) or the bytes
+ * still held in the database. The controller streams each one; no link is
+ * handed to the browser.
  */
-export const getSheetFile = async (sheetId: string, requestedBy: any): Promise<any> => {
+/**
+ * Where a sheet's file is, after the access checks. The row is read without its heavy columns
+ * (the legacy file blob, the quality report): a sheet stored on disk or in Cloudinary never
+ * needs them, and the blob is read on its own only for a legacy sheet, and only when the caller
+ * wants the bytes (`buffer: false` just locates the file).
+ */
+export const getSheetFile = async (sheetId: string, requestedBy: any, opts: { buffer?: boolean } = {}): Promise<any> => {
   try {
-    const sheet = await Scanner.findOne({ where: { sheetId, isDeleted: false } });
+    const sheet = await Scanner.findOne({ where: { sheetId, isDeleted: false }, attributes: { exclude: ["fileBuffer", "qualityReport"] } });
     if (!sheet) {
       return { error: true, statusCode: httpStatus.NOT_FOUND, message: "Sheet not found." };
     }
@@ -694,37 +735,39 @@ export const getSheetFile = async (sheetId: string, requestedBy: any): Promise<a
     // A teacher who only evaluates this paper must not learn whose it is.
     const fileName = access === "masked" ? `answer-sheet${ext}` : sheet.fileName;
 
-    if (sheet.filePublicId) {
+    const filePath = localSheetPath(sheet);
+    if (filePath) {
       return {
         error: false,
         statusCode: httpStatus.OK,
         message: "File located.",
-        data: {
-          redirectUrl: signedAnswerSheetUrl(
-            sheet.filePublicId,
-            sheet.fileResourceType || "raw",
-          ),
-          mimeType: sheet.fileMimeType,
-          fileName,
-        },
+        data: { filePath, mimeType: sheet.fileMimeType, fileName },
       };
     }
 
-    if (sheet.fileUrl) {
+    // Stored in Cloudinary before the move to local storage: the controller fetches it and
+    // streams it on, so its permanent public link never reaches the browser.
+    const remoteUrl = remoteSheetUrl(sheet);
+    if (remoteUrl) {
       return {
         error: false,
         statusCode: httpStatus.OK,
         message: "File located.",
-        data: { redirectUrl: sheet.fileUrl, mimeType: sheet.fileMimeType, fileName },
+        data: { remoteUrl, mimeType: sheet.fileMimeType, fileName },
       };
     }
 
-    if (sheet.fileBuffer) {
+    // Legacy: the file held in the row itself, read now and only now.
+    if (opts.buffer === false) {
+      return { error: false, statusCode: httpStatus.OK, message: "File located.", data: { mimeType: sheet.fileMimeType, fileName } };
+    }
+    const legacy = await Scanner.findOne({ where: { id: sheet.id }, attributes: ["id", "fileBuffer"] });
+    if (legacy?.fileBuffer) {
       return {
         error: false,
         statusCode: httpStatus.OK,
         message: "File fetched from legacy storage.",
-        data: { buffer: sheet.fileBuffer, mimeType: sheet.fileMimeType, fileName },
+        data: { buffer: legacy.fileBuffer, mimeType: sheet.fileMimeType, fileName },
       };
     }
 
@@ -734,10 +777,11 @@ export const getSheetFile = async (sheetId: string, requestedBy: any): Promise<a
       message: "This sheet has no stored file. It may need to be uploaded again.",
     };
   } catch (e: any) {
+    logger.error(`[AnswerSheets] Read ${sheetId} failed: ${e?.stack || e?.message || e}`);
     return {
       error: true,
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e?.message ?? e}`,
+      message: "Something went wrong. Please try again.",
     };
   }
 };

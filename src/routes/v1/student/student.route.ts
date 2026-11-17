@@ -19,6 +19,8 @@ router.post(
   validate(studentValidation.bulkCreateStudents),
   Controller.bulkCreateStudents
 );
+// A big upload answers 202 with an importId: its progress, then its result (kept 3 days).
+router.get("/bulk-import/:importId", authenticate, authorize(ADMINS), Controller.getImportStatus);
 
 // ?search=john&className=Class 10&division=A&academicYear=2024-25
 router.get("/getAllStudents", authenticate, authorize(STAFF), Controller.getAllStudents);

@@ -23,12 +23,13 @@ import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.mode
 import { pythonServices, serviceHeaders } from "../../config/pythonServices";
 import logger from "../../config/logger";
 
-const OCR_TIMEOUT_MS = 3600000; // 1 hour — large multi-page PDFs on CPU are slow
-
 const positiveInt = (value: string | undefined, fallback: number) => {
   const n = Number.parseInt(String(value ?? ""), 10);
   return Number.isFinite(n) && n > 0 ? n : fallback;
 };
+
+/** Large multi-page PDFs on CPU are slow: 1 hour per document unless EVAL_OCR_TIMEOUT_MIN says otherwise. */
+export const ocrTimeoutMs = () => positiveInt(process.env.EVAL_OCR_TIMEOUT_MIN, 60) * 60_000;
 
 /** Runs at most `max` async tasks at a time; the rest wait in FIFO order. */
 export function createLimiter(max: number) {
@@ -59,7 +60,7 @@ export async function ocrDocument(file: Buffer, fileName: string, contentType?: 
 
     const res = await axios.post(pythonServices.ocrUrl(), form, {
       headers: { ...form.getHeaders(), ...serviceHeaders("ocr") },
-      timeout: OCR_TIMEOUT_MS,
+      timeout: ocrTimeoutMs(),
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
     });

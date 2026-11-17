@@ -14,5 +14,7 @@
   "Students fetched successfully.": "تم استلام الطلاب للطلبات بنجاح.",
   "Subject comparison fetched successfully.": "تم جلب مقارنة الموضوع بنجاح.",
   "Subject performance fetched successfully.": "تم جلب بيانات أداء الموضوع بنجاح.",
-  "The uploaded file contains no student rows.": "لا يحتوي الملف المرفوع على أي صفوف خاصة بالطلاب."
+  "The students are being added. Follow the progress here, or leave: you'll get a notification when it's done.": "جارٍ إضافة الطلاب. تابع التقدّم هنا، أو غادر الصفحة وسيصلك إشعار عند الانتهاء.",
+  "The uploaded file contains no student rows.": "لا يحتوي الملف المرفوع على أي صفوف خاصة بالطلاب.",
+  "This upload was not found. Upload results are kept for 3 days.": "لم يتم العثور على عملية الرفع هذه. تُحفظ نتائج الرفع لمدة 3 أيام."
 }

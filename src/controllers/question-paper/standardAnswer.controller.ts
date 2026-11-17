@@ -1,17 +1,24 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { Op } from "sequelize";
 import QuestionPaperAnswerService from "../../services/question-paper/standardAnswer.service";
-import { QuestionPaperService } from "../../services/question-paper/questionPaper.service";
+import { QuestionPaperService, listsEveryPaper } from "../../services/question-paper/questionPaper.service";
 import Session from "../../models/Session.model";
 import Class from "../../models/Class.model";
 import Subject from "../../models/Subject.model";
 import Exam from "../../models/Exam.model";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
 import httpStatus from "http-status";
-import cloudinary from "../../utils/cloudinary";
 import { warmAnswerKeyOcr } from "../../services/evaluation/pipeline6.service";
-import fs from "fs";
 import path from "path";
+import { randomUUID } from "crypto";
+import {
+  MODEL_ANSWERS_ROOT,
+  localPathOf,
+  removeStoredFile,
+  safeSegment,
+  webPathOf,
+  writeStoredFile,
+} from "../../utils/localFileStorage";
 
 export const createQuestionPaperAnswer = async (
   req: any,
@@ -69,27 +76,31 @@ export const createQuestionPaperAnswer = async (
   }
 };
 
-export const uploadFileToCloudinary = (file: Express.Multer.File) =>
-  new Promise<string>((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: "answer-sheets",
-        resource_type: "auto",
-        public_id: `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e6)}`,
-      },
-      (error: any, result: any) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(result?.secure_url || "");
-        }
-      }
-    );
-    uploadStream.end(file.buffer);
-  });
+// Extension of each type verifyUploads accepts on these routes (it sets `mimetype` from the bytes).
+const MODEL_ANSWER_EXTENSIONS: Record<string, string> = {
+  "application/pdf": ".pdf",
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+};
+
+/**
+ * Stores a model answer file (the answer PDF or a diagram) under
+ * uploads/private/model-answers/<institute>/ with a server-chosen name. Only signed-in admins and
+ * teachers of that institute can open it (middlewares/uploadsAccess.ts). Returns its web path.
+ */
+export const storeModelAnswerFile = async (file: Express.Multer.File, instituteId: string): Promise<string> => {
+  const name = `${safeSegment(file.fieldname, "file")}-${randomUUID()}${MODEL_ANSWER_EXTENSIONS[file.mimetype] ?? ""}`;
+  const stored = await writeStoredFile(path.join(MODEL_ANSWERS_ROOT, safeSegment(instituteId)), name, file.buffer);
+  return webPathOf(stored);
+};
+
+/** Removes files this request stored (a failed upload must not leave them behind). */
+const removeModelAnswerFiles = (urls: string[]) =>
+  Promise.all(urls.map((url) => removeStoredFile(localPathOf(url), MODEL_ANSWERS_ROOT, "failed upload")));
 
 export const uploadImageController = async (
-  req: Request,
+  req: any,
   res: Response
 ): Promise<any> => {
   try {
@@ -102,15 +113,21 @@ export const uploadImageController = async (
       ...(files?.diagramUrls || []),
     ];
 
-    const diagramUrls: string[] = [];
+    const instituteId = req.viaExamUser?.instituteId;
+    if (diagramFiles.length && !instituteId) {
+      return res.status(httpStatus.BAD_REQUEST).json({ error: true, message: "Institute not found for this user." });
+    }
 
-    for (const file of diagramFiles) {
-      try {
-        const url = await uploadFileToCloudinary(file);
-        if (url) diagramUrls.push(url);
-      } catch (e: any) {
-        console.error(`Cloudinary upload failed for ${file.originalname}:`, e.message);
-      }
+    const diagramUrls: string[] = [];
+    try {
+      for (const file of diagramFiles) diagramUrls.push(await storeModelAnswerFile(file, instituteId));
+    } catch (e: any) {
+      console.error("Storing model answer images failed:", e.message);
+      await removeModelAnswerFiles(diagramUrls);
+      return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        error: true,
+        message: "The images could not be saved. Please try again.",
+      });
     }
 
     return res.status(200).json({
@@ -166,13 +183,20 @@ export const uploadPdfController = async (
       }
     }
 
-    for (const file of files) {
-      try {
-        const url = await uploadFileToCloudinary(file);
-        if (url) urls.push(url);
-      } catch (e: any) {
-        console.error(`Cloudinary upload failed for ${file.originalname}:`, e.message);
-      }
+    // Stored under the signed-in user's own institute, never one named in the request.
+    const storeIn = req.viaExamUser?.instituteId;
+    if (files.length && !storeIn) {
+      return res.status(httpStatus.BAD_REQUEST).json({ error: true, message: "Institute not found for this user." });
+    }
+    try {
+      for (const file of files) urls.push(await storeModelAnswerFile(file, storeIn));
+    } catch (e: any) {
+      console.error("Storing the model answer file failed:", e.message);
+      await removeModelAnswerFiles(urls);
+      return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        error: true,
+        message: "The file could not be saved. Please try again.",
+      });
     }
 
     if (urls.length === 0) {
@@ -199,7 +223,8 @@ export const uploadPdfController = async (
         if (dbResult?.answerId) warmAnswerKeyOcr(dbResult.answerId);
       } catch (dbErr: any) {
         console.error("Failed to save answer sheet PDF url to database:", dbErr.message);
-        // The file reached storage but is not linked to the paper — report it as a failure.
+        // The file was stored but is not linked to the paper: remove it and report a failure.
+        await removeModelAnswerFiles(urls);
         return res.status(dbErr?.statusCode || httpStatus.BAD_REQUEST).json({
           error: true,
           message: dbErr.message || "Answer sheet uploaded but could not be saved. Please try again.",
@@ -292,11 +317,12 @@ export const getQuestionPaperAnswerBySelection = async (
 
     // 1. Direct lookup by examId if provided
     if (examId) {
-      const qpaWhere: any = { examId };
+      // The requester's school only: an exam id from another school finds nothing.
+      const qpaWhere: any = { examId, ...(instituteId ? { instituteId } : {}) };
       if (paperSet) qpaWhere.paperSet = paperSet;
       const directQpa = await QuestionPaperAnswer.findOne({ where: qpaWhere });
       if (directQpa) {
-        const examObj = await Exam.findOne({ where: { examId } });
+        const examObj = await Exam.findOne({ where: { examId, instituteId: directQpa.instituteId } });
         return res.status(httpStatus.OK).json({
           error: false,
           message: "Question paper answer fetched successfully.",
@@ -413,54 +439,6 @@ export const getQuestionPaperAnswerBySelection = async (
   }
 };
 
-export const getQuestionPaperAnswerUploads = async (req: Request, res: Response) => {
-  try {
-    const baseDir = path.join(process.cwd(), "uploads", "question-papers");
-
-    const listFiles = (dir: string, urlPath: string): string[] => {
-      if (!fs.existsSync(dir)) return [];
-
-      return fs
-        .readdirSync(dir)
-        .filter((file) => fs.statSync(path.join(dir, file)).isFile())
-        .map((file) => `/uploads/question-papers/${urlPath}/${file}`);
-    };
-
-    return res.json({
-      error: false,
-      data: {
-        diagrams: listFiles(path.join(baseDir, "diagrams"), "diagrams"),
-      },
-    });
-
-  } catch (e: any) {
-    return res.status(500).json({
-      error: true,
-      message: e.message,
-    });
-  }
-};
-
-// ─── APPROVAL WORKFLOW CONTROLLERS ─────────────────────────────────────────
-
-export const submitAnswerSheet = async (req: any, res: Response): Promise<any> => {
-  try {
-    const { answerId } = req.params;
-    const answer = await QuestionPaperAnswerService.submitForApproval(answerId, req.viaExamUser);
-
-    return res.status(httpStatus.OK).json({
-      error: false,
-      message: `Set ${answer.paperSet} submitted for approval.`,
-      data: answer,
-    });
-  } catch (error: any) {
-    return res.status(error?.statusCode || httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
-  }
-};
-
 export const approveAnswerSheet = async (req: any, res: Response): Promise<any> => {
   try {
     const { answerId } = req.params;
@@ -499,53 +477,19 @@ export const rejectAnswerSheet = async (req: any, res: Response): Promise<any> =
   }
 };
 
-export const publishAnswerSheet = async (req: any, res: Response): Promise<any> => {
-  try {
-    const { answerId } = req.params;
-
-    const answer = await QuestionPaperAnswerService.publishAnswer(answerId);
-
-    return res.status(httpStatus.OK).json({
-      error: false,
-      message: "Answer sheet published.",
-      data: answer,
-    });
-  } catch (error: any) {
-    return res.status(httpStatus.BAD_REQUEST).json({
-      error: true,
-      message: error.message,
-    });
-  }
-};
-
-export const getPendingAnswerSheets = async (req: any, res: Response): Promise<any> => {
-  try {
-    const instituteId = req.viaExamUser.instituteId;
-
-    const answers = await QuestionPaperAnswerService.getPendingAnswers(instituteId);
-
-    return res.status(httpStatus.OK).json({
-      error: false,
-      message: "Pending answer sheets fetched.",
-      data: { answers },
-    });
-  } catch (error: any) {
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      error: true,
-      message: error.message,
-    });
-  }
-};
-
 export const getAllAnswerSheets = async (req: any, res: Response): Promise<any> => {
   try {
     const instituteId = req.viaExamUser.instituteId;
-    const { status, examId, teacherId } = req.query;
+    const { status, examId, teacherId, sessionId, summary } = req.query;
 
     const answers = await QuestionPaperAnswerService.getAnswers(instituteId, {
       status: status as string,
       examId: examId as string,
-      teacherId: teacherId as string,
+      // A teacher lists only their own answer sheets; the school's admins list every one.
+      teacherId: listsEveryPaper(req.viaExamUser) ? (teacherId as string) : String(req.viaExamUser.userId ?? "-"),
+      sessionId: sessionId as string,
+      // ?summary=1: the sheets' state without the answers themselves (the list of every sheet).
+      summary: ["1", "true"].includes(String(summary ?? "").toLowerCase()),
     });
 
     return res.status(httpStatus.OK).json({

@@ -12,8 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkPythonServices = exports.describePythonServices = exports.pythonServices = void 0;
+exports.checkPythonServices = exports.describePythonServices = exports.serviceBase = exports.serviceReachable = exports.serviceHeaders = exports.pythonServices = void 0;
 const axios_1 = __importDefault(require("axios"));
+const net_1 = __importDefault(require("net"));
 const logger_1 = __importDefault(require("./logger"));
 /**
  * Python services — two separate servers, each configured by its own base URL (scheme + host + port):
@@ -49,9 +50,47 @@ exports.pythonServices = {
         `${evalBase()}/evaluate-text`,
     pipeline6PreprocessUrl: () => firstSet(process.env.PIPELINE6_PREPROCESS_URL) || `${evalBase()}/preprocess-exam`,
     pipeline6VisualPreEvalUrl: () => firstSet(process.env.PIPELINE6_VISUAL_PREEVAL_URL) || `${evalBase()}/visual-pre-eval`,
+    // Documented evaluation call (structured paper in, every part marked) — the partner API uses it.
+    evaluateV1Url: () => firstSet(process.env.EVAL_V1_URL) || `${evalBase()}/v1/evaluate`,
+    capabilitiesUrl: () => `${evalBase()}/v1/capabilities`,
     // ── Legacy evaluation API (port 8002) — only used by the old /evaluate route ──
     evaluationUrl: () => firstSet(process.env.EVALUATION_API_URL) || `${legacyEvalBase()}/evaluation`,
 };
+/**
+ * Headers for calls to a Python service. When the service runs with INTERNAL_API_TOKEN set,
+ * set the same value here (OCR_SERVICE_TOKEN / EVAL_SERVICE_TOKEN); without it every call
+ * except /health is refused with 401.
+ */
+const serviceHeaders = (service) => {
+    const token = firstSet(service === "ocr" ? process.env.OCR_SERVICE_TOKEN : process.env.EVAL_SERVICE_TOKEN);
+    return token ? { "X-Internal-Token": token } : {};
+};
+exports.serviceHeaders = serviceHeaders;
+/**
+ * Can this machine open a connection to the server behind `url`? Only the connection counts, not
+ * an HTTP answer: a server deep in a long OCR or evaluation may answer slowly, but it is still there.
+ */
+const serviceReachable = (url, timeoutMs = 3000) => new Promise((resolve) => {
+    let target;
+    try {
+        target = new URL(url);
+    }
+    catch (_a) {
+        resolve(false);
+        return;
+    }
+    const socket = net_1.default.connect({ host: target.hostname, port: Number(target.port) || (target.protocol === "https:" ? 443 : 80) });
+    const finish = (reachable) => {
+        socket.destroy();
+        resolve(reachable);
+    };
+    socket.setTimeout(timeoutMs, () => finish(false));
+    socket.once("connect", () => finish(true));
+    socket.once("error", () => finish(false));
+});
+exports.serviceReachable = serviceReachable;
+/** Base URLs, for health checks and the evaluation API's capabilities. */
+exports.serviceBase = { ocr: ocrBase, eval: evalBase };
 /** One-line summary for the startup log, so the active targets are visible after an .env change. */
 const describePythonServices = () => `Python services → OCR ${ocrBase()} | Evaluation ${evalBase()}`;
 exports.describePythonServices = describePythonServices;

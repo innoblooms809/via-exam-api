@@ -15,6 +15,10 @@ const router = Router();
 router.get("/admin", authenticate, authorize(ADMINS), Controller.getAdminHome);
 // GET /v1/home/setup    — master-data checklist for a new institute (session → classes → … → first exam)
 router.get("/setup", authenticate, authorize(ADMINS), Controller.getSetupStatus);
+// GET /v1/home/staff-work — every teacher's and scanner's open work, with when each piece was last reminded about
+// POST /v1/home/staff-work/remind — { userId, kind, referenceId }: a reminder about one piece of that work
+router.get("/staff-work", authenticate, authorize(ADMINS), Controller.getStaffWork);
+router.post("/staff-work/remind", authenticate, authorize(ADMINS), Controller.sendReminder);
 // GET /v1/home/people/:userId?sessionId=&examType= — one teacher, scanner or student: profile, numbers and the
 // first page of work and history for a session (default: the current one; "all" for every session)
 router.get("/people/:userId", authenticate, authorize(ADMINS), Controller.getPerson);

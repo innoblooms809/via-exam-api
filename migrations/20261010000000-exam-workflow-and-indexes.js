@@ -3,10 +3,10 @@
 /**
  * Exam workflow tables + indexes for the hot read paths.
  *
- * Run ONLY this migration (older ones were applied by hand and are not in
- * SequelizeMeta):
+ * The older migrations (up to 20260928000000) were applied by hand; a database where they
+ * aren't recorded in SequelizeMeta needs them recorded first, then:
  *
- *   npm run db:migrate:workflow
+ *   npm run db:migrate
  *
  * Everything is idempotent (IF NOT EXISTS), so it is safe to run again and safe
  * to run after the API has already started once (sequelize.sync creates the
@@ -95,7 +95,8 @@ const TABLES = [
 // Names match the model definitions, so sync() and this migration never create twins.
 const INDEXES = [
   // New tables
-  `CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exam_scanner_assignments_one_active" ON "viaexam_exam_scanner_assignments" ("examId") WHERE "isActive" = true`,
+  // (No one-active-scanner-per-exam index: scanners are assigned per section now, and
+  // db/sectionWorkBackfill owns the per-section unique index and drops the old one.)
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exam_scanner_assignments_scanner" ON "viaexam_exam_scanner_assignments" ("scannerId", "isActive")`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exam_scanner_assignments_institute" ON "viaexam_exam_scanner_assignments" ("instituteId", "isActive")`,
   `CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS "viaexam_exam_attendance_exam_student" ON "viaexam_exam_attendance" ("examId", "studentId")`,

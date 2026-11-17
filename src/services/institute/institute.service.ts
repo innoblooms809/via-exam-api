@@ -140,7 +140,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
     // 5. Generate institute ID (needed up front so uploads can be scoped by it)
     const instituteId = newId("institute");
 
-    // 6. Upload the logo to Cloudinary, if provided (bytes already checked by verifyUploads)
+    // 6. Store the logo under uploads/institutes/logos/, if provided (bytes already checked by verifyUploads)
     try {
       if (files?.logo?.[0]) {
         const stored = await uploadInstituteAsset({
@@ -633,9 +633,9 @@ const updateInstitute = async (
       }
     }
 
-    // Handle new file uploads — keep old ones if no new file sent. Each
-    // upload overwrites the same Cloudinary public_id as before, so there is
-    // no separate asset to clean up here.
+    // Handle new file uploads — keep old ones if no new file sent. A new logo
+    // is a new file; the replaced one is kept, since question papers keep the
+    // logo address they were made with (utils/instituteStorage).
     let logoUrl = institute.logoUrl;
     let logoPublicId = institute.logoPublicId;
 

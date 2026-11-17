@@ -10,6 +10,7 @@ import config from "../../config/config"
 import Helper from "../../utils/helper"
 import { sequelize } from "../../config/sequelize"
 import { Op, QueryTypes, col, fn, where as sqlWhere } from "sequelize"
+import { PASSWORD_MESSAGE, isStrongPassword } from "../../utils/passwordRule"
 
 /**
  * Matches a user's email whatever its case. New accounts are stored lowercased, but older
@@ -118,10 +119,8 @@ const sendLoginDetails = async (user: any, requestedBy?: any): Promise<QueuedEma
   });
 };
 
-/** The rule for passwords people choose: 8–64 characters, an uppercase and a lowercase letter, a digit. */
-const STRONG_PASSWORD_MESSAGE = "Password must be 8–64 characters with an uppercase letter, a lowercase letter and a number.";
-const isStrongPassword = (password: string) =>
-  password.length >= 8 && password.length <= 64 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
+/** The rule for passwords people choose: the shared one (utils/passwordRule), as for an institute admin. */
+const STRONG_PASSWORD_MESSAGE = PASSWORD_MESSAGE;
 
 /** How an admin sends someone their login: a generated password, one they typed, or the details only. */
 export type LoginMode = "generate" | "manual" | "details";

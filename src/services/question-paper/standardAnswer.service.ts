@@ -7,7 +7,8 @@ import {
   markExamPaperCreated,
   refreshExamStatus,
 } from "../exam/exam.service";
-import { QuestionPaperService, assertEditableStatus, isTeacherUser } from "./questionPaper.service";
+import { QuestionPaperService, assertEditableStatus, examsOfSession, isTeacherUser } from "./questionPaper.service";
+import { Op } from "sequelize";
 import { cleanupUploadsInBackground, collectUploadRefs } from "../answer-sheet/uploadedFiles.service";
 import { reconcileTypedAnswers } from "../../utils/answerSheetReconcile";
 import { newId } from "../../utils/idGenerator";
@@ -267,11 +268,13 @@ class QuestionPaperAnswerService {
   // GET PENDING ANSWER SHEETS
   // ─────────────────────────────────────────────
 
-  static async getPendingAnswers(instituteId: string) {
+  /** `teacherId`: only that teacher's answer sheets (a teacher asking). */
+  static async getPendingAnswers(instituteId: string, teacherId?: string) {
     const answers = await QuestionPaperAnswer.findAll({
       where: {
         instituteId,
         status: "PENDING_APPROVAL",
+        ...(teacherId ? { teacherId } : {}),
       },
       order: [["submittedAt", "DESC"]],
     });
@@ -283,18 +286,25 @@ class QuestionPaperAnswerService {
   // GET ALL ANSWER SHEETS WITH FILTERS
   // ─────────────────────────────────────────────
 
+  /**
+   * `sessionId`: the answer sheets of that session's exams. `summary`: without the answers
+   * themselves (the bulk of a row): a list needs the sheet's state, and the full sheet comes
+   * with getQuestionPaperAnswerBySet when it is opened.
+   */
   static async getAnswers(
     instituteId: string,
-    filters: { status?: string; examId?: string; teacherId?: string }
+    filters: { status?: string; examId?: string; teacherId?: string; sessionId?: string; summary?: boolean }
   ) {
     const where: any = { instituteId };
 
     if (filters.status) where.status = filters.status;
     if (filters.examId) where.examId = filters.examId;
     if (filters.teacherId) where.teacherId = filters.teacherId;
+    if (filters.sessionId) where[Op.and] = [examsOfSession(instituteId, filters.sessionId)];
 
     const answers = await QuestionPaperAnswer.findAll({
       where,
+      ...(filters.summary ? { attributes: { exclude: ["answers"] } } : {}),
       order: [["createdAt", "DESC"]],
     });
 

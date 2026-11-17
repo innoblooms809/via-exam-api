@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendOtpEmail = exports.sendAdminCredentials = exports.sendUserCredentials = exports.sendEmailToNewUser = void 0;
+exports.composeOtpEmail = exports.composeAdminCredentials = exports.composeUserCredentials = exports.queueUserCredentials = exports.cancelQueuedEmail = exports.queueEmail = exports.maskEmail = exports.sendEmailToNewUser = void 0;
 // const transporter = nodemailer.createTransport({
 //   host: 'smtp.gmail.com',
 //   port: 465,
@@ -285,7 +285,13 @@ exports.sendOtpEmail = exports.sendAdminCredentials = exports.sendUserCredential
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const crypto_1 = require("crypto");
 const config_1 = __importDefault(require("../config/config"));
+const logger_1 = __importDefault(require("../config/logger"));
+const User_model_1 = __importDefault(require("../models/User.model"));
+const queue_1 = require("../queue");
+const config_2 = require("../queue/config");
+const sealed_1 = require("../queue/sealed");
 // ─── Transporter ──────────────────────────────────────────────────────────────
 const transporter = nodemailer_1.default.createTransport({
     host: config_1.default.email.smtp.host || "smtp.gmail.com",
@@ -335,32 +341,162 @@ exports.sendEmailToNewUser = sendEmailToNewUser;
 // not in the email, because it is stored encrypted and can't be read back).
 /** Text from the database or a form, safe to put inside the email's HTML. */
 const escapeHtml = (v) => String(v !== null && v !== void 0 ? v : "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const sendUserCredentials = (data) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+/** Sends one email now; throws when the mail server refuses it. */
+const deliverMail = (message) => __awaiter(void 0, void 0, void 0, function* () {
+    yield transporter.sendMail({
+        from: `"ViaExam" <${config_1.default.email.smtp.auth.user}>`,
+        to: message.to,
+        subject: message.subject,
+        html: message.html,
+    });
+});
+/** "ad***@gmail.com": enough to tell addresses apart in a log, not to collect them. */
+const maskEmail = (email) => {
+    const [name, domain] = String(email !== null && email !== void 0 ? email : "").split("@");
+    return domain ? `${name.slice(0, 2)}***@${domain}` : "***";
+};
+exports.maskEmail = maskEmail;
+const KIND_LABEL = {
+    otp: "sign-in code",
+    "password-reset": "new password",
+    "login-details": "login details",
+    "new-account": "new account's login details",
+    "admin-credentials": "admin login details",
+};
+const SENT = { sent: true };
+/** Saves a reset's password (the email with it has been accepted) and ends the user's sessions. */
+const applyPassword = ({ userId, hash }) => __awaiter(void 0, void 0, void 0, function* () {
+    const [count] = yield User_model_1.default.update({ password: hash, refreshToken: null }, { where: { userId, isDeleted: false } });
+    if (!count)
+        logger_1.default.warn(`[Email] User ${userId} no longer exists; the emailed password was not saved.`);
+});
+const isRejection = (err) => {
+    // 5xx from the mail server (no such mailbox, address rejected) won't change on retry.
+    const code = Number(err === null || err === void 0 ? void 0 : err.responseCode);
+    return (code >= 500 && code < 600) || (err === null || err === void 0 ? void 0 : err.code) === "EENVELOPE";
+};
+const emailQueue = (0, queue_1.defineQueue)({
+    name: "emails",
+    concurrency: (0, config_2.positiveInt)(process.env.EMAIL_QUEUE_CONCURRENCY, 2),
+    defaults: { attempts: 6, backoff: { type: "exponential", delayMs: 60000 }, keepCompletedSec: 0, keepFailedSec: 3 * 24 * 3600 },
+    processor: (job) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
+        const { kind, notAfter } = job.data;
+        if (notAfter && Date.now() > notAfter) {
+            logger_1.default.warn(`[Email] A ${KIND_LABEL[kind]} email expired before the mail server took it; dropped.`);
+            return { skipped: "expired" };
+        }
+        const email = (0, sealed_1.unseal)(job.data.sealed);
+        // A retry after the email went out (the password save failed) doesn't send it twice.
+        if (!((_a = job.lastProgress) === null || _a === void 0 ? void 0 : _a.sent)) {
+            try {
+                yield deliverMail(email.message);
+            }
+            catch (err) {
+                if (isRejection(err))
+                    throw new queue_1.PermanentJobError(`The mail server rejected the email: ${(err === null || err === void 0 ? void 0 : err.message) || err}`);
+                throw err;
+            }
+            yield job.progress(SENT);
+        }
+        if (email.setPassword)
+            yield applyPassword(email.setPassword);
+        return SENT;
+    }),
+    onFailed: (job, err) => __awaiter(void 0, void 0, void 0, function* () {
+        var _b;
+        let to = "***";
+        let resetsPassword = false;
+        try {
+            const email = (0, sealed_1.unseal)(job.data.sealed);
+            to = (0, exports.maskEmail)(email.message.to);
+            resetsPassword = !!email.setPassword;
+        }
+        catch (_c) {
+            /* unreadable: say what we know */
+        }
+        const reason = String((err === null || err === void 0 ? void 0 : err.message) || err).slice(0, 200);
+        const label = (_b = KIND_LABEL[job.data.kind]) !== null && _b !== void 0 ? _b : "email";
+        logger_1.default.error(`[Email] The ${label} email to ${to} could not be sent${resetsPassword ? " (the password was not changed)" : ""}: ${reason}`);
+        const notify = job.data.notify;
+        if (!notify)
+            return;
+        const { notifyAll } = require("../services/notification/notifyPeople");
+        yield notifyAll([
+            {
+                instituteId: notify.instituteId,
+                userId: notify.userId,
+                type: "EMAIL_NOT_SENT",
+                title: `Email not sent: ${label}`,
+                message: `The ${label} email to ${to} could not be sent (${reason}).${resetsPassword ? " Their password was not changed." : ""} Check the address and send it again.`,
+                referenceId: job.id,
+            },
+        ]);
+    }),
+});
+/** Sends now, in this process, when the queue can't take the email. Never throws. */
+const sendInBackground = (email, kind) => {
+    void (() => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            yield deliverMail(email.message);
+            if (email.setPassword)
+                yield applyPassword(email.setPassword);
+        }
+        catch (err) {
+            logger_1.default.error(`[Email] The ${KIND_LABEL[kind]} email to ${(0, exports.maskEmail)(email.message.to)} could not be sent: ${(err === null || err === void 0 ? void 0 : err.message) || err}`);
+        }
+    }))();
+};
+/** Queues an email. Never throws: when the queue is down it is sent from this process instead. */
+const queueEmail = (request) => __awaiter(void 0, void 0, void 0, function* () {
+    var _d;
+    const email = Object.assign({ message: request.message }, (request.setPassword ? { setPassword: request.setPassword } : {}));
+    // A unique id, so a deduplicated add is told apart by the id that comes back.
+    const jobId = (_d = request.jobId) !== null && _d !== void 0 ? _d : `${request.kind}-${(0, crypto_1.randomUUID)()}`;
     try {
-        const kind = (_a = data.kind) !== null && _a !== void 0 ? _a : "created";
-        const e = {
-            name: escapeHtml(data.userName),
-            email: escapeHtml(data.email),
-            phone: escapeHtml(data.phone),
-            password: escapeHtml((_b = data.password) !== null && _b !== void 0 ? _b : ""),
-            role: escapeHtml(data.role),
-            url: escapeHtml(data.loginUrl),
-        };
-        const intro = kind === "details"
-            ? `Here are the login details for your <strong>${e.role}</strong> account on ViaExam. Your password has not changed.`
-            : kind === "reset"
-                ? `Your school has set a new password for your <strong>${e.role}</strong> account on ViaExam. Your old password no longer works.`
-                : `Your <strong>${e.role}</strong> account has been successfully created on ViaExam. Below are your login credentials.`;
-        const note = kind === "details"
-            ? "Sign in with your current password. If you have forgotten it, use “Forgot password” on the sign-in page, or ask your school to send you a new one."
-            : "⚠️ Please change your password immediately after your first login.";
-        const subject = kind === "details"
-            ? `Your ViaExam login details (${data.role})`
-            : kind === "reset"
-                ? `Your new ViaExam password (${data.role})`
-                : `Welcome to ViaExam — Your ${data.role} Account Credentials`;
-        const html = `
+        const id = yield emailQueue.add(request.kind, Object.assign(Object.assign({ sealed: (0, sealed_1.seal)(email), kind: request.kind }, (request.notAfter ? { notAfter: request.notAfter.getTime() } : {})), (request.notify ? { notify: request.notify } : {})), Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ jobId }, (request.dedupeKey ? { dedupeKey: request.dedupeKey } : {})), (request.bulk ? { priority: 10 } : {})), (request.attempts ? { attempts: request.attempts } : {})), (request.retryMs ? { backoff: { type: "exponential", delayMs: request.retryMs } } : {})), (request.notAfter ? { keepFailedSec: 3600 } : {})));
+        return { queued: true, duplicate: id !== jobId };
+    }
+    catch (err) {
+        logger_1.default.warn(`[Email] Queue unavailable (${(err === null || err === void 0 ? void 0 : err.message) || err}); sending the ${KIND_LABEL[request.kind]} email to ${(0, exports.maskEmail)(request.message.to)} directly.`);
+        sendInBackground(email, request.kind);
+        return { queued: false, duplicate: false };
+    }
+});
+exports.queueEmail = queueEmail;
+/** Takes a queued email out before it is sent (e.g. the OTP a newer one replaced). False if it already ran. */
+const cancelQueuedEmail = (jobId) => emailQueue.remove(jobId).catch(() => false);
+exports.cancelQueuedEmail = cancelQueuedEmail;
+/** Login details of a new account (bulk: an import queues hundreds). */
+const queueUserCredentials = (data) => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, exports.queueEmail)({ kind: "new-account", message: (0, exports.composeUserCredentials)(data), bulk: true });
+});
+exports.queueUserCredentials = queueUserCredentials;
+const composeUserCredentials = (data) => {
+    var _a, _b;
+    const kind = (_a = data.kind) !== null && _a !== void 0 ? _a : "created";
+    const e = {
+        name: escapeHtml(data.userName),
+        email: escapeHtml(data.email),
+        phone: escapeHtml(data.phone),
+        password: escapeHtml((_b = data.password) !== null && _b !== void 0 ? _b : ""),
+        role: escapeHtml(data.role),
+        url: escapeHtml(data.loginUrl),
+    };
+    const intro = kind === "details"
+        ? `Here are the login details for your <strong>${e.role}</strong> account on ViaExam. Your password has not changed.`
+        : kind === "reset"
+            ? `Your school has set a new password for your <strong>${e.role}</strong> account on ViaExam. Your old password no longer works.`
+            : `Your <strong>${e.role}</strong> account has been successfully created on ViaExam. Below are your login credentials.`;
+    const note = kind === "details"
+        ? "Sign in with your current password. If you have forgotten it, use “Forgot password” on the sign-in page, or ask your school to send you a new one."
+        : "⚠️ Please change your password immediately after your first login.";
+    const subject = kind === "details"
+        ? `Your ViaExam login details (${data.role})`
+        : kind === "reset"
+            ? `Your new ViaExam password (${data.role})`
+            : `Welcome to ViaExam — Your ${data.role} Account Credentials`;
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -431,24 +567,20 @@ const sendUserCredentials = (data) => __awaiter(void 0, void 0, void 0, function
       </body>
       </html>
     `;
-        yield transporter.sendMail({
-            from: `"ViaExam" <${config_1.default.email.smtp.auth.user}>`,
-            to: data.email,
-            subject,
-            html,
-        });
-        return true;
-    }
-    catch (e) {
-        console.error(`❌ sendUserCredentials failed for ${data.email}:`, e.message);
-        return false;
-    }
-});
-exports.sendUserCredentials = sendUserCredentials;
-// ─── NEW — Send admin credentials after institute registration ─────────────────
-const sendAdminCredentials = (data) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const html = `
+    return { to: data.email, subject, html };
+};
+exports.composeUserCredentials = composeUserCredentials;
+const composeAdminCredentials = (raw) => {
+    var _a;
+    const data = {
+        adminName: escapeHtml(raw.adminName),
+        adminEmail: escapeHtml(raw.adminEmail),
+        adminPassword: escapeHtml(raw.adminPassword),
+        instituteName: escapeHtml(raw.instituteName),
+        loginUrl: escapeHtml(raw.loginUrl),
+        plan: escapeHtml(String((_a = raw.plan) !== null && _a !== void 0 ? _a : "")),
+    };
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -522,36 +654,24 @@ const sendAdminCredentials = (data) => __awaiter(void 0, void 0, void 0, functio
       </body>
       </html>
     `;
-        const response = yield transporter.sendMail({
-            from: `"ViaExam" <${config_1.default.email.smtp.auth.user}>`,
-            to: data.adminEmail,
-            subject: `Welcome to ViaExam — Your Admin Credentials for ${data.instituteName}`,
-            html,
-        });
-        return true;
-    }
-    catch (e) {
-        console.error("❌ sendAdminCredentials failed:", e.message);
-        return false; // don't throw — email failure won't break registration
-    }
-});
-exports.sendAdminCredentials = sendAdminCredentials;
+    return {
+        to: raw.adminEmail,
+        subject: `Welcome to ViaExam — Your Admin Credentials for ${raw.instituteName}`,
+        html,
+    };
+};
+exports.composeAdminCredentials = composeAdminCredentials;
 // ─── Role-specific OTP email templates ──────────────────────────────────────────
-const sendOtpEmail = ({ toEmail, userName, otp, role, }) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const roleSpecificContent = getRoleSpecificOTPContent(role);
-        yield transporter.sendMail({
-            from: `"ViaExam" <${config_1.default.email.smtp.auth.user}>`,
-            to: toEmail,
-            subject: roleSpecificContent.subject,
-            html: roleSpecificContent.html(userName, otp),
-        });
-    }
-    catch (error) {
-        console.error("Failed to send OTP email:", error);
-    }
-});
-exports.sendOtpEmail = sendOtpEmail;
+const composeOtpEmail = ({ toEmail, userName, otp, role, }) => {
+    // Roles are stored in capitals ("TEACHER"); the templates are keyed in lower case.
+    const roleSpecificContent = getRoleSpecificOTPContent(String(role !== null && role !== void 0 ? role : "").toLowerCase());
+    return {
+        to: toEmail,
+        subject: roleSpecificContent.subject,
+        html: roleSpecificContent.html(escapeHtml(userName), escapeHtml(otp)),
+    };
+};
+exports.composeOtpEmail = composeOtpEmail;
 // Helper function to get role-specific email content
 function getRoleSpecificOTPContent(role) {
     const baseStyles = `

@@ -18,6 +18,7 @@ import { EXAM_INCLUDES } from "../exam/examRoster.service";
 import { examLabel, instituteAdminIds, notifyAll, preview } from "../notification/notifyPeople";
 import { recordPaperEvent } from "./paperDiscussion.service";
 import { PAPER_EVENT } from "../../models/PaperComment.model";
+import { ADMINS } from "../../config/roles";
 
 /** What happened to the set's typed answers when its paper changed. */
 export interface AnswerSheetLinkSummary {
@@ -52,6 +53,25 @@ const STATUS_LABELS: Record<string, string> = {
 
 export const isTeacherUser = (user: any): boolean =>
   String(user?.role?.role ?? user?.role ?? "").toUpperCase().includes("TEACH");
+
+/** Role names compared the way authorize() does ("Institute Admin" = "INSTITUTE_ADMIN"). */
+const roleKey = (role: unknown) => String(role ?? "").toUpperCase().replace(/[\s_-]+/g, "");
+
+/**
+ * The school's admins list every question paper and model answer; anyone else allowed on
+ * the lists (a paper setter) lists only their own: another teacher's paper stays private
+ * until it is used.
+ */
+export const listsEveryPaper = (user: any): boolean => ADMINS.map(roleKey).includes(roleKey(user?.role?.role ?? user?.role));
+
+/** Papers (or model answers) of one session's exams: their exam is in the session. */
+export const examsOfSession = (instituteId: string, sessionId: string) => ({
+  examId: {
+    [Op.in]: sequelize.literal(
+      `(SELECT "examId" FROM viaexam_exams WHERE "instituteId" = ${sequelize.escape(instituteId)} AND "sessionId" = ${sequelize.escape(sessionId)} AND "isDeleted" = false)`
+    ),
+  },
+});
 
 export const assertEditableStatus = (
   status: string,
@@ -715,22 +735,33 @@ export class QuestionPaperService {
   // LISTS
   // ─────────────────────────────────────────────
 
-  static async getPendingPapers(instituteId: string) {
+  /** `teacherId`: only that teacher's papers (a teacher asking). */
+  static async getPendingPapers(instituteId: string, teacherId?: string) {
     return QuestionPaper.findAll({
-      where: { instituteId, status: "PENDING_APPROVAL" },
+      where: { instituteId, status: "PENDING_APPROVAL", ...(teacherId ? { teacherId } : {}) },
       order: [["submittedAt", "DESC"]],
     });
   }
 
+  /**
+   * `sessionId`: the papers of that session's exams. `summary`: without the questions
+   * (`content`), the bulk of a paper: a list needs its state, and the paper itself comes
+   * with getQuestionPaperBySet when it is opened.
+   */
   static async getPapers(
     instituteId: string,
-    filters: { status?: string; examId?: string; teacherId?: string }
+    filters: { status?: string; examId?: string; teacherId?: string; sessionId?: string; summary?: boolean }
   ) {
     const where: any = { instituteId };
     if (filters.status) where.status = filters.status;
     if (filters.examId) where.examId = filters.examId;
     if (filters.teacherId) where.teacherId = filters.teacherId;
+    if (filters.sessionId) where[Op.and] = [examsOfSession(instituteId, filters.sessionId)];
 
-    return QuestionPaper.findAll({ where, order: [["createdAt", "DESC"]] });
+    return QuestionPaper.findAll({
+      where,
+      ...(filters.summary ? { attributes: { exclude: ["content"] } } : {}),
+      order: [["createdAt", "DESC"]],
+    });
   }
 }

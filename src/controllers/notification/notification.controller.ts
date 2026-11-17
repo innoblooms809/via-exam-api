@@ -55,6 +55,19 @@ const markAsRead = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+const deleteNotification = async (req: any, res: Response): Promise<any> => {
+  try {
+    const result = await NotificationService.deleteNotification(req.params.notificationId, req.viaExamUser);
+    return res.status(result.statusCode).send(result);
+  } catch (error) {
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      error: true,
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 const registerPushToken = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await PushService.registerToken(req.body, req.viaExamUser, req.headers["user-agent"]);
@@ -86,6 +99,7 @@ export default {
   listNotifications,
   markAsRead,
   markAllAsRead,
+  deleteNotification,
   registerPushToken,
   removePushToken,
 };

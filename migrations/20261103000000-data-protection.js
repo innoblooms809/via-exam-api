@@ -9,7 +9,7 @@
  * task, not here. The API also applies these changes on boot (db/connect.ts); this is for
  * databases managed by migrations only.
  *
- *   npm run db:migrate:data-protection
+ *   npm run db:migrate
  */
 
 const TO_TEXT = [

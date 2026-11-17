@@ -7,12 +7,8 @@ import {
   uploadImageController,
   uploadPdfController,
   getQuestionPaperAnswerBySelection,
-  getQuestionPaperAnswerUploads,
-  submitAnswerSheet,
   approveAnswerSheet,
   rejectAnswerSheet,
-  publishAnswerSheet,
-  getPendingAnswerSheets,
   getAllAnswerSheets,
 } from "../../../controllers/question-paper/standardAnswer.controller";
 import { answerPaperUpload, answerPdfUpload } from "../../../utils/multer";
@@ -33,13 +29,8 @@ router.delete("/delete/:answerId", ...teachers, deleteQuestionPaperAnswer);
 router.post("/image", ...teachers, answerPaperUpload, uploadImageController);
 router.post("/upload-pdf", ...teachers, answerPdfUpload, uploadPdfController);
 router.post("/getQuestionPaperAnswerBySet", ...academic, getQuestionPaperAnswerBySelection);
-router.get("/uploads", ...adminOnly, getQuestionPaperAnswerUploads);
-
-router.patch("/submitAnswerSheet/:answerId/submit", ...teachers, submitAnswerSheet);
 router.patch("/approveAnswerSheet/:answerId/approve", ...adminOnly, approveAnswerSheet);
 router.patch("/rejectAnswerSheet/:answerId/reject", ...adminOnly, rejectAnswerSheet);
-router.patch("/publishAnswerSheet/:answerId/publish", ...adminOnly, publishAnswerSheet);
-router.get("/pending", ...academic, getPendingAnswerSheets);
 router.get("/", ...academic, getAllAnswerSheets);
 
 export default router;

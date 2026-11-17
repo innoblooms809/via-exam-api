@@ -38,6 +38,7 @@ const Student_model_1 = __importDefault(require("../../models/Student.model"));
 const ScannerProfile_model_1 = __importDefault(require("../../models/ScannerProfile.model"));
 const Section_model_1 = __importDefault(require("../../models/Section.model"));
 const idGenerator_1 = require("../../utils/idGenerator");
+const textRules_1 = require("../../utils/textRules");
 // ─── Constants ───────────────────────────────────────────────────────────────
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_DURATION_SECONDS = 5;
@@ -146,7 +147,6 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
 const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, void 0, function* () {
     var _b, _c;
     try {
-        console.log("EMAIL RECEIVED:", emailId);
         let instituteId = null;
         if (slug) {
             const institute = yield Institute_model_1.default.findOne({ where: { slug } });
@@ -160,8 +160,6 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             instituteId = institute.instituteId;
         }
         const user = yield getViaExamUserByEmail(emailId, instituteId);
-        console.log("USER FOUND:", user === null || user === void 0 ? void 0 : user.emailId);
-        console.log("HASHED PASSWORD:", user === null || user === void 0 ? void 0 : user.password);
         if (!user) {
             return {
                 error: true,
@@ -240,6 +238,13 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             lockedUntil: null,
             lastLoginAt: new Date(),
         }, { where: { userId: user.userId } });
+        // A hash made with a lower bcrypt cost (older accounts) is upgraded now that the password is
+        // known. Only if it is still the same hash, so a password changed meanwhile is kept.
+        if (encryption_1.default.passwordNeedsRehash(user.password)) {
+            void encryption_1.default.encryptPassword(password)
+                .then((hash) => User_model_1.default.update({ password: hash }, { where: { userId: user.userId, password: user.password } }))
+                .catch((err) => console.warn(`[Auth] Could not upgrade the password hash of ${user.userId}: ${(err === null || err === void 0 ? void 0 : err.message) || err}`));
+        }
         // Log Activity & Update Presence
         const now = new Date();
         let presenceSession = yield UserPresenceSession_model_1.default.findOne({ where: { userId: user.userId } });
@@ -531,7 +536,7 @@ const viaExamUpdateProfile = (userId, body, files) => __awaiter(void 0, void 0, 
             if (body.fatherName !== undefined)
                 studentUpdates.fatherName = body.fatherName;
             if (body.rollNumber !== undefined)
-                studentUpdates.rollNumber = body.rollNumber;
+                studentUpdates.rollNumber = (0, textRules_1.normalizeRollNo)(body.rollNumber);
             if (body.className !== undefined)
                 studentUpdates.className = body.className;
             if (body.sectionId !== undefined)

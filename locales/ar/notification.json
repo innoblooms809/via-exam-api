@@ -1,6 +1,7 @@
 {
   "A valid push token is required.": "يلزم وجود رمز دفع صالح.",
   "All notifications marked as read.": "تم وضع علامة \"مقروء\" على جميع الإشعارات.",
+  "Notification deleted.": "تم حذف الإشعار.",
   "Notification marked as read.": "تم وضع علامة \"مقروء\" على الإشعار.",
   "Notification not found.": "لم يتم العثور على الإشعار.",
   "Notifications fetched successfully.": "تم جلب الإشعارات بنجاح.",

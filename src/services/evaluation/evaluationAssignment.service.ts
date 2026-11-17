@@ -23,11 +23,34 @@ import StudentService from "../student/student.service";
 import ApiError from "../../utils/ApiError";
 import { refreshExamStatus } from "../exam/exam.service";
 import { activeEvaluators, assertReadyForReview, pickSections, reviewState } from "../exam/examWorkflow.service";
-import { buildRoster, loadExam, sectionKey, sectionsOfExam } from "../exam/examRoster.service";
+import { buildRoster, classSections, rosterBatch, countsOf, loadExam, sectionKey, sectionsOfExam, studentsForExam } from "../exam/examRoster.service";
 import SessionSection from "../../models/SessionSection.model";
 import StudentResult from "../../models/StudentResult.model";
 import { examLabel, instituteAdminIds, notifyAll, workLabel } from "../notification/notifyPeople";
 import { closeRoundForReopen } from "../exam/crossCheck.service";
+import { examLockStates, lockFor } from "./evaluationLock.service";
+import { latestReopenRequests, reopenInfo, settleReopenRequests } from "./evaluationReopen.service";
+
+/** A section key no section has: a section that isn't the exam's shows no rows. */
+const NO_SUCH_SECTION = "\u0000no-such-section";
+
+/**
+ * Before the evaluator reopens marks they marked completed: never once results are published
+ * (marks then change only through a recheck), and not while a cross-check is open — the sheets are
+ * with the cross-checker; the admin can restart the cross-check if the marks must change.
+ */
+async function assertCanReopen(examId: string, user: any) {
+  const state = (await examLockStates([examId])).get(examId);
+  if (state?.published) {
+    throw new ApiError(httpStatus.CONFLICT, "Results of this exam are published, so its marks can't be reopened. Marks change only through a recheck the admin assigns.");
+  }
+  if (state?.crossCheck && isTeacherRequester(user)) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      "This exam is being cross-checked, so its marks can't be reopened now. If they must change, the admin can restart the cross-check."
+    );
+  }
+}
 
 /** Runs `fn` over `items`, `limit` at a time (each exam's roster is a few queries). */
 const mapLimit = async <T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> => {
@@ -52,6 +75,7 @@ async function assertNotPublished(examId: string) {
 }
 import { specialisesIn } from "../../utils/specialization";
 import { newId } from "../../utils/idGenerator";
+import { pageInfo, paging } from "../../utils/pagination";
 import {
   accessForSheet,
   assignedSectionsOf,
@@ -124,15 +148,19 @@ async function notify(instituteId: string, userId: string, type: string, title: 
 
 // ── Admin: approved exams with their evaluator ───────────────────────────────
 
+// A page at a time (?page=&limit=, 25 a page, at most 100; the first 100 without them), one
+// session with ?sessionId=. The summary counts every exam the search keeps.
 const listExams = async (admin: any, query: any) => {
   const instituteId = admin.instituteId;
   const search = clean(query?.search).toLowerCase();
+  const sessionId = clean(query?.sessionId);
+  const inSession = sessionId ? { sessionId } : {};
 
   // 1. Exams whose parent status is already synced to Approved/Live/Completed
   const exams: any[] = await Exam.findAll({
-    where: { instituteId, isDeleted: false, status: { [Op.in]: EVALUATION_READY_STATUSES } },
+    where: { instituteId, isDeleted: false, status: { [Op.in]: EVALUATION_READY_STATUSES }, ...inSession },
     include: EXAM_INCLUDES,
-    order: [["updatedAt", "DESC"]],
+    order: [["updatedAt", "DESC"], ["id", "DESC"]],
   });
 
   // 2. Also find exams that have approved paper sets but parent status wasn't synced
@@ -146,7 +174,7 @@ const listExams = async (admin: any, query: any) => {
 
   if (missingIds.length) {
     const extraExams: any[] = await Exam.findAll({
-      where: { examId: { [Op.in]: missingIds }, instituteId, isDeleted: false },
+      where: { examId: { [Op.in]: missingIds }, instituteId, isDeleted: false, ...inSession },
       include: EXAM_INCLUDES,
     });
     // Auto-fix their parent status so future queries work without this fallback
@@ -178,9 +206,45 @@ const listExams = async (admin: any, query: any) => {
     reviewedBy: a.reviewedBy,
   });
 
-  const rows = await mapLimit(exams, 6, async (exam: any) => {
-    const roster = await buildRoster(exam);
-    const mine = active.filter((a) => a.examId === exam.examId);
+  const mineOf = (examId: string) => active.filter((a) => a.examId === examId);
+
+  // The search reads only what needs no roster.
+  const listed = search
+    ? exams.filter((exam: any) => {
+        const evaluatorNames = [...new Set(mineOf(exam.examId).map((a) => evaluatorById.get(a.teacherId)?.userName ?? ""))].filter(Boolean).join(", ");
+        return [exam.subject?.subjectName ?? "", exam.class?.className ?? "", exam.examType, exam.session?.sessionName ?? "", evaluatorNames, exam.teacher?.userName ?? ""]
+          .join(" ")
+          .toLowerCase()
+          .includes(search);
+      })
+    : exams;
+
+  // Each class's (or section's) students are read once, however many of its exams are listed:
+  // their sections are the ones an exam needs an evaluator for (as in the roster).
+  const studentsByPlace = new Map<string, ReturnType<typeof studentsForExam>>();
+  const studentsOf = (exam: any) => {
+    const key = `${exam.sessionId ?? ""}|${exam.classId ?? ""}|${exam.sectionId ?? ""}`;
+    let students = studentsByPlace.get(key);
+    if (!students) {
+      students = studentsForExam(exam);
+      studentsByPlace.set(key, students);
+    }
+    return students;
+  };
+  const fully = await mapLimit(listed, 6, async (exam: any) => {
+    const keys = [...new Set((await studentsOf(exam)).map((s) => sectionKey(s.sectionId)))];
+    const mine = mineOf(exam.examId);
+    return keys.length > 0 && keys.every((key) => mine.some((a) => sectionKey(a.sectionId) === key));
+  });
+  const assignedCount = fully.filter(Boolean).length;
+
+  // Rosters (sheets and AI marks) only for the exams on the page.
+  const { page, limit, offset } = paging(query, { defaultLimit: 25, maxLimit: 100, unpagedLimit: 100 });
+  const onPage = listed.slice(offset, offset + limit);
+  const batch = rosterBatch(onPage);
+  const rows = await mapLimit(onPage, 6, async (exam: any) => {
+    const roster = await buildRoster(exam, { students: studentsOf(exam), data: batch.of(exam) });
+    const mine = mineOf(exam.examId);
     // Section by section: its evaluator and how far its sheets have got.
     const sections = roster.sections.map((s) => {
       const a = mine.find((x) => sectionKey(x.sectionId) === sectionKey(s.sectionId));
@@ -226,22 +290,14 @@ const listExams = async (admin: any, query: any) => {
     };
   });
 
-  const filtered = search
-    ? rows.filter((r) =>
-        [r.subjectName, r.className, r.examType, r.sessionName, r.assignment?.teacherName, r.paperSetterName]
-          .join(" ")
-          .toLowerCase()
-          .includes(search)
-      )
-    : rows;
-
   return {
-    exams: filtered,
+    exams: rows,
     summary: {
-      total: filtered.length,
-      assigned: filtered.filter((r) => r.fullyAssigned).length,
-      unassigned: filtered.filter((r) => !r.fullyAssigned).length,
+      total: listed.length,
+      assigned: assignedCount,
+      unassigned: listed.length - assignedCount,
     },
+    pagination: pageInfo(listed.length, page, limit),
   };
 };
 
@@ -397,6 +453,8 @@ const assign = async (admin: any, body: any) => {
       if (previous) {
         movedFrom.set(previous.teacherId, [...(movedFrom.get(previous.teacherId) ?? []), section.sectionName]);
         await previous.update({ isActive: false, unassignedAt: new Date() }, { transaction });
+        // Its evaluator's open request to reopen the marks goes with it.
+        await settleReopenRequests([previous.assignmentId], admin.userId, "The section was given to another evaluator.", transaction);
       }
       out.push(
         await EvaluationAssignment.create(
@@ -411,8 +469,8 @@ const assign = async (admin: any, body: any) => {
 
   const examRow = await loadExam(instituteId, examId);
   if (given.length) {
-    await notify(instituteId, teacherId, "EVALUATION_ASSIGNED", "Answer sheets assigned for evaluation",
-      `You have been assigned to evaluate ${workLabel(examRow, given)}. Student identities are hidden.`, examId);
+    await notify(instituteId, teacherId, "EVALUATION_ASSIGNED", "AI evaluation assigned",
+      `Evaluate the answer sheets of ${workLabel(examRow, given)} with AI evaluation. Student identities are hidden.`, examId);
   }
   for (const [previousTeacherId, names] of movedFrom) {
     await notify(instituteId, previousTeacherId, "EVALUATION_UNASSIGNED", "Evaluation reassigned",
@@ -436,6 +494,8 @@ const unassign = async (admin: any, examId: string, query: any = {}) => {
   if (!active.length) throw new ApiError(httpStatus.NOT_FOUND, only === null ? "No evaluator is assigned to this exam." : "No evaluator is assigned to that section.");
   await assertNotPublished(examId);
   for (const a of active) await a.update({ isActive: false, unassignedAt: new Date() });
+  // Their open requests to reopen the marks go with the sections.
+  await settleReopenRequests(active.map((a) => a.assignmentId), admin.userId, "You are no longer the evaluator of this section.");
 
   const exam: any = await Exam.findOne({ where: { examId }, include: EXAM_INCLUDES });
   if (exam) {
@@ -451,12 +511,57 @@ const unassign = async (admin: any, examId: string, query: any = {}) => {
 };
 
 // ── Evaluation pages: exams whose sheets the requester may open ──────────────
+//
+// Teacher: Evaluation → Exams to evaluate. A row per exam, or per section of a whole-class exam
+// given to the teacher section by section. The server filters, counts and pages the rows, and
+// reads an exam's roster (its students, sheets and AI marks) only for the rows on the page.
+// With ?facets=1 the answer also says what the filters offer and how many rows each Show view has.
+//
+//   ?page=&limit=                     10 a page by default, at most 500
+//   ?sessionId= ?examType=            the session and the exam picked on top
+//   ?classes= ?sections= ?subjects=   names, the parameter repeated per name (the Filters panel)
+//   ?role=evaluate|view               "Your part": the exams I evaluate, or the ones I only see
+//   ?view=todo|completed              the Show switch (every row when left out)
+//   ?search=                          subject, exam, class, section, session
+//   ?sort=exam&order=asc|desc         by exam name; the newest exam first when left out
+
+type ExamSectionRef = { sectionId: string | null; sectionName: string };
+
+/** One value, several (a repeated parameter), or none → the names, trimmed. */
+const namesParam = (value: unknown): string[] =>
+  (Array.isArray(value) ? value : value === undefined || value === null || value === "" ? [] : [value]).map((v) => clean(v)).filter(Boolean);
+
+const byLabel = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+
+/** "10" → "Class 10", and the section of a section row ("Class 10 · B"), as the list shows it. */
+const placeText = (className: string, sectionName: string) => {
+  const cls = /^class\b/i.test(className) ? className : `Class ${className}`;
+  return sectionName ? `${cls} · ${sectionName}` : cls;
+};
+
+/** How many rows have each value of a field, in name order. */
+const tally = <R,>(rows: R[], valueOf: (r: R) => string) => {
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    const v = valueOf(r);
+    if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => byLabel(a[0], b[0])).map(([value, count]) => ({ value, count }));
+};
 
 const myExams = async (user: any, query?: any) => {
   const instituteId = user.instituteId;
   const where: any = { instituteId, isDeleted: false };
   const assignedIds = new Set<string>();
   const scope = isTeacherRequester(user) ? await getTeacherScope(user) : null;
+  const { page, limit, offset } = paging(query, { defaultLimit: 10, maxLimit: 500 });
+  const wantFacets = ["1", "true"].includes(clean(query?.facets).toLowerCase());
+  const nothing = {
+    exams: [],
+    pagination: pageInfo(0, page, limit),
+    counts: { all: 0, todo: 0, completed: 0, viewOnly: 0 },
+    ...(wantFacets ? { facets: { sessions: [], examTypes: [], classes: [], sections: [], subjects: [], inSession: 0 } } : {}),
+  };
 
   if (scope) {
     scope.assignedExams.forEach((a) => assignedIds.add(a.examId));
@@ -464,104 +569,218 @@ const myExams = async (user: any, query?: any) => {
     if (scope.ownSubjectIds.size) or.push({ subjectId: { [Op.in]: Array.from(scope.ownSubjectIds) } });
     if (assignedIds.size) or.push({ examId: { [Op.in]: Array.from(assignedIds) } });
     // A teacher who only set the question paper has nothing to evaluate here.
-    if (!or.length) return { exams: [], pagination: { total: 0, page: 1, limit: 10, totalPages: 0 } };
+    if (!or.length) return nothing;
     where[Op.or] = or;
   }
 
+  const sessionId = clean(query?.sessionId);
+  const examType = clean(query?.examType);
+  // The session picker counts every session's exams; without it the session and exam narrow the read.
+  if (!wantFacets && sessionId) where.sessionId = sessionId;
+  if (!wantFacets && examType) where.examType = examType;
+
   // Order by createdAt DESC so most recently created exams are at the top
-  const exams: any[] = await Exam.findAll({ where, include: EXAM_INCLUDES, order: [["createdAt", "DESC"]] });
-  const activeAssignments = exams.length
-    ? await EvaluationAssignment.findAll({
-        where: { isActive: true, examId: { [Op.in]: exams.map((e) => e.examId) } },
-        attributes: ["examId", "sectionId", "teacherId", "reviewedAt", "reviewedBy"],
-      })
-    : [];
-  const nested = await mapLimit(exams, 6, async (exam: any) => {
-    const roster = await buildRoster(exam);
+  const exams: any[] = await Exam.findAll({ where, include: EXAM_INCLUDES, order: [["createdAt", "DESC"], ["id", "DESC"]] });
+  const candidates = scope ? exams.filter((e) => accessForSheet(scope, { subjectId: e.subjectId, examId: e.examId }) !== "none") : exams;
+  if (!candidates.length) return nothing;
+  const ids = candidates.map((e) => e.examId);
+
+  // A class's (or section's) students and section names, read once however many of its exams
+  // there are. Their sections are the ones the exam's work is split into, as in its roster.
+  const studentsByPlace = new Map<string, ReturnType<typeof studentsForExam>>();
+  const namesByClass = new Map<string, ReturnType<typeof classSections>>();
+  const studentsOf = (exam: any) => {
+    const key = `${exam.sessionId ?? ""}|${exam.classId ?? ""}|${exam.sectionId ?? ""}`;
+    let students = studentsByPlace.get(key);
+    if (!students) {
+      students = studentsForExam(exam);
+      studentsByPlace.set(key, students);
+    }
+    return students;
+  };
+  const namesOf = (exam: any) => {
+    const key = String(exam.classId ?? "");
+    let names = namesByClass.get(key);
+    if (!names) {
+      names = classSections(exam);
+      namesByClass.set(key, names);
+    }
+    return names;
+  };
+  const sectionsOf = async (exam: any): Promise<ExamSectionRef[]> => {
+    const [students, { nameOf }] = await Promise.all([studentsOf(exam), namesOf(exam)]);
+    return [...new Set(students.map((s) => sectionKey(s.sectionId)))]
+      .map((key) => ({ sectionId: key || null, sectionName: key ? nameOf.get(key) ?? "" : "" }))
+      .sort((a, b) => Number(!a.sectionId) - Number(!b.sectionId) || byLabel(a.sectionName, b.sectionName));
+  };
+
+  const [sectionLists, activeAssignments, locks] = await Promise.all([
+    mapLimit(candidates, 6, async (exam: any) => [exam.examId, await sectionsOf(exam)] as const).then((pairs) => new Map(pairs)),
+    EvaluationAssignment.findAll({
+      where: { isActive: true, examId: { [Op.in]: ids } },
+      attributes: ["examId", "sectionId", "teacherId", "reviewedAt", "reviewedBy"],
+    }),
+    // Published, cross-checked or completed: read once for every exam.
+    examLockStates(ids),
+  ]);
+  const assignmentsByExam = new Map<string, EvaluationAssignment[]>();
+  for (const a of activeAssignments) assignmentsByExam.set(a.examId, [...(assignmentsByExam.get(a.examId) ?? []), a]);
+
+  // Every row with what needs no roster: who may do what, review, lock, names.
+  const rows = candidates.flatMap((exam: any) => {
+    const sections = sectionLists.get(exam.examId) ?? [];
     const access: SheetAccess = scope ? accessForSheet(scope, { subjectId: exam.subjectId, examId: exam.examId }) : "full";
     const isAssigned = scope ? isAssignedEvaluator(scope, { subjectId: exam.subjectId, examId: exam.examId }) : false;
-    const mine = activeAssignments.filter((a) => a.examId === exam.examId);
-    const assignmentOf = (sectionId: string | null) => mine.find((a) => sectionKey(a.sectionId) === sectionKey(sectionId));
-    const sessionName = exam.session?.sessionName || "";
-
-    const rowFor = (section: (typeof roster.sections)[number] | null) => {
-      const counts = section ? section.counts : roster.counts;
-      // One section: its evaluator's review. The whole exam: every section reviewed.
-      const reviews = section ? [assignmentOf(section.sectionId)] : roster.sections.map((s) => assignmentOf(s.sectionId));
-      const reviewed = reviews.length > 0 && reviews.every((a) => a?.reviewedAt);
-      const last = reviewed ? reviews.reduce((x, a) => (!x || new Date(a!.reviewedAt as Date) > new Date(x.reviewedAt as Date) ? a! : x), undefined as EvaluationAssignment | undefined) : undefined;
-      const sectionName = section ? section.sectionName : exam.section?.sectionName || "";
-      return {
-        id: section ? `${exam.examId}:${sectionKey(section.sectionId)}` : exam.examId,
-        examId: exam.examId,
-        classId: exam.class?.classId || exam.classId,
-        className: exam.class?.className || "N/A",
-        sectionId: section ? section.sectionId : exam.section?.sectionId || exam.sectionId || null,
-        sectionName: sectionName || "N/A",
-        wholeClass: !exam.sectionId,
-        subjectId: exam.subjectId,
-        subjectName: exam.subject?.subjectName || "N/A",
-        sessionId: exam.session?.sessionId || exam.sessionId,
-        sessionName: sessionName || "N/A",
-        examType: exam.examType,
-        status: exam.status,
-        totalMarks: exam.totalMarks,
-        totalStudents: counts.total,
-        uploadedSheets: counts.uploaded,
-        evaluatedSheets: counts.evaluated,
-        failedSheets: counts.evaluationFailed,
-        access,
-        role: !scope ? "admin" : isAssigned ? "evaluator" : "subjectTeacher",
-        /** Only the assigned evaluator (or an admin) may run AI evaluation. */
-        canEvaluate: !scope || isAssigned,
-        hasEvaluator: section ? Boolean(assignmentOf(section.sectionId)) : mine.length > 0,
-        isReviewed: reviewed,
-        reviewedAt: last?.reviewedAt ?? null,
-        reviewedBy: last?.reviewedBy ?? null,
-        identityMasked: access === "masked",
-        createdAt: exam.createdAt,
-      };
-    };
-
+    const mine = assignmentsByExam.get(exam.examId) ?? [];
+    const assignmentOf = (id: string | null) => mine.find((a) => sectionKey(a.sectionId) === sectionKey(id));
     // An evaluator given sections of a whole-class exam works section by section: a row each.
     const mySections = scope ? assignedSectionsOf(scope, exam.examId) : null;
-    if (mySections && !exam.sectionId && roster.sections.length > 1) {
-      return roster.sections.filter((s) => mySections.has(sectionKey(s.sectionId))).map(rowFor);
-    }
-    return [rowFor(null)];
+    const split = mySections && !exam.sectionId && sections.length > 1 ? sections.filter((s) => mySections.has(sectionKey(s.sectionId))) : null;
+    return (split ?? [null]).map((section: ExamSectionRef | null) => {
+      // One section: its evaluator's review. The whole exam: every section reviewed.
+      const reviews = section ? [assignmentOf(section.sectionId)] : sections.map((s) => assignmentOf(s.sectionId));
+      const reviewed = reviews.length > 0 && reviews.every((a) => a?.reviewedAt);
+      const last = reviewed ? reviews.reduce((x, a) => (!x || new Date(a!.reviewedAt as Date) > new Date(x.reviewedAt as Date) ? a! : x), undefined as EvaluationAssignment | undefined) : undefined;
+      const canEvaluate = !scope || isAssigned;
+      // Why its marks can't change now (published, cross-checked, completed), so the list shows
+      // the exam's real state rather than, say, an old failure the teacher can no longer retry.
+      const lock = lockFor(locks.get(exam.examId), { sections: section ? [section.sectionId] : sections.map((s) => s.sectionId) }, { teacher: Boolean(scope) });
+      const className = exam.class?.className || "N/A";
+      const sectionName = (section ? section.sectionName : exam.section?.sectionName || "") || "N/A";
+      return {
+        exam,
+        section,
+        sections,
+        access,
+        isAssigned,
+        canEvaluate,
+        reviewed,
+        last,
+        lock,
+        hasEvaluator: section ? Boolean(assignmentOf(section.sectionId)) : mine.length > 0,
+        todo: canEvaluate && !reviewed && !lock,
+        sessionKey: String(exam.session?.sessionId || exam.sessionId || ""),
+        sessionName: exam.session?.sessionName || "N/A",
+        examType: String(exam.examType ?? ""),
+        className,
+        sectionName,
+        subjectName: exam.subject?.subjectName || "N/A",
+      };
+    });
   });
-  const rows = nested.flat();
 
-  let filtered = rows.filter((r) => r.access !== "none");
-
-  // Strict sorting by createdAt DESC so most recently created is at the top
-  filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-  // Search filter if provided
+  // The filters, in the order the page applies them: session, exam, then class / section / subject.
+  const inSession = sessionId ? rows.filter((r) => r.sessionKey === sessionId) : rows;
+  const inExam = examType ? inSession.filter((r) => r.examType === examType) : inSession;
+  const sectionOf = (r: (typeof rows)[number]) => (r.sectionName === "N/A" ? "" : r.sectionName);
+  const classes = namesParam(query?.classes);
+  const sectionNames = namesParam(query?.sections);
+  const subjects = namesParam(query?.subjects);
+  const role = clean(query?.role);
   const search = clean(query?.search).toLowerCase();
-  if (search) {
-    filtered = filtered.filter((r) =>
-      [r.subjectName, r.className, r.examType, r.sessionName].join(" ").toLowerCase().includes(search)
-    );
+  const scoped = inExam.filter(
+    (r) =>
+      (!classes.length || classes.includes(r.className)) &&
+      (!sectionNames.length || sectionNames.includes(sectionOf(r))) &&
+      (!subjects.length || subjects.includes(r.subjectName)) &&
+      (role !== "evaluate" || r.canEvaluate) &&
+      (role !== "view" || !r.canEvaluate) &&
+      (!search || [r.subjectName, r.examType, placeText(r.className, sectionOf(r)), r.sessionName].some((v) => v.toLowerCase().includes(search)))
+  );
+  const counts = {
+    all: scoped.length,
+    todo: scoped.filter((r) => r.todo).length,
+    completed: scoped.filter((r) => r.reviewed).length,
+    /** Exams of my classes that another teacher evaluates (shown under All only). */
+    viewOnly: scoped.filter((r) => !r.canEvaluate).length,
+  };
+  const view = clean(query?.view);
+  const listed = scoped.filter((r) => (view === "todo" ? r.todo : view === "completed" ? r.reviewed : true));
+  if (clean(query?.sort) === "exam") {
+    const dir = clean(query?.order).toLowerCase() === "desc" ? -1 : 1;
+    // Stable: rows of one exam keep their order, and equal names stay newest first.
+    listed.sort((a, b) => dir * byLabel(`${a.subjectName} · ${a.examType}`, `${b.subjectName} · ${b.examType}`));
   }
 
-  const total = filtered.length;
-  const page = Math.max(1, parseInt(query?.page as string, 10) || 1);
-  const limit = Math.max(1, parseInt(query?.limit as string, 10) || 10);
-  const totalPages = Math.ceil(total / limit);
+  // Rosters for the rows on the page only.
+  const pageRows = listed.slice(offset, offset + limit);
+  const pageExams = [...new Map(pageRows.map((r) => [r.exam.examId, r.exam])).values()];
+  const pageIds = pageExams.map((e) => e.examId);
+  const [rosterPairs, reopens] = await Promise.all([
+    (async () => {
+      const batch = rosterBatch(pageExams);
+      return mapLimit(pageExams, 6, async (exam: any) => [exam.examId, await buildRoster(exam, { students: studentsOf(exam), names: namesOf(exam), data: batch.of(exam) })] as const);
+    })(),
+    // The evaluator's requests to reopen completed marks (latest per section).
+    scope && pageIds.length ? latestReopenRequests(user.userId, pageIds) : Promise.resolve(new Map()),
+  ]);
+  const rosters = new Map(rosterPairs);
 
-  // If query specifies pagination (or by default):
-  const startIndex = (page - 1) * limit;
-  const paginatedExams = filtered.slice(startIndex, startIndex + limit);
+  const pageList = pageRows.map((r) => {
+    const { exam, section } = r;
+    const roster = rosters.get(exam.examId)!;
+    const sheets = section ? (roster.sections.find((s) => sectionKey(s.sectionId) === sectionKey(section.sectionId))?.counts ?? countsOf([])) : roster.counts;
+    return {
+      id: section ? `${exam.examId}:${sectionKey(section.sectionId)}` : exam.examId,
+      examId: exam.examId,
+      classId: exam.class?.classId || exam.classId,
+      className: r.className,
+      sectionId: section ? section.sectionId : exam.section?.sectionId || exam.sectionId || null,
+      sectionName: r.sectionName,
+      wholeClass: !exam.sectionId,
+      subjectId: exam.subjectId,
+      subjectName: r.subjectName,
+      sessionId: exam.session?.sessionId || exam.sessionId,
+      sessionName: r.sessionName,
+      examType: exam.examType,
+      status: exam.status,
+      totalMarks: exam.totalMarks,
+      totalStudents: sheets.total,
+      uploadedSheets: sheets.uploaded,
+      /** Marked absent by the scanner: on the roster, no sheet to come. */
+      absentStudents: sheets.absent,
+      evaluatedSheets: sheets.evaluated,
+      failedSheets: sheets.evaluationFailed,
+      access: r.access,
+      role: !scope ? "admin" : r.isAssigned ? "evaluator" : "subjectTeacher",
+      /** Only the assigned evaluator (or an admin) may run AI evaluation. */
+      canEvaluate: r.canEvaluate,
+      hasEvaluator: r.hasEvaluator,
+      lock: r.lock,
+      resultsPublished: Boolean(locks.get(exam.examId)?.published),
+      isReviewed: r.reviewed,
+      reviewedAt: r.last?.reviewedAt ?? null,
+      reviewedBy: r.last?.reviewedBy ?? null,
+      // My latest request to reopen these marks: the open one if any, else the newest answer.
+      reopenRequest: (() => {
+        const keys = section ? [section.sectionId] : r.sections.map((s) => s.sectionId);
+        const found = keys.map((k) => reopens.get(`${exam.examId}:${sectionKey(k)}`)).filter(Boolean) as any[];
+        const pick = found.find((x) => x.status === "PENDING") ?? found.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))[0];
+        return reopenInfo(pick);
+      })(),
+      identityMasked: r.access === "masked",
+      createdAt: exam.createdAt,
+    };
+  });
 
   return {
-    exams: paginatedExams,
-    pagination: {
-      total,
-      page,
-      limit,
-      totalPages,
-    },
+    exams: pageList,
+    pagination: pageInfo(listed.length, page, limit),
+    /** Rows of each Show view, under every other filter. */
+    counts,
+    ...(wantFacets
+      ? {
+          /** What the session and exam picker and the Filters panel offer, with how many rows each has. */
+          facets: {
+            sessions: tally(rows, (r) => r.sessionKey).map(({ value, count }) => ({ sessionId: value, sessionName: rows.find((r) => r.sessionKey === value)?.sessionName ?? "", count })),
+            examTypes: tally(inSession, (r) => r.examType).map(({ value, count }) => ({ examType: value, count })),
+            inSession: inSession.length,
+            classes: tally(inExam, (r) => r.className),
+            sections: tally(inExam, sectionOf),
+            subjects: tally(inExam, (r) => r.subjectName),
+          },
+        }
+      : {}),
   };
 };
 
@@ -576,7 +795,7 @@ const examProgressAccess = async (user: any, examId: string) => {
 
 // ── Roster: students + their uploaded sheets, masked for evaluators ──────────
 
-const EVAL_STATUS: Record<string, string> = { Success: "Evaluated", Pending: "Evaluating", Failed: "Failed" };
+const EVAL_STATUS: Record<string, string> = { Success: "Evaluated", Pending: "Evaluating", Failed: "Failed", Paused: "Paused" };
 
 const getRoster = async (user: any, query: any) => {
   const instituteId = user.instituteId;
@@ -615,8 +834,10 @@ const getRoster = async (user: any, query: any) => {
     ? await Section.findOne({ where: { classId, isDeleted: false, [Op.or]: [{ sectionId: section }, { sectionName: section }] }, attributes: ["sectionId", "sectionName"] })
     : null;
   if (examId) {
-    const exam = await Exam.findOne({ where: { examId, instituteId, subjectId, examType, isDeleted: false }, attributes: ["examId"] });
-    if (!exam) examId = "";
+    const exam = await Exam.findOne({ where: { examId, instituteId, subjectId, examType, isDeleted: false }, attributes: ["examId", "sectionId"] });
+    // An exam of one section holds only that section's sheets: another section picked means
+    // another exam (looked up below), never this one's sheets under the wrong section.
+    if (!exam || (exam.sectionId && section && exam.sectionId !== sectionRow?.sectionId)) examId = "";
   }
   if (!examId) {
     const sessionRow = session ? await Session.findOne({ where: { instituteId, sessionName: session }, attributes: ["sessionId"] }) : null;
@@ -629,10 +850,12 @@ const getRoster = async (user: any, query: any) => {
   }
   const exam: any = examId ? await loadExam(instituteId, examId) : null;
   // The section asked for, as one of the exam's ("" = students without a section); null = all of them.
+  // A section the exam has no students in (or one the class doesn't have) shows no rows: falling back
+  // to every section would list other sections' sheets under the one picked.
   let wanted: string | null = null;
   if (exam && section && !exam.sectionId) {
     const match = (await sectionsOfExam(exam)).find((s) => (sectionRow && s.sectionId === sectionRow.sectionId) || s.sectionName.toLowerCase() === section.toLowerCase());
-    wanted = match ? sectionKey(match.sectionId) : null;
+    wanted = match ? sectionKey(match.sectionId) : sectionRow ? sectionKey(sectionRow.sectionId) : NO_SUCH_SECTION;
   }
 
   let access: SheetAccess = "full";
@@ -656,8 +879,14 @@ const getRoster = async (user: any, query: any) => {
   }
 
   if (exam) {
-    const roster = await buildRoster(exam, { sections: only });
+    const [roster, locks] = await Promise.all([buildRoster(exam, { sections: only }), examLockStates([exam.examId])]);
     const masked = access === "masked";
+    // Why marks can't change here (published, cross-checked, section completed): the page says so up
+    // front, for the sections in view and on each row, instead of a run failing.
+    const lockState = locks.get(exam.examId);
+    const who = { teacher: isTeacherRequester(user) };
+    const inView = only ?? roster.sections.map((s) => s.sectionId);
+    const lock = lockFor(lockState, { sections: inView }, who);
     const rows = roster.rows.map((r, i) => {
       const name = r.name || "Unknown student";
       const ext = String(r.fileName ?? "").match(/\.[a-z0-9]{1,6}$/i)?.[0]?.toLowerCase() ?? "";
@@ -671,12 +900,16 @@ const getRoster = async (user: any, query: any) => {
         sheetId: r.sheetId,
         fileName: r.fileName ? (masked ? `answer-sheet${ext}` : r.fileName) : null,
         uploadedAt: r.uploadedAt,
-        sheetStatus: r.sheetId ? (r.evaluationStatus ? EVAL_STATUS[r.evaluationStatus] : null) ?? r.sheetStatus ?? "Pending" : "Missing",
+        // The scanner marked the student absent (no sheet): not a sheet still to come.
+        absent: r.state === "ABSENT",
+        absentMarkedAt: r.state === "ABSENT" ? r.absentMarkedAt : null,
+        sheetStatus: r.sheetId ? (r.evaluationStatus ? EVAL_STATUS[r.evaluationStatus] : null) ?? r.sheetStatus ?? "Pending" : r.state === "ABSENT" ? "Absent" : "Missing",
         aiScore: r.score,
         evaluationStatus: r.evaluationStatus,
         // A poor scan: the AI may have misread it, so its marks need a careful look.
         scanQuality: r.quality,
         identityMasked: masked,
+        lock: r.sheetId ? lockFor(lockState, { sheetId: r.sheetId, sections: [r.sectionId] }, who) : null,
       };
     });
     // Masked lists must not reveal the class order (roll / alphabetical) either.
@@ -684,11 +917,15 @@ const getRoster = async (user: any, query: any) => {
     return {
       access,
       canEvaluate,
+      lock,
       rows,
       summary: {
         total: rows.length,
         uploaded: rows.filter((r) => r.sheetId).length,
-        missing: rows.filter((r) => !r.sheetId).length,
+        /** Marked absent by the scanner: no sheet will come. */
+        absent: rows.filter((r) => !r.sheetId && r.absent).length,
+        /** Still to be uploaded (absent students left out). */
+        missing: rows.filter((r) => !r.sheetId && !r.absent).length,
         evaluated: rows.filter((r) => r.evaluationStatus === "Success").length,
       },
     };
@@ -741,6 +978,9 @@ const getRoster = async (user: any, query: any) => {
       sheetId: sheet?.sheetId ?? null,
       fileName: sheet ? (masked ? `answer-sheet${ext}` : sheet.fileName) : null,
       uploadedAt: sheet?.createdAt ?? null,
+      // Absences are kept per exam; sheets saved without one have none to show.
+      absent: false,
+      absentMarkedAt: null,
       sheetStatus: sheet ? (ev ? EVAL_STATUS[ev.status] ?? sheet.status : sheet.status) : "Missing",
       aiScore: ev?.status === "Success" ? ev.totalScore : null,
       evaluationStatus: ev?.status ?? null,
@@ -766,6 +1006,7 @@ const getRoster = async (user: any, query: any) => {
     summary: {
       total: rows.length,
       uploaded: rows.filter((r) => r.sheetId).length,
+      absent: 0,
       missing: rows.filter((r) => !r.sheetId).length,
       evaluated: rows.filter((r) => r.evaluationStatus === "Success").length,
     },
@@ -797,15 +1038,24 @@ const markReviewed = async (user: any, examId: string, reviewed: boolean = true,
   }
 
   // Reviewed means done: every sheet of those sections uploaded (or student absent) and evaluated.
-  // Un-reviewing is blocked once results are published.
+  // Once completed, the evaluator doesn't reopen marks on their own: they ask the admin, who
+  // reopens them (evaluationReopen.service). Reopening is never possible once results are published.
+  if (!reviewed && isTeacherRequester(user) && targets.some((a) => a.reviewedAt)) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      "Completed marks are reopened by the admin. Ask the admin to reopen this section (Ask to reopen), saying why."
+    );
+  }
   if (reviewed) await assertReadyForReview(instituteId, cleanExamId, targets.map((a) => a.sectionId));
-  else await assertNotPublished(cleanExamId);
+  else await assertCanReopen(cleanExamId, user);
 
   const updatedReviewedAt = reviewed ? new Date() : null;
   const updatedReviewedBy = reviewed ? user.userId : null;
+  const wasReviewed = targets.some((a) => a.reviewedAt);
   for (const a of targets) await a.update({ reviewedAt: updatedReviewedAt, reviewedBy: updatedReviewedBy });
   // Marks reopened: a cross-check in progress stops; it starts over after the next review.
-  if (!reviewed) await closeRoundForReopen(cleanExamId);
+  // (Only when something was completed: clearing sections that never were changes nothing.)
+  if (!reviewed && wasReviewed) await closeRoundForReopen(cleanExamId);
 
   // Every admin hears the marks are confirmed: once every section is, the next step is theirs (publish).
   const exam: any = await loadExam(instituteId, cleanExamId);

@@ -57,10 +57,11 @@ const user = (req: any) => req.viaExamUser;
 export default {
   // Admin — one answer sheet's marks history
   sheetHistory: handle("Marks history fetched.", (req) => SheetHistoryService.sheetHistory(user(req), req.params.sheetId)),
-  examReport: handle("Exam report fetched.", (req) => ExamReportService.examReport(user(req), req.params.examId)),
+  examReport: handle("Exam report fetched.", (req) => ExamReportService.examReport(user(req), req.params.examId, req.query)),
 
   // Admin — pipeline
   listPipeline: handle("Exams fetched.", (req) => ExamWorkflowService.listPipeline(user(req), req.query)),
+  examCounts: handle("Exam counts fetched.", (req) => ExamWorkflowService.examCounts(user(req))),
   getTimeline: handle("Timeline fetched.", (req) => ExamWorkflowService.getTimeline(user(req), req.params.examId)),
 
   // Admin — scanner assignment
@@ -91,6 +92,7 @@ export default {
   myResultDetail: handle("Result fetched.", (req) => ExamWorkflowService.myResultDetail(user(req), req.params.resultId)),
   myReportCard: handle("Report card fetched.", (req) => ExamWorkflowService.myReportCard(user(req), req.query)),
   myClaims: handle("Recheck claims fetched.", (req) => ExamWorkflowService.myClaims(user(req))),
+  myRecheckPolicy: handle("Recheck policy fetched.", (req) => ExamWorkflowService.myRecheckPolicy(user(req))),
   createRecheck: handle("Recheck requested.", (req) => ExamWorkflowService.createRecheck(user(req), req.body), httpStatus.CREATED),
 
   // Rechecks — admin / teacher

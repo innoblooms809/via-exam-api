@@ -21,6 +21,7 @@ const listPipeline = {
     examType: text(60),
     sessionId: id.allow(""),
     classId: id.allow(""),
+    examId: id.allow(""),
     _t: cacheBuster,
   }),
 };
@@ -110,6 +111,8 @@ const listRechecks = {
     limit,
     status: Joi.string().valid("Pending", "Under Review", "Awaiting Approval", "Completed", "Rejected", "Approved", ""),
     examId: id.allow(""),
+    sessionId: id.allow(""),
+    examType: text(60),
     _t: cacheBuster,
   }),
 };
@@ -134,10 +137,25 @@ const completeRecheck = {
 // A scanner's request to re-open a completed upload, and the admin's answer (a note is
 // required to reject; the service checks that, since approve and reject share the shape).
 const requestReopen = { ...examParam, body: Joi.object({ reason: Joi.string().trim().min(5).max(500).required(), sectionId }) };
-const listReopenRequests = { query: Joi.object({ status: Joi.string().valid("PENDING", "DECIDED", "ALL", "").insensitive(), _t: cacheBuster }) };
+const listReopenRequests = {
+  query: Joi.object({ status: Joi.string().valid("PENDING", "DECIDED", "ALL", "").insensitive(), sessionId: id.allow(""), examType: text(60), _t: cacheBuster }),
+};
+// The exam report: one section (or all), a quick filter, a search, a page. limit goes up to 1000 for the CSV.
+const examReport = {
+  ...examParam,
+  query: Joi.object({
+    sectionId,
+    filter: Joi.string().valid("all", "missing", "absent", "poor", "aiFailed", "edited", "crossChecked", "recheck", "failed", ""),
+    search: text(100),
+    page,
+    limit: Joi.number().integer().min(1).max(1000),
+    _t: cacheBuster,
+  }),
+};
 const decideReopen = { ...requestParam, body: Joi.object({ note: text(500) }) };
 
 export default {  sheetParam,
+  examReport,
 
   classResults,
   examParam,

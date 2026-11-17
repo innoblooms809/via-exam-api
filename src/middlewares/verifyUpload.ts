@@ -16,6 +16,8 @@ import { randomUUID } from "crypto";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
 import { findPdfActiveContent, sniffFileType } from "../utils/fileSignature";
+import { decodeUploadName } from "../utils/fileNames";
+import { listOf, msg, type ListValue, type Message } from "../i18n/message";
 import logger from "../config/logger";
 
 const collectFiles = (req: Request): Express.Multer.File[] => {
@@ -46,11 +48,8 @@ const removeQuietly = (filePath?: string) => {
   fs.promises.unlink(filePath).catch(() => undefined);
 };
 
-/** "JPG, PNG or WEBP" */
-const acceptedList = (allowed: readonly string[]) => {
-  const names = allowed.map((m) => LABELS[m] ?? m);
-  return names.length > 1 ? `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}` : names[0];
-};
+/** "JPG, PNG or WEBP", in the reader's language. */
+const acceptedList = (allowed: readonly string[]): ListValue => listOf(allowed.map((m) => LABELS[m] ?? m), "disjunction");
 
 const LABELS: Record<string, string> = {
   "image/jpeg": "JPG",
@@ -68,13 +67,13 @@ const LABELS: Record<string, string> = {
 export const translateMulterError = (err: any, req: Request, res: Response, next: NextFunction) => {
   if (!err) return next();
   collectFiles(req).forEach((f) => removeQuietly(f.path));
-  const message =
+  const message: Message =
     err?.code === "LIMIT_FILE_SIZE"
-      ? "The file is too large."
+      ? msg("The file is too large.")
       : err?.code === "LIMIT_UNEXPECTED_FILE"
-        ? `Unexpected file field "${String(err?.field ?? "").slice(0, 40)}".`
+        ? msg("Unexpected file field \"{{field}}\".", { field: String(err?.field ?? "").slice(0, 40) })
         : err?.code === "LIMIT_FILE_COUNT"
-          ? "Too many files."
+          ? msg("Too many files.")
           : String(err?.message ?? "Upload rejected.").slice(0, 200);
   return res.status(httpStatus.BAD_REQUEST).json({ error: true, statusCode: httpStatus.BAD_REQUEST, message });
 };
@@ -86,12 +85,11 @@ export const translateMulterError = (err: any, req: Request, res: Response, next
 export const inspectDiskFile = (
   filePath: string,
   allowed: readonly string[]
-): { ok: true; mime: string } | { ok: false; reason: string } => {
+): { ok: true; mime: string } | { ok: false; reason: Message } => {
   try {
     const detected = sniffFileType(readHead(filePath));
     if (!detected || !allowed.includes(detected.mime)) {
-      const accepted = acceptedList(allowed);
-      return { ok: false, reason: `This is not a real ${accepted} file. Only ${accepted} files are accepted.` };
+      return { ok: false, reason: msg("This is not a real {{types}} file. Only {{types}} files are accepted.", { types: acceptedList(allowed) }) };
     }
     if (detected.mime === "application/pdf") {
       const problem = findPdfActiveContent(fs.readFileSync(filePath));
@@ -99,7 +97,7 @@ export const inspectDiskFile = (
     }
     return { ok: true, mime: detected.mime };
   } catch {
-    return { ok: false, reason: "The file could not be read. Please try again." };
+    return { ok: false, reason: msg("The file could not be read. Please try again.") };
   }
 };
 
@@ -114,29 +112,32 @@ export const verifyUploads =
     const files = collectFiles(req);
     if (files.length === 0) return next();
 
-    const reject = (message: string) => {
+    const reject = (message: Message) => {
       files.forEach((f) => removeQuietly(f.path));
       return res.status(httpStatus.BAD_REQUEST).json({ error: true, statusCode: httpStatus.BAD_REQUEST, message });
     };
 
     try {
       for (const file of files) {
+        // The name as the browser sent it, in any script (multer reads it as latin1).
+        file.originalname = decodeUploadName(file.originalname);
         const onDisk = Boolean(file.path);
         const head = onDisk ? readHead(file.path) : (file.buffer ?? Buffer.alloc(0)).subarray(0, 1024);
         const detected = sniffFileType(head);
-        const name = String(file.originalname ?? "file").slice(0, 120);
+        const name = Array.from(file.originalname || "file").slice(0, 120).join("");
 
         if (!detected || !allowed.includes(detected.mime)) {
-          const accepted = acceptedList(allowed);
-          return reject(`${name}: this file is not a real ${accepted} file. Only ${accepted} files are accepted.`);
+          return reject(
+            msg("{{name}}: this file is not a real {{types}} file. Only {{types}} files are accepted.", { name, types: acceptedList(allowed) })
+          );
         }
 
         if (detected.mime === "application/pdf") {
-          const bytes = onDisk ? fs.readFileSync(file.path) : file.buffer;
-          const problem = findPdfActiveContent(bytes);
+          const content = onDisk ? fs.readFileSync(file.path) : file.buffer;
+          const problem = findPdfActiveContent(content);
           if (problem) {
             logger.warn(`[Upload] Rejected PDF "${name}" from ${(req as any).viaExamUser?.userId ?? "anonymous"}: ${problem}`);
-            return reject(`${name}: ${problem}`);
+            return reject(msg("{{name}}: {{problem}}", { name, problem }));
           }
         }
 
@@ -152,7 +153,7 @@ export const verifyUploads =
       }
     } catch (err: any) {
       logger.error(`[Upload] Verification failed: ${err?.message || err}`);
-      return reject("The uploaded file could not be read. Please try again.");
+      return reject(msg("The uploaded file could not be read. Please try again."));
     }
 
     return next();

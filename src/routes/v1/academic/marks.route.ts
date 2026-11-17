@@ -11,7 +11,7 @@ marksRoutes.put("/", authorize(ADMINS), Controller.saveMarks);
 marksRoutes.post("/copy", authorize(ADMINS), Controller.copyMarks);
 marksRoutes.get("/changes", authorize(ADMINS), Controller.getChanges);
 
-// /institute-settings — the school's rules: grade bands, starting marks, cross-checking, scan quality.
+// /institute-settings — the school's rules: grade bands, starting marks, cross-checking, scan quality, recheck policy.
 export const settingsRoutes = Router();
 settingsRoutes.use(authenticate);
 // Teachers read the rules too (e.g. which papers go for cross-checking).
@@ -21,6 +21,8 @@ settingsRoutes.put("/marks-defaults", authorize(ADMINS), Controller.saveMarksDef
 settingsRoutes.put("/cross-check", authorize(ADMINS), Controller.saveCrossCheck);
 // When an uploaded answer sheet is flagged as a poor scan (DPI, blur, faint ink).
 settingsRoutes.put("/scan-quality", authorize(ADMINS), Controller.saveScanQuality);
+// Whether students can claim a recheck, and for how many days after results are published (on, 6 days by default).
+settingsRoutes.put("/recheck-policy", authorize(ADMINS), Controller.saveRecheckPolicy);
 // The printed result sheet: header (from the institute profile unless replaced), columns, signatures…
 settingsRoutes.get("/result-sheet", authorize(ADMINS), Controller.getResultSheet);
 settingsRoutes.put("/result-sheet", authorize(ADMINS), Controller.saveResultSheet);

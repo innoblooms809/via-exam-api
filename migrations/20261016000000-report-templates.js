@@ -5,7 +5,7 @@
  * sheet first), one row per institute and kind. sync() also creates it on boot; this
  * is for databases managed by migrations only.
  *
- *   npm run db:migrate:report-templates
+ *   npm run db:migrate
  */
 
 module.exports = {

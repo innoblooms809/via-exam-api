@@ -10,6 +10,7 @@ import "../services/evaluation/evaluationMaintenance";
 import "../services/notification/push.service";
 import "../utils/mailHelper";
 import "../services/answer-sheet/sheetQuality.service";
+import "../services/student/studentImport.service";
 import "../services/subscription/subscriptionScheduler";
 import "../services/partner/partnerWebhooks";
 import "../services/security/dataProtectionMaintenance";

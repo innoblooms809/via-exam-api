@@ -10,6 +10,7 @@
  */
 
 import zlib from "zlib";
+import { msg, type LocalizedMessage } from "../i18n/message";
 
 export interface DetectedType {
   mime: string;
@@ -73,7 +74,7 @@ const MAX_INFLATED_BYTES = 32 * 1024 * 1024;
  * random binary would otherwise produce false matches) — except object streams,
  * which hold dictionaries and are inflated and searched like the rest.
  */
-export const findPdfActiveContent = (pdf: Buffer): string | null => {
+export const findPdfActiveContent = (pdf: Buffer): LocalizedMessage | null => {
   const text = pdf.toString("latin1");
   const outside: string[] = [];
   const streamPattern = /stream\r?\n/g;
@@ -93,7 +94,7 @@ export const findPdfActiveContent = (pdf: Buffer): string | null => {
     const dict = decodeNameEscapes(dictStart === -1 ? before.slice(-2048) : before.slice(dictStart));
     if (/\/ObjStm(?=[\s/<>[\]()%])/.test(dict)) {
       if (!/\/FlateDecode(?=[\s/<>[\]()%])/.test(dict)) {
-        return "The PDF uses an unsupported internal compression. Export or print it to PDF again.";
+        return msg("The PDF uses an unsupported internal compression. Export or print it to PDF again.");
       }
       try {
         const body = pdf.subarray(bodyStart, bodyEnd);
@@ -104,7 +105,7 @@ export const findPdfActiveContent = (pdf: Buffer): string | null => {
           const trimmed = pdf.subarray(bodyStart, bodyEnd).toString("latin1").replace(/\r?\n$/, "");
           outside.push(zlib.inflateSync(Buffer.from(trimmed, "latin1"), { maxOutputLength: MAX_INFLATED_BYTES }).toString("latin1"));
         } catch {
-          return "The PDF could not be read. Export or print it to PDF again.";
+          return msg("The PDF could not be read. Export or print it to PDF again.");
         }
       }
     }
@@ -117,12 +118,12 @@ export const findPdfActiveContent = (pdf: Buffer): string | null => {
   const structure = decodeNameEscapes(outside.join("\n"));
   // Encrypted object streams can't be inspected, and scanners never encrypt.
   if (/\/Encrypt(?=[\s/<>[\]()%])/.test(structure)) {
-    return "The PDF is password-protected or encrypted. Export it again without a password.";
+    return msg("The PDF is password-protected or encrypted. Export it again without a password.");
   }
 
   const found = structure.match(ACTIVE_PDF_NAMES);
   if (found) {
-    return `The PDF contains active content (${found[1]}), which is not allowed in an answer sheet or document upload.`;
+    return msg("The PDF contains active content ({{name}}), which is not allowed in an answer sheet or document upload.", { name: found[1] });
   }
   return null;
 };

@@ -54,6 +54,8 @@ export interface JobView<T = any> {
   returnValue: unknown;
   /** 1-based place among the waiting jobs of its queue; 0 when it is not waiting. */
   position: number;
+  /** A delayed job (a retry): when it joins the waiting line again, when the driver knows it. */
+  runAt?: number | null;
 }
 
 export interface JobContext<T = any> {
@@ -93,6 +95,11 @@ export interface QueueDefinition<T = any> {
   lockMs?: number;
   /** How many times a job may be found abandoned (its process died) before it fails. */
   maxStalls?: number;
+  /**
+   * Can this process do this queue's work right now? While false, it starts no jobs of the queue:
+   * they wait, for another process that can or until this one can again, and use no attempts.
+   */
+  canClaim?: () => Promise<boolean>;
   processor?: JobProcessor<T>;
   /** Called once a job has failed for good: its last attempt failed, or the error was permanent. */
   onFailed?: (job: JobView<T>, err: Error) => Promise<void> | void;
@@ -132,6 +139,9 @@ export interface QueueDriver {
   close(graceMs: number): Promise<void>;
   ping(): Promise<void>;
 }
+
+/** How often a queue with a `canClaim` check asks it again. */
+export const CAN_CLAIM_EVERY_MS = 15_000;
 
 /** Thrown by a processor when retrying can't help (bad input, missing record). */
 export class PermanentJobError extends Error {

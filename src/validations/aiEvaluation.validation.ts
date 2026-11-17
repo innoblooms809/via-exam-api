@@ -18,4 +18,18 @@ const statusBatch = {
   }),
 };
 
-export default { evaluateBatch, statusBatch };
+/** "Pause": the page's sheets that haven't started yet leave the line. */
+const pauseBatch = {
+  body: Joi.object({
+    sheetIds: Joi.array().items(id.required()).min(1).max(500).unique().required(),
+  }),
+};
+
+/** "Resume": paused sheets go back in line. */
+const resumeBatch = {
+  body: Joi.object({
+    sheetIds: Joi.array().items(id.required()).min(1).max(500).unique().required(),
+  }),
+};
+
+export default { evaluateBatch, statusBatch, pauseBatch, resumeBatch };

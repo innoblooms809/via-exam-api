@@ -31,6 +31,12 @@ interface AIEvaluationAttributes {
   runCount?: number;
   /** Why the last run failed: "transient" (a service was down — retried automatically) or "permanent". */
   failureKind?: string | null;
+  /** The last failure as a code, detail, attempts, service address and process (evaluationFailure.ts). */
+  failure?: any;
+  /** The API process (host#pid) holding the current run. */
+  runOwner?: string | null;
+  /** A paused run: where it stopped and who paused it (status "Paused", or "Success" for a re-evaluation). */
+  pause?: any;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -54,6 +60,9 @@ interface AIEvaluationCreationAttributes
     | "finishedAt"
     | "runCount"
     | "failureKind"
+    | "failure"
+    | "runOwner"
+    | "pause"
   > {}
 
 class AIEvaluation extends Model<
@@ -83,6 +92,9 @@ class AIEvaluation extends Model<
   public finishedAt!: Date | null;
   public runCount!: number;
   public failureKind!: string | null;
+  public failure!: any;
+  public runOwner!: string | null;
+  public pause!: any;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -120,6 +132,9 @@ AIEvaluation.init(
     finishedAt: { type: DataTypes.DATE, allowNull: true },
     runCount: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     failureKind: { type: DataTypes.STRING(16), allowNull: true },
+    failure: { type: DataTypes.JSONB, allowNull: true },
+    runOwner: { type: DataTypes.STRING(160), allowNull: true },
+    pause: { type: DataTypes.JSONB, allowNull: true },
   },
   {
     sequelize,

@@ -32,6 +32,12 @@ router.patch(
   Controller.markAsRead,
 );
 
+router.delete(
+  "/notification/:notificationId",
+  authenticate,
+  Controller.deleteNotification,
+);
+
 // Firebase Cloud Messaging: register / unregister this browser for push notifications
 router.post(
   "/push-token",

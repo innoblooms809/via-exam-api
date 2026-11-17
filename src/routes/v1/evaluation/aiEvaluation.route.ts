@@ -1,59 +1,14 @@
 import { Router } from "express";
 import Controller from "../../../controllers/evaluation/aiEvaluation.controller";
-import NewController from "../../../controllers/evaluation/aiEvaluationNew.controller";
-import OCRNew5Controller from "../../../controllers/evaluation/ocrnew5.controller";
 import Pipeline6Controller from "../../../controllers/evaluation/pipeline6.controller";
 import { authenticate, authorize } from "../../../middlewares/auth";
-import { ACADEMIC } from "../../../config/roles";
+import { ACADEMIC, SUPER_ADMIN } from "../../../config/roles";
 import { requireSheetAccessMiddleware, requireSheetEvaluateMiddleware } from "../../../services/evaluation/evaluationAccess.service";
 import { evaluationRunGuard } from "../../../services/evaluation/recheckDraft.service";
 import validate from "../../../middlewares/validate";
 import AIEvaluationValidation from "../../../validations/aiEvaluation.validation";
 
 const router = Router();
-
-// Every route that runs the AI: the assigned evaluator only, and never on published results,
-// except a recheck teacher's run, which goes into their recheck draft (evaluationRunGuard).
-
-// Trigger evaluation (legacy — uses old port 8002 API)
-router.post(
-  "/evaluate",
-  authenticate,
-  authorize(ACADEMIC),
-  requireSheetEvaluateMiddleware,
-  evaluationRunGuard,
-  Controller.evaluateSheet
-);
-
-// Trigger evaluation V2 (uses OCR pipeline on port 8003/8005)
-router.post(
-  "/evaluate2",
-  authenticate,
-  authorize(ACADEMIC),
-  requireSheetEvaluateMiddleware,
-  evaluationRunGuard,
-  NewController.evaluateSheet2
-);
-
-// Trigger evaluation OCRNew5 (uses multi-agent pipeline on port 8006)
-router.post(
-  "/evaluate-ocrnew5",
-  authenticate,
-  authorize(ACADEMIC),
-  requireSheetEvaluateMiddleware,
-  evaluationRunGuard,
-  OCRNew5Controller.evaluateSheetOCRNew5
-);
-
-// Trigger evaluation Pipeline 6.3 (uses 9-agent pipeline with rubric pre-warming on port 8007)
-router.post(
-  "/evaluate-pipeline6",
-  authenticate,
-  authorize(ACADEMIC),
-  requireSheetEvaluateMiddleware,
-  evaluationRunGuard,
-  Pipeline6Controller.evaluateSheetPipeline6
-);
 
 router.post(
   "/evaluate6",
@@ -72,6 +27,14 @@ router.get(
   Pipeline6Controller.getQueueStatus
 );
 
+// Everything about the queue, for developers: live jobs (every school's), services, events, failures.
+router.get(
+  "/queue/diagnostics",
+  authenticate,
+  authorize(SUPER_ADMIN),
+  Pipeline6Controller.getQueueDiagnostics
+);
+
 // "Evaluate all": many sheets in one call, each with the same checks as /evaluate6
 // (assigned evaluator, never published results, cross-checks by their checker only).
 router.post(
@@ -80,6 +43,23 @@ router.post(
   authorize(ACADEMIC),
   validate(AIEvaluationValidation.evaluateBatch),
   Pipeline6Controller.evaluateBatch
+);
+
+// "Pause" / "Resume" on the queue page: the requester's own sheets only (assigned evaluator),
+// resume with the same locks as evaluating (published results, cross-checks, completed sections).
+router.post(
+  "/pause-batch",
+  authenticate,
+  authorize(ACADEMIC),
+  validate(AIEvaluationValidation.pauseBatch),
+  Pipeline6Controller.pauseBatch
+);
+router.post(
+  "/resume-batch",
+  authenticate,
+  authorize(ACADEMIC),
+  validate(AIEvaluationValidation.resumeBatch),
+  Pipeline6Controller.resumeBatch
 );
 
 // Status and queue place of many sheets: the queue page's single poll.
@@ -117,14 +97,5 @@ router.put(
   Controller.updateEvaluation
 );
 
-// List evaluations
-router.get(
-  "/list",
-  authenticate,
-  authorize(ACADEMIC),
-  Controller.getAllEvaluations
-);
-
 export default router;
-
 

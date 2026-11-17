@@ -4,6 +4,7 @@ import StudentService from "../../services/student/student.service";
 import { getTeacherScope, isScannerRequester, isTeacherRequester, maskStudentRecord } from "../../services/evaluation/evaluationAccess.service";
 import config from "../../config/config";
 import { queueUserCredentials } from "../../utils/mailHelper";
+import StudentImport, { type ImportStatus } from "../../services/student/studentImport.service";
 
 const createStudent = async (req: any, res: Response): Promise<any> => {
   try {
@@ -100,46 +101,59 @@ const promoteStudents = async (req: any, res: Response): Promise<any> => {
   }
 };
 
+/**
+ * Upload a spreadsheet of students. The rows are saved by a queued job (studentImport.service):
+ * this request waits a few seconds, so a small file answers with its result as before
+ * (201/200); a bigger one answers 202 with `importId`, and GET /student/bulk-import/:importId
+ * follows it. Each new student's login email is queued by the job as their row is saved.
+ */
 const bulkCreateStudents = async (req: any, res: Response): Promise<any> => {
   try {
-    const result = await StudentService.bulkCreateStudents(
-      req.body?.students,
-      req.viaExamUser,
-    );
+    const admin = req.viaExamUser;
+    const slug = admin?.institute?.slug;
+    const loginUrl = slug ? `${config.frontendUrl}/${slug}/auth/signin` : `${config.frontendUrl}/auth/signin`;
 
-    // Mirror the single-student flow: every student that was actually created
-    // gets their login details by email. Each email is a queued job, so a 500-row
-    // upload never stalls the response, the email queue sends a couple at a time,
-    // and nothing is lost to a mail-server outage or a restart.
-    const created: any[] = !result.error ? (result.data?.successes ?? []) : [];
-    if (created.length > 0) {
-      const slug = req.viaExamUser?.institute?.slug;
-      const loginUrl = slug
-        ? `${config.frontendUrl}/${slug}/auth/signin`
-        : `${config.frontendUrl}/auth/signin`;
+    const started = await StudentImport.startImport(req.body?.students, admin, loginUrl);
+    if (started.error) return res.status(started.statusCode).send(started);
 
-      void (async () => {
-        for (const student of created) {
-          if (!student.generatedPassword || !student.email) continue; // admin set the password themselves
-          await queueUserCredentials({
-            userName: student.name,
-            email: student.email,
-            phone: student.mobile,
-            password: student.generatedPassword,
-            role: "Student",
-            loginUrl,
-          });
-        }
-      })();
-    }
-
-    return res.status(result.statusCode).send(result);
+    const status = await StudentImport.waitForImport(started.importId, admin);
+    return sendImportStatus(res, started.importId, status);
   } catch (error) {
     console.error("bulkCreateStudents controller error:", error);
     return res
       .status(500)
       .json({ error: true, statusCode: 500, message: "Internal Server Error" });
   }
+};
+
+/** Progress of an upload, then its result (the same body the upload returns for a file it finished). */
+const getImportStatus = async (req: any, res: Response): Promise<any> => {
+  try {
+    const status = await StudentImport.importStatus(String(req.params.importId), req.viaExamUser);
+    return sendImportStatus(res, String(req.params.importId), status);
+  } catch (error) {
+    console.error("getImportStatus controller error:", error);
+    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
+  }
+};
+
+const sendImportStatus = (res: Response, importId: string, status: ImportStatus | null) => {
+  if (!status) {
+    return res.status(404).send({ error: true, statusCode: 404, message: "This upload was not found. Upload results are kept for 3 days." });
+  }
+  if (status.status === "completed" && status.result) {
+    const { statusCode, message, data } = status.result;
+    return res.status(statusCode).send({ error: false, statusCode, message, data: { ...data, importId } });
+  }
+  if (status.status === "failed") {
+    return res.status(422).send({ error: true, statusCode: 422, message: status.reason || "The upload stopped.", data: { ...status, result: undefined } });
+  }
+  return res.status(202).send({
+    error: false,
+    statusCode: 202,
+    message: "The students are being added. Follow the progress here, or leave: you'll get a notification when it's done.",
+    data: { ...status, result: undefined },
+  });
 };
 
 export default {
@@ -150,4 +164,5 @@ export default {
   deleteStudent,
   promoteStudents,
   bulkCreateStudents,
+  getImportStatus,
 };

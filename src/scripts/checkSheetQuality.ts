@@ -7,7 +7,7 @@
  *   npm run sheets:check-quality -- --all           # check again, already checked ones too
  *   npm run sheets:check-quality -- --dry-run
  *
- * Downloads each sheet from Cloudinary, measures it and saves the flag. Safe to
+ * Reads each stored sheet, measures it and saves the flag. Safe to
  * stop and re-run: a sheet is done once its flag is saved. A sheet the API opens
  * for evaluation is also checked on the spot if it has no flag yet.
  */

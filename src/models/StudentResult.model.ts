@@ -6,6 +6,9 @@ import { sequelize } from "../config/sequelize";
 // what the student sees can't drift if an evaluation is edited later. A recheck
 // that changes the marks updates the row and bumps revisionCount. Unpublishing
 // soft-deletes the rows (isDeleted) so the history is kept.
+// recheckClosesAt is the last moment the student can claim a recheck, set from the
+// school's recheck window when the result is published (null on results published before
+// windows existed: those use the window as it is now, counted from publishedAt).
 
 export const RESULT_STATUS = {
   PASS: "PASS",
@@ -37,6 +40,7 @@ interface StudentResultAttributes {
   resultStatus: ResultStatus;
   publishedAt: Date;
   publishedBy: string;
+  recheckClosesAt: Date | null;
   revisedAt: Date | null;
   revisionCount: number;
   isDeleted: boolean;
@@ -55,6 +59,7 @@ interface StudentResultCreationAttributes
     | "marksObtained"
     | "percentage"
     | "grade"
+    | "recheckClosesAt"
     | "revisedAt"
     | "revisionCount"
     | "isDeleted"
@@ -85,6 +90,7 @@ class StudentResult
   public resultStatus!: ResultStatus;
   public publishedAt!: Date;
   public publishedBy!: string;
+  public recheckClosesAt!: Date | null;
   public revisedAt!: Date | null;
   public revisionCount!: number;
   public isDeleted!: boolean;
@@ -122,6 +128,7 @@ StudentResult.init(
     },
     publishedAt: { type: DataTypes.DATE, allowNull: false },
     publishedBy: { type: DataTypes.STRING, allowNull: false },
+    recheckClosesAt: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
     revisedAt: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
     revisionCount: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     isDeleted: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },

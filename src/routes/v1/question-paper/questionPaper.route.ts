@@ -3,7 +3,6 @@ import {
   createQuestionPaper,
   updateQuestionPaper,
   deleteQuestionPaper,
-  getQuestionPaperUploads,
   uploadImageController,
   getQuestionPaperBySelection,
   submitQuestionPaper,
@@ -11,7 +10,6 @@ import {
   approveQuestionPaper,
   rejectQuestionPaper,
   publishQuestionPaper,
-  getPendingQuestionPapers,
   getAllQuestionPapers,
   approveExamPair,
   rejectExamPair,
@@ -39,8 +37,6 @@ router.delete("/deleteQuestionPaper/:paperId", ...teachers, deleteQuestionPaper)
 
 // Diagram / school-logo images (bytes checked, server-named; see utils/multer)
 router.post("/image", ...teachers, questionPaperUpload, uploadImageController);
-// Lists every stored question-paper image on the server, so admin only.
-router.get("/uploads", ...adminOnly, getQuestionPaperUploads);
 
 router.post("/getQuestionPaperBySet", ...academic, getQuestionPaperBySelection);
 
@@ -52,11 +48,7 @@ router.patch("/submitQuestionPaper/:paperId/submit", ...teachers, submitQuestion
 router.patch("/approveQuestionPaper/:paperId/approve", ...adminOnly, approveQuestionPaper);
 router.patch("/rejectQuestionPaper/:paperId/reject", ...adminOnly, rejectQuestionPaper);
 router.patch("/publishQuestionPaper/:paperId/publish", ...adminOnly, publishQuestionPaper);
-router.get("/pending", ...academic, getPendingQuestionPapers);
 router.get("/getAllQuestionPapers", ...academic, getAllQuestionPapers);
-// A paper's discussion: comments between the admins and the paper setter, and its approval steps.
-router.get("/remarks/:examId", ...academic, getExamRemarksController);
-router.post("/remarks/:examId", ...academic, addExamRemarkController);
 router.get("/exams/:examId/comments", ...academic, getExamRemarksController);
 router.post("/exams/:examId/comments", ...academic, addExamRemarkController);
 

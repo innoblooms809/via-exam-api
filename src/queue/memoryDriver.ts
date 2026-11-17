@@ -7,8 +7,10 @@
 
 import { CronExpressionParser } from "cron-parser";
 import logger from "../config/logger";
+import { emitQueueEvent } from "./events";
 import {
   backoffDelay,
+  CAN_CLAIM_EVERY_MS,
   isPermanent,
   type AddOptions,
   type JobContext,
@@ -38,6 +40,8 @@ interface MemJob {
   dedupeKey?: string;
   keepCompletedSec: number;
   keepFailedSec: number;
+  /** Delayed: when it joins the waiting line. */
+  runAt: number | null;
 }
 
 const RATE_LIMITED = Symbol("rate-limited");
@@ -57,6 +61,8 @@ class MemoryQueue<T> implements JobQueue<T> {
   private pausedUntil = 0;
   private seq = 0;
   private processing = false;
+  private blocked = false;
+  private claimCheck: NodeJS.Timeout | null = null;
 
   constructor(private def: QueueDefinition<T>) {}
 
@@ -67,11 +73,43 @@ class MemoryQueue<T> implements JobQueue<T> {
   startProcessing(def: QueueDefinition<T>) {
     this.def = def;
     this.processing = true;
-    this.pump();
+    if (def.canClaim) this.followCanClaim();
+    else this.pump();
+  }
+
+  /** Starts no job while `canClaim` says no; a job already running is left to finish. */
+  private followCanClaim() {
+    this.blocked = true;
+    let warned = false;
+    const check = async () => {
+      const able = await this.def.canClaim!().catch(() => false);
+      if (able) {
+        if (!this.blocked) return;
+        this.blocked = false;
+        if (warned) {
+          logger.info(`[Queue] ${this.def.name}: this process can do this work again and is starting jobs.`);
+          emitQueueEvent({ type: "claim-resumed", queue: this.def.name });
+        }
+        warned = false;
+        this.pump();
+      } else {
+        this.blocked = true;
+        if (!warned) {
+          logger.warn(`[Queue] ${this.def.name}: this process can't do this work right now, so these jobs wait.`);
+          emitQueueEvent({ type: "claim-paused", queue: this.def.name });
+        }
+        warned = true;
+      }
+    };
+    void check();
+    this.claimCheck = setInterval(() => void check(), CAN_CLAIM_EVERY_MS);
+    this.claimCheck.unref?.();
   }
 
   stopProcessing() {
     this.processing = false;
+    if (this.claimCheck) clearInterval(this.claimCheck);
+    this.claimCheck = null;
     for (const t of this.schedules.values()) clearTimeout(t);
     this.schedules.clear();
   }
@@ -81,7 +119,7 @@ class MemoryQueue<T> implements JobQueue<T> {
   }
 
   private pump() {
-    if (!this.processing || !this.def.processor) return;
+    if (!this.processing || !this.def.processor || this.blocked) return;
     const wait = this.pausedUntil - Date.now();
     if (wait > 0) {
       later(wait, () => this.pump());
@@ -95,6 +133,13 @@ class MemoryQueue<T> implements JobQueue<T> {
 
   private toWaiting(job: MemJob, front = false) {
     job.state = "waiting";
+    job.runAt = null;
+    this.waitingPlace(job, front);
+    this.pump();
+  }
+
+  /** Its place in the waiting line: the front, or by priority (jobs without one first). */
+  private waitingPlace(job: MemJob, front = false) {
     if (front) this.waiting.unshift(job.id);
     else if (job.priority) {
       // Jobs without a priority run first; prioritized ones by priority, then age.
@@ -109,7 +154,6 @@ class MemoryQueue<T> implements JobQueue<T> {
       if (firstPrioritized === -1) this.waiting.push(job.id);
       else this.waiting.splice(firstPrioritized, 0, job.id);
     }
-    this.pump();
   }
 
   private finish(job: MemJob, state: "completed" | "failed") {
@@ -125,6 +169,8 @@ class MemoryQueue<T> implements JobQueue<T> {
     this.running.add(job.id);
     job.state = "active";
     job.processedAt = Date.now();
+    const started = job.processedAt;
+    let pauseMs = 0;
     const ctx: JobContext<T> = {
       id: job.id,
       name: job.name,
@@ -136,27 +182,36 @@ class MemoryQueue<T> implements JobQueue<T> {
         job.progress = value;
       },
       rateLimit: async (ms: number) => {
-        this.pausedUntil = Math.max(this.pausedUntil, Date.now() + Math.max(1000, ms));
+        pauseMs = Math.max(1000, ms);
+        this.pausedUntil = Math.max(this.pausedUntil, Date.now() + pauseMs);
         throw RATE_LIMITED;
       },
     };
+    emitQueueEvent({ type: "active", queue: this.def.name, job: this.view(job) });
     try {
       job.returnValue = await this.def.processor!(ctx);
       this.finish(job, "completed");
+      emitQueueEvent({ type: "completed", queue: this.def.name, job: this.view(job), durationMs: Date.now() - started });
     } catch (err: any) {
       if (err === RATE_LIMITED) {
         this.running.delete(job.id);
         this.toWaiting(job, true);
+        emitQueueEvent({ type: "rate-limited", queue: this.def.name, job: this.view(job), delayMs: pauseMs, durationMs: Date.now() - started });
         return;
       }
       job.attemptsMade += 1;
       job.failedReason = String(err?.message || err);
       logger.warn(`[Queue] ${this.def.name} job ${job.id} (${job.name}) attempt ${job.attemptsMade}/${job.maxAttempts} failed: ${job.failedReason}`);
+      const failure = { error: job.failedReason, errorCode: err?.failureCode, durationMs: Date.now() - started };
       if (!isPermanent(err) && job.attemptsMade < job.maxAttempts) {
+        const delayMs = backoffDelay(job.backoff, job.attemptsMade);
         job.state = "delayed";
-        later(backoffDelay(job.backoff, job.attemptsMade), () => job.state === "delayed" && this.toWaiting(job));
+        job.runAt = Date.now() + delayMs;
+        later(delayMs, () => job.state === "delayed" && this.toWaiting(job));
+        emitQueueEvent({ type: "retrying", queue: this.def.name, job: this.view(job), delayMs, ...failure });
       } else {
         this.finish(job, "failed");
+        emitQueueEvent({ type: "failed", queue: this.def.name, job: this.view(job), ...failure });
         if (this.def.onFailed) {
           Promise.resolve(this.def.onFailed(this.view(job), err instanceof Error ? err : new Error(String(err)))).catch((e) =>
             logger.error(`[Queue] ${this.def.name}: failure handler for job ${job.id} crashed: ${e?.message || e}`)
@@ -171,15 +226,15 @@ class MemoryQueue<T> implements JobQueue<T> {
 
   private view(job: MemJob): JobView<T> {
     const position = job.state === "waiting" ? this.waiting.indexOf(job.id) + 1 : 0;
-    const { id, name, data, state, attemptsMade, maxAttempts, createdAt, processedAt, finishedAt, failedReason, progress, returnValue } = job;
-    return { id, name, data, state, attemptsMade, maxAttempts, createdAt, processedAt, finishedAt, failedReason, progress, returnValue, position };
+    const { id, name, data, state, attemptsMade, maxAttempts, createdAt, processedAt, finishedAt, failedReason, progress, returnValue, runAt } = job;
+    return { id, name, data, state, attemptsMade, maxAttempts, createdAt, processedAt, finishedAt, failedReason, progress, returnValue, position, runAt };
   }
 
   async add(name: string, data: T, opts: AddOptions = {}): Promise<string> {
-    if (opts.jobId && this.jobs.has(opts.jobId)) return opts.jobId;
-    if (opts.dedupeKey) {
-      const holder = this.dedupe.get(opts.dedupeKey);
-      if (holder && this.jobs.has(holder)) return holder;
+    const existing = (opts.jobId && this.jobs.get(opts.jobId)) || (opts.dedupeKey && this.jobs.get(this.dedupe.get(opts.dedupeKey) ?? ""));
+    if (existing) {
+      emitQueueEvent({ type: "deduplicated", queue: this.def.name, job: this.view(existing) });
+      return existing.id;
     }
     const d = this.def.defaults;
     const job: MemJob = {
@@ -200,14 +255,21 @@ class MemoryQueue<T> implements JobQueue<T> {
       dedupeKey: opts.dedupeKey,
       keepCompletedSec: opts.keepCompletedSec ?? d.keepCompletedSec,
       keepFailedSec: opts.keepFailedSec ?? d.keepFailedSec,
+      runAt: null,
     };
     this.jobs.set(job.id, job);
     if (opts.dedupeKey) this.dedupe.set(opts.dedupeKey, job.id);
     if (opts.delayMs && opts.delayMs > 0) {
       job.state = "delayed";
+      job.runAt = Date.now() + opts.delayMs;
       later(opts.delayMs, () => job.state === "delayed" && this.toWaiting(job));
+      emitQueueEvent({ type: "added", queue: this.def.name, job: this.view(job), delayMs: opts.delayMs });
     } else {
-      this.toWaiting(job);
+      // Reported before it can start, so "added" always comes before "active" in the log.
+      job.state = "waiting";
+      this.waitingPlace(job);
+      emitQueueEvent({ type: "added", queue: this.def.name, job: this.view(job) });
+      this.pump();
     }
     return job.id;
   }

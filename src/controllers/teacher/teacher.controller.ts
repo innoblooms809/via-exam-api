@@ -44,15 +44,6 @@ const getAllTeachers = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-const getTeacherById = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await TeacherService.getTeacherById(req.params.userId, req.viaExamUser);
-    return res.status(result.statusCode).send(result);
-  } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
-  }
-};
-
 const updateTeacher = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await TeacherService.updateTeacher(
@@ -70,24 +61,6 @@ const updateTeacher = async (req: any, res: Response): Promise<any> => {
 const deleteTeacher = async (req: any, res: Response): Promise<any> => {
   try {
     const result = await TeacherService.deleteTeacher(req.params.userId, req.viaExamUser);
-    return res.status(result.statusCode).send(result);
-  } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
-  }
-};
-
-const assignExaminer = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await TeacherService.assignExaminer(req.params.userId, req.viaExamUser);
-    return res.status(result.statusCode).send(result);
-  } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
-  }
-};
-
-const removeExaminer = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await TeacherService.removeExaminer(req.params.userId, req.viaExamUser);
     return res.status(result.statusCode).send(result);
   } catch (error) {
     return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
@@ -132,15 +105,6 @@ const getMyStudents = async (req: any, res: Response): Promise<any> => {
   }
 };
 
-const getMyAssignments = async (req: any, res: Response): Promise<any> => {
-  try {
-    const result = await TeacherService.getMyAssignments(req.viaExamUser.userId);
-    return res.status(result.statusCode).send(result);
-  } catch (error) {
-    return res.status(500).json({ error: true, statusCode: 500, message: "Internal Server Error" });
-  }
-};
-
 const getTeacherQuestionPapers = async (req: any, res: Response): Promise<any> => {
   try {
     const targetUserId = req.params?.userId;
@@ -152,25 +116,6 @@ const getTeacherQuestionPapers = async (req: any, res: Response): Promise<any> =
     return res.status(result.statusCode).send(result);
   } catch (error: any) {
     console.error("getTeacherQuestionPapers Controller Error:", error);
-    return res.status(500).json({
-      error: true,
-      statusCode: 500,
-      message: `Internal Server Error: ${error.message}`,
-    });
-  }
-};
-
-const getTeacherExamsWithApprovalStatus = async (req: any, res: Response): Promise<any> => {
-  try {
-    const targetUserId = req.params?.userId;
-    const result = await TeacherService.getTeacherExamsWithApprovalStatus(
-      req.viaExamUser,
-      req.query,
-      targetUserId
-    );
-    return res.status(result.statusCode).send(result);
-  } catch (error: any) {
-    console.error("getTeacherExamsWithApprovalStatus Controller Error:", error);
     return res.status(500).json({
       error: true,
       statusCode: 500,
@@ -197,16 +142,11 @@ export default {
   createTeacher,
   updateSpecializations,
   getAllTeachers,
-  getTeacherById,
   updateTeacher,
   deleteTeacher,
-  assignExaminer,
-  removeExaminer,
   getDeactivatedTeachers,
   reactivateTeacher,
-  getMyAssignments,
   getMyTeaching,
   getMyStudents,
   getTeacherQuestionPapers,
-  getTeacherExamsWithApprovalStatus,
 };

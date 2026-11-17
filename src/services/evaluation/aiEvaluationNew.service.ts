@@ -209,7 +209,7 @@ const runBackgroundEvaluationV2 = async (
   standardAnsText: string
 ): Promise<void> => {
   try {
-    // Resolve the sheet's bytes once, up front — Cloudinary-backed sheets keep
+    // Resolve the sheet's bytes once, up front — sheets stored as files keep
     // fileBuffer null in the database, so every read of sheet.fileBuffer below
     // (both OCR threads and the PDF-base64 fallback) needs it populated first.
     // Assigned onto the in-memory instance only; sheet.update() elsewhere

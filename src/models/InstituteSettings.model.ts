@@ -6,6 +6,7 @@ import { sequelize } from "../config/sequelize";
 //   marksDefaults the marks a subject starts with on Marks & grading, per exam
 //   crossCheck    whether evaluated papers are cross-checked, and which ones
 //   scanQuality   when an uploaded answer sheet is flagged as a poor scan
+//   recheckPolicy whether students can claim a recheck, and for how many days after results are published
 // Typed and validated in services/academic/instituteSettings.service; the JSON keeps
 // the rules together without a table per rule.
 
@@ -50,6 +51,23 @@ export interface ScanQualityRule {
   minContrast: number;
 }
 
+/**
+ * Whether students can claim a recheck, on which exams, and for how long: `days` after an
+ * exam's results are published. `enabled`, `examTypes` and `subjectIds` apply at once to every
+ * result: a result can be claimed only while claims are on and its exam type and subject are
+ * covered (claims already made are still handled). `days` sets each result's deadline when it
+ * is published (StudentResult.recheckClosesAt), so a change applies to results published from
+ * then on.
+ */
+export interface RecheckPolicyRule {
+  enabled: boolean;
+  days: number;
+  /** The exam types (Mid Term, Final…) whose results can be claimed; null: every type. */
+  examTypes: string[] | null;
+  /** The subjects (Subject.subjectId) whose results can be claimed; null: every subject. */
+  subjectIds: string[] | null;
+}
+
 interface InstituteSettingsAttributes {
   id: number;
   instituteId: string;
@@ -57,13 +75,14 @@ interface InstituteSettingsAttributes {
   marksDefaults: Record<string, MarksDefault> | null;
   crossCheck: CrossCheckRule | null;
   scanQuality: ScanQualityRule | null;
+  recheckPolicy: RecheckPolicyRule | null;
   updatedBy: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 interface InstituteSettingsCreationAttributes
-  extends Optional<InstituteSettingsAttributes, "id" | "gradingScale" | "marksDefaults" | "crossCheck" | "scanQuality" | "updatedBy"> {}
+  extends Optional<InstituteSettingsAttributes, "id" | "gradingScale" | "marksDefaults" | "crossCheck" | "scanQuality" | "recheckPolicy" | "updatedBy"> {}
 
 class InstituteSettings
   extends Model<InstituteSettingsAttributes, InstituteSettingsCreationAttributes>
@@ -75,6 +94,7 @@ class InstituteSettings
   public marksDefaults!: Record<string, MarksDefault> | null;
   public crossCheck!: CrossCheckRule | null;
   public scanQuality!: ScanQualityRule | null;
+  public recheckPolicy!: RecheckPolicyRule | null;
   public updatedBy!: string | null;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -88,6 +108,7 @@ InstituteSettings.init(
     marksDefaults: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
     crossCheck: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
     scanQuality: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
+    recheckPolicy: { type: DataTypes.JSONB, allowNull: true, defaultValue: null },
     updatedBy: { type: DataTypes.STRING, allowNull: true, defaultValue: null },
   },
   {

@@ -51,7 +51,8 @@ function decodeSheet(file: { name?: string; contentBase64: string }) {
   }
   if (type.mime === "application/pdf") {
     const unsafe = findPdfActiveContent(buffer);
-    if (unsafe) throw new PartnerApiError(httpStatus.BAD_REQUEST, "unsafe_file", unsafe);
+    // The partner API answers in English (its error codes are what clients act on).
+    if (unsafe) throw new PartnerApiError(httpStatus.BAD_REQUEST, "unsafe_file", String(unsafe));
   }
   const base = String(file.name || "sheet").replace(/[^\w.-]+/g, "_").replace(/\.[^.]*$/, "").slice(0, 100) || "sheet";
   return { buffer, fileName: `${base}${type.ext}` };

@@ -1,4 +1,5 @@
 import axios from "axios";
+import net from "net";
 import logger from "./logger";
 
 /**
@@ -62,6 +63,29 @@ export const serviceHeaders = (service: "ocr" | "eval"): Record<string, string> 
   const token = firstSet(service === "ocr" ? process.env.OCR_SERVICE_TOKEN : process.env.EVAL_SERVICE_TOKEN);
   return token ? { "X-Internal-Token": token } : {};
 };
+
+/**
+ * Can this machine open a connection to the server behind `url`? Only the connection counts, not
+ * an HTTP answer: a server deep in a long OCR or evaluation may answer slowly, but it is still there.
+ */
+export const serviceReachable = (url: string, timeoutMs = 3000): Promise<boolean> =>
+  new Promise((resolve) => {
+    let target: URL;
+    try {
+      target = new URL(url);
+    } catch {
+      resolve(false);
+      return;
+    }
+    const socket = net.connect({ host: target.hostname, port: Number(target.port) || (target.protocol === "https:" ? 443 : 80) });
+    const finish = (reachable: boolean) => {
+      socket.destroy();
+      resolve(reachable);
+    };
+    socket.setTimeout(timeoutMs, () => finish(false));
+    socket.once("connect", () => finish(true));
+    socket.once("error", () => finish(false));
+  });
 
 /** Base URLs, for health checks and the evaluation API's capabilities. */
 export const serviceBase = { ocr: ocrBase, eval: evalBase };
