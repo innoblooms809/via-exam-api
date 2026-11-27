@@ -18,7 +18,6 @@ interface UserAttributes {
   loginAttempts: number;
   lockedUntil: Date | null;
   lastLoginAt: Date | null;
-  refreshToken: string | null;
   profileUrl?: string | null;
   isDeleted: boolean;
   createdAt?: Date;
@@ -34,7 +33,6 @@ interface UserCreationAttributes
     | "loginAttempts"
     | "lockedUntil"
     | "lastLoginAt"
-    | "refreshToken"
     | "profileUrl"
     | "instituteId"
     | "isDeleted"
@@ -58,7 +56,6 @@ class User extends Model<
   public loginAttempts!: number;
   public lockedUntil!: Date | null;
   public lastLoginAt!: Date | null;
-  public refreshToken!: string | null;
   public profileUrl!: string | null;
   public isDeleted!: boolean;
   public readonly createdAt!: Date;
@@ -126,12 +123,6 @@ User.init(
     },
     lastLoginAt: {
       type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: null,
-    },
-    // HMAC digest of the current refresh token (utils/dataProtection), never the token itself.
-    refreshToken: {
-      type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: null,
     },

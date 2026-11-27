@@ -59,9 +59,28 @@ export const pythonServices = {
  * set the same value here (OCR_SERVICE_TOKEN / EVAL_SERVICE_TOKEN); without it every call
  * except /health is refused with 401.
  */
-export const serviceHeaders = (service: "ocr" | "eval"): Record<string, string> => {
+export const serviceHeaders = (service: "ocr" | "eval", trace?: TraceIds): Record<string, string> => {
   const token = firstSet(service === "ocr" ? process.env.OCR_SERVICE_TOKEN : process.env.EVAL_SERVICE_TOKEN);
-  return token ? { "X-Internal-Token": token } : {};
+  return { ...(token ? { "X-Internal-Token": token } : {}), ...traceHeaders(trace) };
+};
+
+/**
+ * Which answer sheet a call belongs to, for LangSmith on the Python side: both servers put their
+ * traces of one sheet (its OCR, its evaluation, later re-evaluations) in the same thread.
+ * threadId: the run key ("sheet-<sheetId>"); runId: this evaluation attempt.
+ */
+export interface TraceIds {
+  threadId?: string;
+  runId?: string;
+}
+
+const traceId = (value?: string) => (value ?? "").replace(/[^A-Za-z0-9._:-]/g, "").slice(0, 128);
+
+const traceHeaders = (trace?: TraceIds): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  if (traceId(trace?.threadId)) headers["X-Trace-Thread-Id"] = traceId(trace?.threadId);
+  if (traceId(trace?.runId)) headers["X-Trace-Run-Id"] = traceId(trace?.runId);
+  return headers;
 };
 
 /**

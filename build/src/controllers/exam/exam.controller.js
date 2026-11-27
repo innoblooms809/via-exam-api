@@ -28,35 +28,9 @@ const createExam = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         });
     }
 });
-const getAllExams = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const result = yield exam_service_1.default.getAllExams(req.query, req.viaExamUser);
-        return res.status(result.statusCode).send(result);
-    }
-    catch (error) {
-        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
-            error: true,
-            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: "Internal Server Error",
-        });
-    }
-});
 const getAssignedExams = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const result = yield exam_service_1.default.getAssignedExams(req.viaExamUser);
-        return res.status(result.statusCode).send(result);
-    }
-    catch (error) {
-        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
-            error: true,
-            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
-            message: "Internal Server Error",
-        });
-    }
-});
-const getExamById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const result = yield exam_service_1.default.getExamById(req.params.examId, req.viaExamUser);
         return res.status(result.statusCode).send(result);
     }
     catch (error) {
@@ -124,26 +98,11 @@ const getExamProgress = (req, res) => __awaiter(void 0, void 0, void 0, function
         });
     }
 });
-const getAssignedExamsSummary = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const result = yield exam_service_1.default.getAssignedExamsSummary(req.viaExamUser);
-        return res.status(result.statusCode).json(result);
-    }
-    catch (e) {
-        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
-            error: true,
-            message: `Something went wrong: ${e.message}`,
-        });
-    }
-});
 exports.default = {
     getExamProgress,
     createExam,
-    getAllExams,
-    getExamById,
     updateExamStatus,
     updateExam,
     deleteExam,
     getAssignedExams,
-    getAssignedExamsSummary,
 };

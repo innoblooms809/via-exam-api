@@ -8,6 +8,7 @@
 import { CronExpressionParser } from "cron-parser";
 import logger from "../config/logger";
 import { emitQueueEvent } from "./events";
+import { presenceInstance } from "./presence";
 import {
   backoffDelay,
   CAN_CLAIM_EVERY_MS,
@@ -20,6 +21,7 @@ import {
   type QueueDefinition,
   type QueueDriver,
   type Repeat,
+  type WorkerPresence,
 } from "./types";
 
 interface MemJob {
@@ -358,6 +360,24 @@ class MemoryQueue<T> implements JobQueue<T> {
 class MemoryDriver implements QueueDriver {
   readonly kind = "memory" as const;
   private readonly queues = new Map<string, MemoryQueue<any>>();
+  private announced: { queues: string[]; info: () => Record<string, unknown>; at: number } | null = null;
+
+  async announce(queues: string[], info: () => Record<string, unknown>): Promise<void> {
+    this.announced = { queues, info, at: Date.now() };
+  }
+
+  /** In-process queues: their jobs run in this process or nowhere. */
+  async workers(): Promise<WorkerPresence[]> {
+    const a = this.announced;
+    if (!a) return [];
+    let info: Record<string, unknown> = {};
+    try {
+      info = a.info() ?? {};
+    } catch {
+      /* reported without it */
+    }
+    return [{ instance: presenceInstance.id, host: presenceInstance.host, pid: presenceInstance.pid, self: true, startedAt: a.at, lastSeenAt: Date.now(), queues: a.queues, info }];
+  }
 
   queue<T>(def: QueueDefinition<T>): JobQueue<T> {
     let q = this.queues.get(def.name);
@@ -374,6 +394,7 @@ class MemoryDriver implements QueueDriver {
   }
 
   async close(graceMs: number): Promise<void> {
+    this.announced = null;
     const queues = [...this.queues.values()];
     queues.forEach((q) => q.stopProcessing());
     const deadline = Date.now() + graceMs;

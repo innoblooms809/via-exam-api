@@ -13,11 +13,13 @@ const envVarsSchema = joi_1.default.object()
     PORT: joi_1.default.number().default(3000),
     JWT_SECRET: joi_1.default.string().required().description('JWT secret key'),
     JWT_ACCESS_EXPIRATION_MINUTES: joi_1.default.number()
-        .default(30)
+        .positive()
+        .default(15)
         .description('minutes after which access tokens expire'),
-    JWT_REFRESH_EXPIRATION_DAYS: joi_1.default.number()
+    JWT_REFRESH_EXPIRATION_MINUTES: joi_1.default.number()
+        .positive()
         .default(30)
-        .description('days after which refresh tokens expire'),
+        .description('minutes without use after which a sign-in session ends'),
     JWT_RESET_PASSWORD_EXPIRATION_MINUTES: joi_1.default.number()
         .default(10)
         .description('minutes after which reset password token expires'),
@@ -32,9 +34,6 @@ const envVarsSchema = joi_1.default.object()
     CORS_ORIGIN: joi_1.default.string().default('http://localhost:3000'),
     SESSION_SECRET: joi_1.default.string().default('a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'),
     FRONTEND_URL: joi_1.default.string().default('http://localhost:3000'),
-    CLOUDINARY_CLOUD_NAME: joi_1.default.string().description('Cloudinary cloud name'),
-    CLOUDINARY_API_KEY: joi_1.default.string().description('Cloudinary API key'),
-    CLOUDINARY_API_SECRET: joi_1.default.string().description('Cloudinary API secret'),
     FIREBASE_SERVICE_ACCOUNT_PATH: joi_1.default.string().description('Path to the Firebase service-account JSON (push notifications)'),
     FIREBASE_SERVICE_ACCOUNT_JSON: joi_1.default.string().description('Firebase service-account JSON, raw or base64 (instead of the path)'),
     STRIPE_SECRET_KEY: joi_1.default.string().description('Stripe secret key (sk_test_… / sk_live_…)'),
@@ -57,7 +56,7 @@ exports.default = {
     jwt: {
         secret: envVars.JWT_SECRET,
         accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,
-        refreshExpirationDays: envVars.JWT_REFRESH_EXPIRATION_DAYS,
+        refreshExpirationMinutes: envVars.JWT_REFRESH_EXPIRATION_MINUTES,
         resetPasswordExpirationMinutes: envVars.JWT_RESET_PASSWORD_EXPIRATION_MINUTES,
         verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES
     },
@@ -78,11 +77,6 @@ exports.default = {
         secret_key: envVars.SECRET_KEY,
         secret_iv: envVars.SECRET_IV,
         ecnryption_method: envVars.ECNRYPTION_METHOD
-    },
-    cloudinary: {
-        cloudName: envVars.CLOUDINARY_CLOUD_NAME,
-        apiKey: envVars.CLOUDINARY_API_KEY,
-        apiSecret: envVars.CLOUDINARY_API_SECRET
     },
     firebase: {
         serviceAccountPath: envVars.FIREBASE_SERVICE_ACCOUNT_PATH,

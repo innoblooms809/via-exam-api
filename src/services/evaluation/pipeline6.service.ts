@@ -11,19 +11,14 @@
 //   (EVAL_QUEUE_OCR_CONCURRENCY / EVAL_QUEUE_EVAL_CONCURRENCY, default 1 — one GPU each), so
 //   "Evaluate All" on 100 sheets never floods the Python servers. Across sheets the stages
 //   overlap: while the AI evaluates student 1, OCR is already reading student 2.
-// • A process claims a stage's jobs only while it can reach that stage's server, so a machine
-//   with a wrong or blocked address leaves sheets to one that can run them. If no process can,
-//   sheets wait in line and start once the server is back.
-// • A server that can't be reached (down, restarting, wrong address) fails nothing: its stage
-//   pauses and every sheet keeps its place and attempts until the server answers; the queue page
-//   says so. A busy server (503 + Retry-After) pauses the stage the same way.
-// • Retries: a server error or a dropped connection is retried with exponential backoff
-//   (OCR 4×, AI 5×). A call that runs past its timeout (EVAL_OCR_TIMEOUT_MIN /
-//   EVAL_AI_TIMEOUT_MIN, default 60) is not: the server may still be busy with it, and one sheet
-//   must not hold the line for hours. Errors retrying can't fix (a deleted sheet, a refused
-//   request) fail at once. Every failure is saved with a code (evaluationFailure.ts) that the
-//   queue page explains; transient ones are re-queued once the services are back
-//   (evaluationMaintenance.ts).
+// • Retries: a server that can't be reached (down, restarting, wrong address), a busy one (503),
+//   a server error or a dropped connection is retried with exponential backoff (OCR 4×: waits of
+//   30 s, 60 s, 120 s; AI 5×: 60 s … 480 s). After the last attempt the sheet is Failed and the
+//   teacher decides whether to run it again: nothing re-runs a failed sheet on its own (each run
+//   may be billed). A call that runs past its timeout (EVAL_OCR_TIMEOUT_MIN / EVAL_AI_TIMEOUT_MIN,
+//   default 60) is not retried: the server may still be busy with it, and one sheet must not hold
+//   the line for hours. Errors retrying can't fix (a deleted sheet, a refused request) fail at
+//   once. Every failure is saved with a code (evaluationFailure.ts) that the queue page explains.
 // • A sheet is never queued twice; asking again returns its current place in line.
 // • Every step is logged (evaluationQueueMonitor.ts): logs/queue.log has one JSON line per event,
 //   the console one "[EvalQueue] …" line per step, with the sheet, attempt, wait, what runs next
@@ -53,15 +48,30 @@ import { studentForSheet } from "../student/enrollment.service";
 import logger from "../../config/logger";
 import { pythonServices, serviceHeaders, serviceReachable } from "../../config/pythonServices";
 import { formatQuestionPaper, paperSetOf } from "../../utils/questionPaperText";
-import { buildEvaluationPaper, placeUploadedKey } from "../../utils/evaluationPaper";
-import { getAnswerKeyText, ocrDocument, ocrTimeoutMs } from "./answerKeyOcr.service";
+import fs from "fs";
+import path from "path";
+import { buildEvaluationPaper, inlinePaperImages, placeUploadedKey } from "../../utils/evaluationPaper";
+import { localPathOf } from "../../utils/localFileStorage";
+import { getAnswerKeyFile, getAnswerKeyText, ocrDocument, ocrTimeoutMs } from "./answerKeyOcr.service";
 import { resolveSheetBuffer } from "../../utils/answerSheetStorage";
 import { newId } from "../../utils/idGenerator";
 import { failRecheckAiRun, finishRecheckAiRun, startRecheckAiRun, type RecheckContext } from "./recheckDraft.service";
 import { failCrossCheckAiRun, finishCrossCheckAiRun, startCrossCheckAiRun, type CrossCheckContext } from "./crossCheckDraft.service";
 import { restoreFullAnswers } from "../../utils/answerSnippets";
-import { defineQueue, isPermanent, onQueueEvent, PermanentJobError, queueDriverKind, type JobContext, type JobView, type QueueEvent } from "../../queue";
-import { positiveInt } from "../../queue/config";
+import {
+  defineQueue,
+  isPermanent,
+  onQueueEvent,
+  PermanentJobError,
+  queueDriverKind,
+  queueWorkers,
+  queueWorkersRunningHere,
+  type JobContext,
+  type JobView,
+  type QueueEvent,
+  type WorkerPresence,
+} from "../../queue";
+import { positiveInt, queueConfig } from "../../queue/config";
 import { failPartner, runPartnerEvaluation, runPartnerOcr } from "../partner/partnerProcessing";
 import { msg } from "../../i18n/message";
 import { classifyFailureText, serviceProblem, StageFailure, type EvaluationFailure, type FailureCode } from "./evaluationFailure";
@@ -81,8 +91,6 @@ import {
 
 /** CPU inference on long papers is slow: 1 hour unless EVAL_AI_TIMEOUT_MIN says otherwise. */
 const aiTimeoutMs = () => positiveInt(process.env.EVAL_AI_TIMEOUT_MIN, 60) * 60_000;
-/** A stage whose server is down tries again this often (its jobs keep their attempts). */
-const SERVICE_DOWN_PAUSE_MS = 30_000;
 const DAY_SEC = 24 * 60 * 60;
 
 // ─── Job ────────────────────────────────────────────────────────────────────────
@@ -137,22 +145,15 @@ const serviceError = (service: "OCR" | "AI", err: any): string =>
   // A refused connection to "localhost" can carry an empty message, but it always has a code.
   err?.response?.data?.detail || err?.response?.data?.message || err?.message || err?.code || `Unknown ${service} error`;
 
-/** Retry-After (seconds or a date) → milliseconds, 30 s when absent. */
-const retryAfterMs = (value: unknown): number => {
-  const raw = String(value ?? "").trim();
-  if (/^\d+$/.test(raw)) return Number(raw) * 1000;
-  const at = Date.parse(raw);
-  return Number.isFinite(at) ? Math.max(1000, at - Date.now()) : 30_000;
-};
-
 const SERVICE_OF = { OCR: "ocr", AI: "ai" } as const;
 const serviceUrl = (service: EvalService) => (service === "ocr" ? pythonServices.ocrUrl() : pythonServices.pipeline6Url());
 
 /**
  * A Python service call failed:
- *   down     (refused, unreachable) the stage pauses and the job goes back to the front of the
- *            line without using an attempt; it runs once the server answers again
- *   busy     (503 / 429) the same, for as long as the server's Retry-After asks
+ *   down     (refused, unreachable) the attempt fails and is retried with backoff, like an error:
+ *            a server still down after the last attempt fails the sheet (ocr_unreachable /
+ *            ai_unreachable), and the teacher runs it again. Nothing re-runs it on its own.
+ *   busy     (503 / 429) the same
  *   timeout  fails the sheet at once (ocr_timeout / ai_timeout): retrying would hold the line for
  *            another full timeout while the server may still be working on the first call
  *   rejected (4xx) fails at once: retrying would get the same answer
@@ -162,18 +163,13 @@ async function handleServiceError(job: JobContext<any>, service: "OCR" | "AI", e
   const status: number | undefined = err?.response?.status;
   const detail = serviceError(service, err);
   const svc = SERVICE_OF[service];
-  const subject = describeJobData(job.data);
   switch (serviceProblem(err)) {
-    case "busy": {
-      const pauseMs = retryAfterMs(err.response.headers?.["retry-after"]);
-      record("stage.busy", { stage: svc, jobId: job.id, ...jobFields(job.data), status, pauseMs }, { msg: `${service} server busy (${status}); its stage pauses ${fmtMs(pauseMs)}, ${subject} keeps its place.` });
-      return job.rateLimit(pauseMs);
-    }
+    case "busy":
+      throw new StageFailure(`${svc}_error`, `${service} server busy (${status}): ${detail}`, { permanent: false });
     case "down": {
       const waiting = (await currentSnapshot().catch(() => null))?.counts[svc === "ocr" ? "ocr" : "evaluation"].waiting;
       serviceDown(svc, detail, serviceUrl(svc), waiting);
-      record("stage.waiting-for-service", { stage: svc, jobId: job.id, ...jobFields(job.data), detail, pauseMs: SERVICE_DOWN_PAUSE_MS }, { level: "debug" });
-      return job.rateLimit(SERVICE_DOWN_PAUSE_MS);
+      throw new StageFailure(`${svc}_unreachable`, `${service} server unreachable (${detail})`, { permanent: false });
     }
     case "timeout": {
       const minutes = Math.round((svc === "ocr" ? ocrTimeoutMs() : aiTimeoutMs()) / 60_000);
@@ -398,7 +394,10 @@ async function readStudentSheet(run: EvaluationRun, sheet: any): Promise<string>
       { stage: "ocr", ...jobFields(run), fileName, bytes: sheet.fileBuffer.length, mime: sheet.fileMimeType, target: pythonServices.ocrUrl(), timeoutMs: ocrTimeoutMs() },
       { msg: `OCR reading sheet ${run.sheetId}: ${fileName}, ${(sheet.fileBuffer.length / 1024 / 1024).toFixed(2)} MB (timeout ${fmtMs(ocrTimeoutMs())}).` }
     );
-    studentText = await ocrDocument(sheet.fileBuffer, fileName, sheet.fileMimeType || "image/png");
+    studentText = await ocrDocument(sheet.fileBuffer, fileName, sheet.fileMimeType || "image/png", {
+      threadId: run.runKey,
+      runId: run.runId,
+    });
   }
   return studentText;
 }
@@ -422,8 +421,10 @@ async function runOcrStage(job: JobContext<EvaluationRun>) {
   let studentText = "";
   try {
     // An uploaded model answer is read here too (once; its text is saved for every later student),
-    // so all OCR goes through this one queue.
-    if (run.answerKeyFileAnswerId) await getAnswerKeyText(run.answerKeyFileAnswerId);
+    // so all OCR goes through this one queue. The model answer as it is NOW: it may have been
+    // replaced (deleted and uploaded again) since this sheet was queued.
+    const current = await resolveSheetContext(sheet);
+    if (current.answerKeyFileAnswerId) await getAnswerKeyText(current.answerKeyFileAnswerId);
     studentText = await readStudentSheet(run, sheet);
   } catch (err: any) {
     if (isServiceCallError(err)) return handleServiceError(job, "OCR", err);
@@ -462,21 +463,42 @@ async function runAnswerKeyWarmup(job: JobContext<AnswerKeyWarmup>) {
 
 // ─── Stage 2: AI evaluation (port 8006) ─────────────────────────────────────────
 
-/** The paper and its key as the evaluator reads them, from the rows named in the run. */
-async function paperMaterial(run: EvaluationRun) {
-  const paper = run.paperId ? await QuestionPaper.findOne({ where: { paperId: run.paperId } }) : null;
-  const answers = run.answerId ? await QuestionPaperAnswer.findOne({ where: { answerId: run.answerId } }) : null;
+/** The paper and its key as the evaluator reads them, from the rows named (re-resolved at AI time). */
+async function paperMaterial(ids: { paperId: string | null; answerId: string | null; maxMarks: number }) {
+  const paper = ids.paperId ? await QuestionPaper.findOne({ where: { paperId: ids.paperId } }) : null;
+  const answers = ids.answerId ? await QuestionPaperAnswer.findOne({ where: { answerId: ids.answerId } }) : null;
   if (!paper) {
-    return { questionText: "Evaluate student answer sheet.", typedKey: "", structured: null as ReturnType<typeof buildEvaluationPaper> | null, maxMarks: run.maxMarks };
+    return { found: false, questionText: "", typedKey: "", structured: null as ReturnType<typeof buildEvaluationPaper> | null, maxMarks: ids.maxMarks };
   }
   const flat = formatQuestionPaper(paper.content, answers ? answers.answers : null);
   const structured = buildEvaluationPaper(paper.content, answers ? answers.answers : null);
   return {
+    found: true,
     questionText: flat.questions || "Evaluate student answer sheet.",
     typedKey: flat.answers,
     structured: structured.paper ? structured : null,
-    maxMarks: flat.calculatedTotalMarks > 0 ? flat.calculatedTotalMarks : run.maxMarks,
+    maxMarks: flat.calculatedTotalMarks > 0 ? flat.calculatedTotalMarks : ids.maxMarks,
   };
+}
+
+const IMAGE_MIME: Record<string, string> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif" };
+
+/**
+ * One picture of the paper (an answer diagram, a question figure) as a data URL for the AI.
+ * Only inline pictures and this server's own uploads: a link to another site is never fetched.
+ */
+async function imageAsDataUrl(ref: string): Promise<string | null> {
+  if (ref.startsWith("data:image/")) return ref;
+  const local = localPathOf(ref);
+  if (!local) return null;
+  const mime = IMAGE_MIME[path.extname(local).toLowerCase()];
+  if (!mime) return null;
+  try {
+    const bytes = await fs.promises.readFile(local);
+    return `data:${mime};base64,${bytes.toString("base64")}`;
+  } catch {
+    return null;
+  }
 }
 
 /** Pipeline response → the AIEvaluation `evaluations` items (sub-part structure included). */
@@ -505,6 +527,15 @@ function mapQuestions(evalResult: any) {
     ...(q.method ? { method: q.method } : {}),
     ...(q.needsReview !== undefined ? { needsReview: Boolean(q.needsReview) } : {}),
     ...(Array.isArray(q.reviewReasons) && q.reviewReasons.length ? { reviewReasons: q.reviewReasons } : {}),
+    // How the marks were reached: per criterion of the teacher's marking scheme (or the default
+    // plan), the diagram's check, where on the sheet the answer was, and how sure the AI is.
+    ...(Array.isArray(q.criteria) && q.criteria.length ? { criteria: q.criteria } : {}),
+    ...(q.diagram ? { diagram: q.diagram } : {}),
+    ...(Array.isArray(q.answerPages) && q.answerPages.length ? { answerPages: q.answerPages } : {}),
+    ...(q.keySource ? { keySource: q.keySource } : {}),
+    ...(q.markingSource ? { markingSource: q.markingSource } : {}),
+    ...(q.markingScheme ? { markingScheme: q.markingScheme } : {}),
+    ...(typeof q.gradingConfidence === "number" ? { gradingConfidence: q.gradingConfidence } : {}),
     evaluation: q.evaluation || {
       confidence: typeof q.confidence === "object" ? q.confidence : {
         score: q.confidence !== undefined ? q.confidence : 1.0,
@@ -541,7 +572,24 @@ async function runEvaluationStage(job: JobContext<EvaluationRun>) {
 
   // Sheets stored as files keep fileBuffer null; the AI uses the page images.
   sheet.fileBuffer = await resolveSheetBuffer(sheet);
-  const material = await paperMaterial(run);
+  // The paper and model answer as they are NOW. While the sheet waited in the queue the teacher
+  // may have deleted the model answer and made a new one (a new row), or replaced the paper: the
+  // rows named when it was queued would then be gone, and every part was marked with no key —
+  // or the whole sheet as one made-up question when the paper was gone.
+  const current = await resolveSheetContext(sheet);
+  if (current.paperId !== run.paperId || current.answerId !== run.answerId) {
+    record(
+      "ai.material-changed",
+      { stage: "ai", ...jobFields(run), paperId: current.paperId, answerId: current.answerId },
+      { msg: `Sheet ${run.sheetId}: the question paper or model answer changed after it was queued; evaluating with the current one.` }
+    );
+  }
+  const material = await paperMaterial(current);
+  if (!material.found) {
+    throw new PermanentJobError(
+      "This exam has no question paper (it may have been deleted). Set the question paper, then evaluate the sheet again."
+    );
+  }
   const studentText = run.studentText ?? String(aiEval?.studentAnsOcr ?? "");
 
   // The key: the uploaded sheet's OCR text (saved by the OCR stage), else the typed answers.
@@ -549,9 +597,9 @@ async function runEvaluationStage(job: JobContext<EvaluationRun>) {
   // place go as text. An uploaded key that can't be read now fails this attempt (it is
   // retried, or the run fails saying why) instead of marking every part without a key.
   let uploadedKey = "";
-  if (run.answerKeyFileAnswerId) {
+  if (current.answerKeyFileAnswerId) {
     try {
-      uploadedKey = (await getAnswerKeyText(run.answerKeyFileAnswerId)) ?? "";
+      uploadedKey = (await getAnswerKeyText(current.answerKeyFileAnswerId)) ?? "";
     } catch (err: any) {
       if (isServiceCallError(err)) return handleServiceError(job, "OCR", err);
       throw err;
@@ -566,6 +614,13 @@ async function runEvaluationStage(job: JobContext<EvaluationRun>) {
   }
   const answerKeyText = uploadedKey || (material.structured ? material.structured.keyText : material.typedKey);
 
+  // Pictures the AI compares diagrams with: the teacher's answer diagrams and the questions'
+  // figures, inlined (the AI never downloads links), and the uploaded model answer file itself.
+  const images = material.structured
+    ? await inlinePaperImages(material.structured.paper, imageAsDataUrl)
+    : { inlined: 0, dropped: 0, chars: 0 };
+  const keyFile = current.answerKeyFileAnswerId ? await getAnswerKeyFile(current.answerKeyFileAnswerId) : null;
+
   const payload = {
     student_id: run.studentId,
     exam_id: run.examId,
@@ -577,6 +632,8 @@ async function runEvaluationStage(job: JobContext<EvaluationRun>) {
     request_id: job.id,
     // Original sheet: page images for diagram questions and the whole-sheet fallback.
     student_pdf_base64: sheet.fileBuffer?.length ? sheet.fileBuffer.toString("base64") : undefined,
+    // Uploaded model answer file: its pages are the reference for diagram parts.
+    ...(keyFile ? { answer_key_pdf_base64: keyFile.buffer.toString("base64") } : {}),
   };
 
   record(
@@ -589,6 +646,9 @@ async function runEvaluationStage(job: JobContext<EvaluationRun>) {
       keyedParts: material.structured?.keyed,
       studentChars: studentText.length,
       withFile: Boolean(payload.student_pdf_base64),
+      withKeyFile: Boolean(keyFile),
+      images: images.inlined,
+      imagesDropped: images.dropped,
       timeoutMs: aiTimeoutMs(),
     },
     {
@@ -601,7 +661,8 @@ async function runEvaluationStage(job: JobContext<EvaluationRun>) {
   let evalResult: any;
   try {
     const evalResponse = await axios.post(pythonServices.pipeline6Url(), payload, {
-      headers: { "Content-Type": "application/json", ...serviceHeaders("eval") },
+      // The thread id puts this evaluation's LangSmith trace next to the sheet's OCR trace.
+      headers: { "Content-Type": "application/json", ...serviceHeaders("eval", { threadId: run.runKey, runId: run.runId }) },
       timeout: aiTimeoutMs(),
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
@@ -692,8 +753,9 @@ async function runPartnerAiStage(job: JobContext<PartnerJob>) {
 }
 
 /**
- * Can this process open a connection to the stage's server? A stage takes jobs only while it can
- * (canClaim, checked every 15 s); the answer is also the service health the queue page shows.
+ * Can this process open a connection to the stage's server? Checked every 15 s (canClaim) for the
+ * service health the queue page shows. Jobs are taken either way: a sheet whose server is down
+ * uses its attempts and fails, instead of waiting for the server with no limit.
  */
 async function canReach(svc: EvalService): Promise<boolean> {
   const url = serviceUrl(svc);
@@ -718,7 +780,10 @@ const ocrQueue = defineQueue<OcrJobData>({
   defaults: { attempts: 4, backoff: { type: "exponential", delayMs: ocrRetryMs }, keepCompletedSec: DAY_SEC, keepFailedSec: 7 * DAY_SEC },
   lockMs: 120_000,
   maxStalls: 2,
-  canClaim: () => canReach("ocr"),
+  canClaim: async () => {
+    await canReach("ocr");
+    return true;
+  },
   processor: (job) =>
     isRun(job.data)
       ? runOcrStage(job as JobContext<EvaluationRun>)
@@ -739,7 +804,10 @@ const aiQueue = defineQueue<AiJobData>({
   defaults: { attempts: 5, backoff: { type: "exponential", delayMs: evalRetryMs }, keepCompletedSec: DAY_SEC, keepFailedSec: 7 * DAY_SEC },
   lockMs: 120_000,
   maxStalls: 2,
-  canClaim: () => canReach("ai"),
+  canClaim: async () => {
+    await canReach("ai");
+    return true;
+  },
   processor: (job) =>
     isPartner(job.data) ? runPartnerAiStage(job as JobContext<PartnerJob>) : runEvaluationStage(job as JobContext<EvaluationRun>),
   onFailed: (job, err) =>
@@ -809,16 +877,26 @@ export interface SheetQueueInfo {
   /** When this stage started on it, while it runs. */
   stageStartedAt: number | null;
   queuedAt: number;
-  /** The stage's server can't be reached from here: it keeps its place and starts once it answers. */
-  serviceDown: { since: number; detail: string } | null;
+  /** The stage's server can't be reached by the processes calling it: it keeps its place and starts once it answers. */
+  serviceDown: Outage | null;
+  /** No process takes this stage's jobs right now: it keeps its place and goes on once one does. */
+  onHold: boolean;
 }
 
-/** One stage's load, and its server's outage if it has one. */
+/** A stage's server that can't be reached: since when, and what the connection said. */
+type Outage = { since: number; detail: string };
+
+/** One stage's load, its server's outage if it has one, and whether anyone takes its jobs. */
 export interface StageLoad {
   running: number;
   waiting: number;
   retrying: number;
-  serviceDown: { since: number; detail: string } | null;
+  serviceDown: Outage | null;
+  /**
+   * No process takes this stage's jobs right now (QUEUE_WORKERS=false and no `npm run worker`, or
+   * the worker died): the line doesn't move until one does. The page says so in plain words.
+   */
+  onHold: boolean;
 }
 
 interface QueueSnapshot {
@@ -826,6 +904,8 @@ interface QueueSnapshot {
   bySheet: Map<string, SheetQueueInfo>;
   byRun: Map<string, SheetQueueInfo>;
   counts: { ocr: StageLoad; evaluation: StageLoad };
+  /** The processes taking jobs (null: this process can't tell). */
+  workers: WorkerPresence[] | null;
 }
 
 let snapshot: QueueSnapshot | null = null;
@@ -834,16 +914,48 @@ const SNAPSHOT_TTL_MS = 2000; // the queue page polls; one read of the queues se
 
 const isWaiting = (j: JobView<any>) => j.state === "waiting" || j.state === "prioritized";
 
-const outageOf = (svc: EvalService) => {
+const QUEUE_OF: Record<EvalService, string> = { ocr: "evaluation-ocr", ai: "evaluation-ai" };
+
+/** The processes taking a stage's jobs, or null when this process can't tell. */
+const takersOf = (workers: WorkerPresence[] | null, svc: EvalService): WorkerPresence[] | null =>
+  workers ? workers.filter((w) => w.queues.includes(QUEUE_OF[svc])) : null;
+
+const ownOutage = (svc: EvalService): Outage | null => {
   const o = serviceOutage(svc);
   return o ? { since: o.since, detail: o.detail } : null;
 };
 
-const loadOf = (jobs: JobView<any>[], svc: EvalService): StageLoad => ({
+/** An outage another process reported with its sign of life (evaluationQueueMonitor.healthReport). */
+const reportedOutage = (w: WorkerPresence, svc: EvalService): Outage | null => {
+  const s: any = (w.info as any)?.services?.[svc];
+  return s?.downSince ? { since: Number(s.downSince), detail: String(s.detail ?? "") } : null;
+};
+
+/**
+ * A stage's server outage as the processes calling it see it. Only they can tell: with
+ * QUEUE_WORKERS=false the API calls neither server, so it goes by what its workers report. Down
+ * while every one of them finds it down (one that reaches it keeps the line moving), since the
+ * last of them lost it.
+ */
+function outageOf(svc: EvalService, takers: WorkerPresence[] | null): Outage | null {
+  if (!takers) return ownOutage(svc);
+  // Nobody calls the server: the stage is on hold, which is what the page says.
+  if (!takers.length) return null;
+  let down: Outage | null = null;
+  for (const w of takers) {
+    const o = w.self ? ownOutage(svc) : reportedOutage(w, svc);
+    if (!o) return null;
+    if (!down || o.since > down.since) down = o;
+  }
+  return down;
+}
+
+const loadOf = (jobs: JobView<any>[], svc: EvalService, takers: WorkerPresence[] | null): StageLoad => ({
   running: jobs.filter((j) => j.state === "active").length,
   waiting: jobs.filter(isWaiting).length,
   retrying: jobs.filter((j) => j.state === "delayed").length,
-  serviceDown: outageOf(svc),
+  serviceDown: outageOf(svc, takers),
+  onHold: Boolean(takers && !takers.length),
 });
 
 const runKind = (data: EvaluationRun): SheetQueueInfo["run"] => (data.recheckRequestId ? "recheck" : data.crossCheckItemId ? "crossCheck" : "evaluation");
@@ -868,13 +980,16 @@ function stageOf(job: JobView<any>, ocr: boolean, load: StageLoad): SheetQueueIn
     stageStartedAt: active ? job.processedAt : null,
     queuedAt: data.queuedAt ?? job.createdAt,
     serviceDown: active ? null : load.serviceDown,
+    // Running too: a job whose worker died stays "active" until a worker comes back for it.
+    onHold: load.onHold,
   };
 }
 
 async function loadSnapshot(): Promise<QueueSnapshot> {
-  const [ocrJobs, aiJobs] = await Promise.all([ocrQueue.liveJobs(5000), aiQueue.liveJobs(5000)]);
+  const [ocrJobs, aiJobs, workers] = await Promise.all([ocrQueue.liveJobs(5000), aiQueue.liveJobs(5000), queueWorkers()]);
+  noteWorkers(workers, ocrJobs.length + aiJobs.length);
   // Counts are the stages' real load, partner evaluations and model answers included.
-  const counts = { ocr: loadOf(ocrJobs, "ocr"), evaluation: loadOf(aiJobs, "ai") };
+  const counts = { ocr: loadOf(ocrJobs, "ocr", takersOf(workers, "ocr")), evaluation: loadOf(aiJobs, "ai", takersOf(workers, "ai")) };
   const bySheet = new Map<string, SheetQueueInfo>();
   const byRun = new Map<string, SheetQueueInfo>();
   const place = (j: JobView<any>, ocr: boolean) => {
@@ -888,7 +1003,43 @@ async function loadSnapshot(): Promise<QueueSnapshot> {
   for (const j of ocrJobs) place(j, true);
   // The AI stage wins: during the hand-over a run briefly sits in both.
   for (const j of aiJobs) place(j, false);
-  return { at: Date.now(), bySheet, byRun, counts };
+  return { at: Date.now(), bySheet, byRun, counts, workers };
+}
+
+// ─── Is anyone taking the evaluation jobs? ──────────────────────────────────────
+//
+// An API started with QUEUE_WORKERS=false only adds jobs; without a worker process sheets wait and
+// nothing reaches OCR. The page says "on hold" in plain words; developers get the how-to here, on
+// the console, once when the last worker goes and once when one is back.
+
+let takersSeen: boolean | null = null;
+
+function noteWorkers(workers: WorkerPresence[] | null, jobs: number) {
+  if (!workers) return;
+  const takers = workers.filter((w) => w.queues.includes(QUEUE_OF.ocr) || w.queues.includes(QUEUE_OF.ai));
+  const any = takers.length > 0;
+  if (any === takersSeen) return;
+  const before = takersSeen;
+  takersSeen = any;
+  if (!any) {
+    record(
+      "workers.none",
+      { schema: queueConfig.schema, jobs },
+      {
+        level: "warn",
+        msg:
+          `No queue worker is running (queue schema "${queueConfig.schema}"): sheets wait in line and nothing reaches OCR or AI evaluation` +
+          (jobs ? ` (${jobs} job(s) in the evaluation queues now)` : "") +
+          `. Start one with "npm run worker" (on the server: the pm2 "worker" app), or run the API without QUEUE_WORKERS=false.`,
+      }
+    );
+  } else if (before === false) {
+    record(
+      "workers.back",
+      { workers: takers.map((w) => w.instance) },
+      { msg: `Queue worker running (${takers.map((w) => w.instance).join(", ")}): the evaluation line moves again.` }
+    );
+  }
 }
 
 let snapshotGeneration = 0;
@@ -1153,7 +1304,8 @@ function startSummary() {
 }
 
 async function summarize() {
-  const [ocrJobs, aiJobs] = await Promise.all([ocrQueue.liveJobs(1000), aiQueue.liveJobs(1000)]);
+  const [ocrJobs, aiJobs, workers] = await Promise.all([ocrQueue.liveJobs(1000), aiQueue.liveJobs(1000), queueWorkers()]);
+  noteWorkers(workers, ocrJobs.length + aiJobs.length);
   if (!ocrJobs.length && !aiJobs.length) {
     if (!summaryWasEmpty) record("queue.summary", { ocr: { running: 0, waiting: 0, retrying: 0 }, ai: { running: 0, waiting: 0, retrying: 0 } }, { msg: "Queue empty: nothing waiting for OCR or AI evaluation." });
     summaryWasEmpty = true;
@@ -1168,14 +1320,22 @@ async function summarize() {
         const ran = now - (j.processedAt ?? now);
         return `${describeJobData(j.data)} for ${fmtMs(ran)}${j.maxAttempts > 1 ? ` (attempt ${j.attemptsMade + 1}/${j.maxAttempts})` : ""}${ran > timeoutMs * 0.75 ? ` — near its ${fmtMs(timeoutMs)} timeout` : ""}`;
       });
-    const load = loadOf(jobs, svc);
+    const load = loadOf(jobs, svc, takersOf(workers, svc));
     const outage = load.serviceDown;
     return {
       text:
         `${label}: ${running.length ? `running ${running.join("; ")}` : "idle"} · ${load.waiting} waiting` +
         (load.retrying ? ` · ${load.retrying} waiting to retry` : "") +
-        (outage ? ` · SERVICE UNREACHABLE since ${new Date(outage.since).toISOString().slice(11, 19)} UTC (${outage.detail})` : ""),
-      fields: { running: load.running, waiting: load.waiting, retrying: load.retrying, runningJobs: jobs.filter((j) => j.state === "active").map((j) => j.id), serviceDown: outage ?? undefined },
+        (outage ? ` · SERVICE UNREACHABLE since ${new Date(outage.since).toISOString().slice(11, 19)} UTC (${outage.detail})` : "") +
+        (load.onHold ? ` · ON HOLD: no queue worker running ("npm run worker")` : ""),
+      fields: {
+        running: load.running,
+        waiting: load.waiting,
+        retrying: load.retrying,
+        runningJobs: jobs.filter((j) => j.state === "active").map((j) => j.id),
+        serviceDown: outage ?? undefined,
+        onHold: load.onHold || undefined,
+      },
     };
   };
   const ocr = part("OCR", "ocr", ocrJobs, ocrTimeoutMs());
@@ -1224,8 +1384,15 @@ export async function queueDiagnostics() {
         "jobs in memory: neither sees the other's queue. Run every API on this database with QUEUE_DRIVER=postgres, or stop the other one."
     );
   }
-  for (const [svc, label] of [["ocr", "OCR"], ["ai", "AI evaluation"]] as const) {
-    const o = serviceOutage(svc);
+  if (snap.counts.ocr.onHold || snap.counts.evaluation.onHold) {
+    warnings.push(
+      `No process takes this queue's jobs (schema "${queueConfig.schema}"): sheets wait and nothing reaches OCR or AI evaluation. ` +
+        `Start the worker ("npm run worker"; on the server the pm2 "worker" app), or run the API without QUEUE_WORKERS=false.`
+    );
+  }
+  // As the processes calling the services see them (an API with QUEUE_WORKERS=false calls neither).
+  for (const [label, load] of [["OCR", snap.counts.ocr], ["AI evaluation", snap.counts.evaluation]] as const) {
+    const o = load.serviceDown;
     if (o) warnings.push(`The ${label} service has been unreachable since ${new Date(o.since).toISOString()} (${o.detail}); its stage waits.`);
   }
   const foreignTargets = new Set(
@@ -1238,7 +1405,17 @@ export async function queueDiagnostics() {
   }
 
   return {
-    instance: { ...instance, queueDriver: queueDriverKind() },
+    instance: { ...instance, queueDriver: queueDriverKind(), runsWorkers: queueWorkersRunningHere(), queueSchema: queueConfig.schema },
+    // Who takes the jobs: every process that runs workers, with the outages it sees.
+    workers:
+      snap.workers?.map((w) => ({
+        instance: w.instance,
+        self: w.self,
+        startedAt: iso(w.startedAt),
+        lastSeenAt: iso(w.lastSeenAt),
+        queues: w.queues,
+        services: (w.info as any)?.services ?? null,
+      })) ?? null,
     config: {
       ocrUrl: pythonServices.ocrUrl(),
       evalUrl: pythonServices.pipeline6Url(),
@@ -1249,7 +1426,6 @@ export async function queueDiagnostics() {
       attempts: { ocr: 4, ai: 5 },
       retryDelayMs: { ocr: ocrRetryMs, ai: evalRetryMs },
       heartbeatMs: HEARTBEAT_EVERY_MS,
-      serviceDownRetryMs: SERVICE_DOWN_PAUSE_MS,
     },
     services: servicesHealth(),
     stages: {
@@ -1470,8 +1646,20 @@ async function queueEvaluation(
     const kind = recheck ? " (recheck run, into its draft)" : crossCheck ? " (cross-check run, into its draft)" : force && aiEval?.evaluations?.length ? " (re-evaluation; the earlier marks stay until it succeeds)" : "";
     record(
       "trigger.queued",
-      { sheetId, runKey, runId: run.runId, examId: run.examId, requestedBy: run.requestedBy, stage: queue?.stage, position: queue?.position, lineLength: queue?.lineLength, running: queue?.running },
       {
+        sheetId,
+        runKey,
+        runId: run.runId,
+        examId: run.examId,
+        requestedBy: run.requestedBy,
+        stage: queue?.stage,
+        position: queue?.position,
+        lineLength: queue?.lineLength,
+        running: queue?.running,
+        onHold: queue?.onHold || undefined,
+      },
+      {
+        level: queue?.onHold ? "warn" : "info",
         msg:
           `Queued sheet ${sheetId}${kind}` +
           (queue
@@ -1480,6 +1668,7 @@ async function queueEvaluation(
               : ` → ${queue.stage === "ocr" ? "OCR started at once" : queue.stage}`
             : "") +
           (run.requestedBy ? ` · requested by ${run.requestedBy}` : "") +
+          (queue?.onHold ? ` — ON HOLD: no queue worker is running, so it waits until one starts ("npm run worker")` : "") +
           ".",
       }
     );

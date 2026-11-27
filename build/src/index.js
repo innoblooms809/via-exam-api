@@ -24,12 +24,15 @@ const queue_1 = require("./queue");
 const config_2 = require("./queue/config");
 const maintenance_1 = require("./queue/maintenance");
 const dataProtection_1 = require("./utils/dataProtection");
+const session_service_1 = require("./services/auth/session.service");
 const pipeline6_service_1 = require("./services/evaluation/pipeline6.service");
 let server;
 // The data encryption key is needed before anything touches the database: stop here, clearly,
 // rather than fail on the first encrypted column.
 try {
     logger_1.default.info(`[DataProtection] ${(0, dataProtection_1.describeDataKeys)()}`);
+    // Sign-in tokens are only as strong as the secret that signs them.
+    (0, session_service_1.assertJwtSecret)();
 }
 catch (err) {
     logger_1.default.error((err === null || err === void 0 ? void 0 : err.message) || String(err));
@@ -58,9 +61,6 @@ const bootApp = () => __awaiter(void 0, void 0, void 0, function* () {
             // Evaluations left "Pending" (by the previous version, or a crash) are queued again now,
             // not at the watchdog's next tick.
             void (0, maintenance_1.runMaintenanceTaskNow)("evaluation-watchdog").catch(() => undefined);
-            // Values still in plain text (rows from before encryption) or under a previous key are
-            // encrypted now, in the background, not at tonight's run.
-            void (0, maintenance_1.runMaintenanceTaskNow)("encrypt-sensitive-data").catch(() => undefined);
         }
         catch (err) {
             logger_1.default.error(`[Queue] Workers could not start: ${(err === null || err === void 0 ? void 0 : err.message) || err}`);

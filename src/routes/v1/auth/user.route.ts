@@ -4,6 +4,7 @@ import userController from "../../../controllers/auth/user.controller" // Adjust
 import {authenticate,authorize} from "../../../middlewares/auth";
 import validate from "../../../middlewares/validate";
 import userValidation from "../../../validations/user.validation";
+import { loginLimiter } from "../../../middlewares/rateLimiter";
 
 const router = Router();
 
@@ -16,16 +17,17 @@ const router = Router();
 router.get("/captcha", userController.getCaptcha);
 
 /**
- * POST /api/viaexam/auth/login
- * Body: { slug, emailId, password }
+ * POST /v1/user/login   Body: { slug, emailId, password }
+ * Sets the session's httpOnly cookies; the body carries the profile only.
  */
 router.post("/login",
+   loginLimiter,
    validate(userValidation.loginValidation),
    userController.loginViaExamUser);
 
 /**
- * POST /api/viaexam/user/refresh-token
- * Reads refreshToken from httpOnly cookie and refreshes accessToken.
+ * POST /v1/user/refresh-token   No body: reads the refresh cookie, which the browser sends only
+ * to this path, and sets new cookies.
  */
 router.post("/refresh-token", userController.refreshAccessToken);
 
@@ -43,9 +45,11 @@ router.post(
 );
 
 /**
- * POST /api/viaexam/auth/logout
+ * POST /v1/user/logout       ends this session
+ * POST /v1/user/logout-all   ends every session of this user
  */
 router.post("/logout", authenticate, userController.logoutViaExamUser);
+router.post("/logout-all", authenticate, userController.logoutEverywhere);
 
 import { profileUpload } from "../../../utils/multer";
 

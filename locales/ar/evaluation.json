@@ -69,6 +69,7 @@
   "This sheet is already queued for evaluation.": "هذه الورقة جاهزة للتقييم.",
   "This sheet is being cross-checked. Its marks change only through the cross-checker's verdict until that's done.": "هذه الورقة قيد التحقق المتبادل، ولن تتغير درجاتها إلا بقرار المُدقِّق حتى ينتهي.",
   "This sheet is in a recheck or cross-check now; run it from there.": "هذه الورقة الآن قيد إعادة الفحص أو التحقق المتبادل؛ شغّلها من هناك.",
+  "This sheet isn't marked yet.": "لم تُصحَّح هذه الورقة بعد.",
   "You already asked to reopen this section. The admin hasn't answered yet.": "لقد طلبت بالفعل إعادة فتح هذه الشعبة، ولم يرد المسؤول بعد.",
   "You are not assigned as the evaluator for this exam.": "أنت لستَ مُعيَّناً كمُقيِّم لهذا الامتحان.",
   "You are not assigned to evaluate that section of this exam.": "لست مُكلَّفًا بتقييم هذه الشعبة من الامتحان.",

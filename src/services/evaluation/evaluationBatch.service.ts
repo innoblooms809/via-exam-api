@@ -81,6 +81,8 @@ export async function triggerBatch(user: any, sheetIds: string[], force: boolean
     return new Map<string, SheetQueueInfo>();
   });
   const results = sheetIds.map((id) => byId.get(id)!).filter(Boolean).map((r) => ({ ...r, queue: places.get(r.sheetId) ?? null }));
+  const held = results.filter((r) => r.queued && r.queue?.onHold).length;
+  if (held) logger.warn(`[Evaluation batch] ${held} sheet(s) queued, but no queue worker is running: they wait in line until one starts ("npm run worker").`);
   return {
     results,
     counts: {

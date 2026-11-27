@@ -58,7 +58,7 @@ exports.profileUpload = [
 ];
 /** Institutes upload a logo only (the banner image was removed). */
 exports.instituteUpload = [
-    // Held in memory only long enough to stream to Cloudinary — never written to local disk.
+    // Held in memory until its bytes are checked; then instituteStorage writes it under uploads/institutes/logos/.
     (0, multer_1.default)({ storage: multer_1.default.memoryStorage(), fileFilter: imageFilter, limits: { fileSize: 2 * 1024 * 1024, files: 1 } }).fields([
         { name: "logo", maxCount: 1 },
     ]),

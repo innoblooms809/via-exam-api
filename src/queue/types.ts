@@ -131,10 +131,34 @@ export interface JobQueue<T = any> {
   clean(olderThanSec: number, state: "completed" | "failed"): Promise<number>;
 }
 
+/** A process taking jobs from this queue database, as it announced itself (QueueDriver.workers). */
+export interface WorkerPresence {
+  /** "host#pid", as the queue logs name processes. */
+  instance: string;
+  host: string;
+  pid: number;
+  /** This process. */
+  self: boolean;
+  startedAt: number;
+  /** Its last sign of life. */
+  lastSeenAt: number;
+  /** The queues it takes jobs from. */
+  queues: string[];
+  /** What it tells the processes that only add jobs (registerPresenceInfo), e.g. the health of the services its jobs call. */
+  info: Record<string, unknown>;
+}
+
 export interface QueueDriver {
   readonly kind: "postgres" | "memory";
   queue<T>(def: QueueDefinition<T>): JobQueue<T>;
   startWorker<T>(def: QueueDefinition<T>): Promise<void>;
+  /**
+   * This process takes jobs from `queues`: says so, and keeps saying it (with `info()` as it is
+   * then), so a process that only adds jobs (QUEUE_WORKERS=false) can tell whether anyone takes them.
+   */
+  announce(queues: string[], info: () => Record<string, unknown>): Promise<void>;
+  /** The processes taking jobs from this queue database now (this one included when it does); null when it can't tell. */
+  workers(): Promise<WorkerPresence[] | null>;
   /** Stops workers (waiting up to `graceMs` for running jobs), then closes connections. */
   close(graceMs: number): Promise<void>;
   ping(): Promise<void>;

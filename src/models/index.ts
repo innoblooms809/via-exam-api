@@ -18,6 +18,7 @@ import AIEvaluation from "./AIEvaluation.model";
 import ScannerProfile from "./ScannerProfile.model";
 import ActivityLog from "./ActivityLog.model";
 import UserPresenceSession from "./UserPresenceSession.model";
+import UserSession from "./UserSession.model";
 import RecheckRequest from "./RecheckRequest.model";
 import EvaluationAssignment from "./EvaluationAssignment.model";
 import PushToken from "./PushToken.model";
@@ -75,6 +76,7 @@ export {
   ScannerProfile,
   ActivityLog,
   UserPresenceSession,
+  UserSession,
   RecheckRequest,
   EvaluationAssignment,
   PushToken,

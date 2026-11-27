@@ -5,8 +5,8 @@
  *   - columns that now hold AES-256-GCM ciphertext become TEXT (ciphertext is longer than the
  *     value): answer sheets' file public id, profile photo paths, Aadhaar numbers;
  *   - viaexam_password_resets.attempts: wrong codes tried against an OTP (it is burned at 5).
- * Existing values are encrypted in the background by the "encrypt-sensitive-data" maintenance
- * task, not here. The API also applies these changes on boot (db/connect.ts); this is for
+ * Existing values are not encrypted (the "encrypt-sensitive-data" maintenance task that did this
+ * is switched off); new values are. The API also applies these changes on boot (db/connect.ts); this is for
  * databases managed by migrations only.
  *
  *   npm run db:migrate

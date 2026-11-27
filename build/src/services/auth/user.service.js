@@ -24,6 +24,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
+const crypto_1 = require("crypto");
 const User_model_1 = __importDefault(require("../../models/User.model"));
 const Role_model_1 = __importDefault(require("../../models/Role.model"));
 const encryption_1 = __importDefault(require("../../utils/encryption")); // reuse your existing utility
@@ -39,18 +40,17 @@ const ScannerProfile_model_1 = __importDefault(require("../../models/ScannerProf
 const Section_model_1 = __importDefault(require("../../models/Section.model"));
 const idGenerator_1 = require("../../utils/idGenerator");
 const textRules_1 = require("../../utils/textRules");
-// ─── Constants ───────────────────────────────────────────────────────────────
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_DURATION_SECONDS = 5;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+// A real bcrypt hash of a random password, compared against when the email has no account.
+let unknownUserHashPromise = null;
+const unknownUserHash = () => (unknownUserHashPromise !== null && unknownUserHashPromise !== void 0 ? unknownUserHashPromise : (unknownUserHashPromise = encryption_1.default.encryptPassword((0, crypto_1.randomBytes)(24).toString("base64url"))));
 /**
  * Fetch ViaExam user by emailId — mirrors your getUserByEmail() pattern
  */
 const getViaExamUserByEmail = (emailId, instituteId) => __awaiter(void 0, void 0, void 0, function* () {
+    // The whole address, whatever its case: never a pattern ("%" or "_" in the input match only themselves).
     const where = {
-        emailId: {
-            [sequelize_1.Op.iLike]: emailId,
-        },
+        [sequelize_1.Op.and]: [(0, sequelize_1.where)((0, sequelize_1.fn)("lower", (0, sequelize_1.col)("User.emailId")), String(emailId !== null && emailId !== void 0 ? emailId : "").trim().toLowerCase())],
     };
     if (instituteId) {
         where.instituteId = instituteId;
@@ -140,9 +140,10 @@ const viaExamUserCreate = (req) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 /**
- * ViaExam login — mirrors your userLogin() pattern exactly.
- * type 1 = email login, type 2 = mobile login
- * Adds: account lockout, status checks
+ * Checks a sign-in: the institute (slug), the email (exact, any case), the password, then the
+ * account's and institute's status. Wrong email and wrong password get the same answer in the same
+ * time. Repeated failures are throttled by loginLimiter (middlewares/rateLimiter); the session
+ * itself is started by the controller (services/auth/session.service).
  */
 const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, void 0, function* () {
     var _b, _c;
@@ -161,44 +162,21 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
         }
         const user = yield getViaExamUserByEmail(emailId, instituteId);
         if (!user) {
+            // As long as a wrong password takes, so the answer time doesn't tell which emails have accounts.
+            yield encryption_1.default.isPasswordMatch(String(password !== null && password !== void 0 ? password : ""), yield unknownUserHash());
             return {
                 error: true,
                 statusCode: http_status_1.default.BAD_REQUEST,
                 message: "Invalid credentials.",
             };
         }
-        // Lock check (DISABLED)
-        /*
-        if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-          return {
-            error: true,
-            statusCode: httpStatus.TOO_MANY_REQUESTS,
-            message: "Account is locked.",
-          };
-        }
-        */
         const isMatch = yield encryption_1.default.isPasswordMatch(password, user.password);
+        // An older, cheaper hash answers faster than the comparison made for unknown emails: padded to
+        // the same time (it is upgraded below once the right password comes in).
+        if (encryption_1.default.passwordNeedsRehash(user.password)) {
+            yield encryption_1.default.isPasswordMatch(String(password !== null && password !== void 0 ? password : ""), yield unknownUserHash());
+        }
         if (!isMatch) {
-            /* Login attempts lock logic disabled
-            const attempts = (user.loginAttempts || 0) + 1;
-      
-            if (attempts >= MAX_LOGIN_ATTEMPTS) {
-              await UserModal.update(
-                {
-                  loginAttempts: attempts,
-                  lockedUntil: new Date(
-                    Date.now() + LOCK_DURATION_SECONDS * 1000
-                  ),
-                },
-                { where: { userId: user.userId } },
-              );
-            } else {
-              await UserModal.update(
-                { loginAttempts: attempts },
-                { where: { userId: user.userId } },
-              );
-            }
-            */
             return {
                 error: true,
                 statusCode: http_status_1.default.BAD_REQUEST,
@@ -273,7 +251,7 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
             eventType: "LOGIN_SUCCESS",
             currentActivity: "Logged In",
         });
-        const userResponse = (0, exclude_1.default)(user.toJSON(), ["password", "refreshToken"]);
+        const userResponse = (0, exclude_1.default)(user.toJSON(), ["password"]);
         return {
             error: false,
             statusCode: http_status_1.default.OK,
@@ -291,7 +269,7 @@ const viaExamUserLogin = (slug, emailId, password) => __awaiter(void 0, void 0, 
     }
 });
 /**
- * Logout — store/clear refresh token (mirrors your token invalidation pattern)
+ * Logout: presence and the activity log (the session itself is ended by the controller).
  */
 const viaExamUserLogout = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     var _d;
@@ -300,7 +278,6 @@ const viaExamUserLogout = (userId) => __awaiter(void 0, void 0, void 0, function
             include: [{ model: Role_model_1.default, as: "role" }],
             where: { userId },
         });
-        yield User_model_1.default.update({ refreshToken: null }, { where: { userId } });
         // Instantly update active presence session to OFFLINE
         const logoutTime = new Date();
         const presenceSession = yield UserPresenceSession_model_1.default.findOne({ where: { userId } });
@@ -355,7 +332,7 @@ const viaExamGetProfile = (userId) => __awaiter(void 0, void 0, void 0, function
                 message: "User not found.",
             };
         }
-        const userResponse = (0, exclude_1.default)(user.toJSON(), ["password", "refreshToken"]);
+        const userResponse = (0, exclude_1.default)(user.toJSON(), ["password"]);
         // Fetch role-specific details
         const teacherProfile = yield TeacherProfile_model_1.default.findOne({ where: { userId } }).catch(() => null);
         if (teacherProfile) {

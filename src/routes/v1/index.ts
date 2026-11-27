@@ -29,6 +29,7 @@ import monitoringRoutes from "./monitoring/monitoring.route";
 import evaluationAssignmentRoutes from "./evaluation/evaluationAssignment.route";
 import subscriptionRoutes from "./subscription/subscription.route";
 import { partnerKeyRoutes, partnerRoutes } from "./partner/partner.route";
+import contactRoutes from "./contact/contact.route";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -156,6 +157,11 @@ const defaultRoutes = [
   {
     path: "/partner-keys",
     route: partnerKeyRoutes,
+  },
+  // The landing page's "Get in touch" form (public).
+  {
+    path: "/contact",
+    route: contactRoutes,
   },
 
   // {

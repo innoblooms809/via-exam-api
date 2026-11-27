@@ -10,11 +10,13 @@ const envVarsSchema = Joi.object()
     PORT: Joi.number().default(3000),
     JWT_SECRET: Joi.string().required().description('JWT secret key'),
     JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
-      .default(30)
+      .positive()
+      .default(15)
       .description('minutes after which access tokens expire'),
-    JWT_REFRESH_EXPIRATION_DAYS: Joi.number()
+    JWT_REFRESH_EXPIRATION_MINUTES: Joi.number()
+      .positive()
       .default(30)
-      .description('days after which refresh tokens expire'),
+      .description('minutes without use after which a sign-in session ends'),
     JWT_RESET_PASSWORD_EXPIRATION_MINUTES: Joi.number()
       .default(10)
       .description('minutes after which reset password token expires'),
@@ -54,7 +56,7 @@ export default {
   jwt: {
     secret: envVars.JWT_SECRET,
     accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,
-    refreshExpirationDays: envVars.JWT_REFRESH_EXPIRATION_DAYS,
+    refreshExpirationMinutes: envVars.JWT_REFRESH_EXPIRATION_MINUTES,
     resetPasswordExpirationMinutes: envVars.JWT_RESET_PASSWORD_EXPIRATION_MINUTES,
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES
   },

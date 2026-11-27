@@ -75,7 +75,7 @@ const changePassword = async (req: any, res: Response): Promise<any> => {
   try {
     const userId = req.viaExamUser?.userId;
     const { currentPassword, newPassword } = req.body;
-    const result = await AuthService.changePassword(userId, currentPassword, newPassword);
+    const result = await AuthService.changePassword(userId, currentPassword, newPassword, req.authSessionId);
     return res.status(result.statusCode).send(result);
   } catch {
     return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

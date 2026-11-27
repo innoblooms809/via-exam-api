@@ -79,6 +79,29 @@ const ensurePerformanceIndexes = () => __awaiter(void 0, void 0, void 0, functio
         yield sequelize_1.sequelize.query(sql).catch((err) => logger_1.default.warn(`Index skipped: ${err === null || err === void 0 ? void 0 : err.message}`));
     }
 });
+// A new student must have a father's name: the database refuses a new profile without one, so
+// no path can skip it. Only on insert: students saved before the rule may have none and can
+// still be edited. Same as migrations/20261116000000-student-father-name-required.js.
+const FATHER_NAME_REQUIRED = [
+    `CREATE OR REPLACE FUNCTION viaexam_student_father_required() RETURNS trigger AS $fn$
+   BEGIN
+     IF NEW."fatherName" IS NULL OR btrim(NEW."fatherName") = '' THEN
+       RAISE EXCEPTION 'Father''s name is required for a new student.' USING ERRCODE = 'check_violation';
+     END IF;
+     RETURN NEW;
+   END $fn$ LANGUAGE plpgsql`,
+    `DO $do$ BEGIN
+     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'viaexam_student_father_required') THEN
+       CREATE TRIGGER viaexam_student_father_required BEFORE INSERT ON "viaexam_student_profiles"
+         FOR EACH ROW EXECUTE FUNCTION viaexam_student_father_required();
+     END IF;
+   END $do$`,
+];
+const ensureFatherNameRequired = () => __awaiter(void 0, void 0, void 0, function* () {
+    for (const sql of FATHER_NAME_REQUIRED) {
+        yield sequelize_1.sequelize.query(sql).catch((err) => logger_1.default.warn(`Father's-name rule not applied: ${err === null || err === void 0 ? void 0 : err.message}`));
+    }
+});
 const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield sequelize_1.sequelize.authenticate();
@@ -130,6 +153,7 @@ const connectDB = (fn) => __awaiter(void 0, void 0, void 0, function* () {
         yield sequelize_1.sequelize.query(`ALTER TABLE "viaexam_academic_calendar" ADD COLUMN IF NOT EXISTS "status" VARCHAR(16) NOT NULL DEFAULT 'published', ADD COLUMN IF NOT EXISTS "publishedAt" TIMESTAMP WITH TIME ZONE, ADD COLUMN IF NOT EXISTS "publishedBy" VARCHAR(255), ADD COLUMN IF NOT EXISTS "changeLog" JSONB;`).catch(() => null);
         yield sequelize_1.sequelize.sync({ force: false });
         logger_1.default.info("Models synced with PostgreSQL");
+        yield ensureFatherNameRequired();
         // Refuses to start when the database holds values sealed with a key this process lacks.
         yield (0, dataProtectionMaintenance_1.checkStoredKeys)();
         // Once per database: fill the per-session tables (setup, enrolments) from existing data.

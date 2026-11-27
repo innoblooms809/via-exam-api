@@ -59,6 +59,39 @@ const getEvaluation = async (req: any, res: Response): Promise<any> => {
         result.data.evaluations = maskAnswerTexts(result.data.evaluations, [source?.studentName, req.accessSheet?.studentName, req.accessSheet?.rollNo]);
       }
     }
+    // ?view=review: the admin's read-only review of one sheet. It shows the per-question
+    // breakdown, so the raw OCR texts stay behind (the model-answer text only goes when a
+    // question has no model answer of its own), and it names the sheet. A sheet the AI hasn't
+    // marked yet still opens: the page shows the sheet with "not marked yet".
+    if (req.query?.view === "review" && req.accessSheet) {
+      const masked = req.sheetAccess === "masked";
+      const s = req.accessSheet;
+      const sheet = {
+        sheetId: s.sheetId,
+        examId: s.examId ?? null,
+        section: s.section ?? null,
+        rollNo: masked ? null : s.rollNo ?? null,
+        studentName: masked ? null : s.studentName ?? null,
+        fileName: masked ? null : s.fileName ?? null,
+        fileMimeType: s.fileMimeType ?? null,
+        uploadedAt: s.createdAt ?? null,
+      };
+      if (!result.error && result.data) {
+        const evs = Array.isArray(result.data.evaluations) ? result.data.evaluations : [];
+        delete result.data.studentAnsOcr;
+        delete result.data.questionOcr;
+        if (evs.every((q: any) => String(q?.expectedAnswer ?? "").trim())) delete result.data.standardAnsOcr;
+        result.data.sheet = sheet;
+      } else if (result.statusCode === httpStatus.NOT_FOUND) {
+        ensureSheetQuality(req.accessSheet);
+        return res.status(httpStatus.OK).send({
+          error: false,
+          statusCode: httpStatus.OK,
+          message: "This sheet isn't marked yet.",
+          data: { sheetId: s.sheetId, status: null, evaluations: [], sheet, scanQuality: scanQualityView(req.accessSheet) },
+        });
+      }
+    }
     // Sheets uploaded before the quality check get checked the first time they're opened.
     ensureSheetQuality(req.accessSheet);
     return res.status(result.statusCode).send(result);

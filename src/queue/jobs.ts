@@ -14,3 +14,4 @@ import "../services/student/studentImport.service";
 import "../services/subscription/subscriptionScheduler";
 import "../services/partner/partnerWebhooks";
 import "../services/security/dataProtectionMaintenance";
+import "../services/auth/sessionMaintenance";

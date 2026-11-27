@@ -1,5 +1,6 @@
 import httpStatus from "http-status";
 import UserModal from "../../models/User.model";
+import { endAllSessions } from "../auth/session.service";
 import TeacherProfile from "../../models/TeacherProfile.model";
 import Role from "../../models/Role.model";
 import Institute from "../../models/Institute.model";
@@ -190,7 +191,7 @@ const getAllTeachers = async (createdBy: any, query: any): Promise<any> => {
           where: Object.keys(teacherProfileWhere).length > 0 ? teacherProfileWhere : undefined,
         },
       ],
-      attributes: { exclude: ["password", "refreshToken"] },
+      attributes: { exclude: ["password"] },
       order: [[sortBy, sortOrder]],
       limit: limitNum,
       offset,
@@ -450,7 +451,8 @@ const deleteTeacher = async (userId: string, createdBy: any): Promise<any> => {
     if (work.total) return { error: true, statusCode: httpStatus.CONFLICT, message: work.message };
 
     const freed = await sequelize.transaction(async (t) => {
-      await user.update({ status: 0, refreshToken: null }, { transaction: t });
+      await user.update({ status: 0 }, { transaction: t });
+      await endAllSessions(userId, "deactivated", null, t);
       await Class.update({ classTeacherId: null }, { where: { classTeacherId: userId, instituteId }, transaction: t });
       const released = await releaseTeacher(instituteId, userId, t);
       return released.subjects;
@@ -495,7 +497,7 @@ const getDeactivatedTeachers = async (createdBy: any, query: any): Promise<any> 
         { model: Role, as: "role" },
         { model: TeacherProfile, as: "teacherProfile", required: false },
       ],
-      attributes: { exclude: ["password", "refreshToken"] },
+      attributes: { exclude: ["password"] },
       order: [["userName", "ASC"]],
     });
 

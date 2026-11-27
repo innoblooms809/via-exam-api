@@ -8,7 +8,7 @@ import morgan from './config/morgan';
 import logger from './config/logger';
 import xss from './middlewares/xss';
 import cookieParser from 'cookie-parser';
-import { authLimiter } from './middlewares/rateLimiter';
+import { csrfGuard } from './middlewares/csrf';
 import routes from './routes/v1';
 import SubscriptionController from './controllers/subscription/subscription.controller';
 import { errorConverter, errorHandler } from './middlewares/error';
@@ -19,6 +19,12 @@ import path from 'path';
 // import session from 'express-session'; // Commented out: captcha is disabled, MemoryStore not needed in production
 import bodyParser from 'body-parser';
 const app = express();
+
+// Behind a reverse proxy (nginx, the UI's /v1 proxy), TRUST_PROXY says how many proxy hops to believe
+// in X-Forwarded-For ("1" for one), so req.ip is the visitor's address (sign-in rate limits, session
+// records). Unset: the address that connected.
+const trustProxy = String(process.env.TRUST_PROXY ?? '').trim();
+if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' ? true : trustProxy);
 
 if (config.env !== 'test') {
   app.use(morgan.successHandler);
@@ -88,6 +94,19 @@ const corsOptions: cors.CorsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
+// Sign-in is in cookies: a request that changes something must come from the app's own pages.
+const frontendOrigin = (() => {
+  try {
+    return new URL(String(config.frontendUrl)).origin;
+  } catch {
+    return '';
+  }
+})();
+if (config.env === 'production' && allowedOrigins.includes('*')) {
+  logger.warn(`CORS_ORIGIN is "*": any website may call this API with the user's cookies. List the app's own origins instead.`);
+}
+app.use(csrfGuard((origin) => origin === frontendOrigin || isAllowedOrigin(origin)));
+
 // Answer messages in the language the UI asks for (Accept-Language): English or Arabic.
 app.use(detectLanguage);
 app.use(translateMessages);
@@ -98,10 +117,7 @@ app.use(translateMessages);
 //   saveUninitialized: false,
 // })); // Commented out: session only used for CAPTCHA which is disabled
 app.use(bodyParser.json({ limit: "25mb" }));
-// limit repeated failed requests to auth endpoints
-if (config.env === 'production') {
-  app.use('/v1/auth', authLimiter);
-}
+// Failed sign-in and password attempts are rate limited on their routes (middlewares/rateLimiter).
 
 const allowCrossOriginUploads = (
   req: express.Request,

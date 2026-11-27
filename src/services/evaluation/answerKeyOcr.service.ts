@@ -20,7 +20,7 @@ import FormData from "form-data";
 import fs from "fs";
 import path from "path";
 import QuestionPaperAnswer from "../../models/question-paper/StandardAnswer.model";
-import { pythonServices, serviceHeaders } from "../../config/pythonServices";
+import { pythonServices, serviceHeaders, type TraceIds } from "../../config/pythonServices";
 import logger from "../../config/logger";
 
 const positiveInt = (value: string | undefined, fallback: number) => {
@@ -52,14 +52,15 @@ export function createLimiter(max: number) {
 
 const withOcrSlot = createLimiter(positiveInt(process.env.EVAL_OCR_CONCURRENCY, 1));
 
-/** Sends one document to the OCR server and returns its markdown text. */
-export async function ocrDocument(file: Buffer, fileName: string, contentType?: string): Promise<string> {
+/** Sends one document to the OCR server and returns its markdown text. `trace` names the
+ *  answer sheet, so the OCR server's LangSmith trace joins that sheet's thread. */
+export async function ocrDocument(file: Buffer, fileName: string, contentType?: string, trace?: TraceIds): Promise<string> {
   return withOcrSlot(async () => {
     const form = new FormData();
     form.append("file", file, { filename: fileName, contentType: contentType || undefined });
 
     const res = await axios.post(pythonServices.ocrUrl(), form, {
-      headers: { ...form.getHeaders(), ...serviceHeaders("ocr") },
+      headers: { ...form.getHeaders(), ...serviceHeaders("ocr", trace) },
       timeout: ocrTimeoutMs(),
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
@@ -96,6 +97,25 @@ const parseAnswers = (value: unknown): Record<string, any> | null => {
 };
 
 const inFlight = new Map<string, Promise<string>>();
+
+/**
+ * The uploaded model answer file itself (PDF / image) — sent to the AI with its OCR text, so a
+ * diagram part is compared with the teacher's drawing. Null when the answer sheet is typed, the
+ * file can't be read, or it is larger than `maxBytes`.
+ */
+export async function getAnswerKeyFile(answerId: string, maxBytes = 15 * 1024 * 1024): Promise<{ buffer: Buffer; fileName: string } | null> {
+  const row = await QuestionPaperAnswer.findOne({ where: { answerId } });
+  const answers = parseAnswers(row?.answers);
+  const sourceUrl: string | undefined = answers?.pdfUrl || answers?.fileUrl;
+  if (!row || !sourceUrl) return null;
+  try {
+    const file = await loadFile(sourceUrl);
+    return file.buffer.length <= maxBytes ? file : null;
+  } catch (err: any) {
+    logger.warn(`[AnswerKey] Could not read the uploaded model answer file of ${answerId}: ${err?.message || err}`);
+    return null;
+  }
+}
 
 /**
  * Text of an uploaded model answer sheet — from the saved OCR cache when present,

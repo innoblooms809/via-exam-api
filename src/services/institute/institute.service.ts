@@ -29,6 +29,7 @@ import Notification from "../../models/Notification.model";
 import StudentResult from "../../models/StudentResult.model";
 import EvaluationAssignment from "../../models/EvaluationAssignment.model";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
+import { endInstituteSessions } from "../auth/session.service";
 
 // A school's slug is the first part of its web address ("/gdmis/auth/signin"), so it can't be one of the
 // website's own: "en" and "ar" are the home page in each language ("/ar"), the rest are app pages.
@@ -241,10 +242,7 @@ const registerInstitute = async (body: any, files: any): Promise<any> => {
         { transaction: t },
       );
 
-      adminResponse = exclude(adminUser.toJSON(), [
-        "password",
-        "refreshToken",
-      ]);
+      adminResponse = exclude(adminUser.toJSON(), ["password"]);
 
       // Credentials email to the admin, queued once the institute is committed
       adminEmail = {
@@ -452,7 +450,7 @@ const getAllInstitutes = async (query: any): Promise<any> => {
           roleId: adminRole.id,
           isDeleted: false,
         },
-        attributes: { exclude: ["password", "refreshToken"] },
+        attributes: { exclude: ["password"] },
       });
 
       // Build a map of instituteId → admin user
@@ -532,7 +530,7 @@ const getInstituteById = async (identifier: string): Promise<any> => {
           instituteId: institute.instituteId, // ✅ use fetched institute's id
           roleId: adminRole.id,
         },
-        attributes: { exclude: ["password", "refreshToken"] },
+        attributes: { exclude: ["password"] },
       })
       : null;
 
@@ -729,7 +727,7 @@ const updateInstitute = async (
         }
         updatedAdmin = await UserModal.findOne({
           where: { userId: adminUser.userId },
-          attributes: { exclude: ["password", "refreshToken"] },
+          attributes: { exclude: ["password"] },
         });
       }
     }
@@ -813,7 +811,8 @@ const softDeleteInstitute = async (instituteId: string): Promise<any> => {
     await institute.update({ isDeleted: true, status: 0 }, { transaction: t });
 
     // People: deleted and signed out everywhere.
-    await UserModal.update({ status: 0, isDeleted: true, refreshToken: null } as any, notDeleted);
+    await UserModal.update({ status: 0, isDeleted: true }, notDeleted);
+    await endInstituteSessions(institute.instituteId, "institute-deleted", t);
     await StudentProfile.update({ isActive: false }, scope);
     await PushToken.destroy(scope);
 
@@ -913,7 +912,8 @@ const toggleInstituteStatus = async (
           if (!stillActive) await UserModal.update({ status: 1 }, { where: { ...users, status: 0 }, transaction: t });
         }
       } else {
-        await UserModal.update({ status: 2, refreshToken: null } as any, { where: { ...users, status: 1 }, transaction: t });
+        await UserModal.update({ status: 2 }, { where: { ...users, status: 1 }, transaction: t });
+        await endInstituteSessions(institute.instituteId, "institute-suspended", t);
       }
     });
 
@@ -1184,7 +1184,7 @@ const addInstituteAdmin = async (instituteId: string, body: any, requestedBy?: s
           ? "Admin saved. Login details are being emailed; a new password works as soon as the email goes out."
           : "Admin details saved.",
       data: {
-        admin: exclude(adminUser.toJSON(), ["password", "refreshToken"]),
+        admin: exclude(adminUser.toJSON(), ["password"]),
       },
     };
   } catch (e: any) {

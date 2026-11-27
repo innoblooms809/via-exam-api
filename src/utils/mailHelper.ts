@@ -300,6 +300,7 @@ import { randomUUID } from "crypto";
 import config from "../config/config";
 import logger from "../config/logger";
 import UserModal from "../models/User.model";
+import { endAllSessions } from "../services/auth/session.service";
 import { defineQueue, PermanentJobError } from "../queue";
 import { positiveInt } from "../queue/config";
 import { seal, unseal } from "../queue/sealed";
@@ -362,7 +363,7 @@ export const sendEmailToNewUser = async (requestBody: any) => {
 // not in the email, because it is stored encrypted and can't be read back).
 
 /** Text from the database or a form, safe to put inside the email's HTML. */
-const escapeHtml = (v: unknown) =>
+export const escapeHtml = (v: unknown) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 
 export interface UserCredentialsEmail {
@@ -380,6 +381,8 @@ export interface MailMessage {
   to: string;
   subject: string;
   html: string;
+  /** Where "Reply" goes (a landing-page enquiry: the visitor who wrote it). */
+  replyTo?: string;
 }
 
 /** Sends one email now; throws when the mail server refuses it. */
@@ -389,6 +392,7 @@ const deliverMail = async (message: MailMessage) => {
     to: message.to,
     subject: message.subject,
     html: message.html,
+    ...(message.replyTo ? { replyTo: message.replyTo } : {}),
   });
 };
 
@@ -411,9 +415,11 @@ export const maskEmail = (email: string) => {
 //   • A reset's new password is saved only once the mail server has accepted the email, so
 //     an outage never leaves anyone locked out with a password they didn't get.
 
-export type EmailKind = "otp" | "password-reset" | "login-details" | "new-account" | "admin-credentials";
+export type EmailKind = "otp" | "password-reset" | "login-details" | "new-account" | "admin-credentials" | "contact" | "subscription-reminder";
 
 const KIND_LABEL: Record<EmailKind, string> = {
+  contact: "contact form",
+  "subscription-reminder": "plan renewal reminder",
   otp: "sign-in code",
   "password-reset": "new password",
   "login-details": "login details",
@@ -463,8 +469,9 @@ const SENT = { sent: true };
 
 /** Saves a reset's password (the email with it has been accepted) and ends the user's sessions. */
 const applyPassword = async ({ userId, hash }: NonNullable<SealedEmail["setPassword"]>) => {
-  const [count] = await UserModal.update({ password: hash, refreshToken: null }, { where: { userId, isDeleted: false } });
+  const [count] = await UserModal.update({ password: hash }, { where: { userId, isDeleted: false } });
   if (!count) logger.warn(`[Email] User ${userId} no longer exists; the emailed password was not saved.`);
+  else await endAllSessions(userId, "password-reset");
 };
 
 const isRejection = (err: any) => {

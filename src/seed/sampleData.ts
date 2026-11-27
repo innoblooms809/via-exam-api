@@ -163,7 +163,6 @@ const seed = async () => {
       loginAttempts: 0,
       lockedUntil: null,
       lastLoginAt: null,
-      refreshToken: null,
     }
   );
 
@@ -182,7 +181,6 @@ const seed = async () => {
       loginAttempts: 0,
       lockedUntil: null,
       lastLoginAt: null,
-      refreshToken: null,
     }
   );
 
@@ -201,7 +199,6 @@ const seed = async () => {
       loginAttempts: 0,
       lockedUntil: null,
       lastLoginAt: null,
-      refreshToken: null,
     }
   );
 
@@ -220,7 +217,6 @@ const seed = async () => {
       loginAttempts: 0,
       lockedUntil: null,
       lastLoginAt: null,
-      refreshToken: null,
     }
   );
 

@@ -40,11 +40,18 @@ const paperNode: any = {
     wordLimit: { type: "string" },
     marks: { type: "number", description: "Marks of a part without sub-parts; a parent's marks are computed." },
     hasDiagram: { type: "boolean" },
+    figures: {
+      type: "array",
+      items: { type: "string", example: "data:image/png;base64,iVBORw0…" },
+      description: "The question's own figure(s), as data URLs (\"label the given diagram\", \"mark on this map\").",
+    },
     numbering: { type: "string", enum: ["alpha", "roman", "numeric", "upper"] },
     attemptAny: { type: "integer", description: "Only the best N parts count." },
     answer: {
       type: "object",
-      description: "The key. Objective types with a structured key are marked by rule.",
+      description:
+        "The key. Objective types with a structured key are marked by rule. On a question with parts it holds what applies to " +
+        "the whole question (notes, marking scheme, keywords, reference diagram), which every part follows.",
       properties: {
         text: { type: "string", description: "Model answer." },
         correctOption: { oneOf: [{ type: "integer", minimum: 0 }, { type: "string", example: "b" }] },
@@ -52,7 +59,19 @@ const paperNode: any = {
         matchKey: { type: "array", items: { type: "integer", nullable: true }, description: "For each left row, the index of its right row." },
         acceptedAnswers: { type: "array", items: { type: "string" } },
         keywords: { type: "array", items: { type: "string" } },
-        markingScheme: { type: "string" },
+        markingScheme: {
+          type: "string",
+          example: "Diagram 2 marks, explanation 3 marks",
+          description:
+            "How the marks are split: \"diagram 30%\", \"1 mark each keyword\", \"formula 1, substitution 1, answer 1\", " +
+            "\"format 1, content 3, expression 1\". The marks then follow it criterion by criterion.",
+        },
+        notes: { type: "string", description: "The examiner's notes, followed when marking (\"accept alternative answers such as …\")." },
+        diagrams: {
+          type: "array",
+          items: { type: "string", example: "data:image/png;base64,iVBORw0…" },
+          description: "Reference diagram(s) of the model answer, as data URLs: a diagram part is compared with them.",
+        },
       },
     },
     parts: { type: "array", items: { $ref: "#/components/schemas/PaperNode" }, description: "Sub-parts, up to two levels: Q.5 (b) (ii)." },

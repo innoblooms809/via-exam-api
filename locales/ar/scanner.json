@@ -2,6 +2,7 @@
   "{{problem}} Check the roll number, or add the student to the class first.": "{{problem}} تحقّق من رقم القيد، أو أضف الطالب إلى الصف أولًا.",
   "Answer paper already uploaded for this student.": "تم تحميل ورقة الإجابة لهذا الطالب بالفعل.",
   "Approved exams fetched successfully.": "تم استلام الامتحانات المعتمدة بنجاح.",
+  "Choose the exam whose answer sheets to list (examId, or class, subject and exam type).": "اختر الامتحان الذي تريد عرض أوراق إجابته (examId، أو الصف والمادة ونوع الامتحان).",
   "classId, section, subjectId and examType are required.": "مطلوب كل من classId و section و subjectId و examType.",
   "Enter a valid date of birth.": "أدخل تاريخ ميلاد صحيح.",
   "examId, studentName, and rollNumber are required.": "رقم الامتحان واسم الطالب ورقم التسجيل مطلوبة.",

@@ -1,0 +1,700 @@
+VIAEXAM - HOW SIGN-IN (AUTH) WORKS
+==================================
+
+Covers the API (via-exam-api) and the web app (via-exam-ui).
+Last updated: 2026-11-19 (cookie-only sessions with refresh token rotation).
+
+
+CONTENTS
+--------
+  1.  The short version
+  2.  Words used in this document
+  3.  Login: browser -> API -> database -> what comes back
+  4.  Every API call after login
+  5.  When the access token runs out (refresh)
+  6.  A stolen refresh token (reuse detection)
+  7.  Logout, and log out everywhere
+  8.  When sessions end on their own
+  9.  Roles: who may call what
+  10. School (tenant) checks
+  11. Passwords: rule, storage, forgot, change, admin reset, resend details
+  12. Attacks and what stops them
+  13. What is stored in the database
+  14. Cookies
+  15. Endpoints
+  16. Answers the app can get (status codes and messages)
+  17. The frontend side
+  18. Settings (.env)
+  19. Production checklist
+  20. Partner API keys (a separate system)
+  21. Known risks and to-do
+  22. Files
+  23. How to test by hand
+
+
+1. THE SHORT VERSION
+====================
+
+- A user signs in with the school's slug, their email and their password.
+- The API checks the password, creates a SESSION (one row in the database for this browser) and
+  puts two tokens in httpOnly cookies:
+    ACCESS token   - short (15 min), sent with every API call
+    REFRESH token  - ends after 30 min without use, sent only to the refresh endpoint
+- The response body carries only the profile (name, role, school). NEVER a token.
+- The browser sends the cookies by itself. JavaScript on the page cannot read them, so a script
+  injected into a page (XSS) cannot steal them.
+- Every API call checks: token valid -> session still open -> user and school still active ->
+  role allowed for this route.
+- When the access token runs out, the app calls the refresh endpoint. The API sets new cookies and
+  REPLACES the refresh token: each refresh token works only once.
+- If an already-replaced refresh token is used again, someone has a copy. That session ends at once.
+- A session lasts at most 8 hours, however much it is used; then the user signs in again.
+
+
+2. WORDS USED IN THIS DOCUMENT
+==============================
+
+Access token     A JWT (signed text) that says who you are and which session you belong to.
+                 Lives JWT_ACCESS_EXPIRATION_MINUTES (15). Sent with every API call (cookie).
+Refresh token    A JWT used only to get a new access token. Sent only to
+                 POST /v1/user/refresh-token. Replaced every time it is used. Ends after
+                 JWT_REFRESH_EXPIRATION_MINUTES (30) without use.
+Session          One signed-in browser or device = one row in viaexam_user_sessions.
+                 Both tokens carry its id ("sid").
+httpOnly cookie  A cookie the browser keeps and sends, but page JavaScript can't read.
+Role             SUPER_ADMIN, ADMIN, TEACHER, SCANNER, STUDENT.
+Slug             The school's short name in the URL: /gdmis/auth/signin -> "gdmis".
+Hash / digest    A one-way fingerprint. You can check a value against it, but not get the value
+                 back. bcrypt for passwords, HMAC-SHA-256 for codes and refresh tokens.
+
+
+3. LOGIN: BROWSER -> API -> DATABASE -> WHAT COMES BACK
+=======================================================
+
+Pages: app/[schoolSlug]/auth/signin/page.tsx  (school users: admin, teacher, student, scanner)
+       app/auth/superadmin/page.tsx           (super admin; no school slug)
+
+The browser sends:
+    POST /v1/user/login
+    { "slug": "gdmis", "emailId": "a@b.com", "password": "..." }
+    (the super admin page sends no slug)
+
+The API does, in this order:
+
+  1. Rate limit: 10 failed attempts per account + address in 15 minutes, then 429.
+  2. Input check (Joi): a valid email, a password of at most 128 characters, a slug of at most 100.
+  3. CSRF check: the request's Origin must be the app (see section 12).
+  4. Find the school by slug ................................. viaexam_institutes
+     Unknown slug -> 400 "Invalid institute."
+  5. Find the user by the WHOLE email, any letter case, inside that school. No slug: only users
+     with no school (the super admin). "%" and "_" are plain characters, never wildcards.
+                                                            ... viaexam_users + viaexam_roles
+  6. Compare the password with bcrypt ......................... viaexam_users.password
+     - Unknown email: the password is compared against a dummy hash anyway, so the answer takes
+       the same time as for a real account (nobody can find accounts by timing).
+     - Wrong email or wrong password: the same answer, 400 "Invalid credentials."
+  7. Only now the status checks (so they don't reveal which accounts exist):
+     - school stopped   -> 403 "Your institute's ViaExam access is suspended. Contact the ViaExam team."
+     - user status 0    -> 401 "Your account is inactive."
+     - user status 2    -> 401 "Account suspended."
+  8. Save lastLoginAt. An old weak password hash (bcrypt cost 7) is re-hashed at cost 10.
+  9. Presence ONLINE and activity log LOGIN_SUCCESS ........... viaexam_user_presence_sessions,
+                                                                viaexam_activity_logs
+ 10. If this browser already had a session for this role (its access cookie is in the request),
+     that session ends (reason "replaced"): its cookies are about to be overwritten.
+ 11. Create the session ........................................ viaexam_user_sessions
+     id (sid) = 18 random bytes; tokenHash = HMAC of the new refresh token (never the token);
+     expiresAt = now + 30 minutes; IP address; browser (user agent).
+ 12. Set the two cookies (section 14).
+
+The API answers:
+
+    200 OK
+    Set-Cookie: adminToken=<access JWT>; Path=/; HttpOnly; SameSite=Lax (+ Secure in production)
+    Set-Cookie: adminRefreshToken=<refresh JWT>; Path=/v1/user/refresh-token; HttpOnly; SameSite=Strict
+    {
+      "error": false,
+      "statusCode": 200,
+      "message": "User logged in successfully",
+      "data": {
+        "userName": "...", "userId": "...", "emailId": "...", "phoneNumber": "...",
+        "roleId": 2, "role": "admin", "instituteId": "...", "status": 1
+      }
+    }
+
+    No token, no password, no hash in the body.
+
+The frontend then:
+- AuthContext.login(user) saves the profile in sessionStorage ("viaexam_user"), this tab only.
+- Goes to /{slug}/{role}/dashboard (super admin: /super-admin/dashboard).
+- Stores no token anywhere (there is none to store).
+
+What is inside the tokens (JWT payload; signed, not encrypted - don't put secrets in it):
+    access:  { sub: userId, sid, typ: "access",  iat, exp, iss: "viaexam-api", aud: "viaexam-app", jti }
+    refresh: { sub: userId, sid, typ: "refresh", iat, exp, iss: "viaexam-api", aud: "viaexam-app", jti }
+Signed with HS256. The access and refresh tokens use two DIFFERENT keys, both derived from
+JWT_SECRET (HKDF-SHA-256), so one can never be used as the other.
+
+
+4. EVERY API CALL AFTER LOGIN
+=============================
+
+The frontend (shared/api/CRMAxios.ts) sends with every request:
+- the cookies (axios withCredentials: true)
+- X-User-Role: admin / teacher / student / scanner / superadmin, taken from the page URL. It only
+  tells the API WHICH role's cookie to read, so an admin tab and a teacher tab in the same browser
+  both work. It can't give anyone a role: the role always comes from the database.
+- X-School-Slug: the school in the page URL
+- Accept-Language: en or ar (messages come back in that language)
+
+The API (src/middlewares/auth.ts -> authenticate) then:
+
+  1. Picks the access cookie of the page's role (X-User-Role; else from the Referer; else each
+     role in turn). Super-admin routes look at superAdminToken first.
+  2. Verifies the JWT: signature (HS256 only, access key), issuer, audience, typ "access", expiry.
+       no cookie      -> 401 "Access token missing."
+       expired        -> 401 "Token has expired. Please login again."
+       anything else  -> 401 "Invalid token."
+  3. At the same time loads the user (with role and school) and checks the session row
+     (not ended, not past expiresAt, not older than AUTH_SESSION_MAX_HOURS: 8 hours).
+       session ended  -> 401 "Your session has ended. Please sign in again."
+  4. Checks the account:
+       deleted / missing  -> 401 "User not found."
+       status 0           -> 401 "Your account is inactive. Contact your administrator."
+       status 2           -> 401 "Your account is suspended. Contact your administrator."
+       school stopped     -> 403 "Your institute's account is not active. Contact the ViaExam team."
+  5. Sets req.viaExamUser (the user) and req.authSessionId (the sid), writes a
+     [WINSTON_ACTIVITY] log line and marks the user ONLINE (presence).
+
+Then each route adds its own checks:
+- authorize([...roles])  -> 403 "Access denied. Allowed roles: ..."  (section 9)
+- verifyTenant (some routes) -> 403 "Tenant mismatch. ..."            (section 10)
+- every service filters its data by the user's instituteId.
+
+Because steps 3 and 4 run on EVERY request, a logout, a new password, a deactivation or a
+suspension works at the next request, not when the token runs out.
+
+
+5. WHEN THE ACCESS TOKEN RUNS OUT (REFRESH)
+===========================================
+
+When any API call answers 401, CRMAxios:
+  1. calls POST /v1/user/refresh-token with an EMPTY body. Only one refresh per role at a time;
+     other calls that failed meanwhile wait for it.
+  2. if it works, repeats the call that failed (the new cookies are already in the browser).
+  3. if it fails, forgets the tab's profile and opens the sign-in page.
+  (Calls to /login and /refresh-token themselves are never retried.)
+
+The API (services/auth/session.service.ts -> refreshSession):
+  1. Reads the refresh cookie. The browser sends it to this path only.
+  2. Verifies the JWT (refresh key, typ "refresh", expiry). Bad -> 401.
+  3. Loads the session. Ended, unused for 30 minutes, or 8 hours after sign-in -> 401.
+  4. Loads the user. Inactive, suspended, deleted, or school stopped -> the session ends, 401/403.
+  5. Compares the token with the session's stored hash:
+
+       matches the CURRENT hash
+           -> ROTATE: a new refresh token and a new access token. The new token's hash is saved,
+              the old hash is kept as "previous", the 30-minute limit starts again.
+              200 + two new cookies.
+
+       matches the PREVIOUS hash, and the rotation was at most 30 seconds ago
+           -> another tab refreshed at the same moment (tabs share cookies). A new access token
+              only; the refresh cookie the other tab got stays. 200.
+
+       anything else
+           -> REUSE: see section 6. 401.
+
+  Body on success: { "error": false, "statusCode": 200, "message": "Session refreshed.", "data": {} }
+  No token in the body.
+
+  If two refreshes of one session arrive at the same moment, the database update only succeeds
+  for the first ("WHERE tokenHash = the old one"); the second is judged as the 30-second case.
+
+How the three times work together (defaults):
+  15 minutes  the access token. After it, the next API call gets 401 and the app refreshes by
+              itself: the user notices nothing.
+  30 minutes  without a refresh, the session ends (the idle limit). While a tab is open, the
+              app's heartbeat (an API call every 5 minutes) keeps the session in use, so in
+              practice this counts from when the tab was closed or the computer went to sleep.
+  8 hours     after sign-in, the session ends however much it is used (the absolute limit), so a
+              tab left open all night is signed out. The app then opens the sign-in page; anything
+              typed on the page and not saved yet is lost.
+These follow OWASP's guidance for an app used through a working day: 15-30 minutes idle, 4-8 hours
+in all.
+
+
+6. A STOLEN REFRESH TOKEN (REUSE DETECTION)
+===========================================
+
+Each refresh token works once. Example:
+  - The user's browser holds R1. A thief copies R1.
+  - The thief refreshes first and gets R2. R1 is now "previous".
+  - More than 30 s later the user's browser refreshes with R1: it matches neither the current nor
+    the recent previous token -> someone used a copy.
+  -> The API ends THAT SESSION (reason "reuse"). The thief's R2 and the user's R1 both stop.
+     The user signs in again; the thief has nothing.
+  (If the user refreshes first, the thief's R1 is the one refused, with the same result.)
+
+Answer: 401 "For your security this session was signed out. Please sign in again."
+Server log: "[Auth] A replaced refresh token of user X was used again (session Y); the session
+was ended."
+
+This is the standard rule (OAuth 2.0 security best practice): only the affected session ends,
+not the user's other devices.
+
+
+7. LOGOUT, AND LOG OUT EVERYWHERE
+=================================
+
+POST /v1/user/logout
+  Frontend: AuthContext.logout() -> monitoringService.sendSessionLogout(). It waits at most 3 s
+  for the API, then forgets the tab's profile anyway.
+  API: ends this session (reason "logout"), clears this role's cookies, presence OFFLINE,
+  activity log LOGOUT. The user's other sessions (other browsers, another role in this browser)
+  stay signed in.
+
+POST /v1/user/logout-all
+  Ends every session of the user, this one included (reason "logout-all").
+  Answer: { "message": "Signed out on every device.", "data": { "sessions": <how many> } }
+  There is no button for it in the app yet.
+
+
+8. WHEN SESSIONS END ON THEIR OWN
+=================================
+
+  What happened                                   Which sessions end            revokedReason
+  ---------------------------------------------   ---------------------------   -------------------
+  Logout                                          this one                      logout
+  Log out everywhere                              all of the user's             logout-all
+  User changes their own password                 all the OTHER ones            password-change
+  Password reset with the emailed code            all                           password-reset
+  Admin / super admin sends a new password        all (once the email is sent)  password-reset
+  Admin removes a teacher, scanner or student     all of that user's            deactivated
+  Institute suspended                             all users of the institute    institute-suspended
+  Institute deleted                               all users of the institute    institute-deleted
+  An old refresh token comes back (section 6)     that one                      reuse
+  Sign in again in the same browser and role      the one being replaced        replaced
+  Refresh while the account is inactive           that one                      inactive
+  Unused 30 minutes, or 8 hours after sign-in     that one                      expired
+
+Ended and expired rows are deleted 30 days later by the daily task "auth-session-cleanup" (04:20).
+Until then they show who signed in, from where, and why each session ended.
+
+
+9. ROLES: WHO MAY CALL WHAT
+===========================
+
+Roles in the database: SUPER_ADMIN (the platform), ADMIN (a school's admin; INSTITUTE_ADMIN on old
+data), TEACHER, SCANNER, STUDENT. "Examiner" is a flag on a teacher, not a role.
+
+Role groups (src/config/roles.ts), used as authorize(GROUP) on routes:
+  ADMINS       ADMIN, INSTITUTE_ADMIN
+  SUPER_ADMIN  SUPER_ADMIN
+  TEACHERS     TEACHER (EXAMINER for old tokens)
+  ACADEMIC     admins + teachers
+  STAFF        admins + teachers + SCANNER
+  UPLOADERS    admins + SCANNER
+  MEMBERS      everyone in a school, students included
+
+A route is protected like this:
+  router.post("/something", authenticate, authorize(ADMINS), controller)
+
+The frontend's ProtectedRoute only decides which PAGES to show. The API is the real lock: hiding a
+button never protects anything, the authorize() on the route does.
+
+
+10. SCHOOL (TENANT) CHECKS
+==========================
+
+- Login: the user is looked up only inside the school of the slug in the URL.
+- verifyTenant (used on the monitoring and subscription routes): X-School-Slug must be the
+  user's own school, else 403 "Tenant mismatch. Your active session is for school 'x', but the
+  requested route is 'y'. ..." The app then opens that school's sign-in page.
+  The super admin skips this check.
+- Every school-level service filters its queries by the caller's instituteId: a guard decides
+  WHO may call a route, the service decides WHICH rows they see.
+
+
+11. PASSWORDS
+=============
+
+Rule (API src/utils/passwordRule.ts, the same in the UI shared/lib/passwordRule.ts):
+  8-64 characters, an uppercase letter, a lowercase letter and a number, no spaces.
+  Used for every password a person types: forgot-password reset, change password, admin typing one.
+
+Storage: bcrypt, cost 10 (BCRYPT_ROUNDS), a random salt per hash. Older accounts with cost-7
+hashes are re-hashed at cost 10 at their next sign-in.
+
+FORGOT PASSWORD (public, 3 steps; pages: forgot-password)
+  1. POST /v1/auth/forgotPassword { email }
+     Always 200 "If an active account uses this email, a code has been sent to it. It is valid
+     for 10 minutes." - the same answer, just as fast, for an unknown email. The code is sent in
+     the background:
+     - 6 digits from crypto.randomInt; only its HMAC digest is stored (viaexam_password_resets)
+     - one new code per minute per email; a new code makes older ones stop working
+     - the email is queued ahead of bulk mail and dropped if not sent before the code expires
+  2. POST /v1/auth/verifyOtp { email, otp }
+     5 wrong codes and that code is burned ("Too many wrong codes. Please request a new OTP.").
+  3. POST /v1/auth/resetPassword { email, otp, newPassword }
+     Strong rule, new bcrypt hash, the code is marked used, ALL the user's sessions end.
+
+CHANGE PASSWORD (signed in; profile page dialog)
+  POST /v1/auth/change-password { currentPassword, newPassword }
+  The current password must match (5 wrong tries per 15 minutes, then 429), the strong rule
+  applies, and all the user's OTHER sessions end. The session making the change stays signed in.
+
+ADMIN RESET (school admin)
+  POST /v1/auth/admin/reset-credentials { email, mode, password? }
+  Only a teacher, scanner or student of the admin's own school; never another admin.
+  mode "generate"  a random password is emailed
+  mode "manual"    the password the admin typed (strong rule) is emailed
+  mode "details"   only the login email and sign-in link; the password is unchanged
+  The new password is saved only when the mail server has accepted the email (nobody is left with
+  a password they never got), and then all of the user's sessions end. While one reset of a user is
+  on its way, another is refused (409).
+  The super admin resets a school admin's password the same way (institute pages).
+
+RESEND LOGIN DETAILS (public; page: resend-credentials)
+  POST /v1/auth/resendCredentials { email }
+  Emails the login email and sign-in link ONLY. It never changes the password: someone who only
+  knows an email address must not be able to reset it or sign its owner out. Always the same
+  answer ("If an active account uses this email, its login details have been sent to it. To choose
+  a new password, use Forgot password."). At most one email per account every 10 minutes.
+
+
+12. ATTACKS AND WHAT STOPS THEM
+===============================
+
+  Attack                                   What stops it
+  --------------------------------------   ------------------------------------------------------
+  A script on the page steals the token    Tokens only in httpOnly cookies; never in a response
+  (XSS)                                    body or in localStorage / sessionStorage.
+  Someone copies a refresh token           Rotation: each refresh token works once; a reused one
+                                           ends the session (section 6).
+  Someone forges a token                   HS256 with keys derived from JWT_SECRET (32+ characters
+                                           required in production); algorithm pinned; issuer,
+                                           audience and type checked.
+  Access token used as a refresh token,    Separate signing keys + the "typ" claim.
+  or the other way round
+  Token still used after logout            The session is checked on every request.
+  Another website makes the browser        SameSite cookies + the CSRF guard (src/middlewares/
+  send a request (CSRF)                    csrf.ts): POST/PUT/PATCH/DELETE carrying a sign-in
+                                           cookie must have an Origin (or Referer) from
+                                           CORS_ORIGIN, FRONTEND_URL or the API's own host; else
+                                           403 "This request did not come from the ViaExam app."
+  Guessing passwords                       10 failed sign-ins per account + address per 15 min.
+  Guessing the current password            5 per user per 15 min on change password.
+  Guessing an emailed code                 5 wrong tries burn it; one code a minute; 10-min life.
+  Finding out who has an account           Same answer and same time for wrong email / wrong
+                                           password; forgot password and resend login details
+                                           answer the same for every email.
+  Email wildcards ("%@school.com")         Exact match only.
+  A copy of the database leaks             bcrypt passwords; HMAC digests for codes and refresh
+                                           tokens (useless without the server key); AES-256-GCM
+                                           for file links, photo paths and Aadhaar numbers.
+  Cookies read on plain HTTP               "Secure" cookies in production (HTTPS only).
+  A stranger resets someone's password     Public "resend login details" never changes passwords.
+  A removed user keeps working             Status checked on every request + sessions ended.
+  HTML / script in form fields             The xss middleware escapes body, query and params
+                                           (not on the partner API).
+  Missing security headers                 helmet on the API; CSP, HSTS and others in the UI
+                                           (next.config.ts).
+
+
+13. WHAT IS STORED IN THE DATABASE
+==================================
+
+viaexam_users
+  password        bcrypt hash
+  status          1 active, 0 inactive, 2 suspended
+  isDeleted, lastLoginAt
+  loginAttempts, lockedUntil, refreshToken   old columns, no longer used (the migration
+                                             20261119000000-user-sessions.js empties refreshToken)
+
+viaexam_user_sessions  (one row per signed-in browser / device)
+  id              the session id ("sid" in both tokens), random
+  userId
+  tokenHash       HMAC digest of the CURRENT refresh token  ("hmac:1:<keyId>:<mac>")
+  previousHash    digest of the one before (accepted for 30 s after a refresh)
+  rotatedAt       when the refresh token was last replaced
+  expiresAt       30 minutes after the last refresh (the idle limit)
+  lastUsedAt      last refresh
+  revokedAt       when the session ended (null = still signed in)
+  revokedReason   why it ended (section 8)
+  userAgent, ipAddress, createdAt, updatedAt
+
+viaexam_password_resets
+  email, otp (HMAC digest of the code), expiresAt, isUsed, attempts (wrong tries)
+
+viaexam_user_presence_sessions   online / offline for the monitoring pages (not a security record)
+viaexam_activity_logs            LOGIN_SUCCESS, LOGOUT and other events
+
+The tokens themselves are stored NOWHERE on the server.
+
+
+14. COOKIES
+===========
+
+  Role          Access cookie       Refresh cookie
+  -----------   -----------------   ------------------------
+  super admin   superAdminToken     superAdminRefreshToken
+  admin         adminToken          adminRefreshToken
+  teacher       teacherToken        teacherRefreshToken
+  student       studentToken        studentRefreshToken
+  scanner       scannerToken        scannerRefreshToken
+  (other)       accessToken         refreshToken
+
+  Access cookie:   HttpOnly; Path=/; SameSite=Lax; Secure in production; Max-Age 15 minutes
+  Refresh cookie:  HttpOnly; Path=/v1/user/refresh-token; SameSite=Strict; Secure in production;
+                   Max-Age 30 minutes (renewed at every refresh)
+
+- One browser holds ONE session per role. An admin tab and a teacher tab work side by side; two
+  different admins can't use two tabs of the same browser at once (the second sign-in replaces
+  the first).
+- Earlier versions kept the refresh cookie on Path=/. That copy is deleted at the next sign-in,
+  refresh or logout.
+
+
+15. ENDPOINTS
+=============
+
+The user routes are mounted twice: under /v1/user and under /v1/auth (the same handlers).
+The app uses the /v1/user paths for login, refresh and logout.
+
+Public (no sign-in):
+  POST /v1/user/login                  sign in (rate limited)
+  POST /v1/user/refresh-token          new cookies from the refresh cookie (no body)
+  POST /v1/auth/forgotPassword         send a reset code (rate limited)
+  POST /v1/auth/verifyOtp              check the code (rate limited)
+  POST /v1/auth/resetPassword          set a new password with the code (rate limited)
+  POST /v1/auth/resendCredentials      email the login details (rate limited)
+
+Signed in:
+  GET  /v1/user/me                     the profile (also /profile, /profile/user); no password,
+                                       no token
+  PUT  /v1/user/me                     update the profile
+  POST /v1/user/logout                 end this session
+  POST /v1/user/logout-all             end every session of the user
+  POST /v1/auth/change-password        change own password (also /changePassword)
+  POST /v1/auth/admin/reset-credentials  school admin: a user's new password or login details
+  POST /v1/user/create-user            super admin only
+  POST /v1/monitoring/heartbeat        every 5 minutes while signed in (presence)
+
+Private files: uploads/private/model-answers/... open only for a signed-in admin or teacher of
+that school, or the super admin, by the same cookie (src/middlewares/uploadsAccess.ts). Answer
+sheets are read through GET /v1/scanner/getFile/:sheetId after its access checks.
+
+
+16. ANSWERS THE APP CAN GET
+===========================
+
+Every answer has the shape { error, statusCode, message, data? }.
+
+  200  success
+  400  "Invalid credentials."                       wrong email or wrong password (login)
+       "Invalid institute."                         unknown school slug
+       "Enter a valid email address."               malformed email (recovery)
+       "Invalid OTP. Please check and try again."   wrong code
+       a password-rule message                      weak new password
+  401  "Access token missing."                      no cookie
+       "Token has expired. Please login again."     access token ran out (the app refreshes)
+       "Invalid token."                             tampered / wrong kind of token
+       "Your session has ended. Please sign in again."
+       "For your security this session was signed out. Please sign in again."   (reuse)
+       "Your account is inactive." / "Account suspended."   (login)
+       "Your account is inactive. Contact your administrator." /
+       "Your account is suspended. Contact your administrator."   (later requests)
+  403  "Your institute's ViaExam access is suspended. Contact the ViaExam team."   (login)
+       "Your institute's account is not active. Contact the ViaExam team."     (later requests)
+       "Access denied. Allowed roles: ..."          wrong role for the route
+       "Tenant mismatch. ..."                       another school's page
+       "This request did not come from the ViaExam app."   CSRF guard
+  429  "Too many attempts. Please wait 15 minutes and try again."
+       "Too many wrong codes. Please request a new OTP."
+
+How the app reacts:
+  401 on any call   -> one refresh, then the call again; if the refresh fails -> sign-in page
+  403 Tenant mismatch -> that school's sign-in page
+  anything else     -> the message is shown
+
+Messages are in Arabic when the page is in Arabic (API: locales/ar/*.json).
+
+
+17. THE FRONTEND SIDE
+=====================
+
+shared/api/CRMAxios.ts
+  The axios clients. withCredentials: true (cookies), adds X-User-Role, X-School-Slug and
+  Accept-Language, never an Authorization header. 401 -> refresh -> retry; refresh fails ->
+  forget the profile and open the sign-in page. 403 "Tenant mismatch" -> that school's sign-in.
+
+shared/session/session.ts
+  Keeps ONLY the profile, in sessionStorage ("viaexam_user"): this tab only, gone when the tab
+  closes. Removes tokens that older versions stored (sessionStorage and localStorage).
+  getStoredAuthUser() is used by pages to know the user's role and school.
+
+features/auth/context/AuthContext.tsx
+  login(user): keep the profile. logout(): call the API (waits at most 3 s), then forget the
+  profile. While signed in, a heartbeat every 5 minutes (presence).
+
+features/auth/components/ProtectedRoute.tsx
+  Wraps the admin, teacher, student, scanner and super-admin layouts. No profile in the tab ->
+  the sign-in page (with ?returnUrl=). Another role -> /unauthorized. UI only; the API decides.
+
+Pages
+  app/[schoolSlug]/auth/signin              school sign-in
+  app/[schoolSlug]/auth/forgot-password     the 3-step code reset
+  app/[schoolSlug]/auth/resend-credentials  email my login details
+  app/auth/superadmin (+ forgot-password, resend-credentials)   super admin
+  features/profile                          change password dialog
+
+Good to know
+- A NEW tab has no profile in its sessionStorage, so it shows the sign-in page, even though the
+  browser's cookies may still be valid. Signing in there replaces this browser's session for that
+  role (the other tab keeps working with the new cookies).
+- proxy.ts handles only the language in the URL; app/middleware.ts is a pass-through. Neither is
+  part of auth.
+- In development the app calls http://localhost:5020/v1 directly (NEXT_PUBLIC_BACKEND_BASE_URL).
+  localhost:3000 and localhost:5020 count as the same site, so the cookies work. In production the
+  app proxies /v1 to the API (BACKEND_URL), so the browser sees one site.
+
+
+18. SETTINGS (.env)
+===================
+
+API (via-exam-api/.env):
+  JWT_SECRET                      required; 32+ random characters in production (the API refuses
+                                  to start otherwise; development only warns). Changing it signs
+                                  everyone out.
+  JWT_ACCESS_EXPIRATION_MINUTES   15   life of the access cookie
+  JWT_REFRESH_EXPIRATION_MINUTES  30   minutes without use after which a session ends (idle
+                                       limit; never shorter than the access token's life)
+  AUTH_SESSION_MAX_HOURS          8    a session ends this long after sign-in, used or not
+                                       (JWT_REFRESH_EXPIRATION_DAYS of earlier versions is no
+                                       longer read; a warning says so when it is still set)
+  COOKIE_SECURE                   true in production; false only for a production server
+                                  reached over plain HTTP
+  AUTH_REFRESH_COOKIE_PATH        /v1/user/refresh-token; change only if a proxy serves the API
+                                  under another prefix
+  TRUST_PROXY                     unset; "1" behind one proxy, so rate limits see the visitor's
+                                  address instead of the proxy's
+  CORS_ORIGIN                     the app's origins, comma separated; NEVER "*"
+  FRONTEND_URL                    the app's address (email links; also trusted by the CSRF guard)
+  DATA_ENCRYPTION_KEY             required in production; keys the HMAC digests (codes, refresh
+                                  tokens) and the column encryption
+  BCRYPT_ROUNDS                   10
+
+Create a JWT_SECRET:
+  node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+
+UI (via-exam-ui/.env):
+  NEXT_PUBLIC_BACKEND_BASE_URL    where the browser calls the API (dev: http://localhost:5020/v1)
+  BACKEND_URL                     where the UI server proxies /v1 (production)
+
+
+19. PRODUCTION CHECKLIST
+========================
+
+  [ ] JWT_SECRET: 32+ random characters (else the API won't start)
+  [ ] DATA_ENCRYPTION_KEY set, the same in every API and worker process
+  [ ] HTTPS everywhere
+  [ ] The app and the API on the same site (the app's /v1 proxy, or subdomains of one domain);
+      browsers don't send SameSite cookies to another site
+  [ ] CORS_ORIGIN and FRONTEND_URL = the app's real address(es); no "*"
+  [ ] TRUST_PROXY=1 if the API is behind a proxy
+  [ ] Change the default super admin password (section 21)
+  [ ] Tell users: everyone signs in again once after this version is deployed
+
+
+20. PARTNER API KEYS (A SEPARATE SYSTEM)
+========================================
+
+/v1/partner/* is for other companies' servers, not for people. It uses API keys, not cookies:
+  Authorization: Bearer vx_live_<keyId>_<secret>    (or X-API-Key: ...)
+- Only the SHA-256 hash of the secret is stored (src/services/partner/partnerKeys.service.ts).
+- Each key has scopes and its own requests-per-minute limit (src/middlewares/partnerAuth.ts).
+- The CSRF guard doesn't apply there (no cookies).
+
+
+21. KNOWN RISKS AND TO-DO
+=========================
+
+- DEFAULT SUPER ADMIN. On a database without a super admin, the API creates
+  superadmin@viaexam.com with the password SuperAdmin@123 (src/config/superAdmin.ts). Change that
+  password right after the first start, or change the code to take it from .env.
+- New accounts and admin resets email the password in plain text (part of school onboarding).
+  Users should change it after their first sign-in.
+- Accounts with old cost-7 password hashes (167 in the development database on 2026-11-19) are
+  weaker if the database leaks, until each user signs in once.
+- Rate limits are counted in each API process's memory: with N processes, N times the limit.
+- No "log out of all devices" button in the app yet (the API has POST /v1/user/logout-all).
+- The xss middleware also escapes characters like "<" in passwords before they are hashed. It is
+  the same at sign-in, so such passwords work, but they are stored as "&lt;".
+- viaexam_users.loginAttempts, lockedUntil and refreshToken are unused.
+
+
+22. FILES
+=========
+
+API (via-exam-api/src):
+  services/auth/session.service.ts     sessions, token signing and checks, cookies, refresh,
+                                       reuse detection, ending sessions
+  services/auth/sessionMaintenance.ts  daily cleanup of old session rows
+  models/UserSession.model.ts          the session table
+  middlewares/auth.ts                  authenticate, authorize, verifyTenant
+  middlewares/csrf.ts                  the CSRF guard
+  middlewares/rateLimiter.ts           login / recovery / change-password limits
+  controllers/auth/user.controller.ts  login, refresh, logout, logout-all, profile
+  services/auth/user.service.ts        the login checks, the profile
+  controllers/auth/auth.controller.ts  forgot / verify / reset / change / admin reset / resend
+  services/auth/auth.service.ts        the same, the logic
+  utils/dataProtection.ts              HMAC digests, AES-256-GCM columns
+  utils/encryption.ts                  bcrypt
+  utils/passwordRule.ts                the password rule
+  config/roles.ts                      role groups
+  middlewares/uploadsAccess.ts         private files by cookie
+  app.ts                               helmet, CORS, CSRF guard, TRUST_PROXY
+  index.ts                             start-up check of JWT_SECRET
+API (other):
+  migrations/20261119000000-user-sessions.js   the session table (for migration-managed databases;
+                                               the API also creates it on start)
+  docs/OPERATIONS.md                           the "Sign-in" section, settings, schedules
+
+UI (via-exam-ui):
+  shared/api/CRMAxios.ts, shared/session/session.ts, features/auth/context/AuthContext.tsx,
+  features/auth/components/ProtectedRoute.tsx, features/auth/services/authService.ts,
+  features/auth/components/PasswordResetForm.tsx, features/auth/components/ResendCredentialsForm.tsx,
+  app/[schoolSlug]/auth/*, app/auth/superadmin/*, shared/lib/passwordRule.ts
+
+
+23. HOW TO TEST BY HAND
+=======================
+
+With the API running on localhost:5020 (Git Bash). Use a real account's email and password.
+
+  # Sign in: the body has the profile only; the cookies go into jar.txt
+  curl -i -c jar.txt -H "Content-Type: application/json" -H "Origin: http://localhost:3000" \
+       -d '{"slug":"gdmis","emailId":"YOU@SCHOOL.COM","password":"YOUR-PASSWORD"}' \
+       http://localhost:5020/v1/user/login
+
+  # Who am I (the access cookie is sent)
+  curl -b jar.txt -H "X-User-Role: admin" http://localhost:5020/v1/user/me
+
+  # Refresh: new cookies, empty body, the refresh token is replaced
+  curl -i -b jar.txt -c jar.txt -X POST -H "Origin: http://localhost:3000" \
+       -H "X-User-Role: admin" http://localhost:5020/v1/user/refresh-token
+
+  # CSRF guard: the same call from another website is refused (403)
+  curl -i -b jar.txt -X POST -H "Origin: https://evil.example" -H "X-User-Role: admin" \
+       http://localhost:5020/v1/user/logout
+
+  # Logout (200), then /me answers 401
+  curl -i -b jar.txt -X POST -H "Origin: http://localhost:3000" -H "X-User-Role: admin" \
+       http://localhost:5020/v1/user/logout
+
+On 2026-11-19 a scripted end-to-end test of 37 checks passed against the development API:
+sign-in body, cookie flags and lifetimes (15 and 30 minutes), Bearer refused, token kinds not interchangeable, tampered tokens,
+refresh and rotation, the 30-second second-tab case, reuse ending the session, CSRF (another origin,
+no origin, Referer), logout and logout-all, same answer and time for wrong email / wrong password,
+"%" in the email, the 11th failed attempt rate limited, and forgot password's generic answer.
+The database held only "hmac:1:" digests, no tokens.

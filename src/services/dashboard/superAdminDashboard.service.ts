@@ -324,6 +324,7 @@ SELECT i."instituteId", i."instituteName" AS name, i.slug, i."logoUrl",
        ${ACCESS_ENDS_AT} AS "accessEndsAt"
 FROM viaexam_subscriptions s
 JOIN viaexam_institutes i ON i."instituteId" = s."instituteId" AND i."isDeleted" = false
+  AND i.status = 1 -- a suspended institute can't renew, so it isn't a renewal due
 LEFT JOIN viaexam_plans p ON p."planKey" = s."planKey"
 WHERE (s.status = 'trialing' AND s."trialEndsAt" > now() AND s."trialEndsAt" <= now() + (:days * interval '1 day'))
    OR (s.status = 'active' AND s."currentPeriodEnd" > now() AND s."currentPeriodEnd" <= now() + (:days * interval '1 day'))

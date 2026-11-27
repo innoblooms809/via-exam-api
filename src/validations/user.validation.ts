@@ -75,12 +75,13 @@ const userCreateValidation = {
 
 const loginValidation = {
   body: Joi.object().keys({
-    slug: Joi.string().optional().allow(""),
+    slug: Joi.string().optional().allow("").max(100),
     emailId: Joi.string().email().required().min(3).max(320).messages({
       "string.email": "Please provide a valid email address.",
       "any.required": "Email is required.",
     }),
-    password: Joi.string().required().messages({
+    // bcrypt reads 72 bytes at most; a longer value is only work for the server.
+    password: Joi.string().required().max(128).messages({
       "any.required": "Password is required.",
     }),
   }),

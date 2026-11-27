@@ -22,6 +22,13 @@ export interface PaperAnswer {
   matchKey?: (number | null)[];
   keywords?: string[];
   markingScheme?: string;
+  /** The examiner's notes ("accept alternative answers such as …"). */
+  notes?: string;
+  /**
+   * Reference diagram(s): the "separate answer diagram" and pictures inside answer boxes.
+   * Upload paths here; inlinePaperImages turns them into data URLs before the AI call.
+   */
+  diagrams?: string[];
 }
 
 export interface PaperNode {
@@ -37,8 +44,14 @@ export interface PaperNode {
   wordLimit?: string;
   marks: number;
   hasDiagram?: boolean;
+  /** The question's own figure(s) ("label the given diagram", "mark on this map"). */
+  figures?: string[];
   numbering?: string;
   attemptAny?: number;
+  /**
+   * On a question WITH parts: what the teacher wrote for the whole question (keywords,
+   * marking scheme, notes, answer diagram) — the evaluator applies it to every part.
+   */
   answer?: PaperAnswer;
   parts?: PaperNode[];
   or?: PaperNode;
@@ -46,6 +59,12 @@ export interface PaperNode {
 
 export interface EvaluationPaper {
   schema: typeof PAPER_SCHEMA;
+  /**
+   * The language the paper is printed in, when it is not English. On an Arabic paper students
+   * label parts (أ) (ب) (ج), write صح / خطأ, س1, أو — the evaluator reads those, prints its labels
+   * the same way and writes its feedback in Arabic.
+   */
+  language?: "ar";
   questions: PaperNode[];
 }
 
@@ -94,6 +113,30 @@ export const htmlToText = (html: unknown): string => {
 };
 
 const oneLine = (value: unknown): string => String(value ?? "").replace(/\s+/g, " ").trim();
+
+/** The `src` of every picture in an HTML fragment (data URLs and upload paths). */
+export const imageRefsIn = (html: unknown): string[] => {
+  const out: string[] = [];
+  let clean = unescapeHtml(String(html ?? ""));
+  if (clean.includes("&lt;")) clean = unescapeHtml(clean);
+  for (const m of clean.matchAll(/<img\b[^>]*?\bsrc\s*=\s*(["'])(.*?)\1/gi)) {
+    const src = m[2].trim();
+    if (src && !out.includes(src)) out.push(src);
+  }
+  return out;
+};
+
+/** Image references from loose values (strings / arrays), without blanks or duplicates. */
+const imageRefs = (...values: unknown[]): string[] => {
+  const out: string[] = [];
+  for (const value of values) {
+    for (const item of Array.isArray(value) ? value : [value]) {
+      const ref = typeof item === "string" ? item.trim() : "";
+      if (ref && !out.includes(ref)) out.push(ref);
+    }
+  }
+  return out;
+};
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -144,10 +187,28 @@ const childrenOf = (q: AnyRecord): AnyRecord[] =>
 
 // ─── Keys ───────────────────────────────────────────────────────────────────────
 
-/** "(b) Photosynthesis", "b)", "Option B" → "b"; null when the text doesn't start with a choice. */
+/** Arabic option letters (abjad order, as an Arabic paper prints them) → a–d. */
+const ARABIC_OPTION_LETTERS: Record<string, string> = { "أ": "a", "ا": "a", "إ": "a", "آ": "a", "ب": "b", "ج": "c", "د": "d" };
+
+/**
+ * "(b) Photosynthesis", "b)", "Option B", "(ب) البناء الضوئي", "ب-" → "b"; null when the text
+ * doesn't start with a choice.
+ */
 const leadingOption = (text: string): string | null => {
   const m = text.match(/^\s*(?:option\s*)?\(?([a-d])\)?(?:[\s.):,-]|$)/i);
-  return m ? m[1].toLowerCase() : null;
+  if (m) return m[1].toLowerCase();
+  const ar = text.match(/^\s*(?:الإجابة الصحيحة|الاجابة الصحيحة|الخيار)?\s*[:：]?\s*\(?\s*([أاإآبجد])\s*\)?(?=[\s.):،,\-–]|$)/);
+  return ar ? ARABIC_OPTION_LETTERS[ar[1]] : null;
+};
+
+/** "True …" / "صح" / "صحيح" → true, "False …" / "خطأ" / "غير صحيح" → false; null otherwise. */
+const leadingTrueFalse = (text: string): boolean | null => {
+  if (/^\s*true\b/i.test(text)) return true;
+  if (/^\s*false\b/i.test(text)) return false;
+  if (/^\s*(?:غير|ليس|ليست)\s+صح/.test(text)) return false;
+  if (/^\s*(?:صحيحة|صحيحه|صحيح|صح|صواب)(?![\u0621-\u064A])/.test(text)) return true;
+  if (/^\s*(?:خاطئة|خاطئه|خاطئ|خطأ|خطا|غلط)(?![\u0621-\u064A])/.test(text)) return false;
+  return null;
 };
 
 const keywordsOf = (raw: unknown): string[] | undefined => {
@@ -174,7 +235,10 @@ const leafKey = (type: string, partAnswer: AnyRecord | undefined, legacy: AnyRec
 
   const tf = partAnswer?.trueFalse;
   if (tf === "True" || tf === "False") key.trueFalse = tf === "True";
-  else if (type === "true_false" && /^\s*(true|false)\b/i.test(text)) key.trueFalse = /^\s*true/i.test(text);
+  else if (type === "true_false") {
+    const said = leadingTrueFalse(text);
+    if (said !== null) key.trueFalse = said;
+  }
 
   if (Array.isArray(partAnswer?.matchKey) && partAnswer!.matchKey.some((v: unknown) => typeof v === "number")) {
     key.matchKey = partAnswer!.matchKey.map((v: unknown) => (typeof v === "number" && v >= 0 ? v : null));
@@ -183,8 +247,35 @@ const leafKey = (type: string, partAnswer: AnyRecord | undefined, legacy: AnyRec
   if (scheme) key.markingScheme = scheme;
   const keywords = keywordsOf(legacy?.keywords);
   if (keywords) key.keywords = keywords;
+  const notes = oneLine(legacy?.notes);
+  if (notes) key.notes = notes;
+  // The teacher's drawing: pictures in this part's answer box, else (a question without parts)
+  // the question's separate answer diagram and the pictures in its overall answer.
+  const diagrams = imageRefs(
+    imageRefsIn(partAnswer?.answerHtml),
+    legacy ? [legacy.diagramUrl, legacy.diagramDataUrl, ...imageRefsIn(legacy.overallHtml)] : []
+  );
+  if (diagrams.length) key.diagrams = diagrams;
 
   return Object.keys(key).length ? key : undefined;
+};
+
+/**
+ * What the teacher wrote for a whole question with parts (keywords, marking scheme, notes,
+ * answer diagram). The evaluator gives it to every part: until now it was dropped.
+ */
+const questionGuidance = (entry: AnyRecord | null): PaperAnswer | undefined => {
+  if (!entry) return undefined;
+  const g: PaperAnswer = {};
+  const scheme = oneLine(entry.marksScheme ?? entry.markingScheme);
+  if (scheme) g.markingScheme = scheme;
+  const keywords = keywordsOf(entry.keywords);
+  if (keywords) g.keywords = keywords;
+  const notes = oneLine(entry.notes);
+  if (notes) g.notes = notes;
+  const diagrams = imageRefs([entry.diagramUrl, entry.diagramDataUrl, ...imageRefsIn(entry.overallHtml)]);
+  if (diagrams.length) g.diagrams = diagrams;
+  return Object.keys(g).length ? g : undefined;
 };
 
 // ─── Tree ───────────────────────────────────────────────────────────────────────
@@ -229,12 +320,16 @@ const toNode = (q: AnyRecord, depth: number, state: BuildState, legacy: AnyRecor
   }
   if (oneLine(q.wordLimit)) node.wordLimit = oneLine(q.wordLimit);
   if (q.diagramUrl || q.diagramDataUrl || type === "diagram") node.hasDiagram = true;
+  const figures = imageRefs([q.diagramDataUrl, q.diagramUrl, ...imageRefsIn(q.questionHtml)]);
+  if (figures.length) node.figures = figures;
 
   if (kids.length) {
     if (["alpha", "roman", "numeric", "upper"].includes(q.partNumbering)) node.numbering = q.partNumbering;
     else node.numbering = depth === 0 ? "alpha" : "roman";
     if (Number(q.attemptAny) > 0) node.attemptAny = Number(q.attemptAny);
     node.parts = kids.map((kid) => toNode(kid, depth + 1, state, null, false));
+    const guidance = questionGuidance(legacy);
+    if (guidance) node.answer = guidance;
   } else {
     state.leaves += 1;
     const answer = leafKey(type, state.partAnswers[node.sourceId ?? ""], legacy);
@@ -273,7 +368,12 @@ export const buildEvaluationPaper = (content: unknown, ansDoc?: unknown): Evalua
     const node = toNode(q, 0, state, entry, true);
     node.number = number;
     const alt = q.orQuestion && typeof q.orQuestion === "object" ? q.orQuestion : null;
-    if (alt) node.or = toNode(alt, 0, state, null, false);
+    if (alt) {
+      node.or = toNode(alt, 0, state, null, false);
+      // The examiner's notes are written for the whole question: the OR alternative follows them too.
+      const notes = oneLine(entry?.notes);
+      if (notes) node.or.answer = { ...(node.or.answer ?? {}), notes };
+    }
 
     // An older answer sheet keeps one answer for a question with parts: the evaluator reads
     // it part by part, by its labels.
@@ -285,12 +385,83 @@ export const buildEvaluationPaper = (content: unknown, ansDoc?: unknown): Evalua
   });
 
   if (!questions.length) return empty;
+  // The paper builder stores the printed language in meta.language; papers without one are English.
+  const meta = (parsed as AnyRecord).meta;
+  const language = meta && typeof meta === "object" && String(meta.language ?? "").toLowerCase().startsWith("ar") ? "ar" : null;
   return {
-    paper: { schema: PAPER_SCHEMA, questions },
+    paper: { schema: PAPER_SCHEMA, ...(language ? { language } : {}), questions },
     keyText: keyLines.join("\n"),
     leaves: state.leaves,
     keyed: state.keyed,
   };
+};
+
+// ─── Pictures for the evaluator ─────────────────────────────────────────────────
+
+export interface InlineImageLimits {
+  /** Largest single picture sent (bytes of the data URL). */
+  maxImageChars: number;
+  /** All pictures of one paper together. */
+  maxTotalChars: number;
+  /** Pictures per question / part. */
+  maxPerNode: number;
+}
+
+const DEFAULT_INLINE_LIMITS: InlineImageLimits = { maxImageChars: 4_000_000, maxTotalChars: 24_000_000, maxPerNode: 3 };
+
+/**
+ * The evaluator reads pictures only as data URLs (it never downloads a link from a paper), so
+ * the answer diagrams and question figures are inlined here. `load` turns one reference into a
+ * data URL, or null when it can't (a remote link, a missing file). Pictures over the limits are
+ * left out. Changes `paper` in place; returns what was sent and dropped.
+ */
+export const inlinePaperImages = async (
+  paper: EvaluationPaper | null,
+  load: (ref: string) => Promise<string | null>,
+  limits: InlineImageLimits = DEFAULT_INLINE_LIMITS
+): Promise<{ inlined: number; dropped: number; chars: number }> => {
+  const stats = { inlined: 0, dropped: 0, chars: 0 };
+  if (!paper) return stats;
+  const cache = new Map<string, string | null>();
+
+  const convert = async (refs: string[] | undefined): Promise<string[] | undefined> => {
+    if (!refs?.length) return refs;
+    const out: string[] = [];
+    for (const ref of refs.slice(0, limits.maxPerNode)) {
+      if (!cache.has(ref)) {
+        let url: string | null = null;
+        try {
+          url = await load(ref);
+        } catch {
+          url = null;
+        }
+        cache.set(ref, url);
+      }
+      const url = cache.get(ref) ?? null;
+      if (!url || url.length > limits.maxImageChars || stats.chars + url.length > limits.maxTotalChars) {
+        stats.dropped += 1;
+        continue;
+      }
+      stats.chars += url.length;
+      stats.inlined += 1;
+      out.push(url);
+    }
+    stats.dropped += Math.max(refs.length - limits.maxPerNode, 0);
+    return out.length ? out : undefined;
+  };
+
+  const walk = async (node: PaperNode): Promise<void> => {
+    node.figures = await convert(node.figures);
+    if (!node.figures) delete node.figures;
+    if (node.answer?.diagrams) {
+      node.answer.diagrams = await convert(node.answer.diagrams);
+      if (!node.answer.diagrams) delete node.answer.diagrams;
+    }
+    for (const part of node.parts ?? []) await walk(part);
+    if (node.or) await walk(node.or);
+  };
+  for (const q of paper.questions) await walk(q);
+  return stats;
 };
 
 // ─── Uploaded model answer ──────────────────────────────────────────────────────

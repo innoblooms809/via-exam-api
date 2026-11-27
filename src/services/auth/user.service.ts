@@ -1,10 +1,11 @@
 import httpStatus from "http-status";
+import { randomBytes } from "crypto";
 import UserModal from "../../models/User.model";
 import Role from "../../models/Role.model";
 import EncryptPassword from "../../utils/encryption"; // reuse your existing utility
 import RegHelper from "../../utils/helper"; // reuse your existing utility
 import exclude from "../../utils/exclude"; // reuse your existing utility
-import { Op } from "sequelize";
+import { Op, col, fn, where as sqlWhere } from "sequelize";
 import Institute from "../../models/Institute.model";
 import UserPresenceSession from "../../models/UserPresenceSession.model";
 import { logActivity } from "../../utils/activityLogger";
@@ -16,21 +17,19 @@ import Section from "../../models/Section.model";
 import { newId } from "../../utils/idGenerator";
 import { normalizeRollNo } from "../../utils/textRules";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_DURATION_SECONDS = 5;
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// A real bcrypt hash of a random password, compared against when the email has no account.
+let unknownUserHashPromise: Promise<string> | null = null;
+const unknownUserHash = () => (unknownUserHashPromise ??= EncryptPassword.encryptPassword(randomBytes(24).toString("base64url")));
 
 /**
  * Fetch ViaExam user by emailId — mirrors your getUserByEmail() pattern
  */
 const getViaExamUserByEmail = async (emailId: string, instituteId?: string | null): Promise<any> => {
+  // The whole address, whatever its case: never a pattern ("%" or "_" in the input match only themselves).
   const where: any = {
-    emailId: {
-      [Op.iLike]: emailId,
-    },
+    [Op.and]: [sqlWhere(fn("lower", col("User.emailId")), String(emailId ?? "").trim().toLowerCase())],
   };
   if (instituteId) {
     where.instituteId = instituteId;
@@ -125,9 +124,10 @@ const viaExamUserCreate = async (req: any): Promise<any> => {
 };
 
 /**
- * ViaExam login — mirrors your userLogin() pattern exactly.
- * type 1 = email login, type 2 = mobile login
- * Adds: account lockout, status checks
+ * Checks a sign-in: the institute (slug), the email (exact, any case), the password, then the
+ * account's and institute's status. Wrong email and wrong password get the same answer in the same
+ * time. Repeated failures are throttled by loginLimiter (middlewares/rateLimiter); the session
+ * itself is started by the controller (services/auth/session.service).
  */
 const viaExamUserLogin = async (slug: string, emailId: string, password: string) => {
   try {
@@ -146,6 +146,8 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
     const user = await getViaExamUserByEmail(emailId, instituteId);
 
     if (!user) {
+      // As long as a wrong password takes, so the answer time doesn't tell which emails have accounts.
+      await EncryptPassword.isPasswordMatch(String(password ?? ""), await unknownUserHash());
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
@@ -153,41 +155,14 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       };
     }
 
-    // Lock check (DISABLED)
-    /*
-    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-      return {
-        error: true,
-        statusCode: httpStatus.TOO_MANY_REQUESTS,
-        message: "Account is locked.",
-      };
-    }
-    */
-
     const isMatch = await EncryptPassword.isPasswordMatch(password, user.password);
+    // An older, cheaper hash answers faster than the comparison made for unknown emails: padded to
+    // the same time (it is upgraded below once the right password comes in).
+    if (EncryptPassword.passwordNeedsRehash(user.password)) {
+      await EncryptPassword.isPasswordMatch(String(password ?? ""), await unknownUserHash());
+    }
 
     if (!isMatch) {
-      /* Login attempts lock logic disabled
-      const attempts = (user.loginAttempts || 0) + 1;
-
-      if (attempts >= MAX_LOGIN_ATTEMPTS) {
-        await UserModal.update(
-          {
-            loginAttempts: attempts,
-            lockedUntil: new Date(
-              Date.now() + LOCK_DURATION_SECONDS * 1000
-            ),
-          },
-          { where: { userId: user.userId } },
-        );
-      } else {
-        await UserModal.update(
-          { loginAttempts: attempts },
-          { where: { userId: user.userId } },
-        );
-      }
-      */
-
       return {
         error: true,
         statusCode: httpStatus.BAD_REQUEST,
@@ -272,10 +247,7 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
       currentActivity: "Logged In",
     });
 
-    const userResponse = exclude(
-      user.toJSON(),
-      ["password", "refreshToken"]
-    );
+    const userResponse = exclude(user.toJSON(), ["password"]);
 
     return {
       error: false,
@@ -294,7 +266,7 @@ const viaExamUserLogin = async (slug: string, emailId: string, password: string)
 };
 
 /**
- * Logout — store/clear refresh token (mirrors your token invalidation pattern)
+ * Logout: presence and the activity log (the session itself is ended by the controller).
  */
 const viaExamUserLogout = async (userId: string): Promise<any> => {
   try {
@@ -302,8 +274,6 @@ const viaExamUserLogout = async (userId: string): Promise<any> => {
       include: [{ model: Role, as: "role" }],
       where: { userId },
     });
-
-    await UserModal.update({ refreshToken: null }, { where: { userId } });
 
     // Instantly update active presence session to OFFLINE
     const logoutTime = new Date();
@@ -363,7 +333,7 @@ const viaExamGetProfile = async (userId: string): Promise<any> => {
       };
     }
 
-    const userResponse: any = exclude(user.toJSON(), ["password", "refreshToken"]);
+    const userResponse: any = exclude(user.toJSON(), ["password"]);
 
     // Fetch role-specific details
     const teacherProfile = await TeacherProfile.findOne({ where: { userId } }).catch(() => null);

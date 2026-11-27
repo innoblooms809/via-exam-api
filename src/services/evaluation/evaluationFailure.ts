@@ -10,10 +10,11 @@
  *   ai_unreachable, ai_timeout, ai_error, ai_rejected   the same for the AI evaluation server
  *   sheet_missing     the answer sheet was deleted while it waited
  *   stuck             the run didn't finish within EVAL_STUCK_HOURS
+ *   interrupted       the run's job was lost (a restart or crash); the watchdog stopped it
  *   unknown           anything else; the detail says what
  *
- * "Unreachable" never fails a run while the server is down: the stage waits for it (see
- * handleServiceError in pipeline6.service). Rows from before that, or a stage that gave up, keep it.
+ * "Unreachable" fails a run once its attempts are used up while the server is down (see
+ * handleServiceError in pipeline6.service). A failed run is never re-run on its own.
  */
 
 export type FailureStage = "ocr" | "ai";
@@ -29,6 +30,7 @@ export type FailureCode =
   | "ai_rejected"
   | "sheet_missing"
   | "stuck"
+  | "interrupted"
   | "unknown";
 
 export interface EvaluationFailure {
@@ -91,6 +93,7 @@ export function classifyFailureText(text: string): { code: FailureCode; stage: F
   const stage = stageOfText(t);
   if (/answer sheet was deleted/i.test(t)) return { code: "sheet_missing", stage };
   if (/did not finish within \d+ hours/i.test(t)) return { code: "stuck", stage: null };
+  if (/evaluation was interrupted/i.test(t)) return { code: "interrupted", stage: null };
   if (!stage) return { code: "unknown", stage: null };
   if (/timeout of \d+ms exceeded|didn['’]t answer within|did not answer within/i.test(t)) return { code: `${stage}_timeout`, stage };
   if (/ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|EHOSTDOWN|ENOTFOUND|EAI_AGAIN|connect ETIMEDOUT/i.test(t)) return { code: `${stage}_unreachable`, stage };

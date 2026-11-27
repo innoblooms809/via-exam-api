@@ -11,6 +11,7 @@ import { closeQueues, initQueues, startQueueWorkers } from "./queue";
 import { queueConfig } from "./queue/config";
 import { runMaintenanceTaskNow } from "./queue/maintenance";
 import { describeDataKeys } from "./utils/dataProtection";
+import { assertJwtSecret } from "./services/auth/session.service";
 import { startEvaluationQueueMonitor } from "./services/evaluation/pipeline6.service";
 let server: Server;
 
@@ -18,6 +19,8 @@ let server: Server;
 // rather than fail on the first encrypted column.
 try {
   logger.info(`[DataProtection] ${describeDataKeys()}`);
+  // Sign-in tokens are only as strong as the secret that signs them.
+  assertJwtSecret();
 } catch (err: any) {
   logger.error(err?.message || String(err));
   process.exit(1);
@@ -47,9 +50,6 @@ const bootApp = async () => {
       // Evaluations left "Pending" (by the previous version, or a crash) are queued again now,
       // not at the watchdog's next tick.
       void runMaintenanceTaskNow("evaluation-watchdog").catch(() => undefined);
-      // Values still in plain text (rows from before encryption) or under a previous key are
-      // encrypted now, in the background, not at tonight's run.
-      void runMaintenanceTaskNow("encrypt-sensitive-data").catch(() => undefined);
     } catch (err: any) {
       logger.error(`[Queue] Workers could not start: ${err?.message || err}`);
     }

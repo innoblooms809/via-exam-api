@@ -20,7 +20,7 @@ import winston from "winston";
 import { QueryTypes } from "sequelize";
 import logger from "../../config/logger";
 import { sequelize } from "../../config/sequelize";
-import { allQueues, onQueueEvent, queueDriverKind, queueWorkersRunningHere, type QueueEvent } from "../../queue";
+import { allQueues, onQueueEvent, queueDriverKind, queueWorkersRunningHere, registerPresenceInfo, type QueueEvent } from "../../queue";
 import { positiveInt, queueConfig } from "../../queue/config";
 
 export const EVAL_QUEUES = new Set(["evaluation-ocr", "evaluation-ai"]);
@@ -125,7 +125,7 @@ export function fmtMs(ms: number | null | undefined): string {
 //
 //   QUEUE_CONSOLE=all       every job of every queue as one readable line: added (in the process
 //                           that adds it), started / done / retrying / failed (in the process that
-//                           runs it), plus a status line of running / waiting jobs whenever it changes.
+//                           runs it; the maintenance queue shows only its problems), plus a status line of running / waiting jobs whenever it changes.
 //                           Default outside production.
 //   QUEUE_CONSOLE=problems  only retries, failures and pauses. Default in production.
 //   QUEUE_CONSOLE=off       nothing on the console (queue.log keeps everything either way).
@@ -142,6 +142,7 @@ const consoleMode = ((): ConsoleMode => {
   return process.env.NODE_ENV === "production" ? "problems" : "all";
 })();
 
+const QUIET_QUEUES = new Set(["maintenance"]);
 const PROBLEM_EVENTS = new Set<QueueEvent["type"]>(["retrying", "failed", "rate-limited", "claim-paused", "claim-resumed"]);
 
 const consoleLog =
@@ -192,6 +193,9 @@ const describeQueueEvent = (e: QueueEvent, attempt?: number): string => {
 function printQueueEvent(e: QueueEvent, attempt?: number): void {
   if (!consoleLog) return;
   if (consoleMode === "problems" && !PROBLEM_EVENTS.has(e.type)) return;
+  // Scheduled maintenance ticks (watchdog every 5 min, …) would fill the console: only their
+  // problems are shown. Every tick is still in queue.log.
+  if (QUIET_QUEUES.has(e.queue) && !PROBLEM_EVENTS.has(e.type)) return;
   const level = e.type === "failed" ? "error" : e.type === "retrying" || e.type === "rate-limited" || e.type === "claim-paused" ? "warn" : "info";
   consoleLog.log(level, `[Queue] ${e.queue} | ${describeQueueEvent(e, attempt)}`);
 }
@@ -280,8 +284,8 @@ export function serviceDown(service: EvalService, detail: string, target: string
     {
       level: "warn",
       msg:
-        `${SERVICE_NAME[service]} service unreachable at ${target} (${detail}). Its stage is paused: sheets keep their ` +
-        `place in line and start on their own once it answers${waiting !== undefined ? ` (${waiting} waiting)` : ""}.`,
+        `${SERVICE_NAME[service]} service unreachable at ${target} (${detail}). Each sheet is tried up to its attempt ` +
+        `limit, then marked Failed${waiting !== undefined ? ` (${waiting} waiting)` : ""}.`,
     }
   );
 }
@@ -303,6 +307,17 @@ export function serviceOutage(service: EvalService): { since: number; detail: st
   const h = health[service];
   return h.downSince ? { since: h.downSince, detail: h.detail ?? "", target: h.target } : null;
 }
+
+/**
+ * The outages this process sees, sent with its sign of life (queue/presence.ts). Only a process
+ * that runs the evaluation jobs calls the services: an API with QUEUE_WORKERS=false learns of an
+ * outage from its workers this way (pipeline6.service outageOf).
+ */
+export const healthReport = (): Record<EvalService, { downSince: number; detail: string } | null> => ({
+  ocr: health.ocr.downSince ? { downSince: health.ocr.downSince, detail: health.ocr.detail ?? "" } : null,
+  ai: health.ai.downSince ? { downSince: health.ai.downSince, detail: health.ai.detail ?? "" } : null,
+});
+registerPresenceInfo("services", healthReport);
 
 export const servicesHealth = () =>
   Object.fromEntries(

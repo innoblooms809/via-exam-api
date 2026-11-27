@@ -5,24 +5,25 @@
  * queue database, so two API instances still give ONE run per tick, picked up by whichever
  * worker is free (no "every instance runs the cron" duplicates, nothing lost on restart).
  *
- *   evaluation-watchdog       5 min   Pending evaluations without a queued job are queued again;
- *                                     ones stuck for EVAL_STUCK_HOURS are failed (evaluationMaintenance.ts)
- *   evaluation-retry          15 min  transient failures re-queued once the services answer again
+ *   evaluation-watchdog       5 min   Pending evaluations without a queued job are failed as
+ *                                     interrupted, never queued again (evaluationMaintenance.ts)
+ *   evaluation-retry          removed failed sheets are re-run only by a teacher
  *   sheet-quality-sweep       15 min  sheets never scan-checked get checked (sheetQuality.service.ts)
  *   subscription-maintenance  hourly  expiry and renewal reminders (subscriptionScheduler.ts)
  *   queue-cleanup             daily   finished jobs past their retention removed from every queue
- *   encrypt-sensitive-data    daily   plain-text values of encrypted columns encrypted, old-key ones
- *                                     re-encrypted (security/dataProtectionMaintenance.ts)
+ *   encrypt-sensitive-data    removed values stored before encryption stay as they are
  *   password-reset-cleanup    daily   expired OTP rows deleted
+ *   auth-session-cleanup      daily   sign-in sessions ended or expired 30+ days ago deleted
  */
 
 import logger from "../config/logger";
-import { allQueues, defineQueue, defineSchedule, PermanentJobError, type Repeat } from "./index";
+import { allQueues, defineQueue, defineSchedule, PermanentJobError, retireSchedule, type Repeat } from "./index";
 
 type Task = () => Promise<unknown>;
 
 const DAY_SEC = 24 * 60 * 60;
 const tasks = new Map<string, Task>();
+const retiredTasks = new Set<string>();
 
 export const maintenanceQueue = defineQueue<Record<string, unknown>>({
   name: "maintenance",
@@ -31,6 +32,11 @@ export const maintenanceQueue = defineQueue<Record<string, unknown>>({
   lockMs: 5 * 60_000,
   processor: async (job) => {
     const task = tasks.get(job.name);
+    if (!task && retiredTasks.has(job.name)) {
+      // A job queued before the task was switched off: finish it without doing anything.
+      logger.info(`[Maintenance] ${job.name} is switched off; job ${job.id} skipped.`);
+      return null;
+    }
     if (!task) throw new PermanentJobError(`No maintenance task "${job.name}" in this version of the API.`);
     const started = Date.now();
     const result = await task();
@@ -44,6 +50,13 @@ export function defineMaintenanceTask(name: string, repeat: Repeat, task: Task) 
   if (tasks.has(name)) throw new Error(`Maintenance task "${name}" is defined twice.`);
   tasks.set(name, task);
   defineSchedule(maintenanceQueue, name, repeat, { name });
+}
+
+/** A task that no longer runs: its stored schedule is removed and jobs already queued are skipped. */
+export function retireMaintenanceTask(name: string) {
+  if (tasks.has(name)) throw new Error(`Maintenance task "${name}" is both defined and retired.`);
+  retiredTasks.add(name);
+  retireSchedule(maintenanceQueue, name);
 }
 
 /** Runs a task now, besides its schedule (e.g. right after a deploy). */

@@ -35,13 +35,19 @@ const envInt = (name: string, fallback: number): number => {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 };
 
+/**
+ * Largest single answer sheet (ANSWER_SHEET_MAX_FILE_MB, default 10). A 35-page booklet scanned in
+ * colour can pass 10 MB: raise it (the OCR server reads up to OCR_MAX_FILE_MB, default 30).
+ */
+const MAX_SHEET_BYTES = envInt("ANSWER_SHEET_MAX_FILE_MB", 10) * 1024 * 1024;
+
 export const ANSWER_SHEET_LIMITS = {
   /** Largest single answer sheet accepted. */
-  maxFileBytes: 10 * 1024 * 1024,
+  maxFileBytes: MAX_SHEET_BYTES,
   /** Largest number of sheets in one request. */
   maxFilesPerRequest: 10,
-  /** Largest total body size for one upload request, headers excluded. */
-  maxRequestBytes: 60 * 1024 * 1024,
+  /** Largest total body size for one upload request, headers excluded (at least one largest sheet). */
+  maxRequestBytes: Math.max(60 * 1024 * 1024, MAX_SHEET_BYTES),
   /**
    * Most sheets one upload in the scanner UI takes (one selection). The browser sends each
    * sheet as its own request, `parallelUploads` at a time, like large-upload sites do: a

@@ -14,51 +14,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const http_status_1 = __importDefault(require("http-status"));
 const svg_captcha_1 = __importDefault(require("svg-captcha")); // same as your boilerplate
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const token_service_1 = __importDefault(require("../../services/auth/token.service")); // reuse your existing tokenService
 const user_service_1 = __importDefault(require("../../services/auth/user.service"));
 const mailHelper_1 = require("../../utils/mailHelper"); // queued; retried while SMTP is down
 const config_1 = __importDefault(require("../../config/config"));
-const User_model_1 = __importDefault(require("../../models/User.model"));
-const UserPresenceSession_model_1 = __importDefault(require("../../models/UserPresenceSession.model"));
 const logger_1 = __importDefault(require("../../config/logger"));
-const Role_model_1 = __importDefault(require("../../models/Role.model"));
 const auth_1 = require("../../middlewares/auth");
-const dataProtection_1 = require("../../utils/dataProtection");
-const getCookieValue = (req, name) => {
-    var _a;
-    const cookies = req.cookies;
-    if (cookies === null || cookies === void 0 ? void 0 : cookies[name]) {
-        return cookies[name];
-    }
-    const cookieHeader = req.headers.cookie;
-    if (!cookieHeader) {
-        return undefined;
-    }
-    return (_a = cookieHeader
-        .split(";")
-        .map((cookie) => cookie.trim())
-        .find((cookie) => cookie.startsWith(`${name}=`))) === null || _a === void 0 ? void 0 : _a.split("=").slice(1).join("=");
-};
-const getRoleCookieNames = (roleStr) => {
-    const cleanRole = String(roleStr || "").toUpperCase().replace(/[\s_-]+/g, "");
-    if (cleanRole === "SUPERADMIN") {
-        return { access: "superAdminToken", refresh: "superAdminRefreshToken" };
-    }
-    if (cleanRole === "ADMIN") {
-        return { access: "adminToken", refresh: "adminRefreshToken" };
-    }
-    if (cleanRole === "TEACHER") {
-        return { access: "teacherToken", refresh: "teacherRefreshToken" };
-    }
-    if (cleanRole === "STUDENT") {
-        return { access: "studentToken", refresh: "studentRefreshToken" };
-    }
-    if (cleanRole === "SCANNER") {
-        return { access: "scannerToken", refresh: "scannerRefreshToken" };
-    }
-    return { access: "accessToken", refresh: "refreshToken" };
-};
+const session_service_1 = require("../../services/auth/session.service");
 // ─── GET CAPTCHA ──────────────────────────────────────────────────────────────
 /**
  * GET /api/viaexam/auth/captcha
@@ -72,66 +33,38 @@ const getCaptcha = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 });
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 /**
- * POST /api/viaexam/auth/login
+ * POST /v1/user/login   Body: { slug, emailId, password }
  *
- * Body: { emailId, mobileNo, type, password, captcha }
- * type 1 = email, type 2 = mobile  ← matches your existing pattern
- *
- * Reuses: your tokenService.generateUserAuthTokens()
+ * Starts a session (services/auth/session.service). Its tokens go into httpOnly cookies, where the
+ * page's JavaScript can't read them; the response body carries the profile only.
  */
 const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a;
     try {
         const { slug, emailId, password } = req.body;
-        // CAPTCHA check — identical to your boilerplate
-        // if (captcha !== req.session.captcha) {
-        //   return res.status(400).json({ message: "Invalid CAPTCHA" });
-        // }
         const result = yield user_service_1.default.viaExamUserLogin(slug, emailId, password);
-        if (result.error) {
-            return res.status(result.statusCode).send(result);
-        }
-        // Reuse your existing tokenService — same call signature as your boilerplate
         if (result.error || !result.data) {
             return res.status(result.statusCode).send(result);
         }
-        const token = yield token_service_1.default.generateUserAuthTokens(result.data.user);
-        // Only a digest of the refresh token is stored: a copy of the database can't sign anyone in.
-        yield User_model_1.default.update({ refreshToken: (0, dataProtection_1.digestSecret)(token.refresh.token, "refresh-token") }, { where: { userId: result.data.user.userId } });
-        const cookieNames = getRoleCookieNames(((_a = result.data.user.role) === null || _a === void 0 ? void 0 : _a.role) || "");
-        // Set tokens as httpOnly cookies (role-scoped to avoid session collisions)
-        res.cookie(cookieNames.access, token.access.token, {
-            httpOnly: true,
-            secure: false,
-            // secure: process.env.NODE_ENV === "production",
-            maxAge: config_1.default.jwt.accessExpirationMinutes * 60 * 1000,
-            sameSite: "lax",
-        });
-        res.cookie(cookieNames.refresh, token.refresh.token, {
-            httpOnly: true,
-            secure: false,
-            maxAge: config_1.default.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
-            sameSite: "lax",
-        });
-        // Send user data and access tokens to frontend
-        const userData = {
-            userName: result.data.user.userName,
-            userId: result.data.user.userId,
-            emailId: result.data.user.emailId,
-            phoneNumber: result.data.user.phoneNumber,
-            roleId: result.data.user.roleId,
-            role: ((_c = (_b = result.data.user.role) === null || _b === void 0 ? void 0 : _b.role) === null || _c === void 0 ? void 0 : _c.toLowerCase()) || null,
-            instituteId: result.data.user.instituteId,
-            status: result.data.user.status,
-            token: token.access.token,
-            accessToken: token.access.token,
-            refreshToken: token.refresh.token,
-        };
+        const user = result.data.user;
+        const role = ((_a = user.role) === null || _a === void 0 ? void 0 : _a.role) || "";
+        // This browser's earlier session for the role ends: its cookies are replaced now.
+        yield (0, session_service_1.endReplacedSession)(req, role);
+        (0, session_service_1.setAuthCookies)(res, role, yield (0, session_service_1.startSession)(user.userId, req));
         return res.status(http_status_1.default.OK).send({
             error: false,
             statusCode: http_status_1.default.OK,
             message: "User logged in successfully",
-            data: userData,
+            data: {
+                userName: user.userName,
+                userId: user.userId,
+                emailId: user.emailId,
+                phoneNumber: user.phoneNumber,
+                roleId: user.roleId,
+                role: role.toLowerCase() || null,
+                instituteId: user.instituteId,
+                status: user.status,
+            },
         });
     }
     catch (error) {
@@ -144,128 +77,33 @@ const loginViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functio
         });
     }
 });
+// ─── REFRESH ──────────────────────────────────────────────────────────────────
+/**
+ * POST /v1/user/refresh-token   No body: the refresh token is the httpOnly cookie the browser sends
+ * only to this path. New cookies on success; the body never carries a token.
+ */
 const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _d, _e, _f, _g, _h;
+    var _b, _c;
     try {
-        const superAdminRefresh = getCookieValue(req, "superAdminRefreshToken");
-        const adminRefresh = getCookieValue(req, "adminRefreshToken");
-        const teacherRefresh = getCookieValue(req, "teacherRefreshToken");
-        const studentRefresh = getCookieValue(req, "studentRefreshToken");
-        const scannerRefresh = getCookieValue(req, "scannerRefreshToken");
-        const defaultRefresh = getCookieValue(req, "refreshToken");
-        const bodyRefresh = typeof ((_d = req.body) === null || _d === void 0 ? void 0 : _d.refreshToken) === "string" ? req.body.refreshToken : undefined;
-        const authRole = (0, auth_1.resolveRequestAuthRole)(req);
-        const roleRefreshByKey = {
-            superadmin: superAdminRefresh,
-            admin: adminRefresh,
-            teacher: teacherRefresh,
-            student: studentRefresh,
-            scanner: scannerRefresh,
-        };
-        const candidates = [
-            bodyRefresh,
-            authRole ? roleRefreshByKey[authRole] : undefined,
-            !authRole ? adminRefresh : undefined,
-            !authRole ? teacherRefresh : undefined,
-            !authRole ? superAdminRefresh : undefined,
-            !authRole ? studentRefresh : undefined,
-            !authRole ? scannerRefresh : undefined,
-            defaultRefresh,
-        ].filter((value, index, list) => !!value && list.indexOf(value) === index);
-        if (!candidates.length) {
-            return res.status(http_status_1.default.BAD_REQUEST).json({
-                error: true,
-                statusCode: http_status_1.default.BAD_REQUEST,
-                message: "Refresh token missing",
-            });
+        const role = (0, auth_1.resolveRequestAuthRole)(req);
+        const result = yield (0, session_service_1.refreshSession)(req, role);
+        if (!result.ok) {
+            if (role)
+                (0, session_service_1.clearAuthCookies)(res, role);
+            const { statusCode, message } = (_b = result.problem) !== null && _b !== void 0 ? _b : {
+                statusCode: http_status_1.default.UNAUTHORIZED,
+                message: result.reason === "reused"
+                    ? "For your security this session was signed out. Please sign in again."
+                    : "Your session has ended. Please sign in again.",
+            };
+            return res.status(statusCode).json({ error: true, statusCode, message });
         }
-        let refreshToken;
-        let decoded;
-        for (const candidate of candidates) {
-            try {
-                decoded = jsonwebtoken_1.default.verify(candidate, config_1.default.jwt.secret);
-                refreshToken = candidate;
-                break;
-            }
-            catch (_j) {
-                // try next candidate (stale tab token vs rotated cookie)
-            }
-        }
-        if (!refreshToken || !decoded) {
-            logger_1.default.error("Invalid refresh token: no usable candidate");
-            return res.status(http_status_1.default.FORBIDDEN).json({
-                error: true,
-                statusCode: http_status_1.default.FORBIDDEN,
-                message: "Invalid or expired refresh token",
-            });
-        }
-        const userId = typeof decoded.sub === "object"
-            ? (_e = decoded.sub) === null || _e === void 0 ? void 0 : _e.userId
-            : (_f = decoded.sub) !== null && _f !== void 0 ? _f : decoded.userId;
-        if (!userId) {
-            return res.status(http_status_1.default.FORBIDDEN).json({
-                error: true,
-                statusCode: http_status_1.default.FORBIDDEN,
-                message: "Invalid refresh token payload",
-            });
-        }
-        const user = yield User_model_1.default.findOne({
-            where: { userId },
-            include: [{ model: Role_model_1.default, as: "role" }],
-        });
-        if (!user) {
-            return res.status(http_status_1.default.NOT_FOUND).json({
-                error: true,
-                statusCode: http_status_1.default.NOT_FOUND,
-                message: "User not found",
-            });
-        }
-        // Deactivated or deleted accounts can't mint new tokens.
-        if (user.isDeleted || user.status !== 1) {
-            return res.status(http_status_1.default.FORBIDDEN).json({
-                error: true,
-                statusCode: http_status_1.default.FORBIDDEN,
-                message: "This account is no longer active.",
-            });
-        }
-        // The stored value is a digest (or, for a session from before digests, the token itself).
-        const matchingStored = candidates.find((candidate) => (0, dataProtection_1.verifySecret)(candidate, user.refreshToken, "refresh-token"));
-        if (matchingStored) {
-            refreshToken = matchingStored;
-        }
-        const isSameUser = ((_g = decoded.sub) === null || _g === void 0 ? void 0 : _g.userId) === user.userId ||
-            decoded.sub === user.userId;
-        if (!isSameUser || !matchingStored) {
-            return res.status(http_status_1.default.FORBIDDEN).json({
-                error: true,
-                statusCode: http_status_1.default.FORBIDDEN,
-                message: "Invalid or revoked refresh token",
-            });
-        }
-        const token = yield token_service_1.default.generateUserAuthTokens(user);
-        yield User_model_1.default.update({ refreshToken: (0, dataProtection_1.digestSecret)(token.refresh.token, "refresh-token") }, { where: { userId: user.userId } });
-        const cookieNames = getRoleCookieNames(((_h = user.role) === null || _h === void 0 ? void 0 : _h.role) || "");
-        res.cookie(cookieNames.access, token.access.token, {
-            httpOnly: true,
-            secure: false,
-            maxAge: config_1.default.jwt.accessExpirationMinutes * 60 * 1000,
-            sameSite: "lax",
-        });
-        res.cookie(cookieNames.refresh, token.refresh.token, {
-            httpOnly: true,
-            secure: false,
-            maxAge: config_1.default.jwt.refreshExpirationDays * 24 * 60 * 60 * 1000,
-            sameSite: "lax",
-        });
+        (0, session_service_1.setAuthCookies)(res, (_c = result.user.role) === null || _c === void 0 ? void 0 : _c.role, result);
         return res.status(http_status_1.default.OK).json({
             error: false,
             statusCode: http_status_1.default.OK,
-            message: "Access token refreshed successfully",
-            data: {
-                token: token.access.token,
-                accessToken: token.access.token,
-                refreshToken: token.refresh.token,
-            },
+            message: "Session refreshed.",
+            data: {},
         });
     }
     catch (error) {
@@ -283,11 +121,11 @@ const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, funct
  * Mirrors your createUser() — also sends welcome email
  */
 const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _k, _l;
+    var _d, _e;
     try {
         const result = yield user_service_1.default.viaExamUserCreate(req);
         if (!result.error) {
-            const slug = (_l = (_k = req.viaExamUser) === null || _k === void 0 ? void 0 : _k.institute) === null || _l === void 0 ? void 0 : _l.slug;
+            const slug = (_e = (_d = req.viaExamUser) === null || _d === void 0 ? void 0 : _d.institute) === null || _e === void 0 ? void 0 : _e.slug;
             const loginUrl = slug
                 ? `${config_1.default.frontendUrl}/${slug}/auth/signin`
                 : `${config_1.default.frontendUrl}/auth/signin`;
@@ -314,26 +152,40 @@ const createViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, functi
 });
 // ─── LOGOUT ───────────────────────────────────────────────────────────────────
 /**
- * POST /api/viaexam/auth/logout
- * Protected by authenticate middleware — reads userId from req.viaExamUser
+ * POST /v1/user/logout   Ends this session and clears its cookies; the user's other sessions
+ * (another browser, another role in this one) stay signed in.
  */
 const logoutViaExamUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _m, _o, _p;
+    var _f, _g;
     try {
-        // Clear only this user's role cookies so other tabs stay logged in
-        const cookieOpts = { httpOnly: true, secure: false, sameSite: "lax" };
-        const cookieNames = getRoleCookieNames(((_o = (_m = req.viaExamUser) === null || _m === void 0 ? void 0 : _m.role) === null || _o === void 0 ? void 0 : _o.role) || "");
-        res.clearCookie(cookieNames.access, cookieOpts);
-        res.clearCookie(cookieNames.refresh, cookieOpts);
-        if (cookieNames.access !== "accessToken") {
-            res.clearCookie("accessToken", cookieOpts);
-            res.clearCookie("refreshToken", cookieOpts);
-        }
-        if ((_p = req.viaExamUser) === null || _p === void 0 ? void 0 : _p.userId) {
-            UserPresenceSession_model_1.default.update({ presenceStatus: "OFFLINE", currentActivity: "Logged Out", lastLogoutAt: new Date() }, { where: { userId: req.viaExamUser.userId } }).catch(() => { });
-        }
+        (0, session_service_1.clearAuthCookies)(res, (_g = (_f = req.viaExamUser) === null || _f === void 0 ? void 0 : _f.role) === null || _g === void 0 ? void 0 : _g.role);
+        if (req.authSessionId)
+            yield (0, session_service_1.endSession)(req.authSessionId, "logout");
         const result = yield user_service_1.default.viaExamUserLogout(req.viaExamUser.userId);
         return res.status(result.statusCode).send(result);
+    }
+    catch (error) {
+        return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
+            error: true,
+            statusCode: http_status_1.default.INTERNAL_SERVER_ERROR,
+            data: {},
+            message: "Internal Server Error",
+        });
+    }
+});
+/** POST /v1/user/logout-all   Ends every session of this user, this one included. */
+const logoutEverywhere = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _h, _j;
+    try {
+        const sessions = yield (0, session_service_1.endAllSessions)(req.viaExamUser.userId, "logout-all");
+        (0, session_service_1.clearAuthCookies)(res, (_j = (_h = req.viaExamUser) === null || _h === void 0 ? void 0 : _h.role) === null || _j === void 0 ? void 0 : _j.role);
+        yield user_service_1.default.viaExamUserLogout(req.viaExamUser.userId);
+        return res.status(http_status_1.default.OK).send({
+            error: false,
+            statusCode: http_status_1.default.OK,
+            message: "Signed out on every device.",
+            data: { sessions },
+        });
     }
     catch (error) {
         return res.status(http_status_1.default.INTERNAL_SERVER_ERROR).json({
@@ -387,6 +239,7 @@ exports.default = {
     refreshAccessToken,
     createViaExamUser,
     logoutViaExamUser,
+    logoutEverywhere,
     getViaExamProfile,
     updateViaExamProfile,
 };

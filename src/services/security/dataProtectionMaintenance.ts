@@ -1,24 +1,19 @@
 /**
- * Encrypted columns in the database (utils/dataProtection): their list, the start-up checks, and
- * the maintenance tasks that keep them encrypted.
+ * Encrypted columns in the database (utils/dataProtection): their list and the start-up checks.
+ * Values stored before encryption stay as they are.
  *
  *   prepareEncryptedColumns   on start: the columns become TEXT (ciphertext is longer than the value)
  *   checkStoredKeys           on start: refuses to run when the newest encrypted value of a column
  *                             was sealed with a key this process doesn't have (a wrong or missing
  *                             DATA_ENCRYPTION_KEY would otherwise write a second key's values)
- *   encrypt-sensitive-data    daily and after each start: encrypts values still in plain text
- *                             (rows from before, or written by raw SQL) and moves values sealed
- *                             with a previous key to the current one. Batches of 500; a row
- *                             changed meanwhile keeps its new value; a value no key opens is left
- *                             as it is and counted.
  *   password-reset-cleanup    daily: OTP rows a day past their expiry are deleted
  */
 
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/sequelize";
 import logger from "../../config/logger";
-import { defineMaintenanceTask } from "../../queue/maintenance";
-import { currentKeyId, encryptField, isKnownKey, keyIdOf, openForRotation, type FieldPurpose } from "../../utils/dataProtection";
+import { defineMaintenanceTask, retireMaintenanceTask } from "../../queue/maintenance";
+import { isKnownKey, keyIdOf, type FieldPurpose } from "../../utils/dataProtection";
 
 interface EncryptedColumn {
   table: string;
@@ -37,8 +32,6 @@ export const ENCRYPTED_COLUMNS: EncryptedColumn[] = [
   { table: "viaexam_student_profiles", column: "profileUrl", purpose: "profileUrl" },
   { table: "viaexam_student_profiles", column: "aadhar", purpose: "aadhaar" },
 ];
-
-const BATCH = 500;
 
 export const prepareEncryptedColumns = async () => {
   const found = await sequelize
@@ -79,50 +72,10 @@ export const checkStoredKeys = async () => {
   }
 };
 
-const encryptColumn = async ({ table, column, purpose }: EncryptedColumn) => {
-  const sealedNow = `enc:1:${currentKeyId()}:%`;
-  let lastId = 0;
-  let encrypted = 0;
-  let unreadable = 0;
-  for (;;) {
-    const rows = await sequelize.query<{ id: number; value: string }>(
-      `SELECT "id", "${column}" AS value FROM "${table}"
-        WHERE "id" > :lastId AND "${column}" IS NOT NULL AND "${column}" <> '' AND "${column}" NOT LIKE :sealedNow
-        ORDER BY "id" LIMIT ${BATCH}`,
-      { replacements: { lastId, sealedNow }, type: QueryTypes.SELECT }
-    );
-    if (!rows.length) break;
-    lastId = rows[rows.length - 1].id;
-
-    const changes: Array<[number, string, string]> = [];
-    for (const r of rows) {
-      const plain = openForRotation(r.value, purpose);
-      if (plain === null) unreadable++;
-      else changes.push([r.id, r.value, encryptField(plain, purpose)]);
-    }
-    if (!changes.length) continue;
-    // One statement per batch, pinned to the value read: a row changed meanwhile keeps its new value.
-    const values = changes.map((_, i) => `($${i * 3 + 1}::int, $${i * 3 + 2}::text, $${i * 3 + 3}::text)`).join(", ");
-    const [, meta] = (await sequelize.query(
-      `UPDATE "${table}" AS t SET "${column}" = v.next FROM (VALUES ${values}) AS v(id, prev, next) WHERE t."id" = v.id AND t."${column}" = v.prev`,
-      { bind: changes.flat() }
-    )) as [unknown, { rowCount?: number } | undefined];
-    encrypted += Number(meta?.rowCount ?? changes.length);
-  }
-  return { encrypted, unreadable };
-};
-
-defineMaintenanceTask("encrypt-sensitive-data", { pattern: "15 4 * * *" }, async () => {
-  const done: Record<string, { encrypted: number; unreadable: number }> = {};
-  for (const c of ENCRYPTED_COLUMNS) {
-    const result = await encryptColumn(c);
-    if (result.encrypted || result.unreadable) done[`${c.table}.${c.column}`] = result;
-    if (result.unreadable) {
-      logger.error(`[DataProtection] ${result.unreadable} value(s) of ${c.table}.${c.column} can't be decrypted with the configured keys; left as they are.`);
-    }
-  }
-  return Object.keys(done).length ? done : null;
-});
+// Removed: values stored before encryption (and ones under a previous key) are left as they are;
+// new values are encrypted when the models write them. Its schedule, still saved in the queue
+// database of an earlier version, is deleted on start.
+retireMaintenanceTask("encrypt-sensitive-data");
 
 defineMaintenanceTask("password-reset-cleanup", { pattern: "45 4 * * *" }, async () => {
   const [, meta] = (await sequelize.query(`DELETE FROM "viaexam_password_resets" WHERE "expiresAt" < now() - interval '1 day'`)) as [

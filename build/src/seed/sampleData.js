@@ -134,7 +134,6 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         loginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
-        refreshToken: null,
     });
     yield upsertById(User_model_1.default, { userId: "USER-TEACHER-001" }, {
         userId: "USER-TEACHER-001",
@@ -148,7 +147,6 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         loginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
-        refreshToken: null,
     });
     yield upsertById(User_model_1.default, { userId: "USER-EXAMINER-001" }, {
         userId: "USER-EXAMINER-001",
@@ -162,7 +160,6 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         loginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
-        refreshToken: null,
     });
     yield upsertById(User_model_1.default, { userId: "USER-STUDENT-001" }, {
         userId: "USER-STUDENT-001",
@@ -176,7 +173,6 @@ const seed = () => __awaiter(void 0, void 0, void 0, function* () {
         loginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
-        refreshToken: null,
     });
     yield upsertById(TeacherProfile_model_1.default, { userId: "USER-TEACHER-001" }, {
         userId: "USER-TEACHER-001",

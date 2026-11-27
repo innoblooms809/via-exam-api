@@ -41,6 +41,8 @@ router.patch(
   validate(Validation.updateInstituteSubscription),
   Controller.updateInstituteSubscription
 );
+// POST /v1/subscription/institutes/:instituteId/remind — email + notify its admins that the plan is ending / ended
+router.post("/institutes/:instituteId/remind", ...superAdmin, validate(Validation.instituteParams), Controller.sendRenewalReminder);
 router.get("/transactions", ...superAdmin, validate(Validation.listTransactions), Controller.listTransactions);
 
 export default router;

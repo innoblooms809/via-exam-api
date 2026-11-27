@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const config_1 = __importDefault(require("../../config/config"));
 const user_route_1 = __importDefault(require("./auth/user.route"));
-const access_route_1 = __importDefault(require("./access/access.route"));
 const docs_route_1 = __importDefault(require("./system/docs.route"));
 const institute_route_1 = __importDefault(require("./institute/institute.route"));
 const teacher_route_1 = __importDefault(require("./teacher/teacher.route"));
@@ -29,17 +28,13 @@ const academicCalendar_route_1 = __importDefault(require("./academic/academicCal
 const auth_route_1 = __importDefault(require("./auth/auth.route"));
 const notification_route_1 = __importDefault(require("./notification/notification.route"));
 const aiEvaluation_route_1 = __importDefault(require("./evaluation/aiEvaluation.route"));
-const dashboard_route_1 = __importDefault(require("./dashboard/dashboard.route"));
 const adminDashboard_route_1 = __importDefault(require("./dashboard/adminDashboard.route"));
-const teacherDashboard_route_1 = __importDefault(require("./teacher/teacherDashboard.route"));
-const studentDashboard_route_1 = __importDefault(require("./student/studentDashboard.route"));
-const scannerDashboard_route_1 = __importDefault(require("./scanner/scannerDashboard.route"));
 const home_route_1 = __importDefault(require("./dashboard/home.route"));
 const monitoring_route_1 = __importDefault(require("./monitoring/monitoring.route"));
-const recheckRequest_route_1 = __importDefault(require("./evaluation/recheckRequest.route"));
 const evaluationAssignment_route_1 = __importDefault(require("./evaluation/evaluationAssignment.route"));
 const subscription_route_1 = __importDefault(require("./subscription/subscription.route"));
 const partner_route_1 = require("./partner/partner.route");
+const contact_route_1 = __importDefault(require("./contact/contact.route"));
 const router = express_1.default.Router();
 const defaultRoutes = [
     {
@@ -47,32 +42,12 @@ const defaultRoutes = [
         route: user_route_1.default,
     },
     {
-        path: "/access",
-        route: access_route_1.default,
-    },
-    {
         path: "/institute",
         route: institute_route_1.default,
     },
     {
-        path: "/dashboard",
-        route: dashboard_route_1.default,
-    },
-    {
         path: "/admin-dashboard",
         route: adminDashboard_route_1.default,
-    },
-    {
-        path: "/teacher-dashboard",
-        route: teacherDashboard_route_1.default,
-    },
-    {
-        path: "/student-dashboard",
-        route: studentDashboard_route_1.default,
-    },
-    {
-        path: "/scanner-dashboard",
-        route: scannerDashboard_route_1.default,
     },
     {
         path: "/home",
@@ -171,10 +146,6 @@ const defaultRoutes = [
         route: monitoring_route_1.default,
     },
     {
-        path: "/recheck-requests",
-        route: recheckRequest_route_1.default,
-    },
-    {
         path: "/evaluation-assignments",
         route: evaluationAssignment_route_1.default,
     },
@@ -190,6 +161,11 @@ const defaultRoutes = [
     {
         path: "/partner-keys",
         route: partner_route_1.partnerKeyRoutes,
+    },
+    // The landing page's "Get in touch" form (public).
+    {
+        path: "/contact",
+        route: contact_route_1.default,
     },
     // {
     //   path: '/captcha',

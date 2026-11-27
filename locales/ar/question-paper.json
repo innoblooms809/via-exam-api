@@ -35,6 +35,8 @@
   "Rejection note is required": "يلزم تقديم مذكرة رفض",
   "teacherId is required": "معرف المعلم مطلوب",
   "teacherId must be a string": "يجب أن يكون teacherId سلسلة نصية",
+  "The file could not be saved. Please try again.": "تعذّر حفظ الملف. يُرجى المحاولة مرة أخرى.",
+  "The images could not be saved. Please try again.": "تعذّر حفظ الصور. يُرجى المحاولة مرة أخرى.",
   "This question paper belongs to a different exam or set.": "هذه ورقة الأسئلة تخص امتحانًا أو مجموعة أسئلة مختلفة.",
   "This question paper belongs to a different exam.": "هذه ورقة أسئلة تخص امتحاناً مختلفاً.",
   "Write a comment first.": "اكتب تعليقًا أولًا.",

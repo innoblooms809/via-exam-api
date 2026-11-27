@@ -1,59 +1,11 @@
-// import jwt from "jsonwebtoken";
-// import UserModel from "../models/User.model";
-// import config from "../config/config";
-// import { NextFunction, Request, Response } from "express";
-
-
-// const authenticate = async (req: any, res: Response, next: NextFunction) => {
-//   const token = req.headers.authorization?.split(" ")[1];
-
-//   if (!token) {
-//     return res.status(401).json({ message: "Authentication required" });
-//   }
-
-//   try {
-//     const decodedToken: any = jwt.verify(token, config.jwt.secret);
-//     const user = await UserModel.findOne({where:{userId:decodedToken?.sub.userId}});
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-//     req.user = user;
-//     next();
-//   } catch (error) {
-//     res.status(401).json({ message: "Invalid token" });
-//   }
-// };
-
-// export default authenticate;
-
-import jwt from "jsonwebtoken";
 import { NextFunction, Response } from "express";
 import httpStatus from "http-status";
 import UserModal from "../models/User.model";
 import Role from "../models/Role.model";
 import Institute from "../models/Institute.model";
 import UserPresenceSession from "../models/UserPresenceSession.model";
-import config from "../config/config";
 import logger from "../config/logger";
-
-const getCookieValue = (req: any, name: string): string | undefined => {
-  if (req.cookies?.[name]) {
-    return req.cookies[name];
-  }
-
-  const cookieHeader = req.headers.cookie;
-  if (!cookieHeader) {
-    return undefined;
-  }
-
-  return cookieHeader
-    .split(";")
-    .map((cookie: string) => cookie.trim())
-    .find((cookie: string) => cookie.startsWith(`${name}=`))
-    ?.split("=")
-    .slice(1)
-    .join("=");
-};
+import { accountProblem, checkAccessToken, cookieNamesFor, cookieNamesToTry, cookieValues, sessionIsActive } from "../services/auth/session.service";
 
 const cleanRole = (r: string): string => {
   return String(r || "").toUpperCase().replace(/[\s_-]+/g, "");
@@ -85,137 +37,62 @@ const resolveRequestAuthRole = (req: any): string | undefined => {
 };
 
 // ─── 1. AUTHENTICATION GUARD ("Who is this? → req.viaExamUser") ───────────────
+// The access token comes only from an httpOnly cookie (services/auth/session.service): the page's
+// JavaScript never holds it, so a script injected into a page can't take it away.
+const unauthorized = (res: Response, message: string) =>
+  res.status(httpStatus.UNAUTHORIZED).json({ error: true, statusCode: httpStatus.UNAUTHORIZED, message });
+
 const authenticate = async (
   req: any,
   res: Response,
   next: NextFunction
 ): Promise<any> => {
   try {
-    const authHeader = req.headers.authorization;
-
-    const superAdminCookie = getCookieValue(req, "superAdminToken");
-    const adminCookie = getCookieValue(req, "adminToken");
-    const teacherCookie = getCookieValue(req, "teacherToken");
-    const studentCookie = getCookieValue(req, "studentToken");
-    const scannerCookie = getCookieValue(req, "scannerToken");
-    const defaultCookie = getCookieValue(req, "accessToken");
-
     const reqPath = (req.originalUrl || req.url || "").toLowerCase();
     const authRole = resolveRequestAuthRole(req);
-
-    // Use only this tab's role cookie — never fall back to another logged-in role
-    let cookieToken: string | undefined;
-    if (authRole === "superadmin") cookieToken = superAdminCookie || defaultCookie;
-    else if (authRole === "admin") cookieToken = adminCookie || defaultCookie;
-    else if (authRole === "teacher") cookieToken = teacherCookie || defaultCookie;
-    else if (authRole === "student") cookieToken = studentCookie || defaultCookie;
-    else if (authRole === "scanner") cookieToken = scannerCookie || defaultCookie;
-    else {
-      cookieToken =
-        adminCookie ||
-        teacherCookie ||
-        superAdminCookie ||
-        studentCookie ||
-        scannerCookie ||
-        defaultCookie;
-    }
-
-    if ((!authHeader || !authHeader.startsWith("Bearer ")) && !cookieToken) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "Access token missing.",
-      });
-    }
-
-    let token: string | undefined;
-    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : undefined;
-    const isValidBearer = !!(bearerToken && bearerToken !== "undefined" && bearerToken !== "null");
-
-    const isUsableJwt = (value?: string) => {
-      if (!value) return false;
-      try {
-        jwt.verify(value, config.jwt.secret);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-
     const isSuperAdminRoute = reqPath.includes("/super-admin") || reqPath.includes("/monitoring/platform");
-    if (isSuperAdminRoute && isUsableJwt(superAdminCookie)) {
-      token = superAdminCookie;
-    } else if (isUsableJwt(bearerToken)) {
-      token = bearerToken;
-    } else if (isUsableJwt(cookieToken)) {
-      token = cookieToken;
-    } else {
-      token = isValidBearer ? bearerToken : cookieToken;
+
+    // This tab's role cookie only, never another signed-in role's (a super-admin page's own first).
+    const names = [...new Set([...(isSuperAdminRoute ? [cookieNamesFor("superadmin").access] : []), ...cookieNamesToTry("access", authRole)])];
+    let token: { userId: string; sid: string } | null = null;
+    let seen = false;
+    let expired = false;
+    for (const name of names) {
+      for (const value of cookieValues(req, name)) {
+        seen = true;
+        const check = checkAccessToken(value);
+        if (check.ok) {
+          token = check;
+          break;
+        }
+        expired ||= check.expired;
+      }
+      if (token) break;
     }
+    if (!seen) return unauthorized(res, "Access token missing.");
+    if (!token) return unauthorized(res, expired ? "Token has expired. Please login again." : "Invalid token.");
 
-    let decoded: any;
-    try {
-      decoded = jwt.verify(token || "", config.jwt.secret);
-    } catch (err: any) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message:
-          err.name === "TokenExpiredError"
-            ? "Token has expired. Please login again."
-            : "Invalid token.",
-      });
-    }
-
-    const userId =
-      typeof decoded.sub === "object"
-        ? decoded.sub?.userId
-        : decoded.sub ?? decoded.userId;
-
-    if (!userId) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "Invalid token payload.",
-      });
-    }
-
-    const user = await UserModal.findOne({
-      include: [
-        { model: Role, as: "role" },
-        { model: Institute, as: "institute" },
-      ],
-      where: { userId },
-    });
-
-    if (!user) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: "User not found.",
-      });
-    }
-
-    // A valid token is not enough: the account (and its school) must still be
-    // active, so deactivating or deleting someone takes effect immediately.
-    if ((user as any).isDeleted || user.status !== 1) {
-      return res.status(httpStatus.UNAUTHORIZED).json({
-        error: true,
-        statusCode: httpStatus.UNAUTHORIZED,
-        message: user.status === 2 ? "Your account is suspended. Contact your administrator." : "Your account is inactive. Contact your administrator.",
-      });
-    }
-    const userInstitute = (user as any).institute;
-    const isSuperAdmin = cleanRole((user as any).role?.role) === "SUPERADMIN";
-    if (!isSuperAdmin && user.instituteId && (!userInstitute || userInstitute.isDeleted || userInstitute.status !== 1)) {
-      return res.status(httpStatus.FORBIDDEN).json({
-        error: true,
-        statusCode: httpStatus.FORBIDDEN,
-        message: "Your institute's account is not active. Contact the ViaExam team.",
-      });
+    // The session must still be signed in (sign-out, a new password, reuse of a stolen refresh
+    // token end it at once), and the account and its school still active.
+    const [user, active] = await Promise.all([
+      UserModal.findOne({
+        include: [
+          { model: Role, as: "role" },
+          { model: Institute, as: "institute" },
+        ],
+        where: { userId: token.userId },
+      }),
+      sessionIsActive(token.sid, token.userId),
+    ]);
+    if (!active) return unauthorized(res, "Your session has ended. Please sign in again.");
+    const problem = accountProblem(user);
+    if (problem || !user) {
+      const { statusCode, message } = problem ?? { statusCode: httpStatus.UNAUTHORIZED, message: "User not found." };
+      return res.status(statusCode).json({ error: true, statusCode, message });
     }
 
     req.viaExamUser = user;
+    req.authSessionId = token.sid;
 
     // ─────────────────────────────────────────────
     // PASSIVE WINSTON ACTIVITY & PRESENCE TRACKER

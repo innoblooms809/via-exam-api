@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
 import { Op, QueryTypes } from "sequelize";
 import UserModal from "../../models/User.model";
+import { endAllSessions } from "../auth/session.service";
 import StudentProfile from "../../models/Student.model";
 import Role from "../../models/Role.model";
 import Institute from "../../models/Institute.model";
@@ -143,7 +144,7 @@ const createStudent = async (body: any, files: any, createdBy: any): Promise<any
         ? `${user.userName} was a deleted student; their account is restored in ${placeLabel(place)} with their old results.`
         : `Student added to ${placeLabel(place)}.`,
       data: {
-        user: exclude(user.toJSON(), ["password", "refreshToken"]),
+        user: exclude(user.toJSON(), ["password"]),
         plainPassword,
         instituteName: institute.instituteName,
         restored: Boolean(restoring),
@@ -413,7 +414,7 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
     let student = await UserModal.findOne({
       where: userWhere,
       include: [{ model: Role, as: "role" }, { model: StudentProfile, as: "studentProfile" }],
-      attributes: { exclude: ["password", "refreshToken"] },
+      attributes: { exclude: ["password"] },
     });
 
     // Older links pass a roll number instead of the id.
@@ -423,7 +424,7 @@ const getStudentById = async (userId: string, createdBy: any): Promise<any> => {
         student = await UserModal.findOne({
           where: { userId: profile.userId, ...(instituteId ? { instituteId } : {}) },
           include: [{ model: Role, as: "role" }, { model: StudentProfile, as: "studentProfile" }],
-          attributes: { exclude: ["password", "refreshToken"] },
+          attributes: { exclude: ["password"] },
         });
       }
     }
@@ -587,7 +588,8 @@ const deleteStudent = async (userId: string, createdBy: any): Promise<any> => {
     if (!user) return fail(httpStatus.NOT_FOUND, "Student not found.");
 
     await sequelize.transaction(async (t) => {
-      await user.update({ status: 0, refreshToken: null }, { transaction: t });
+      await user.update({ status: 0 }, { transaction: t });
+      await endAllSessions(userId, "deactivated", null, t);
       await StudentProfile.update({ isActive: false }, { where: { userId, instituteId }, transaction: t });
       await leaveOpenSessions(instituteId, userId, t);
     });

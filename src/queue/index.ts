@@ -6,6 +6,8 @@
  *   initQueues()          on start: connects the driver (or falls back to in-process queues)
  *   startQueueWorkers()   once the database is ready: runs processors and schedules
  *                         (skipped with QUEUE_WORKERS=false; `npm run worker` runs them instead)
+ *   queueWorkers()        which processes take jobs right now (presence.ts): a process that only
+ *                         adds jobs can tell when nobody takes them
  *   closeQueues()         on shutdown
  *
  * Handles returned by defineQueue can be used right away: until initQueues() has finished,
@@ -17,13 +19,14 @@ import logger from "../config/logger";
 import { queueConfig, type QueueDriverKind } from "./config";
 import { createMemoryDriver } from "./memoryDriver";
 import { createPostgresDriver } from "./postgresDriver";
-import type { AddOptions, JobQueue, JobView, QueueDefinition, QueueDriver, Repeat } from "./types";
+import type { AddOptions, JobQueue, JobView, QueueDefinition, QueueDriver, Repeat, WorkerPresence } from "./types";
 
 export * from "./types";
 export * from "./events";
 
 const definitions = new Map<string, QueueDefinition<any>>();
 const schedules: Array<{ queue: string; id: string; repeat: Repeat; job: { name: string; data?: unknown } }> = [];
+const retiredSchedules: Array<{ queue: string; id: string }> = [];
 
 let driver: QueueDriver | null = null;
 let initializing: Promise<QueueDriver> | null = null;
@@ -102,6 +105,36 @@ export function defineSchedule<T>(queue: QueueHandle<T>, id: string, repeat: Rep
   schedules.push({ queue: queue.name, id, repeat, job });
 }
 
+/**
+ * A schedule that is no longer used. The queue database keeps a schedule after its code is gone,
+ * so it is removed there when workers start; otherwise it would keep adding jobs.
+ */
+export function retireSchedule<T>(queue: QueueHandle<T>, id: string) {
+  retiredSchedules.push({ queue: queue.name, id });
+}
+
+const presenceInfo = new Map<string, () => unknown>();
+
+/**
+ * Something a process that runs workers tells the processes that only add jobs, sent with its sign
+ * of life (e.g. the health of the services its jobs call). The others read it in queueWorkers().
+ */
+export function registerPresenceInfo(key: string, read: () => unknown) {
+  presenceInfo.set(key, read);
+}
+
+const collectPresenceInfo = (): Record<string, unknown> => {
+  const info: Record<string, unknown> = {};
+  for (const [key, read] of presenceInfo) {
+    try {
+      info[key] = read();
+    } catch {
+      /* left out of this beat */
+    }
+  }
+  return info;
+};
+
 const describe = (err: any) => String(err?.message || err).slice(0, 300);
 
 /**
@@ -164,6 +197,17 @@ export async function startQueueWorkers(options: { force?: boolean } = {}): Prom
       .schedule(s.id, s.repeat, s.job as any)
       .catch((err) => logger.error(`[Queue] Schedule ${s.id} on ${s.queue} could not be set: ${describe(err)}`));
   }
+  for (const r of retiredSchedules) {
+    const def = definitions.get(r.queue);
+    if (!def) continue;
+    await d
+      .queue(def)
+      .unschedule(r.id)
+      .catch((err) => logger.warn(`[Queue] Schedule ${r.id} on ${r.queue} could not be removed: ${describe(err)}`));
+  }
+  // From now on the processes that only add jobs see that this one takes them.
+  const taken = [...definitions.values()].filter((x) => x.processor).map((x) => x.name);
+  await d.announce(taken, collectPresenceInfo).catch((err) => logger.warn(`[Queue] Could not announce this worker: ${describe(err)}`));
   logger.info(
     `[Queue] Workers running: ${[...definitions.values()].filter((x) => x.processor).map((x) => `${x.name}×${x.concurrency}`).join(", ")}` +
       (schedules.length ? `; ${schedules.length} schedules.` : ".")
@@ -202,6 +246,26 @@ export async function queueStatus(options: { counts?: boolean } = {}): Promise<{
 }
 
 export const queueDriverKind = (): QueueDriverKind | "none" => driver?.kind ?? "none";
+
+/**
+ * The processes taking jobs right now (this one included when it runs workers), or null when this
+ * process can't tell: queues not started yet, or the list unavailable. Never throws.
+ */
+export async function queueWorkers(): Promise<WorkerPresence[] | null> {
+  const d = driver;
+  if (!d) return null;
+  try {
+    const list = await d.workers();
+    workersReadFailing = false;
+    return list;
+  } catch (err) {
+    // The queue page asks every few seconds: once per run of failures is enough.
+    if (!workersReadFailing) logger.warn(`[Queue] Could not read which processes take jobs: ${describe(err)}`);
+    workersReadFailing = true;
+    return null;
+  }
+}
+let workersReadFailing = false;
 
 /** Whether this process runs the queues' jobs (the worker, or the API without QUEUE_WORKERS=false). */
 export const queueWorkersRunningHere = (): boolean => workersRunning;

@@ -61,11 +61,20 @@ exports.pythonServices = {
  * set the same value here (OCR_SERVICE_TOKEN / EVAL_SERVICE_TOKEN); without it every call
  * except /health is refused with 401.
  */
-const serviceHeaders = (service) => {
+const serviceHeaders = (service, trace) => {
     const token = firstSet(service === "ocr" ? process.env.OCR_SERVICE_TOKEN : process.env.EVAL_SERVICE_TOKEN);
-    return token ? { "X-Internal-Token": token } : {};
+    return Object.assign(Object.assign({}, (token ? { "X-Internal-Token": token } : {})), traceHeaders(trace));
 };
 exports.serviceHeaders = serviceHeaders;
+const traceId = (value) => (value !== null && value !== void 0 ? value : "").replace(/[^A-Za-z0-9._:-]/g, "").slice(0, 128);
+const traceHeaders = (trace) => {
+    const headers = {};
+    if (traceId(trace === null || trace === void 0 ? void 0 : trace.threadId))
+        headers["X-Trace-Thread-Id"] = traceId(trace === null || trace === void 0 ? void 0 : trace.threadId);
+    if (traceId(trace === null || trace === void 0 ? void 0 : trace.runId))
+        headers["X-Trace-Run-Id"] = traceId(trace === null || trace === void 0 ? void 0 : trace.runId);
+    return headers;
+};
 /**
  * Can this machine open a connection to the server behind `url`? Only the connection counts, not
  * an HTTP answer: a server deep in a long OCR or evaluation may answer slowly, but it is still there.

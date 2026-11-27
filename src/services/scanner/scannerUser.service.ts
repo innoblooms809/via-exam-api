@@ -14,6 +14,7 @@ import { cleanEmail, contactTakenMessage, emailChange, staffAgeProblem, staffInp
 import { photoChange, uploadedPhoto } from "../../utils/profilePhoto";
 import { NAME_RULE } from "../../utils/textRules";
 import ExamScannerAssignment from "../../models/ExamScannerAssignment.model";
+import { endAllSessions } from "../auth/session.service";
 
 // ─── CREATE SCANNER ───────────────────────────────────────────────────────────
 // Checks run before the transaction opens, so they never wait on its connection.
@@ -114,7 +115,7 @@ const getAllScanners = async (createdBy: any, query: any): Promise<any> => {
         { model: Role, as: "role" },
         { model: ScannerProfile, as: "scannerProfile", required: false },
       ],
-      attributes: { exclude: ["password", "refreshToken"] },
+      attributes: { exclude: ["password"] },
       order: [["userName", "ASC"]],
     });
 
@@ -178,7 +179,7 @@ const getScannerById = async (userId: string, createdBy: any): Promise<any> => {
         { model: Role, as: "role" },
         { model: ScannerProfile, as: "scannerProfile" },
       ],
-      attributes: { exclude: ["password", "refreshToken"] },
+      attributes: { exclude: ["password"] },
     });
 
     if (!scanner) {
@@ -273,7 +274,8 @@ const deleteScanner = async (userId: string, createdBy: any): Promise<any> => {
     const work = await scannerOpenWork(userId, instituteId);
     if (work.total) return { error: true, statusCode: httpStatus.CONFLICT, message: work.message };
 
-    await user.update({ status: 0, refreshToken: null });
+    await user.update({ status: 0 });
+    await endAllSessions(userId, "deactivated");
     return { error: false, statusCode: httpStatus.OK, message: `${user.userName} deactivated.`, data: {} };
   } catch (e: any) {
     console.error("Delete scanner error:", e);

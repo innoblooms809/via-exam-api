@@ -6,6 +6,7 @@ import userController from "../../../controllers/auth/user.controller";
 import { authenticate, authorize } from "../../../middlewares/auth";
 import { ADMINS } from "../../../config/roles";
 import { profileUpload } from "../../../utils/multer";
+import { passwordChangeLimiter, recoveryLimiter } from "../../../middlewares/rateLimiter";
 // No authenticate middleware — user is logged out at this point
 
 const router = Router();
@@ -13,24 +14,28 @@ const router = Router();
 // Forgot Password - Step 1 (send OTP)
 router.post(
   "/forgotPassword",
+  recoveryLimiter,
   Controller.forgotPassword
 );
 
 // Verify OTP - Step 2 (verify OTP code)
 router.post(
   "/verifyOtp",
+  recoveryLimiter,
   Controller.verifyOtp
 );
 
 // Reset Password - Step 3 (reset password with verified OTP)
 router.post(
   "/resetPassword",
+  recoveryLimiter,
   Controller.resetPassword
 );
 
 // Resend Credentials - Generate new password and send email
 router.post(
   "/resendCredentials",
+  recoveryLimiter,
   Controller.resendCredentials
 );
 
@@ -41,11 +46,13 @@ router.post("/admin/reset-credentials", authenticate, authorize(ADMINS), Control
 router.post(
   "/changePassword",
   authenticate,
+  passwordChangeLimiter,
   Controller.changePassword
 );
 router.post(
   "/change-password",
   authenticate,
+  passwordChangeLimiter,
   Controller.changePassword
 );
 

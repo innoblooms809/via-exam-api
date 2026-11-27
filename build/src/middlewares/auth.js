@@ -1,8 +1,4 @@
 "use strict";
-// import jwt from "jsonwebtoken";
-// import UserModel from "../models/User.model";
-// import config from "../config/config";
-// import { NextFunction, Request, Response } from "express";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -17,46 +13,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.normalizeRoleKey = exports.resolveRequestAuthRole = exports.verifyTenant = exports.authorize = exports.authenticate = void 0;
-// const authenticate = async (req: any, res: Response, next: NextFunction) => {
-//   const token = req.headers.authorization?.split(" ")[1];
-//   if (!token) {
-//     return res.status(401).json({ message: "Authentication required" });
-//   }
-//   try {
-//     const decodedToken: any = jwt.verify(token, config.jwt.secret);
-//     const user = await UserModel.findOne({where:{userId:decodedToken?.sub.userId}});
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-//     req.user = user;
-//     next();
-//   } catch (error) {
-//     res.status(401).json({ message: "Invalid token" });
-//   }
-// };
-// export default authenticate;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const http_status_1 = __importDefault(require("http-status"));
 const User_model_1 = __importDefault(require("../models/User.model"));
 const Role_model_1 = __importDefault(require("../models/Role.model"));
 const Institute_model_1 = __importDefault(require("../models/Institute.model"));
 const UserPresenceSession_model_1 = __importDefault(require("../models/UserPresenceSession.model"));
-const config_1 = __importDefault(require("../config/config"));
 const logger_1 = __importDefault(require("../config/logger"));
-const getCookieValue = (req, name) => {
-    var _a, _b;
-    if ((_a = req.cookies) === null || _a === void 0 ? void 0 : _a[name]) {
-        return req.cookies[name];
-    }
-    const cookieHeader = req.headers.cookie;
-    if (!cookieHeader) {
-        return undefined;
-    }
-    return (_b = cookieHeader
-        .split(";")
-        .map((cookie) => cookie.trim())
-        .find((cookie) => cookie.startsWith(`${name}=`))) === null || _b === void 0 ? void 0 : _b.split("=").slice(1).join("=");
-};
+const session_service_1 = require("../services/auth/session.service");
 const cleanRole = (r) => {
     return String(r || "").toUpperCase().replace(/[\s_-]+/g, "");
 };
@@ -88,136 +51,65 @@ const resolveRequestAuthRole = (req) => {
 };
 exports.resolveRequestAuthRole = resolveRequestAuthRole;
 // ─── 1. AUTHENTICATION GUARD ("Who is this? → req.viaExamUser") ───────────────
+// The access token comes only from an httpOnly cookie (services/auth/session.service): the page's
+// JavaScript never holds it, so a script injected into a page can't take it away.
+const unauthorized = (res, message) => res.status(http_status_1.default.UNAUTHORIZED).json({ error: true, statusCode: http_status_1.default.UNAUTHORIZED, message });
 const authenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
+    var _a;
     try {
-        const authHeader = req.headers.authorization;
-        const superAdminCookie = getCookieValue(req, "superAdminToken");
-        const adminCookie = getCookieValue(req, "adminToken");
-        const teacherCookie = getCookieValue(req, "teacherToken");
-        const studentCookie = getCookieValue(req, "studentToken");
-        const scannerCookie = getCookieValue(req, "scannerToken");
-        const defaultCookie = getCookieValue(req, "accessToken");
         const reqPath = (req.originalUrl || req.url || "").toLowerCase();
         const authRole = resolveRequestAuthRole(req);
-        // Use only this tab's role cookie — never fall back to another logged-in role
-        let cookieToken;
-        if (authRole === "superadmin")
-            cookieToken = superAdminCookie || defaultCookie;
-        else if (authRole === "admin")
-            cookieToken = adminCookie || defaultCookie;
-        else if (authRole === "teacher")
-            cookieToken = teacherCookie || defaultCookie;
-        else if (authRole === "student")
-            cookieToken = studentCookie || defaultCookie;
-        else if (authRole === "scanner")
-            cookieToken = scannerCookie || defaultCookie;
-        else {
-            cookieToken =
-                adminCookie ||
-                    teacherCookie ||
-                    superAdminCookie ||
-                    studentCookie ||
-                    scannerCookie ||
-                    defaultCookie;
-        }
-        if ((!authHeader || !authHeader.startsWith("Bearer ")) && !cookieToken) {
-            return res.status(http_status_1.default.UNAUTHORIZED).json({
-                error: true,
-                statusCode: http_status_1.default.UNAUTHORIZED,
-                message: "Access token missing.",
-            });
-        }
-        let token;
-        const bearerToken = (authHeader === null || authHeader === void 0 ? void 0 : authHeader.startsWith("Bearer ")) ? authHeader.split(" ")[1] : undefined;
-        const isValidBearer = !!(bearerToken && bearerToken !== "undefined" && bearerToken !== "null");
-        const isUsableJwt = (value) => {
-            if (!value)
-                return false;
-            try {
-                jsonwebtoken_1.default.verify(value, config_1.default.jwt.secret);
-                return true;
-            }
-            catch (_a) {
-                return false;
-            }
-        };
         const isSuperAdminRoute = reqPath.includes("/super-admin") || reqPath.includes("/monitoring/platform");
-        if (isSuperAdminRoute && isUsableJwt(superAdminCookie)) {
-            token = superAdminCookie;
+        // This tab's role cookie only, never another signed-in role's (a super-admin page's own first).
+        const names = [...new Set([...(isSuperAdminRoute ? [(0, session_service_1.cookieNamesFor)("superadmin").access] : []), ...(0, session_service_1.cookieNamesToTry)("access", authRole)])];
+        let token = null;
+        let seen = false;
+        let expired = false;
+        for (const name of names) {
+            for (const value of (0, session_service_1.cookieValues)(req, name)) {
+                seen = true;
+                const check = (0, session_service_1.checkAccessToken)(value);
+                if (check.ok) {
+                    token = check;
+                    break;
+                }
+                expired || (expired = check.expired);
+            }
+            if (token)
+                break;
         }
-        else if (isUsableJwt(bearerToken)) {
-            token = bearerToken;
-        }
-        else if (isUsableJwt(cookieToken)) {
-            token = cookieToken;
-        }
-        else {
-            token = isValidBearer ? bearerToken : cookieToken;
-        }
-        let decoded;
-        try {
-            decoded = jsonwebtoken_1.default.verify(token || "", config_1.default.jwt.secret);
-        }
-        catch (err) {
-            return res.status(http_status_1.default.UNAUTHORIZED).json({
-                error: true,
-                statusCode: http_status_1.default.UNAUTHORIZED,
-                message: err.name === "TokenExpiredError"
-                    ? "Token has expired. Please login again."
-                    : "Invalid token.",
-            });
-        }
-        const userId = typeof decoded.sub === "object"
-            ? (_a = decoded.sub) === null || _a === void 0 ? void 0 : _a.userId
-            : (_b = decoded.sub) !== null && _b !== void 0 ? _b : decoded.userId;
-        if (!userId) {
-            return res.status(http_status_1.default.UNAUTHORIZED).json({
-                error: true,
-                statusCode: http_status_1.default.UNAUTHORIZED,
-                message: "Invalid token payload.",
-            });
-        }
-        const user = yield User_model_1.default.findOne({
-            include: [
-                { model: Role_model_1.default, as: "role" },
-                { model: Institute_model_1.default, as: "institute" },
-            ],
-            where: { userId },
-        });
-        if (!user) {
-            return res.status(http_status_1.default.UNAUTHORIZED).json({
-                error: true,
-                statusCode: http_status_1.default.UNAUTHORIZED,
-                message: "User not found.",
-            });
-        }
-        // A valid token is not enough: the account (and its school) must still be
-        // active, so deactivating or deleting someone takes effect immediately.
-        if (user.isDeleted || user.status !== 1) {
-            return res.status(http_status_1.default.UNAUTHORIZED).json({
-                error: true,
-                statusCode: http_status_1.default.UNAUTHORIZED,
-                message: user.status === 2 ? "Your account is suspended. Contact your administrator." : "Your account is inactive. Contact your administrator.",
-            });
-        }
-        const userInstitute = user.institute;
-        const isSuperAdmin = cleanRole((_c = user.role) === null || _c === void 0 ? void 0 : _c.role) === "SUPERADMIN";
-        if (!isSuperAdmin && user.instituteId && (!userInstitute || userInstitute.isDeleted || userInstitute.status !== 1)) {
-            return res.status(http_status_1.default.FORBIDDEN).json({
-                error: true,
-                statusCode: http_status_1.default.FORBIDDEN,
-                message: "Your institute's account is not active. Contact the ViaExam team.",
-            });
+        if (!seen)
+            return unauthorized(res, "Access token missing.");
+        if (!token)
+            return unauthorized(res, expired ? "Token has expired. Please login again." : "Invalid token.");
+        // The session must still be signed in (sign-out, a new password, reuse of a stolen refresh
+        // token end it at once), and the account and its school still active.
+        const [user, active] = yield Promise.all([
+            User_model_1.default.findOne({
+                include: [
+                    { model: Role_model_1.default, as: "role" },
+                    { model: Institute_model_1.default, as: "institute" },
+                ],
+                where: { userId: token.userId },
+            }),
+            (0, session_service_1.sessionIsActive)(token.sid, token.userId),
+        ]);
+        if (!active)
+            return unauthorized(res, "Your session has ended. Please sign in again.");
+        const problem = (0, session_service_1.accountProblem)(user);
+        if (problem || !user) {
+            const { statusCode, message } = problem !== null && problem !== void 0 ? problem : { statusCode: http_status_1.default.UNAUTHORIZED, message: "User not found." };
+            return res.status(statusCode).json({ error: true, statusCode, message });
         }
         req.viaExamUser = user;
+        req.authSessionId = token.sid;
         // ─────────────────────────────────────────────
         // PASSIVE WINSTON ACTIVITY & PRESENCE TRACKER
         // ── Purpose: Automatically logs active user API request to logs/combined.log
         // ── and updates presence status to ONLINE without raw endpoint strings on UI.
         // ─────────────────────────────────────────────
         try {
-            const userRole = ((_d = user.role) === null || _d === void 0 ? void 0 : _d.role) || "USER";
+            const userRole = ((_a = user.role) === null || _a === void 0 ? void 0 : _a.role) || "USER";
             const reqPath = (req.originalUrl || req.url || "").toLowerCase();
             // Skip background utility/polling endpoints so they don't overwrite user's main UI activity
             const isUtility = reqPath.includes("/notifications") ||

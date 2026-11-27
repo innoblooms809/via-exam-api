@@ -11,6 +11,8 @@ import Helper from "../../utils/helper"
 import { sequelize } from "../../config/sequelize"
 import { Op, QueryTypes, col, fn, where as sqlWhere } from "sequelize"
 import { PASSWORD_MESSAGE, isStrongPassword } from "../../utils/passwordRule"
+import logger from "../../config/logger"
+import { endAllSessions } from "./session.service"
 
 /**
  * Matches a user's email whatever its case. New accounts are stored lowercased, but older
@@ -33,11 +35,11 @@ const getRoleName = async (roleId: number): Promise<string> => {
 
 // ─── Credentials (new password + email) ──────────────────────────────────────
 
-const genericResendMessage = "If an active account uses this email, new login details have been sent to it.";
+const genericResendMessage =
+  "If an active account uses this email, its login details have been sent to it. To choose a new password, use Forgot password.";
 
-// One public resend per account every 10 minutes, so nobody can keep resetting
-// someone else's password. In-memory is enough: the window is short and a
-// restart only re-opens one resend.
+// One public resend per account every 10 minutes, so nobody can fill someone's inbox. In-memory is
+// enough: the window is short and a restart only re-opens one resend.
 const RESEND_COOLDOWN_MS = 10 * 60 * 1000;
 const lastResendAt = new Map<string, number>();
 
@@ -125,37 +127,27 @@ const STRONG_PASSWORD_MESSAGE = PASSWORD_MESSAGE;
 /** How an admin sends someone their login: a generated password, one they typed, or the details only. */
 export type LoginMode = "generate" | "manual" | "details";
 
+const isEmail = (email: string) => !!email && email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 /**
- * Public "resend my login details" (sign-in page). The password is always
- * generated here — a caller can never choose it — and goes only to the
- * account's own inbox. The reply is the same whether or not the email exists,
- * so the form can't be used to discover who has an account.
+ * Public "resend my login details" (sign-in page): the account's own inbox gets its login email
+ * and sign-in link. It never changes the password: someone who only knows the address must not be
+ * able to reset it, or sign its owner out. A new password goes through the emailed code
+ * (forgotPassword). The answer is the same, and as fast, whether or not the email has an account,
+ * so the form can't be used to find out who has one.
  */
 const resendCredentials = async (email: string): Promise<any> => {
-  try {
-    const cleanEmail = String(email ?? "").trim().toLowerCase();
-    if (!cleanEmail || cleanEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a valid email address." };
-    }
+  const cleanEmail = String(email ?? "").trim().toLowerCase();
+  if (!isEmail(cleanEmail)) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a valid email address." };
+  void sendOwnLoginDetails(cleanEmail).catch((e) => logger.error(`[Auth] Login details could not be sent: ${e?.message || e}`));
+  return { error: false, statusCode: httpStatus.OK, message: genericResendMessage, data: {} };
+};
 
-    const user = await UserModal.findOne({ where: { ...emailIs(cleanEmail), status: 1, isDeleted: false } });
-    if (!user) return { error: false, statusCode: httpStatus.OK, message: genericResendMessage, data: {} };
-
-    const last = lastResendAt.get(user.userId) ?? 0;
-    if (Date.now() - last < RESEND_COOLDOWN_MS) {
-      return {
-        error: true,
-        statusCode: httpStatus.TOO_MANY_REQUESTS,
-        message: "New login details were sent a few minutes ago. Check your inbox (and spam) or try again in 10 minutes.",
-      };
-    }
-    lastResendAt.set(user.userId, Date.now());
-
-    await issueCredentials(user, Helper.generateTempPassword());
-    return { error: false, statusCode: httpStatus.OK, message: genericResendMessage, data: {} };
-  } catch (e: any) {
-    return { error: true, statusCode: httpStatus.INTERNAL_SERVER_ERROR, message: "Could not send login details. Please try again." };
-  }
+const sendOwnLoginDetails = async (cleanEmail: string) => {
+  const user = await UserModal.findOne({ where: { ...emailIs(cleanEmail), status: 1, isDeleted: false } });
+  if (!user || Date.now() - (lastResendAt.get(user.userId) ?? 0) < RESEND_COOLDOWN_MS) return;
+  lastResendAt.set(user.userId, Date.now());
+  await sendLoginDetails(user);
 };
 
 /**
@@ -273,33 +265,27 @@ const checkCode = async (cleanEmail: string, otp: unknown): Promise<CodeCheck> =
 };
 
 // ─── STEP 1: Send OTP ─────────────────────────────────────────────────────────
+// The answer is the same, and as fast, whether or not the email has an account (the code is sent
+// after it), so the form can't be used to find out who has one.
+const genericCodeMessage = "If an active account uses this email, a code has been sent to it. It is valid for 10 minutes.";
+
 const forgotPassword = async (email: string): Promise<any> => {
-  try {
-    const cleanEmail = String(email ?? "").trim().toLowerCase();
+  const cleanEmail = String(email ?? "").trim().toLowerCase();
+  if (!isEmail(cleanEmail)) return { error: true, statusCode: httpStatus.BAD_REQUEST, message: "Enter a valid email address." };
+  void sendResetCode(cleanEmail).catch((e) => logger.error(`[Auth] A password reset code could not be sent: ${e?.message || e}`));
+  return { error: false, statusCode: httpStatus.OK, message: genericCodeMessage, data: {} };
+};
 
-    // 1. Check user exists
+/** The code, when the email has an active account and none went out in the last minute (the page's "Resend" waits a minute too). */
+const sendResetCode = async (cleanEmail: string): Promise<void> => {
+    // 1. An active account, and no code in the last minute
     const user = await UserModal.findOne({
-      where: { ...emailIs(cleanEmail), status: 1 },
+      where: { ...emailIs(cleanEmail), status: 1, isDeleted: false },
     });
+    if (!user) return;
 
-    if (!user) {
-      return {
-        error: true,
-        statusCode: httpStatus.NOT_FOUND,
-        message: "No account found with this email.",
-      };
-    }
-
-    // 2. One code a minute per address (the page's "Resend" waits a minute too)
     const latest = await PasswordReset.findOne({ where: resetsOf(cleanEmail), order: [["createdAt", "DESC"]], attributes: ["createdAt"] });
-    const waitMs = latest ? OTP_RESEND_MS - (Date.now() - new Date(latest.createdAt).getTime()) : 0;
-    if (waitMs > 0) {
-      return {
-        error: true,
-        statusCode: httpStatus.TOO_MANY_REQUESTS,
-        message: `A code was sent less than a minute ago. Check your inbox (and spam), or ask for a new one in ${Math.ceil(waitMs / 1000)} seconds.`,
-      };
-    }
+    if (latest && Date.now() - new Date(latest.createdAt).getTime() < OTP_RESEND_MS) return;
 
     // 3. Get user role for personalized email
     const roleName = await getRoleName(user.roleId);
@@ -325,20 +311,6 @@ const forgotPassword = async (email: string): Promise<any> => {
       attempts: 5,
       retryMs: 10_000,
     });
-
-    return {
-      error: false,
-      statusCode: httpStatus.OK,
-      message: `OTP sent to ${email}. Valid for 10 minutes.`,
-      data: {},
-    };
-  } catch (e: any) {
-    return {
-      error: true,
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      message: `Something went wrong: ${e.message}`,
-    };
-  }
 };
 
 // ─── STEP 2: Verify OTP (separate from password reset) ───────────────────────
@@ -409,9 +381,10 @@ const resetPassword = async (
       };
     }
 
-    // 4. Hash + update password; sessions signed in with the old one end
+    // 4. Hash + update password; every session signed in with the old one ends
     const encrypted = await EncryptPassword.encryptPassword(String(newPassword));
-    await user.update({ password: encrypted, refreshToken: null });
+    await user.update({ password: encrypted });
+    await endAllSessions(user.userId, "password-reset");
 
     // 5. Mark OTP as used
     await check.record.update({ isUsed: true });
@@ -432,10 +405,12 @@ const resetPassword = async (
 };
 
 // ─── Change Password for logged in user ─────────────────────────────────────────
+/** The user's other sessions end; the one making the change (`sessionId`) stays signed in. */
 const changePassword = async (
   userId: string,
   currentPassword: string,
-  newPassword: string
+  newPassword: string,
+  sessionId?: string | null
 ): Promise<any> => {
   try {
     if (!currentPassword || !newPassword) {
@@ -446,12 +421,8 @@ const changePassword = async (
       };
     }
 
-    if (newPassword.length < 6) {
-      return {
-        error: true,
-        statusCode: httpStatus.BAD_REQUEST,
-        message: "New password must be at least 6 characters long.",
-      };
+    if (!isStrongPassword(String(newPassword))) {
+      return { error: true, statusCode: httpStatus.BAD_REQUEST, message: STRONG_PASSWORD_MESSAGE };
     }
 
     const user = await UserModal.findOne({
@@ -477,6 +448,7 @@ const changePassword = async (
 
     const encrypted = await EncryptPassword.encryptPassword(newPassword);
     await user.update({ password: encrypted });
+    await endAllSessions(userId, "password-change", sessionId);
 
     return {
       error: false,

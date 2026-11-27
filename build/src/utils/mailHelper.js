@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.composeOtpEmail = exports.composeAdminCredentials = exports.composeUserCredentials = exports.queueUserCredentials = exports.cancelQueuedEmail = exports.queueEmail = exports.maskEmail = exports.sendEmailToNewUser = void 0;
+exports.composeOtpEmail = exports.composeAdminCredentials = exports.composeUserCredentials = exports.queueUserCredentials = exports.cancelQueuedEmail = exports.queueEmail = exports.maskEmail = exports.escapeHtml = exports.sendEmailToNewUser = void 0;
 // const transporter = nodemailer.createTransport({
 //   host: 'smtp.gmail.com',
 //   port: 465,
@@ -289,6 +289,7 @@ const crypto_1 = require("crypto");
 const config_1 = __importDefault(require("../config/config"));
 const logger_1 = __importDefault(require("../config/logger"));
 const User_model_1 = __importDefault(require("../models/User.model"));
+const session_service_1 = require("../services/auth/session.service");
 const queue_1 = require("../queue");
 const config_2 = require("../queue/config");
 const sealed_1 = require("../queue/sealed");
@@ -341,14 +342,10 @@ exports.sendEmailToNewUser = sendEmailToNewUser;
 // not in the email, because it is stored encrypted and can't be read back).
 /** Text from the database or a form, safe to put inside the email's HTML. */
 const escapeHtml = (v) => String(v !== null && v !== void 0 ? v : "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+exports.escapeHtml = escapeHtml;
 /** Sends one email now; throws when the mail server refuses it. */
 const deliverMail = (message) => __awaiter(void 0, void 0, void 0, function* () {
-    yield transporter.sendMail({
-        from: `"ViaExam" <${config_1.default.email.smtp.auth.user}>`,
-        to: message.to,
-        subject: message.subject,
-        html: message.html,
-    });
+    yield transporter.sendMail(Object.assign({ from: `"ViaExam" <${config_1.default.email.smtp.auth.user}>`, to: message.to, subject: message.subject, html: message.html }, (message.replyTo ? { replyTo: message.replyTo } : {})));
 });
 /** "ad***@gmail.com": enough to tell addresses apart in a log, not to collect them. */
 const maskEmail = (email) => {
@@ -357,6 +354,8 @@ const maskEmail = (email) => {
 };
 exports.maskEmail = maskEmail;
 const KIND_LABEL = {
+    contact: "contact form",
+    "subscription-reminder": "plan renewal reminder",
     otp: "sign-in code",
     "password-reset": "new password",
     "login-details": "login details",
@@ -366,9 +365,11 @@ const KIND_LABEL = {
 const SENT = { sent: true };
 /** Saves a reset's password (the email with it has been accepted) and ends the user's sessions. */
 const applyPassword = ({ userId, hash }) => __awaiter(void 0, void 0, void 0, function* () {
-    const [count] = yield User_model_1.default.update({ password: hash, refreshToken: null }, { where: { userId, isDeleted: false } });
+    const [count] = yield User_model_1.default.update({ password: hash }, { where: { userId, isDeleted: false } });
     if (!count)
         logger_1.default.warn(`[Email] User ${userId} no longer exists; the emailed password was not saved.`);
+    else
+        yield (0, session_service_1.endAllSessions)(userId, "password-reset");
 });
 const isRejection = (err) => {
     // 5xx from the mail server (no such mailbox, address rejected) won't change on retry.
@@ -476,12 +477,12 @@ const composeUserCredentials = (data) => {
     var _a, _b;
     const kind = (_a = data.kind) !== null && _a !== void 0 ? _a : "created";
     const e = {
-        name: escapeHtml(data.userName),
-        email: escapeHtml(data.email),
-        phone: escapeHtml(data.phone),
-        password: escapeHtml((_b = data.password) !== null && _b !== void 0 ? _b : ""),
-        role: escapeHtml(data.role),
-        url: escapeHtml(data.loginUrl),
+        name: (0, exports.escapeHtml)(data.userName),
+        email: (0, exports.escapeHtml)(data.email),
+        phone: (0, exports.escapeHtml)(data.phone),
+        password: (0, exports.escapeHtml)((_b = data.password) !== null && _b !== void 0 ? _b : ""),
+        role: (0, exports.escapeHtml)(data.role),
+        url: (0, exports.escapeHtml)(data.loginUrl),
     };
     const intro = kind === "details"
         ? `Here are the login details for your <strong>${e.role}</strong> account on ViaExam. Your password has not changed.`
@@ -573,12 +574,12 @@ exports.composeUserCredentials = composeUserCredentials;
 const composeAdminCredentials = (raw) => {
     var _a;
     const data = {
-        adminName: escapeHtml(raw.adminName),
-        adminEmail: escapeHtml(raw.adminEmail),
-        adminPassword: escapeHtml(raw.adminPassword),
-        instituteName: escapeHtml(raw.instituteName),
-        loginUrl: escapeHtml(raw.loginUrl),
-        plan: escapeHtml(String((_a = raw.plan) !== null && _a !== void 0 ? _a : "")),
+        adminName: (0, exports.escapeHtml)(raw.adminName),
+        adminEmail: (0, exports.escapeHtml)(raw.adminEmail),
+        adminPassword: (0, exports.escapeHtml)(raw.adminPassword),
+        instituteName: (0, exports.escapeHtml)(raw.instituteName),
+        loginUrl: (0, exports.escapeHtml)(raw.loginUrl),
+        plan: (0, exports.escapeHtml)(String((_a = raw.plan) !== null && _a !== void 0 ? _a : "")),
     };
     const html = `
       <!DOCTYPE html>
@@ -668,7 +669,7 @@ const composeOtpEmail = ({ toEmail, userName, otp, role, }) => {
     return {
         to: toEmail,
         subject: roleSpecificContent.subject,
-        html: roleSpecificContent.html(escapeHtml(userName), escapeHtml(otp)),
+        html: roleSpecificContent.html((0, exports.escapeHtml)(userName), (0, exports.escapeHtml)(otp)),
     };
 };
 exports.composeOtpEmail = composeOtpEmail;

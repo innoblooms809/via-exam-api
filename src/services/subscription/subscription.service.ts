@@ -7,6 +7,7 @@ import config from "../../config/config";
 import logger from "../../config/logger";
 import { isStripeConfigured } from "../../config/stripe";
 import Institute from "../../models/Institute.model";
+import Notification from "../../models/Notification.model";
 import Plan from "../../models/Plan.model";
 import Subscription, { BillingCycle, SubscriptionStatus } from "../../models/Subscription.model";
 import SubscriptionTransaction, { TransactionKind } from "../../models/SubscriptionTransaction.model";
@@ -333,7 +334,7 @@ const expireDueSubscriptions = async (): Promise<number> => {
         { status: "active", currentPeriodEnd: { [Op.lte]: now } },
       ],
     },
-    include: [{ model: Institute, as: "institute", attributes: ["instituteName"] }],
+    include: [{ model: Institute, as: "institute", attributes: ["instituteName", "status"] }],
   });
 
   let expired = 0;
@@ -352,10 +353,15 @@ const expireDueSubscriptions = async (): Promise<number> => {
       title: `Your ${what} has ended`,
       message: `Your ${what} ended on ${formatDate(accessEndsAt(sub))}. Choose a plan in Billing to keep using ViaExam without interruption.`,
     });
+    // The admins of a suspended institute get nothing (they can't sign in); the super admin is
+    // told it is suspended, so this doesn't read as a renewal to chase.
+    const suspended = Number((sub as any).institute?.status) !== 1;
     await SubscriptionNotifier.notifySuperAdmins(sub.instituteId, {
       type: SUBSCRIPTION_NOTIFICATION.EXPIRED,
-      title: `${name}: ${what} expired`,
-      message: `${name}'s ${what} on the ${sub.planKey} plan expired on ${formatDate(accessEndsAt(sub))}.`,
+      title: `${name}: ${what} expired${suspended ? " (institute suspended)" : ""}`,
+      message:
+        `${name}'s ${what} on the ${sub.planKey} plan expired on ${formatDate(accessEndsAt(sub))}.` +
+        (suspended ? " The institute is suspended, so its admin can't renew until you reactivate it." : ""),
     });
   }
   return expired;
@@ -426,7 +432,7 @@ const getOverview = async (): Promise<any> => {
     const weekAhead = new Date(now.getTime() + 7 * DAY_MS);
     const monthStart = moment().startOf("month").toDate();
 
-    const liveInstitute = { model: Institute, as: "institute", attributes: [], where: { isDeleted: false } };
+    const liveInstitute = { model: Institute, as: "institute", attributes: ["status"], where: { isDeleted: false } };
     const [subs, plans, revenueMonth, revenueTotal, recent] = await Promise.all([
       Subscription.findAll({ include: [liveInstitute] }),
       Plan.findAll(),
@@ -451,7 +457,9 @@ const getOverview = async (): Promise<any> => {
       if (status === "trialing" || status === "active") {
         byPlan[sub.planKey] = (byPlan[sub.planKey] || 0) + 1;
         const ends = accessEndsAt(sub);
-        if (ends && new Date(ends) <= weekAhead) expiringSoon++;
+        // A suspended institute can't renew, so it isn't "expiring soon" (it shows as suspended instead).
+        const suspended = Number((sub as any).institute?.status) !== 1;
+        if (ends && new Date(ends) <= weekAhead && !suspended) expiringSoon++;
       }
       const plan = planByKey.get(sub.planKey);
       if (status === "active" && plan) {
@@ -501,6 +509,8 @@ const listSubscriptions = async (query: any): Promise<any> => {
     }
 
     const instituteWhere: WhereOptions = { isDeleted: false };
+    // "Expiring soon" is the renewals to chase; a suspended institute can't renew.
+    if (query.expiringSoon === "true") Object.assign(instituteWhere, { status: 1 });
     if (query.search) {
       const term = `%${String(query.search).trim()}%`;
       Object.assign(instituteWhere, {
@@ -551,7 +561,7 @@ const getInstituteSubscription = async (instituteId: string): Promise<any> => {
   try {
     const sub = await getOrCreate(instituteId);
     if (!sub) return notFound();
-    const [institute, plan, usage, transactions] = await Promise.all([
+    const [institute, plan, usage, transactions, lastReminder] = await Promise.all([
       Institute.findOne({
         where: { instituteId },
         attributes: ["instituteId", "instituteName", "slug", "city", "state", "contactEmail", "contactPhone", "contactPersonName", "logoUrl", "status", "createdAt"],
@@ -559,6 +569,8 @@ const getInstituteSubscription = async (instituteId: string): Promise<any> => {
       PlanService.findPlan(sub.planKey),
       getUsage(instituteId),
       SubscriptionTransaction.findAll({ where: { instituteId }, order: [["createdAt", "DESC"]], limit: 100 }),
+      // The last renewal reminder a super admin sent by hand (subscriptionReminder.service).
+      Notification.findOne({ where: { instituteId, type: "SUBSCRIPTION_REMINDER" }, attributes: ["createdAt"], order: [["createdAt", "DESC"]] }),
     ]);
 
     return {
@@ -571,6 +583,7 @@ const getInstituteSubscription = async (instituteId: string): Promise<any> => {
         plan: plan ? PlanService.formatPlan(plan) : null,
         usage,
         transactions: transactions.map(formatTransaction),
+        lastReminderAt: lastReminder?.createdAt ?? null,
       },
     };
   } catch (e: any) {

@@ -24,7 +24,9 @@ const sendReminders = async (): Promise<void> => {
         { status: "active", currentPeriodEnd: { [Op.between]: [now, horizon] } },
       ],
     },
-    include: [{ model: Institute, as: "institute", attributes: ["instituteName"], where: { isDeleted: false } }],
+    // Not suspended institutes: nobody there can sign in to renew. Their reminder isn't claimed,
+    // so one still goes out if the institute is reactivated before the plan ends.
+    include: [{ model: Institute, as: "institute", attributes: ["instituteName"], where: { isDeleted: false, status: 1 } }],
   });
 
   for (const sub of subs) {

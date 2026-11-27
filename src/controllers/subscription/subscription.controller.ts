@@ -4,6 +4,7 @@ import logger from "../../config/logger";
 import PlanService from "../../services/subscription/plan.service";
 import SubscriptionService from "../../services/subscription/subscription.service";
 import CheckoutService from "../../services/subscription/checkout.service";
+import ReminderService from "../../services/subscription/subscriptionReminder.service";
 
 type ServiceResult = { statusCode: number; [key: string]: any };
 
@@ -45,6 +46,7 @@ const updateInstituteSubscription = handle((req) =>
   SubscriptionService.updateInstituteSubscription(req.params.instituteId, req.body, req.viaExamUser)
 );
 const listTransactions = handle((req) => SubscriptionService.listTransactions(req.query));
+const sendRenewalReminder = handle((req) => ReminderService.sendReminder(req.params.instituteId, req.viaExamUser));
 
 // Stripe webhook: req.body is the raw Buffer (see app.ts) so the signature can be checked.
 const stripeWebhook = async (req: Request, res: Response): Promise<any> => {
@@ -70,5 +72,6 @@ export default {
   getInstituteSubscription,
   updateInstituteSubscription,
   listTransactions,
+  sendRenewalReminder,
   stripeWebhook,
 };

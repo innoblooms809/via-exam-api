@@ -13,12 +13,11 @@
  *   Passwords are hashed with bcrypt (utils/encryption.ts).
  *
  * Keys come from DATA_ENCRYPTION_KEY (32 random bytes, base64 or hex). Each value names the key
- * that sealed it: after a rotation the old key goes into DATA_ENCRYPTION_PREVIOUS_KEYS, and the
- * "encrypt-sensitive-data" maintenance task moves every value to the new key. Production refuses
- * to start without the key; development and tests fall back to one derived from JWT_SECRET.
+ * that sealed it: after a rotation the old key goes into DATA_ENCRYPTION_PREVIOUS_KEYS and must
+ * stay there for good (nothing moves old values to the new key). Production refuses to start
+ * without the key; development and tests fall back to one derived from JWT_SECRET.
  *
- * Rows written before encryption hold plain text. They are read as they are until that task
- * encrypts them.
+ * Rows written before encryption hold plain text and are read as they are.
  */
 
 import crypto from "crypto";
@@ -116,7 +115,6 @@ export const describeDataKeys = () => {
   return `Encrypting with key ${k.keyId} (${k.source}).` + (k.readOnly.length ? ` Older values can also be read with ${k.readOnly.join("; ")}.` : "");
 };
 
-export const currentKeyId = () => keys().current.id;
 export const isKnownKey = (keyId: string) => keys().byId.has(keyId);
 
 const b64 = (b: Buffer) => b.toString("base64url");
@@ -185,10 +183,6 @@ export function decryptField(stored: string | null | undefined, purpose: FieldPu
   }
   return plain;
 }
-
-/** For the re-encryption task: the plain text, or null when the value can't be opened (left alone). */
-export const openForRotation = (stored: string, purpose: FieldPurpose): string | null =>
-  isEncrypted(stored) ? open(stored, purpose) : stored;
 
 /**
  * Model attribute options for an encrypted column: the model reads and writes plain text, the

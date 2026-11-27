@@ -23,6 +23,7 @@ import {
 import logger from "../config/logger";
 import { queueConfig } from "./config";
 import { emitQueueEvent } from "./events";
+import { ensurePresenceTable, PostgresPresence } from "./presence";
 import {
   backoffDelay,
   CAN_CLAIM_EVERY_MS,
@@ -35,6 +36,7 @@ import {
   type QueueDefinition,
   type QueueDriver,
   type Repeat,
+  type WorkerPresence,
 } from "./types";
 
 const { Queue, Worker } = withBackend(createPostgresBackend);
@@ -186,10 +188,18 @@ class PostgresJobQueue<T> implements JobQueue<T> {
 class PostgresDriver implements QueueDriver {
   readonly kind = "postgres" as const;
   private readonly queues = new Map<string, PostgresJobQueue<any>>();
-  private readonly workers: BullWorker[] = [];
+  private readonly bullWorkers: BullWorker[] = [];
   private readonly claimChecks: NodeJS.Timeout[] = [];
 
-  constructor(private readonly pool: PgPool) {}
+  constructor(private readonly pool: PgPool, private readonly presence: PostgresPresence) {}
+
+  announce(queues: string[], info: () => Record<string, unknown>): Promise<void> {
+    return this.presence.announce(queues, info);
+  }
+
+  workers(): Promise<WorkerPresence[] | null> {
+    return this.presence.workers();
+  }
 
   queue<T>(def: QueueDefinition<T>): JobQueue<T> {
     let q = this.queues.get(def.name);
@@ -284,7 +294,7 @@ class PostgresDriver implements QueueDriver {
       })().catch((e) => logger.error(`[Queue] ${def.name}: failure handler for job ${job.id} crashed: ${e?.message || e}`));
     });
     worker.on("error", (err) => logger.error(`[Queue] ${def.name} worker error: ${err?.message || err}`));
-    this.workers.push(worker);
+    this.bullWorkers.push(worker);
     if (def.canClaim) this.followCanClaim(def, worker);
   }
 
@@ -328,11 +338,13 @@ class PostgresDriver implements QueueDriver {
 
   async close(graceMs: number): Promise<void> {
     this.claimChecks.forEach((timer) => clearInterval(timer));
+    // First of all: the processes that only add jobs learn at once that this one stops taking them.
+    await this.presence.leave();
     // Running jobs get `graceMs` to finish; any still running keep their lock and are picked up
     // again by the next worker once it lapses.
-    const stopped = Promise.all(this.workers.map((w) => w.close().catch(() => undefined)));
+    const stopped = Promise.all(this.bullWorkers.map((w) => w.close().catch(() => undefined)));
     await Promise.race([stopped, sleep(graceMs)]);
-    await Promise.all(this.workers.map((w) => w.close(true).catch(() => undefined)));
+    await Promise.all(this.bullWorkers.map((w) => w.close(true).catch(() => undefined)));
     await Promise.all([...this.queues.values()].map((q) => q.close().catch(() => undefined)));
     await this.pool.end().catch(() => undefined);
   }
@@ -364,10 +376,13 @@ export async function createPostgresDriver(workerCount: number): Promise<QueueDr
   // Every queue and worker of the process listens on this one pool: a fixed set, not a leak.
   (pool as unknown as { setMaxListeners?: (n: number) => void }).setMaxListeners?.(200);
 
+  let presenceTable: string | null = null;
   try {
     const client = await pool.connect();
     try {
       await runMigrations(client, schema);
+      // Which processes take jobs (presence.ts). Never fatal: without it the queue still works.
+      presenceTable = await ensurePresenceTable(client, quoteSchemaName(schema));
     } finally {
       client.release();
     }
@@ -375,5 +390,5 @@ export async function createPostgresDriver(workerCount: number): Promise<QueueDr
     await pool.end().catch(() => undefined);
     throw err;
   }
-  return new PostgresDriver(pool);
+  return new PostgresDriver(pool, new PostgresPresence(pool, presenceTable));
 }
